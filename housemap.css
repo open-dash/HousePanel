@@ -1,0 +1,457 @@
+* {
+font-family: "Arial", sans-serif;
+}
+
+h1, h2, h3 {
+font-size: 30pt;
+color: #003366;
+margin-bottom: 2px;
+margin-top: 5px;
+}
+h2 {
+font-size: 24pt;
+}
+h3 {
+font-size: 14pt;
+}
+p {
+font-size: 12pt;
+}
+
+div.ui-tabs, div.ui-tabs-panel, ui-widget-content {
+    background: #333333;
+}
+
+ul.ui-tabs-nav {
+    background: #eeeeee;
+    color: #000000;
+    font-size: 12pt;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
+    cursor: pointer;
+}
+
+.ui.widget-header {
+    background: #cccccc
+}
+
+body {
+  background-color: #000000;
+  color: #ffffee;
+}
+
+div {
+  font-size: 12pt; padding: 0px; margin: 0px;
+}
+
+div.sitename {
+    display: inline-block;
+    background-color: #000000;
+    color: #eeeeee;
+    position: relative;
+    left: 4px;
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+input.authbutton {
+    display: inline-block;
+    background-color: #000000;
+    color: #eeeeee;
+    position: absolute;
+    right: 10px;
+    width: 120px;
+    text-align: right;
+    cursor: pointer;
+}
+
+.debug, .error {
+  background-color: #cc3300;
+  color: white;
+  font-size: 10pt;
+}
+
+form {
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+    background: none;
+}
+
+/* how the tab page shows up - this affects everything shown */
+.ui-tabs .ui-tabs-panel {
+    padding: 4px 1px;
+}
+
+/* specific tabs can be fully customized by ID as shown here */
+/* this puts the last two tabs content on the right side for kicks */
+#thermostats-tab, #music-tab {
+    text-align: right;
+}
+
+#options-tab {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* all panels look like this */
+div.panel {
+    display: inline-block;
+    border: 2px solid #3333cc;
+    padding: 2px;
+    background-color: #666666;
+    position: relative; 
+    left: 0px; top: 0px; 
+    width: 68%
+}
+
+/* make specific panels look however you wish */
+div.panel-music {
+  border: 4px solid #cc9900;
+  padding: 2px;
+  background-color: #660000;
+}
+
+/* locate and style the blocks of data for history info */
+div.sensordata {
+    display: inline-block;
+    position: relative;
+    top: 2px; right: 2px;
+    width: 30%; height: auto;
+    border-left: 4px solid #ffffff;
+    vertical-align: top;
+}
+
+div.scrollit {
+    height: 600px;
+    overflow-y: scroll;
+}
+
+table.sensordata {
+    width: 100%;
+    text-align: left;
+}
+
+th, tr.theader {
+    background-color: #111133;
+    color: #ffffff;
+}
+
+td.shaded, tr.shaded {
+    background-color: #eeeeee;
+    color: #000000;
+}
+
+td.unshaded, tr.unshaded {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+table.roomoptions {
+    background-color: #eeeeee;
+    color: black;
+    font-size: 11pt;
+}
+
+table.roomoptions td {
+    text-align: center;
+}
+
+table.roomoptions td.roomname {
+    border-bottom: 2px solid #0033cc;
+    background-color: #cccccc;
+    font-weight: bold;
+    width: 40px;
+}
+
+table.roomoptions td.thingname {
+    text-align: left;
+    font-weight: bold;
+    width: auto;
+}
+
+span.typeopt {
+    font-weight: normal;
+    font-family: serif;
+    font-style: italic;
+    color: #666666;
+}
+
+/* all things look like this */
+div.thing {
+    display: inline-block;
+    margin: 2px;
+    text-align: center;
+    vertical-align: top;
+    border-top: 2px solid #cccccc; border-right: 2px solid #cccccc;
+    border-bottom: 2px solid #ffffff; border-left: 2px solid #ffffff;
+    background-color: #000000; 
+    color: #eeeeee;
+    font-size: 14pt;
+    cursor: default;
+    width: 120px; height: 120px;
+}
+
+div.thing.music-thing {
+    width: 180px;
+}
+
+/* customize colors and shapes for a specific thing */
+div.thing.switch-thing, div.thing.switchlevel-thing {
+    background-color: #0033ff;
+    cursor: pointer;
+}
+
+div.thing.lock-thing {
+    background-color: #006666;
+    cursor: pointer;
+}
+
+/* handle larger images */
+div.thing.image-thing {
+    background-color: #ffffff;
+    width: 242px; height: 242px;
+}
+
+/* handle larger thermostats */
+div.thing.thermostat-thing, div.thing.music-thing {
+  height: 242px;
+}
+
+/* the name of the thing  */
+div.thingname {
+    background-color: #666666; 
+    color: #ffffff;
+    border-bottom: 3px solid #fffa90;
+    height: 40px;
+    cursor: pointer;
+}
+
+/* what to do when you hover over an item */
+div.thingname:hover {
+    background-color: #000000; 
+    color: #cccccc ;
+}
+
+/* style for thing name when it has been picked */
+div.thingname.sensorpick {
+    background-color: #333333;
+}
+
+/* styling for the actual item without its state */
+div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, div.music, div.thermostat {
+    display: inline-block;
+    color: #ffffee;
+    cursor: pointer;
+    width: 118px;
+    height: auto;
+    border-bottom: 1px solid #ffffff;
+}
+
+div.music {
+    width: 178px;
+}
+
+div.image {
+    width: 238px;
+}
+
+div.switch, div.contact, div.lock, div.motion, div.momentary {
+    padding: 27px 0;
+}
+
+/* for switches within switchlevels make room for level control */
+div.switchlevel-thing div.switch {
+    padding: 10px 0;
+}
+
+/* what to do when you hover over an item */
+div.switch:hover, div.lock:hover {
+    background-color: #000000; 
+    color: #cccccc ;
+}
+
+/* handle the block of controls for adjusting the thermostat and levels */
+div.thermostat.heat, div.thermostat.cool, div.music.level {
+    display: inline-block;
+    background-color: #333333;
+    color: #ffffee;
+    border: 1px solid #ffffff;
+    width: 118px; height: auto;
+    padding: 0px;
+    cursor: default;
+    text-align: center;
+}
+
+div.music.level {
+    width: 178px;
+}
+
+/* style the on and off states of switches */
+div.on, div.open, div.unlocked, div.active {
+  background-color: #339900;
+  color: #ffffff;
+  font-size: 14pt;
+}
+
+div.off, div.closed, div.locked, div.inactive {
+  background-color: #993300;
+  color: #ffffff;
+  font-size: 14pt;
+}
+
+/* hover over things that are clickable */
+div.on:hover, div.unlocked:hover {
+  background-color: #116600;
+}
+div.off:hover, div.locked:hover {
+  background-color: #661100;
+}
+
+/* up and down arrows */
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+    display: inline-block;
+    width: 32px; height: 32px;
+    border: 0px; padding: 0px;
+    cursor: pointer;
+}
+
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
+    background-image: url("sprites.gif");
+    background-position: -32px 0px;
+}
+
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+    background-image: url("sprites.gif");
+    background-position: -272px -2px;
+}
+
+div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
+    background-image: url("Media-Player-Buttons.png");
+    display: inline-block;
+    background-repeat: no-repeat;
+    height:38px; width: 32px;
+    background-position: -160px -4px;
+}
+
+div.music-pause {
+    background-position: -64px -4px;
+}
+
+div.music-stop {
+    background-position: -128px -4px;
+}
+
+div.music-play {
+    background-position: -96px -4px;
+}
+
+div.music-next {
+    background-position: -32px -4px;
+}
+
+/* individual temperature value inside a thermostat */
+div.thermostat.temperature {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: none;
+    cursor: default;
+    font-size: 30px;
+    text-align: center;
+    height: 40px;
+}
+
+div.thermostat.thermofan, div.thermostat.thermomode {
+    cursor: pointer;
+}
+
+div.thermostat.thermomode.heat {
+    background-color: #cc3300;
+}
+
+div.thermostat.thermomode.cool {
+    background-color: #3333ff;
+}
+
+div.thermostat.thermomode.auto {
+    background-color: #009999;
+}
+
+div.thermostat.thermostate {
+    cursor: default;
+}
+
+/* values of the adjustable items */
+div.heat-val, div.cool-val, div.level-val, div.switchlevel-val {
+    display: inline-block;
+    position: relative;
+    left: 0px; top: 0px;
+    text-align: center;
+    vertical-align: top;
+    font-size: 18px;
+    width: 52px;
+    height: 26px;
+    padding-top: 6px;
+    color: #ffffff;
+    border: 0px;
+}
+
+div.music div.level-val {
+    width: 112px;
+}
+
+/* color specific values */
+div.heat-val {
+    background-color: #cc3300;
+}
+div.cool-val {
+  background-color: #0033cc;
+}
+div.switchlevel-val, div.level-val {
+    background-color: #009999;
+}
+
+/* hover over the adjustment arrows */
+div.heat-up:hover, div.heat-dn:hover, 
+div.cool-up:hover, div.cool-dn:hover,
+div.switchlevel-up:hover, div.switchlevel-dn:hover,
+div.level-up:hover, div.level-dn:hover {
+    border: 2px solid #666666;
+    width: 28px;
+    height: 28px;
+}
+
+/* use italic serif font for music titles and a custom size */
+div.music.track {
+    font-family: "Times New Roman",serif;
+    font-size: 12pt;
+    font-style: italic;
+    height: auto;
+    border-bottom: none;
+}
+
+div.paneldata {
+  border: 0px;
+  padding: 0px;
+}
+
+/*
+li {
+padding-top: 5px;
+padding-bottom: 5px;
+padding-right: 70px;
+margin-left: 30px;
+}
+*/
+
+.hidden {
+	display: none;
+}
+
+.shown {
+	display: inline;
+}
