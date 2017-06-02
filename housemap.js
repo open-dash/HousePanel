@@ -1,21 +1,62 @@
 // jquery functions to do Ajax on housemap.php
-
 // old style setup of tabs to support maximum browsers
-// TODO: impliment change(event,ui) function for permanence
 window.addEventListener("load", function(event) {
     $( "#tabs" ).tabs();
+    
+    // make the room tabs sortable
+    // the change function does a post to make it permanent
     $("ul.ui-tabs-nav").sortable({
         axis: "x", 
         items: "> li",
         cancel: "li.nodrag",
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
-        revert: true
+        revert: true,
+        update: function(event, ui) {
+            var pages = {};
+            var k = 0;
+            // get the new list of pages in order
+            $("ul.ui-tabs-nav li.drag").each(function() {
+                var pagename = $(this).text();
+                pages[pagename] = k;
+                k++;
+            });
+            $.post("housemap.php", 
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
+                function (presult, pstatus) {
+//                    alert("Updated panel order with status= "+pstatus+
+//                          "\n" + "Page order:\n"+strObject(pages));
+                }
+            );
+        }
     });
+
+    // make the actual thing tiles on each panel sortable
+    // the change function does a post to make it permanent
     $("div.panel").sortable({
         items: "> div.thing",
         opacity: 0.5,
-        revert: true
+        revert: true,
+        update: function(event, ui) {
+            var things = {};
+            var k=0;
+            var roomname = $(ui.item).attr("panel");
+            var roomtitle = $(this).attr("title");
+            // var bid = $(ui.helper).attr("bid");
+            // get the new list of pages in order
+            $("div.panel-" + roomname + " > div.thing").each(function() {
+                var tilenum = parseInt( $(this).attr("tile") );
+                things[k] = tilenum;
+                k++;
+            });
+            $.post("housemap.php", 
+                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle},
+                   function (presult, pstatus) {
+                        alert("Updated tile order with status= "+pstatus+" result= "+presult+ 
+                              " in room= "+roomname+"\nNew list= "+strObject(things));
+                   }
+            );
+        }
     });
 
     // setup clicking on name of tiles
@@ -85,9 +126,8 @@ function setupTimers() {
         var bid = $(this).attr("bid");
         var thetype = $(this).attr("type");
         var panel = $(this).attr("panel");
-                
-        // set the repeat timer value
-        var timerval = 15000;
+        var timerval = 0;
+        
         switch (thetype) {
             case "switch":
             case "swithlevel":
@@ -106,7 +146,7 @@ function setupTimers() {
         
         // limit to closet for testing
         // if (aid==47 && bid && thetype) {
-        if (aid && bid && (thetype==="switch" || thetype==="switchlevel" || thetype==="lock") ) {
+        if ( timerval && aid && bid ) {
 
             // define the timer callback function to update this tile
             var apparray = [aid, bid, thetype, panel, timerval];
@@ -126,28 +166,26 @@ function setupTimers() {
                         }, "json"
                     );
                 }
-                if (timerval) setTimeout(function() {apparray.myMethod();}, this[4]);
+                setTimeout(function() {apparray.myMethod();}, this[4]);
             };
             
             // wait before doing first one
             setTimeout(function() {apparray.myMethod();}, timerval);
-            // apparray.myMethod();
-
-            // setTimeout(function(){apparray.myMethod();}, 30000);
         }
     });
 }
 
 function createOutput(swtype, presult) {
-    alert('presult = ' + presult);
-    tc= "<table class=\"sensortable\">";
+    alert('presult = ' + strObject(presult));
+    var tc= "<table class=\"sensortable\">";
     tc= tc + "<tr class=\"theader\"><td width=\"80\">" + swtype + " Status" + "</td><td>Date / Time</td></tr>";
     var shaded = "shaded";
+    var tval;
     $.each( presult, function(k, timestamp)  {
         // if ($timestamp["name"] == $swtype) {
-        shaded = (shaded =="shaded") ? "unshaded" : "shaded";
-        fulldate = timestamp["date"];
-        tvalue = timestamp["value"];
+        shaded = (shaded ==="shaded") ? "unshaded" : "shaded";
+        var fulldate = timestamp["date"];
+        var tvalue = timestamp["value"];
         if (Array.isArray(tvalue)) {
             tval = "";
             $.each( tvalue, function (key, val)  {
@@ -169,14 +207,14 @@ function setupName() {
     var jqflag = "div.thing div.thingname";
     $(jqflag).click(function() {
       
-        var thetitle = $(this).attr("title");
         var thevalue = $(this).html();
-        var aid = $(this).attr("tile");
+        var aid = $(this).attr("aid");
         var tile = '#tile-'+aid;
         var bid = $(tile).attr("bid");
         var thetype = $(tile).attr("type");
         var panelname = $(tile).attr("panel");
-        // alert("type= " + thetype + " tile id= " + aid + " thing id = "+bid);
+//        var kindex = $(tile).attr("tile");
+//        alert("type= " + thetype + " aid= " + aid + " kindex= " + kindex + " bid= "+bid);
 
         // add class to highlight last one picked
         $(jqflag).removeClass("sensorpick");
@@ -197,18 +235,22 @@ function setupName() {
                             mywindow.document.write(output);
                         }
                     }
-               }
+               }, "json"
         );        
     });
 }
 
 // find all the things with "bid" and update the value clicked on somewhere
-function updAll(aid, bid, subid, theclass, thetype, pvalue) {
-    
+function updAll(aid, bid, thetype, pvalue) {
+
+    // update trigger tile first
+    updateTile(aid, pvalue);
+        
     // go through all the tiles this bid and type (easy ones)
+    // this will include the trigger tile so we skip it
     $('div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
         var otheraid = $(this).attr("tile");
-        updateTile(otheraid, pvalue);
+        if (otheraid !== aid) { updateTile(otheraid, pvalue); }
     });
     
     // if this is a switch go through and set all switchlevels
@@ -238,7 +280,8 @@ function setupPage(sensortype) {
 
     $(actionid).click(function() {
 
-        var aid = $(this).attr("tile");
+        // updated this to use "tileid" to avoid confusion with main tile
+        var aid = $(this).attr("aid");
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
         var tile = '#tile-'+aid;
@@ -248,12 +291,14 @@ function setupPage(sensortype) {
         // get target id and contents
         var targetid = '#a-'+aid+'-'+subid;
         var thevalue = $(targetid).html();
-        // alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
+        var tarclass = $(targetid).attr("class");
+//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
 
+        // turn momentary items on or off temporarily
         if (thetype==="momentary") {
             var that = targetid;
             // define a class with method to reset momentary button
-            var classarray = [$(that), theclass, thevalue];
+            var classarray = [$(that), tarclass, thevalue];
             classarray.myMethod = function() {
                 this[0].attr("class", this[1]);
                 this[0].html(this[2]);
@@ -269,16 +314,16 @@ function setupPage(sensortype) {
                 $(that).addClass("on");
                 $(that).html("on");
             }
-            setTimeout(function(){classarray.myMethod();}, 2000);
+            setTimeout(function(){classarray.myMethod();}, 1500);
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
                    thetype==="thermostat" || thetype==="music") {
-            // alert('targetid= ' + targetid+' type= '+thetype+' class= ['+theclass+'] value= '+thevalue);
+//             alert('targetid= ' + targetid+' type= '+thetype+' class= ['+theclass+'] value= '+thevalue);
             $.post("housemap.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
 //                        alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
                         if (pstatus==="success" && presult!==undefined ) {
-                            updAll(aid,bid,subid,theclass,thetype,presult);
+                            updAll(aid,bid,thetype,presult);
                         }
                    }, "json"
             );

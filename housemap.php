@@ -1,57 +1,56 @@
 <?php
 /*
-* House Controller web service PHP application for SmartThings
-* author: Ken Washington  (c) 2017
-*
-* general purpose routines included for authorizing a web service
-* specific application shows all switches, motion sensors, and door contacts
-* thermostats and doors to open and other capabilities will be added later
-* uses Ajax to query specific sensor to return most recent 20 historical events
-*
-* for switches the Ajax call is used to turn the switch on and off from the web
-* DEBUG flags can be used to show specific data details during installation
-* this must be paired with a SmartApp on the SmartThings side
-* and the CLIENT_ID and CLIENT_SECRET must match what is specified here
-* to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
-*
-* The endpoints must also match the names referenced in the routines below
-* Other requirements for using this web app include installing jquery and pointing to it
-* the references below are the directories that I use on my server but they can be anything
-* you can even point it to the code.jquery site but I didn't like the delay and security risk
-* 
-* Finally, install this file and the accompanying .js and .css file on your server
-* and you should be good to go. Don't forget to provide the CLIENT_ID and CLIENT_SECRET info
-*
+ * House Panel web service PHP application for SmartThings
+ * author: Ken Washington  (c) 2017
+ *
+ * Must be paired with the housemap.groovy SmartApp on the SmartThings side
+ * and the CLIENT_ID and CLIENT_SECRET must match what is specified here
+ * to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
+ * install this file and the accompanying .js and .css file on your server
+ * and you should be good to go. A hmoptions.cfg file will be generated
+ * your server must have write privileges turned for the web for this to work
+ * 
+ * note: I point to the public jQuery libraries but you can change this
+ *       if you want faster response time. At least version 10 is required
+ *
+ * Revision History
+ * 1.0      Initial release
+ * 1.1      Implement new architecture for files to support sortable jQuery
+ * 1.2      Cleanup including fixing unsafe GET and POST calls
+ *          Removed history call and moved to javascript side
+ *          put reading and writing of options into function calls
+ *          replaced main page bracket from table to div
+ * 
 */
 
-ini_set('max_execution_time',180);
+ini_set('max_execution_time', 300);
+ini_set('max_input_vars', 20);
+
 session_start();
-define('APPNAME', 'House Controller');
+define('APPNAME', 'House Panel');
 define('CLIENT_ID', 'f7d5bdf7-c6a5-475d-95ce-25e49efb6436');
 define('CLIENT_SECRET', 'b299a4b9-e2cf-48ef-995f-ed9c762ed820');
+define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
-define('DEBUG4', false);
 
 // header and footer
 function htmlHeader() {
     $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
     $tc.= '<html><head><title>Smart Motion Sensor Authorization</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
-    // $tc.= '<link rel="stylesheet" href="/jquery/jquery-ui-1.11.4/jquery-ui.css">';
+    
+    // load jQuery and themes
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
-    $tc.= '<link rel="stylesheet" type="text/css" href="housemap.css">';
-    // $tc.= '<script src="/jquery/jquery-3.1.0.min.js"></script>';
-    // $tc.= '<script src="/jquery/jquery-ui-1.11.4/jquery-ui.min.js"></script>';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
     
-    // load the rest of the jquery routine for this to all work
+    // load custom .css and the main script file
+    $tc.= '<link rel="stylesheet" type="text/css" href="housemap.css">';
     $tc.= '<script type="text/javascript" src="housemap.js"></script>';  
     
-    // dynamically create the jquery startup routine to handle all rooms
-    // this replaces the startup routine found in the main housemap5.js file
+    // dynamically create the jquery startup routine to handle all types
     $tc.= '<script type="text/javascript">';
         $thingtypes = array("switch","lock","momentary","heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
@@ -61,22 +60,24 @@ function htmlHeader() {
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';
-            // $tc.= 'alert("setting up ' . $thing . '");';
         }
-        // activate the tabs
-        // $tc.= '  $( "#tabs" ).tabs();';
-        // $tc.= "  setupName();";
         $tc.= "});";
     $tc.= '</script>';
 
-
+    // begin creating the main page
+    // can be wrapped in a table but that messes up sortable feature
+    // changed this to a div
     $tc.= '</head><body>';
-    $tc.= '<table class="maintable"><tr><td>';
+    $tc.= '<div class="maintable">';
+    // $tc.= '<table class="maintable"><tr><td>';
     return $tc;
 }
 
 function htmlFooter() {
-    $tc = "</td></tr></table></body></html>";
+    $tc = "";
+    // $tc.= "</td></tr></table>";
+    $tc.= "</div>";
+    $tc.= "</body></html>";
     return $tc;
 }
 
@@ -237,44 +238,6 @@ function authButton($sname, $returl) {
     return $tc;
 }
 
-function convertDate($indate, $priordate) {
-
-    $indate = substr($indate,0,10) . " " . substr($indate,11,8) . " UTC";
-    
-    // sample time:  2016-07-11T21:58:47.708Z
-    $utime = strtotime($indate);
-    // $utime = $indate;
-    $outdate = date("M d, Y  h:i:s A", $utime);
-    // $outdate = strftime("%b %d  %I:%M:%S %p", $utime);
-
-    if ($priordate) {
-        $priordate = substr($priordate,0,10) . " " . substr($priordate,11,8) . " UTC";
-        $ptime = $utime - strtotime($priordate);
-        // $ptime = abs($utime - $priordate);
-        $hours = (int) ($ptime/3600);
-        $min = (int) (($ptime - $hours*3600) / 60);
-        $sec = (int) ($ptime - $hours*3600 - $min*60);
-        $outdate .= " &nbsp;&nbsp; " . sprintf("%02d:%02d:%02d",$hours,$min,$sec); 
-        // $outdate .= " &nbsp;&nbsp; " . strftime("%H:%M:%S", $ptime);
-    }
-
-    return $outdate;
-}
-
-function sortsensor($a, $b) {
-    $atime = strtotime($a["date"]);
-    $btime = strtotime($b["date"]);
-    if ($atime==$btime) { return 0; }
-    return ($atime < $btime) ? -1 : 1;
-}
-
-function sortswitch($a, $b) {
-    $atime = $a["name"];
-    $btime = $b["name"];
-    if ($atime==$btime) { return 0; }
-    return ($atime < $btime) ? -1 : 1;
-}
-
 function getAllThings($endpt, $access_token) {
     $thingtypes = array("switches","dimmers","momentaries","contacts",
                         "sensors", "locks", "thermostats", "musics",
@@ -292,7 +255,7 @@ function getAllThings($endpt, $access_token) {
     return $response;
 }
 
-function makeThing($i, $thesensor, $panelname) {
+function makeThing($i, $kindex, $thesensor, $panelname) {
 // rewritten to use thing numbers as primary keys
     
     // $bname = "type-$bid";
@@ -302,7 +265,9 @@ function makeThing($i, $thesensor, $panelname) {
     $thingtype = $thesensor["type"];
 
     // wrap thing in generic thing class and specific type for css handling
-    $tc= "<div id=\"tile-$i\" tile=\"$i\" bid=\"$bid\" type=\"$thingtype\" panel=\"$panelname\" class=\"thing $thingtype" . "-thing\">";
+    // IMPORTANT - changed tile to the saved index in the master list
+    //             so one must now use the id to get the value of "i" to find elements
+    $tc= "<div id=\"tile-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" panel=\"$panelname\" class=\"thing $thingtype" . "-thing\">";
 
     // add a hidden field for passing thing type to js
     // $tc.= hidden("type-$i", $thingtype, "type-$i");
@@ -311,7 +276,7 @@ function makeThing($i, $thesensor, $panelname) {
     // print out the thing name wrapped with tags for javascript to react to
     // status class will be the key to trigger click action. That will read $i attribute
     // wrap the name of the thing in this class to trigger hover and click and styling
-    $tc.= "<div tile=\"$i\"  title=\"$thingtype status\" class=\"thingname\" id=\"s-$i\">" . $thingname . "</div>";
+    $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname\" id=\"s-$i\">" . $thingname . "</div>";
 
     // create a thing in a HTML page using special tags so javascript can manipulate it
     // multiple classes provided. One is the type of thing. "on" and "off" provided for state
@@ -355,9 +320,9 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
     if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
         $tkeyval = $tkey . "-val";
         $tc.= "<div class=\"$thingtype $tkey\">";
-        $tc.= "<div tile=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div tile=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
-        $tc.= "<div tile=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
@@ -373,11 +338,11 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
         if ($tkey==="musicstatus") {
             // print controls for the player
             $tc.= "<div class=\"music-controls\">";
-            $tc.= "<div  tile=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
-            $tc.= "<div  tile=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
-            $tc.= "<div  tile=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";
-            $tc.= "<div  tile=\"$i\" subid=\"$tkey\" title=\"Stop\" class=\"music-stop\"></div>";
-            $tc.= "<div  tile=\"$i\" subid=\"$tkey\" title=\"Next\" class=\"music-next\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Stop\" class=\"music-stop\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Next\" class=\"music-next\"></div>";
             $tc.= "</div>";
         }
 
@@ -388,19 +353,20 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
         } else {
             $tkeyshow = " ".$tkey;
         }
-        $tc.= "<div tile=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"action-$i\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"action-$i\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
     }
     return $tc;
 }
 
 // this makes a basic call to get the sensor status and return as a formatted table
 // notice the call of $cnt by reference to keep running count
-function getNewPage(&$cnt, $allthings, $roomnum, $roomname, $things, $indexoptions) {
+function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
     $tc = "";
+    $roomname = strtolower($roomtitle);
     $tc.= "<div id=\"$roomname" . "-tab\">";
     if ( $allthings ) {
-        $tc.= "<form title=\"" . $roomname . "\" name=\"" . $roomname . "\" action=\"#\"  method=\"POST\">";
-        $tc.= "<div id=\"panel-$roomname\" title=\"" . $roomname . "\" class=\"panel panel-$roomname\">";
+        $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\"  method=\"POST\">";
+        $tc.= "<div id=\"panel-$roomname\" title=\"" . $roomtitle . "\" class=\"panel panel-$roomname\">";
         // $tc.= hidden("panelname",$keyword);
         
         foreach ($things as $kindex) {
@@ -415,7 +381,7 @@ function getNewPage(&$cnt, $allthings, $roomnum, $roomname, $things, $indexoptio
 
                 // keep running count of things to use in javascript logic
                 $cnt++;
-                $tc.= makeThing($cnt, $thesensor, $roomname);
+                $tc.= makeThing($cnt, $kindex, $thesensor, $roomname);
             }
         }
 
@@ -457,78 +423,87 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
     return json_encode($response);
 }
 
-// this makes a basic call to get the sensor status and return as a formatted table
-// function showDetails($endpt, $access_token, $sensortype, $sensorname) {
-function showHistory($endpt, $access_token, $swid, $swtype) {
-    $tc = "";
-    
-    // converted from GET to POST
-    // $host = $endpt . "/gethistory?picked=" . urlencode($sname) . "&stype=$swtype&swid=$swid";
-    // $response = curl_call($host, $headertype);
-    $host = $endpt . "/gethistory";
-    $headertype = array("Authorization: Bearer " . $access_token);
+function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
 
-    $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-              "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-              "&swid=" . urlencode($swid) . 
-              "&swtype=" . urlencode($swtype);
-    $response = curl_call($host, $headertype, $nvpreq, "POST");    
+    $updated = false;
+    $options = readOptions();
     
-    if (DEBUG3) {
-        $tc.= putdiv("History = </br>" . print_r($response, true));
+    // if the options file doesn't exist, create it by reading all ST
+    // this is very slow but hopefully it will never happen since this
+    // function is being triggered by a drag completion event
+    // it is here just in case something weird happened
+    if (!$options) {
+        $allthings = getAllThings($endpt, $access_token);
+        $options= getOptions($allthings);
     }
-
-    if ( is_array($response) && !array_key_exists("error",$response) ) {
-        $history = $response;
-        // $tc.= "<h3>History for " . $sensorname . "</h3>";
-        $hsize = count($history);
-        $shaded = "shaded";
-        $tc.= "<table class=\"sensortable\">";
-        $tc.= "<tr class=\"theader\"><td width=\"80\">" . ucfirst($swtype) . " Status" . "</td><td>" . "Date / Time" . "</td></tr>";
-        foreach($history as $k => $timestamp) {
-            // if ($timestamp["name"] == $swtype) {
-                $shaded = ($shaded =="shaded") ? "unshaded" : "shaded";
-                $olddate = ($k < $hsize) ? $history[$k+1]["date"] : false;
-                $fulldate = convertDate($timestamp["date"], $olddate);
-                $tvalue = $timestamp["value"];
-                if (is_array($tvalue)) {
-                    $tval = "";
-                    foreach($tvalue as $key => $val) {
-                        $tval.= "$key = $val <br />";
-                    }
-                } else {
-                    $tval = $tvalue;
+    
+    // now update either the page or the tiles based on type
+    switch($swtype) {
+        case "rooms":
+            $options["rooms"] = $swval;
+//          $updated = print_r($options,true);
+            $updated = true;
+            break;
+            
+        case "things":
+            if (key_exists($swattr, $options["rooms"])) {
+//                $options["things"][$swattr] = $swval;
+                $options["things"][$swattr] = array();
+                foreach( $swval as $val) {
+                    $options["things"][$swattr][] = intval($val, 10);
                 }
-                $tc.= "<tr class=\"$shaded\"><td width=\"80\">" . $tvalue . "</td><td>" . $fulldate . "</td></tr>";
-            // }
-        }
-        $tc.= "</table>";
-    } else {
-        $tc .= "<div class=\"error\">Error retrieving data for type: " . ucfirst($swtype) . " id: $swid " .
-            print_r($response,true) . "</div>" ;
+//              $updated = print_r($swval,true);
+                $updated = true;
+            }
+            break;
     }
     
-    return $tc;
+    if ($updated!==false) {
+        writeOptions($options);
+    }
+    
+    // return successful update or not
+    return $updated . " type = $swtype attr = $swattr";
+}
+
+function readOptions() {
+    $options = false;
+    if ( file_exists("hmoptions.cfg") ) {
+        $f = fopen("hmoptions.cfg","rb");
+        $optsize = filesize("hmoptions.cfg");
+        if ($f && $optsize) {
+            $serialoptions = fread($f, $optsize );
+            $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
+            $options = json_decode($serialnew,true);
+        }
+        fclose($f);
+    }
+    return $options;
+}
+
+function writeOptions($options) {
+    $f = \fopen("hmoptions.cfg","wb");
+    $str =  json_encode($options);
+
+    // make the file easier to look at
+    $str1 = str_replace(",\"",",\n\"",$str);
+    $str = str_replace(":{\"",":{\n\"",$str1);
+    fwrite($f, $str);
+
+    fclose($f);
 }
 
 function getOptions($allthings) {
 
-    // look for cookie with options
-    $options = false;
+    // read options from a local server file
+    // TODO: convert this over to a database tied to a user login
+    //       so that multiple people can use this same website for their ST
+    //       for now this code is locked down to only work for my home
     $updated = false;
     $cnt = 0;
+    $options = readOptions();
     
-    if ( file_exists("hmoptions.cfg") ) {
-
-        $f = fopen("hmoptions.cfg","rb");
-        $optsize = filesize("hmoptions.cfg");
-        
-        if ($f && $optsize) {
-            $serialoptions = fread($f, $optsize );
-            // $options = json_decode(stripslashes($serialoptions),true);
-            $options = json_decode($serialoptions,true);
-        }
-        fclose($f);
+    if ( $options ) {
         
         // make sure there is at least one room
         $rcount = count($options["rooms"]);
@@ -546,13 +521,11 @@ function getOptions($allthings) {
             }
         }
         
-        // TODO - go through index and invalidate items removed
-        // one way to do this is to set the index to a negative number
-        
         // make sure all options are arrays and keys are in a valid room
         // we don't need to check for valid thing as that is done later
         // this way things can be removed and added back later
         // and they will still show up where they used to be setup
+        // TODO: add new rooms to the options["things"] index
         $tempthings = $options["things"];
         $k = 0;
         foreach ($tempthings as $key => $var) {
@@ -560,21 +533,6 @@ function getOptions($allthings) {
                 array_splice($options["things"], $k, 1);
                 $updated = true;
             } else {
-                /*
-                 * this code isn't needed because the thing won't be displayed
-                 * anyway if it is not in our master index list
-                 * 
-                $j= 0;
-                foreach ($var as $idx) {
-                    if ( !is_int($idx) || !array_search($idx, $options["index"]) ) {
-                        array_splice($options["things"][$key], $j, 1);
-                        $updated = true;
-                    } else {
-                        $j++;
-                    }
-                }
-                 * 
-                 */
                 $k++;
             }
         }
@@ -584,7 +542,8 @@ function getOptions($allthings) {
 //        echo "<pre>";
 //        print_r($options);
 //        echo "</pre>";
-        
+
+    // if options were not found or not processed properly, make a default set
     if ( $cnt===0 ) {
         
         $updated = true;
@@ -640,13 +599,8 @@ function getOptions($allthings) {
 //        exit(0);
     }
 
-    // save the cookie for next time
-    // $expiry = time()+31*24*3600;
     if ($updated) {
-        $f = fopen("hmoptions.cfg","wb");
-        $str =  json_encode($options);
-        fwrite($f, $str);
-        fclose($f);
+        writeOptions($options);
     }
         
     return $options;
@@ -783,7 +737,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
 // *** main routine ***
 
     // set timezone so dates work where I live instead of where code runs
-    date_default_timezone_set("America/Detroit");
+    date_default_timezone_set(TIMEZONE);
     
     // save authorization for this app for about one month
     $expiry = time()+31*24*3600;
@@ -806,13 +760,14 @@ function processOptions($optarray, $retpage, $allthings=null) {
     $returnURL = $url . $uri;
     
     // check if this is a return from a code authorization call
-    if ( isset($_GET["code"]) && count($_GET)>0 ) {
+    $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    if ( $code ) {
     
         // grab the returned code and make the next call
-        $code = $_GET[code];
+        // $code = $_GET["code"];
         
         // check for manual reset flag for debugging purposes
-        if ($code=="0" || $code=="reset") {
+        if ($code=="reset") {
             getAuthCode($returnURL);
     	    exit(0);
         }
@@ -882,18 +837,18 @@ function processOptions($optarray, $retpage, $allthings=null) {
             $tc.= "access_token = $access_token<br />";
             $tc.= "endpt = $endpt<br />";
             $tc.= "sitename = $sitename<br />";
-            $tc.= "<br />cookies = <br />";
+            $tc.= "<br />cookies = <br /><pre>";
             $tc.= print_r($_COOKIE, true);
-            $tc.= "</div>";
+            $tc.= "</pre></div>";
         }
     }
 
     // cheeck if cookies are set
     if (!$endpt || !$access_token) {
         $first = true;
-        $tc .= "<h2>" . APPNAME . "</h2>";
+        $tc .= "<div><h2>" . APPNAME . "</h2>";
         $tc.= authButton($sitename, $returnURL);
-        $tc.= "<h3>Authorize this web service to access SmartThings</h3>";
+        $tc.= "<h3>Authorize this web service to access SmartThings</h3></div>";
     }
        
 
@@ -920,6 +875,12 @@ function processOptions($optarray, $retpage, $allthings=null) {
             case "dohistory":
                 echo doAction($endpt . "/dohistory", $access_token, $swid, $swtype);
                 break;
+        
+            case "pageorder":
+                $swval = $_POST["value"];
+                $swattr = $_POST["attr"];
+                echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr);
+                break;
         }
         exit(0);
     }
@@ -935,8 +896,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
 // ********************************************************************************************
 
-// *** check for errors ***
-
+    // *** check for errors ***
     if ( isset($_SESSION['curl_error_no']) ) {
         $tc.= "<br /><div class=\"error\">Errors detected<br />";
         $tc.= "Error number: " . $_SESSION['curl_error_no'] . "<br />";
@@ -972,7 +932,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
             
             // use the list of things in this room
             if ($room !== FALSE) {
-                $tc.= "<li><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
+                $tc.= "<li class=\"drag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
             }
         }
         // create a configuration tab
@@ -981,18 +941,21 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $tc.= '</ul>';
         
         $cnt = 0;
-        // foreach ($options as $room => $optionvals) {
-        for ($k=0; $k< count($roomoptions); $k++) {
+        // changed this to show rooms in the order listed
+        // this is so we just need to rewrite order to make sortable permanent
+        // for ($k=0; $k< count($roomoptions); $k++) {
+        foreach ($roomoptions as $room => $k) {
             
             // get name of the room in this column
-            $room = array_search($k, $roomoptions);
+            // $room = array_search($k, $roomoptions);
             // $roomlist = array_keys($roomoptions, $k);
             // $room = $roomlist[0];
 
             // use the list of things in this room
-            if ($room !== FALSE) {
+            // if ($room !== FALSE) {
+            if ( key_exists($room, $thingoptions)) {
                 $things = $thingoptions[$room];
-                $tc.= getNewPage($cnt, $allthings, $k, strtolower($room), $things, $indexoptions);
+                $tc.= getNewPage($cnt, $allthings, $room, $things, $indexoptions);
             }
         }
         
