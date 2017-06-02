@@ -20,5 +20,7 @@
 * 
 * Finally, install this file and the accompanying .js and .css file on your server
 * and you should be good to go. Don't forget to provide the CLIENT_ID and CLIENT_SECRET info
+* 
+* Rev 1.1  - Implemented permanent drag-drop
 *
 */
