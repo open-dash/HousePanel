@@ -52,8 +52,8 @@ window.addEventListener("load", function(event) {
             $.post("housemap.php", 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle},
                    function (presult, pstatus) {
-                        alert("Updated tile order with status= "+pstatus+" result= "+presult+ 
-                              " in room= "+roomname+"\nNew list= "+strObject(things));
+//                        alert("Updated tile order with status= "+pstatus+" result= "+presult+ 
+//                              " in room= "+roomname+"\nNew list= "+strObject(things));
                    }
             );
         }
