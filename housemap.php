@@ -486,8 +486,8 @@ function writeOptions($options) {
     $str =  json_encode($options);
 
     // make the file easier to look at
-    $str1 = str_replace(",\"",",\n\"",$str);
-    $str = str_replace(":{\"",":{\n\"",$str1);
+    $str1 = str_replace(",\"",",\r\n\"",$str);
+    $str = str_replace(":{\"",":{\r\n\"",$str1);
     fwrite($f, $str);
 
     fclose($f);
