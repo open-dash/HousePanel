@@ -3,6 +3,10 @@
 window.addEventListener("load", function(event) {
     $( "#tabs" ).tabs();
     
+//    var cookies = decodeURIComponent(document.cookie);
+//    cookies = cookies.split(';');
+//    alert(strObject(cookies));
+    
     // make the room tabs sortable
     // the change function does a post to make it permanent
     $("ul.ui-tabs-nav").sortable({
@@ -22,11 +26,7 @@ window.addEventListener("load", function(event) {
                 k++;
             });
             $.post("housemap.php", 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
-                function (presult, pstatus) {
-//                    alert("Updated panel order with status= "+pstatus+
-//                          "\n" + "Page order:\n"+strObject(pages));
-                }
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
             );
         }
     });
@@ -100,29 +100,51 @@ function updateTile(aid, presult) {
             // this avoids putting names of songs into classes
             // also only do this if the old class was there in the first place
             if ( $.isNumeric(value)===false && $.isNumeric(oldvalue)===false && 
-                  value.indexOf(' ') < 0 && oldvalue.indexOf(' ') < 0 &&
+                  value.includes(' ')===false && oldvalue.includes(' ')===false &&
                   oldclass.indexOf(oldvalue)>=0 ) {
                 $(targetid).removeClass(oldvalue);
                 $(targetid).addClass(value);
             }
 
-            // update the content only if the old and new values are same types
-            // that is, both numbers or both text values
-    //        if ( ( $.isNumeric(value) && $.isNumeric(oldvalue) ) ||
-    //             ( $.isNumeric(value)===false && $.isNumeric(oldvalue)===false ) )  {
-    //            $(targetid).html(value);
-    //        }
+            // update the content 
             $(targetid).html(value);
         }
     });
 }
 
+function refreshTile(aid, bid, thetype) {
+    $.post("housemap.php", 
+        {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
+        function (presult, pstatus) {
+            if (pstatus==="success" && presult!==undefined ) {
+                updateTile(aid, presult);
+            }
+        }, "json"
+    );
+}
+
 function setupTimers() {
     
-    // set up a timer for each tile to update every 10 seconds
+    // force refresh when we click on a new page tab
+    $("li.ui-tab > a").click(function() {
+        var panel = $(this).text().toLowerCase();
+//        alert("panel = "+panel);
+        $("#panel-"+panel+" div.thing").each(function() {
+            var aid = $(this).attr("id").substring(2);
+            var bid = $(this).attr("bid");
+            var thetype = $(this).attr("type");
+            if (thetype!=="options") {
+                refreshTile(aid, bid, thetype);
+            }
+        });
+    });
+    
+    // set up a timer for each tile to update automatically
+    // but only for tabs that are being shown
     $('div.thing').each(function() {
         
-        var aid = $(this).attr("tile");
+        var tile = $(this).attr("tile");
+        var aid = $(this).attr("id").substring(2);
         var bid = $(this).attr("bid");
         var thetype = $(this).attr("type");
         var panel = $(this).attr("panel");
@@ -130,13 +152,21 @@ function setupTimers() {
         
         switch (thetype) {
             case "switch":
-            case "swithlevel":
+            case "switchlevel":
+                timerval = 30000;
+                break;
+                
+            case "motion":
+            case "contact":
                 timerval = 30000;
                 break;
 
             case "thermostat":
+                timerval = 120000;
+                break;
+
             case "music":
-                timerval = 60000;
+                timerval = 120000;
                 break;
 
             case "lock":
@@ -155,16 +185,8 @@ function setupTimers() {
                 // only call and update things if this panel is visible
                 if ( $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
                     var that = this;
-                    // use ajax to get updated value for this tile
-                    $.post("housemap.php", 
-                        {useajax: "doquery", id: that[1], type: that[2], value: "none", attr: "none"},
-                        function (presult, pstatus) {
-//                            alert("timer... pstatus= "+pstatus+" count= "+lenObject(presult)+" presult= "+strObject(presult));
-                            if (pstatus==="success" && presult!==undefined ) {
-                                updateTile(that[0], presult);
-                            }
-                        }, "json"
-                    );
+//                    alert("aid= "+that[0]+" bid= "+that[1]+" type= "+that[2]);
+                    refreshTile(that[0], that[1], that[2]);
                 }
                 setTimeout(function() {apparray.myMethod();}, this[4]);
             };
@@ -209,7 +231,7 @@ function setupName() {
       
         var thevalue = $(this).html();
         var aid = $(this).attr("aid");
-        var tile = '#tile-'+aid;
+        var tile = '#t-'+aid;
         var bid = $(tile).attr("bid");
         var thetype = $(tile).attr("type");
         var panelname = $(tile).attr("panel");
@@ -249,14 +271,14 @@ function updAll(aid, bid, thetype, pvalue) {
     // go through all the tiles this bid and type (easy ones)
     // this will include the trigger tile so we skip it
     $('div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
-        var otheraid = $(this).attr("tile");
+        var otheraid = $(this).attr("id").substring(2);
         if (otheraid !== aid) { updateTile(otheraid, pvalue); }
     });
     
     // if this is a switch go through and set all switchlevels
     if (thetype==="switch") {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
-            var otheraid = $(this).attr("tile");
+            var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
         });
     }
@@ -264,7 +286,7 @@ function updAll(aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     if (thetype==="switchlevel") {
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
-            var otheraid = $(this).attr("tile");
+            var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
         });
     }
@@ -284,7 +306,7 @@ function setupPage(sensortype) {
         var aid = $(this).attr("aid");
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
-        var tile = '#tile-'+aid;
+        var tile = '#t-'+aid;
         var bid = $(tile).attr("bid");
         var thetype = $(tile).attr("type");
 
