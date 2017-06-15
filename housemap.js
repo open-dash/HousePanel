@@ -99,8 +99,8 @@ function updateTile(aid, presult) {
             // single word text fields like open/closed/on/off
             // this avoids putting names of songs into classes
             // also only do this if the old class was there in the first place
-            if ( $.isNumeric(value)===false && $.isNumeric(oldvalue)===false && 
-                  value.includes(' ')===false && oldvalue.includes(' ')===false &&
+            if ( $.isNumeric(value)===false && $.isNumeric(oldvalue)===false &&
+//                  value.includes(' ')===false && oldvalue.includes(' ')===false &&
                   oldclass.indexOf(oldvalue)>=0 ) {
                 $(targetid).removeClass(oldvalue);
                 $(targetid).addClass(value);

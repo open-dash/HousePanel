@@ -35,14 +35,14 @@ ul.ui-tabs-nav {
 
 body {
   background-color: #000000;
-  color: #ffffee;
+  color: #ffffff;
 }
 
-div.sitename, .authbutton {
-    display: inline-block;
-    left: 4px;
-    text-align: left;
-    margin-bottom: 4px;
+div.sitename, input.authbutton {
+    margin-left: 10px; margin-top: 5px; margin-bottom: 2px;
+    line-height: 1.5; text-align: left;
+    background: #ffffff; 
+    color: #0033cc;
 }
 
 .authbutton {
@@ -69,10 +69,12 @@ form {
 }
 
 /* specific tabs can be fully customized by ID as shown here */
-/* this puts content on the right side for kicks */
+/* this would put the content on the right when uncommented */
+/*
 #thermostats-tab {
     text-align: right;
 }
+*/
 
 #options-tab {
     background-color: #ffffff;
@@ -109,7 +111,7 @@ div.sensordata {
 
 div.scrollit {
     height: 600px;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 table.sensordata {
@@ -132,27 +134,56 @@ td.unshaded, tr.unshaded {
     color: #ffffff;
 }
 
-table.roomoptions {
+table.headoptions {
+    margin-top: 20px;
+    margin-left: 10px;
     background-color: #eeeeee;
-    color: black;
+    color: #000000;
+    font-size: 11pt;
+    height: 40px;
+}
+
+table.headoptions thead {
+    top: 20px; left: 10px;
+}
+
+div.scrolltable {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+table.roomoptions {
+    margin-left: 10px;
+    background-color: #eeeeee;
+    color: #000000;
     font-size: 11pt;
 }
 
 table.roomoptions td {
-    text-align: center;
-}
-
-table.roomoptions td.roomname {
-    border-bottom: 2px solid #0033cc;
-    background-color: #cccccc;
-    font-weight: bold;
-    width: 40px;
+    text-align: center; width: 100px;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+    line-height: 1.5;
 }
 
 table.roomoptions td.thingname {
-    text-align: left;
+    text-align: left; width: 300px;
     font-weight: bold;
-    width: auto;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+}
+
+table.headoptions th.roomname, table.headoptions th.thingname {
+    text-align: center; width: 101px;
+    border-bottom: 2px solid #11cccc;
+    background-color: #1111cc;
+    color:#ffffff;
+    font-weight: bold;
+}
+
+table.headoptions th.thingname {
+    text-align: left;
+    width: 300px;
 }
 
 span.typeopt {
@@ -160,6 +191,22 @@ span.typeopt {
     font-family: serif;
     font-style: italic;
     color: #666666;
+}
+
+div.processoptions {
+    margin-left: 30px; margin-top: 10px;
+}
+
+input.submitbutton, input.resetbutton {
+    background-image: url("submit.jpg");
+    background-repeat: no-repeat;
+    width: 120px; height: 40px;
+    margin-left: 30px;
+    cursor: pointer;
+}
+
+input.resetbutton {
+    background-image: url("reset.jpg");
 }
 
 /* all things look like this */
@@ -209,7 +256,7 @@ div.thingname {
     color: #ffffff;
     border-bottom: 3px solid #fffa90;
     height: 40px;
-    cursor: pointer;
+    cursor: move;
 }
 
 /* what to do when you hover over an item */
@@ -222,6 +269,11 @@ div.thingname:hover {
 div.thingname.sensorpick {
     background-color: #333333;
 }
+
+div.thead {
+    position: fixed;
+}
+
 
 /* styling for the actual item without its state */
 div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, div.music, div.thermostat {

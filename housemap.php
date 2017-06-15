@@ -22,6 +22,7 @@
  *          replaced main page bracket from table to div
  * 
 */
+require_once "hmutils.php";
 
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
@@ -34,120 +35,6 @@ define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
-
-// header and footer
-function htmlHeader() {
-    $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
-    $tc.= '<html><head><title>Smart Motion Sensor Authorization</title>';
-    $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
-    
-    // load jQuery and themes
-    $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
-    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
-    $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
-    
-    // load custom .css and the main script file
-    $tc.= '<link rel="stylesheet" type="text/css" href="housemap.css">';
-    $tc.= '<script type="text/javascript" src="housemap.js"></script>';  
-    
-    // dynamically create the jquery startup routine to handle all types
-    $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch","lock","momentary","heat-dn","heat-up",
-                            "cool-dn","cool-up","thermomode","thermofan",
-                            "musicmute","musicstatus", 
-                            "music-previous","music-pause","music-play","music-stop","music-next",
-                            "level-dn","level-up", "level-val");
-        $tc.= '$(document).ready(function(){';
-        foreach ($thingtypes as $thing) {
-            $tc.= '  setupPage("' . $thing . '");';
-        }
-        $tc.= "});";
-    $tc.= '</script>';
-
-    // begin creating the main page
-    // can be wrapped in a table but that messes up sortable feature
-    // changed this to a div
-    $tc.= '</head><body>';
-    $tc.= '<div class="maintable">';
-    // $tc.= '<table class="maintable"><tr><td>';
-    return $tc;
-}
-
-function htmlFooter() {
-    $tc = "";
-    // $tc.= "</td></tr></table>";
-    $tc.= "</div>";
-    $tc.= "</body></html>";
-    return $tc;
-}
-
-// helper function to put a hidden field inside a form
-function hidden($pname, $pvalue, $id = false) {
-    $inpstr = "<input type=\"hidden\" name=\"$pname\"  value=\"$pvalue\"";
-    if ($id) { $inpstr .= " id=\"$id\""; }
-    $inpstr .= " />";
-    return $inpstr;
-}
-
-function putdiv($value, $class="error") {
-    $tc = "<div class=\"" . $class . "\">" . $value . "</div>";
-    return $tc;
-}
-
-// function to make a curl call
-function curl_call($host, $headertype=FALSE, $nvpstr=FALSE, $calltype="GET")
-{
-	//setting the curl parameters.
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $host);
-	if ($headertype) {
-    	curl_setopt($ch, CURLOPT_HTTPHEADER, $headertype);
-    }
-
-	//turning off peer verification
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	// curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-
-    if ($calltype==="POST" && $nvpstr) {
-    	curl_setopt($ch, CURLOPT_POST, TRUE);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
-    } else {
-    	curl_setopt($ch, CURLOPT_POST, FALSE);
-        if ($calltype!="GET") { curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $calltype); }
-        if ($nvpstr) { curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr); }
-    }
-
-	//getting response from server
-    $response = curl_exec($ch);
-    
-    // handle errors
-    if (curl_errno($ch)) {
-        // moving to display page to display curl errors
-        $_SESSION['curl_error_no']=curl_errno($ch) ;
-        $_SESSION['curl_error_msg']= curl_error($ch) . 
-                 "<br />host= $host .
-                  <br />headertype= $headertype .
-                  <br />nvpstr = $nvpstr . 
-                  <br />response = " . print_r($response,true);
-        // $location = "authfailure.php";
-        // header("Location: $location");  
-        // echo "Error from curl<br />" . $_SESSION['curl_error_msg'];
-        // $nvpResArray = false;
-        $nvpResArray = array( "error" => curl_errno($ch), "response" => print_r($response,true) );
-    } else {
-        // convert json returned by Groovy into associative array
-        $nvpResArray = json_decode($response, TRUE);
-        if (!$nvpResArray) {
-            $nvpResArray = array( "error" => curl_errno($ch), "response" => print_r($response,true) );
-            // $nvpResArray = "Error - not json<br />" . print_r($response,true);
-        }
-    }
-    curl_close($ch);
-
-    return $nvpResArray;
-}
 
 function getResponse($host, $access_token) {
 
@@ -232,16 +119,16 @@ function authButton($sname, $returl) {
     $tc = "";
     $tc.= "<form name=\"housemap\" action=\"" . $returl . "\"  method=\"POST\">";
     $tc.= hidden("doauthorize", "1");
-    $tc.= "<div class=\"sitename\">$sname</div>";
+    $tc.= "<div class=\"sitename\">$sname";
     $tc .= "<input class=\"authbutton\" value=\"Re-Authorize\" name=\"submit1\" type=\"submit\" />";
-    $tc.= "</form>";
+    $tc.= "</div></form>";
     return $tc;
 }
 
 function getAllThings($endpt, $access_token) {
     $thingtypes = array("switches","dimmers","momentaries","contacts",
                         "sensors", "locks", "thermostats", "musics",
-                        "cameras");
+                        "weathers", "cameras", "others");
     $response = array();
     foreach ($thingtypes as $key) {
         $newitem = getResponse($endpt . "/" . $key, $access_token);
@@ -510,9 +397,15 @@ function getOptions($allthings) {
         if (!$rcount) {
             $options["rooms"]["All"] = 0;
         }
+
+        // find the largest index number for a sensor in our index
+        $cnt = count($options["index"]) - 1;
+        foreach ($options["index"] as $thingid => $idx) {
+            $cnt = ($idx > $cnt) ? $idx : $cnt;
+        }
+        $cnt++;
         
         // update the index with latest sensor information
-        $cnt = count($options["index"]);
         foreach ($allthings as $thingid =>$thesensor) {
             if ( !key_exists($thingid, $options["index"]) ) {
                 $options["index"][$thingid] = $cnt;
@@ -613,7 +506,7 @@ function getOptionsPage($options, $retpage, $allthings) {
     $tc.= "<div id=\"options-tab\">";
     $tc.= "<form name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
-    $tc.= "<table class=\"roomoptions\"><thead>";
+    $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
     
     $roomoptions = $options["rooms"];
@@ -632,7 +525,9 @@ function getOptionsPage($options, $retpage, $allthings) {
             $tc.= "</th>";
         }
     }
-    $tc.= "</tr></thead><tbody>";
+    $tc.= "</tr></thead></table>";
+    $tc.= "<div class='scrolltable'><table class=\"roomoptions\">";
+    $tc.= "<tbody>";
 
     // now print our options matrix
     foreach ($allthings as $thingid => $thesensor) {
@@ -671,10 +566,10 @@ function getOptionsPage($options, $retpage, $allthings) {
         $tc.= "</tr>";
     }
 
-    $tc.= "</tbody></table>";
-    $tc.= "<div class=\"authbutton\">";
-    $tc.= "<input class=\"optionbutton\" value=\"submit\" name=\"submitoption\" type=\"submit\" />";
-    $tc.= "<input class=\"optionbutton\" value=\"cancel\" name=\"canceloption\" type=\"reset\" />";
+    $tc.= "</tbody></table></div>";
+    $tc.= "<div class=\"processoptions\">";
+    $tc.= "<input class=\"submitbutton\" value=\" \" name=\"submitoption\" type=\"submit\" />";
+    $tc.= "<input class=\"resetbutton\" value=\" \" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
     $tc.= "</div>";
@@ -847,8 +742,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
     if (!$endpt || !$access_token) {
         $first = true;
         $tc .= "<div><h2>" . APPNAME . "</h2>";
+        $tc.= "<h3>Authorize this web service to access SmartThings</h3>";
         $tc.= authButton($sitename, $returnURL);
-        $tc.= "<h3>Authorize this web service to access SmartThings</h3></div>";
+        $tc.= "</div>";
     }
        
 
@@ -907,10 +803,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // display the main page
     } else if ( $access_token && $endpt ) {
     
-        if ($sitename) {
-            // $tc.= "<div class=\"homename\">$sitename</div>";
-            $tc.= authButton($sitename, $returnURL);
-        }
+//        if ($sitename) {
+//            $tc.= authButton($sitename, $returnURL);
+//        }
 
         // read all the smartthings from API
         $allthings = getAllThings($endpt, $access_token);
@@ -962,6 +857,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // add the options tab
         $tc.= getOptionsPage($options, $returnURL, $allthings);
         $tc.= "</div>";
+        if ($sitename) {
+            $tc.= authButton($sitename, $returnURL);
+        }
    
     } else {
 

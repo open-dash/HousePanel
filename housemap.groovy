@@ -54,6 +54,9 @@ preferences {
     section ("Thermostats...") {
     	input "mythermostats", "capability.thermostat", multiple: true, required: false
     }
+    section ("Weather Tile") {
+    	input "myweather", "capability.temperatureMeasurement", multiple: false, required: false
+    }
     section ("Cameras...") {
     	input "mycameras", "capability.imageCapture", multiple: true, required: false
     }
@@ -236,6 +239,24 @@ def getWater(swid, item=null) {
     return resp
 }
 
+def getOther(swid, item=null) {
+    item = item ? item : myothers.find {it.id == swid }
+    def resp = false
+    
+            item?.capabilities.each {cap ->
+                def capname = cap.getName()
+                resp = [:]
+                cap.attributes?.each {attr ->
+                    def othername = attr.getName()
+                    def othervalue = item.currentValue(othername)
+                    if ( othervalue ) { 
+                    	resp.put(othername,othervalue)
+                    }
+                }
+            }
+    return resp
+}
+
 def getSwitches() {
     def resp = []
     log.debug "Number of switches = " + myswitches?.size() ?: 0
@@ -342,23 +363,45 @@ def getWaters() {
 
 def getOthers() {
     def resp = []
+    def uniquenum = 0
     log.debug "Number of other sensors = " + myothers?.size() ?: 0
     myothers?.each {
+        
+        def thatid = it.id;
+        def inlist = ( myswitches?.find {it.id == thatid } ||
+             mymomentaries?.find {it.id == thatid } ||
+             mydimmers?.find {it.id == thatid } ||
+             mydoors?.find {it.id == thatid } ||
+             mylocks?.find {it.id == thatid } ||
+             mysensors?.find {it.id == thatid} ||
+             mywaters?.find {it.id == thatid } ||
+             mymusics?.find {it.id == thatid } ||
+             mythermostats?.find {it.id == thatid} ||
+             mycameras?.find {it.id == thatid}
+            )
+        
+        if ( !inlist ) {
+            uniquenum++
 
-	// log each capability supported with all its supported attributes
-	def caps = it.capabilities
-        it.capabilities.each {cap ->
-            def capname = cap.getName()
-            log.debug "Capability name: ${capname}"
+            // log each capability supported with all its supported attributes
+            def that = it
             def multivalue = [:]
-            cap.attributes.each {attr ->
-                def othername = attr.getName()
-                def othervalue = attr.getValue()
-                multivalue.put(othername,othervalue)
-                log.debug "-- Attribute Name= ${othername} Value= ${othervalue}"
+            it.capabilities.each {cap ->
+                def capname = cap.getName()
+                log.debug "Capability name: ${capname}"
+                cap.attributes?.each {attr ->
+                    def othername = attr.getName()
+                    def othervalue = that.currentValue(othername)
+                    if ( othervalue ) { 
+                    	multivalue.put(othername,othervalue)
+                    	log.debug "-- Attribute Name= ${othername} Value= ${othervalue}"
+                    }
+                }
             }
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "other"]
+            log.debug it.displayName + " = " + multivalue
         }
-	resp << [name: it.displayName, id: it.id, value: multivalue, type: "other"]
+        log.debug "Number of unique other sensors = " + uniquenum
     }
     return resp
 }
@@ -453,6 +496,10 @@ def doQuery() {
          
     case "water" :
         cmdresult = getWater(swid)
+        break
+        
+    case "other" :
+    	cmdresult = getOther(swid)
         break
     }
    
