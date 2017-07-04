@@ -224,10 +224,69 @@ div.thing {
     width: 120px; height: 120px;
 }
 
-div.thing.music-thing {
+div.thing.music-thing, div.thing.weather-thing {
     width: 180px;
 }
+div.thing.weather-thing {
+    height: 242px;
+}
 
+
+div.weather {
+    text-align: left; margin-left: 2px;
+    font-style: italic;
+    font-size: 11pt;
+}
+
+div.weather.wind::before {
+    content: "Wind: ";
+}
+
+div.weather.wind::after {
+    content: " MPH";
+}
+
+div.weather.city::before {
+    content: "City: ";
+}
+
+div.weather.temperature::before {
+    content: "Temperature: ";
+}
+
+div.weather.feelsLike::before {
+    content: "Feels Like: ";
+}
+
+div.weather.temperature::after, div.weather.feelsLike::after {
+    content: " deg F";
+}
+
+div.weather.humidity::before {
+    content: "Humidity: ";
+}
+
+div.weather.percentPrecip::before {
+    content: "Rain chance: ";
+}
+
+div.weather.humidity::after, div.weather.percentPrecip::after {
+    content: "%";
+}
+
+div.weather.localSunrise::before {
+    content: "Sunrise at: ";
+}
+
+div.weather.localSunset::before {
+    content: "Sunset at: ";
+}
+
+div.weather.timeZoneOffset, div.weather.alertKeys,
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.illuminance{
+    display: none;
+}
 /* customize colors and shapes for a specific thing */
 div.thing.switch-thing, div.thing.switchlevel-thing {
     background-color: #0033ff;
@@ -281,7 +340,7 @@ div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, d
     color: #ffffee;
     cursor: pointer;
     width: 118px;
-    height: auto;
+    height: 24px;
     border-bottom: 1px solid #ffffff;
 }
 
@@ -296,6 +355,15 @@ div.image {
 div.switch, div.contact, div.lock, div.motion, div.momentary {
     padding: 27px 0;
 }
+
+div.switch.on, div.switch.off {
+    background-image: url("light_bulb.png");
+    background-position: center;
+    background-size: 30%;
+    background-repeat: no-repeat;
+    font-size: 0px;
+}
+
 
 /* for switches within switchlevels make room for level control */
 div.switchlevel-thing div.switch {

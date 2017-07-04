@@ -54,8 +54,8 @@ preferences {
     section ("Thermostats...") {
     	input "mythermostats", "capability.thermostat", multiple: true, required: false
     }
-    section ("Weather Tile") {
-    	input "myweather", "capability.temperatureMeasurement", multiple: false, required: false
+    section ("Weather...") {
+    	input "myweathers", "device.smartweatherStationTile", title: "Weather tile", multiple: true, required: false
     }
     section ("Cameras...") {
     	input "mycameras", "capability.imageCapture", multiple: true, required: false
@@ -63,7 +63,7 @@ preferences {
     section ("Water Sensors...") {
     	input "mywaters", "capability.waterSensor", multiple: true, required: false
     }
-    section ("Other Sensors (duplicates okay)...") {
+    section ("Other Sensors (duplicates ignored)...") {
     	input "myothers", "capability.sensor", multiple: true, required: false
     }
 }
@@ -134,6 +134,12 @@ mappings {
       POST: "getOthers"
     ]
   }
+    
+  path("/weathers") {
+    action: [
+      POST: "getWeathers"
+    ]
+  }
   
   path("/doaction") {
      action: [
@@ -157,6 +163,7 @@ mappings {
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
+        subscribe(weathers, "device.smartweatherStationTile", getWeatherInfo)
 }
 
 def updated() {
@@ -224,6 +231,7 @@ def getThermostat(swid, item=null) {
                               thermomode: item.currentValue("thermostatMode"),
                               thermostate: item.currentValue("thermostatOperatingState")
                          ] : false
+    // log.debug "Thermostat response = ${resp}"
     return resp
 }
 
@@ -236,6 +244,23 @@ def getCamera(swid, item=null) {
 def getWater(swid, item=null) {
     item = item ? item : mywaters.find {it.id == swid }
     def resp = item ? [water: item.currentValue("water")] : false
+    return resp
+}
+
+def getWeather(swid, item=null) {
+    item = item ? item : myweathers.find {it.id == swid }
+    def resp = false
+            item?.capabilities.each {cap ->
+                def capname = cap.getName()
+                resp = [:]
+                cap.attributes?.each {attr ->
+                    def othername = attr.getName()
+                    def othervalue = item.currentValue(othername)
+                    if ( othervalue ) { 
+                    	resp.put(othername,othervalue)
+                    }
+                }
+            }
     return resp
 }
 
@@ -361,20 +386,38 @@ def getWaters() {
     return resp
 }
 
+def getWeathers() {
+	def resp = getGenerals(myweathers, "weather")
+    
+    myweathers?.each {
+    	def that = it
+    	def attrs = it.getSupportedAttributes()
+		attrs.each {att ->
+        	def attname = att.name
+        	def attval = that.currentValue(attname)
+            log.debug "Supported ${that.displayName} Attribute: ${attname} value = ${attval}"
+        }
+    }
+    
+    return resp
+}
+
 def getOthers() {
+	return getGenerals(myothers, "other")
+}
+
+def getGenerals(mygens, gentype) {
     def resp = []
     def uniquenum = 0
-    log.debug "Number of other sensors = " + myothers?.size() ?: 0
-    myothers?.each {
+    log.debug "Number of ${gentype} sensors = " + mygens?.size() ?: 0
+    mygens?.each {
         
         def thatid = it.id;
         def inlist = ( myswitches?.find {it.id == thatid } ||
-             mymomentaries?.find {it.id == thatid } ||
              mydimmers?.find {it.id == thatid } ||
              mydoors?.find {it.id == thatid } ||
              mylocks?.find {it.id == thatid } ||
              mysensors?.find {it.id == thatid} ||
-             mywaters?.find {it.id == thatid } ||
              mymusics?.find {it.id == thatid } ||
              mythermostats?.find {it.id == thatid} ||
              mycameras?.find {it.id == thatid}
@@ -388,20 +431,20 @@ def getOthers() {
             def multivalue = [:]
             it.capabilities.each {cap ->
                 def capname = cap.getName()
-                log.debug "Capability name: ${capname}"
+                // log.debug "Capability name: ${capname}"
                 cap.attributes?.each {attr ->
                     def othername = attr.getName()
                     def othervalue = that.currentValue(othername)
                     if ( othervalue ) { 
                     	multivalue.put(othername,othervalue)
-                    	log.debug "-- Attribute Name= ${othername} Value= ${othervalue}"
+                    	// log.debug "-- Attribute Name= ${othername} Value= ${othervalue}"
                     }
                 }
             }
-            resp << [name: it.displayName, id: it.id, value: multivalue, type: "other"]
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: gentype]
             log.debug it.displayName + " = " + multivalue
         }
-        log.debug "Number of unique other sensors = " + uniquenum
+        log.debug "Number of unique ${gentype} sensors = " + uniquenum
     }
     return resp
 }
@@ -496,6 +539,10 @@ def doQuery() {
          
     case "water" :
         cmdresult = getWater(swid)
+        break
+        
+    case "weather" :
+    	cmdresult = getWeather(swid)
         break
         
     case "other" :

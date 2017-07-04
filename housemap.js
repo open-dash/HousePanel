@@ -107,7 +107,9 @@ function updateTile(aid, presult) {
             }
 
             // update the content 
-            $(targetid).html(value);
+            if (oldvalue.length) {
+                $(targetid).html(value);
+            }
         }
     });
 }
@@ -167,6 +169,10 @@ function setupTimers() {
 
             case "music":
                 timerval = 120000;
+                break;
+
+            case "weather":
+                timerval = 300000;
                 break;
 
             case "lock":
