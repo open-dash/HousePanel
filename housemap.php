@@ -500,10 +500,13 @@ function getOptions($allthings) {
     
 }
 
-function getOptionsPage($options, $retpage, $allthings) {
+function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
     $tc.= "<div id=\"options-tab\">";
+    if ($sitename) {
+        $tc.= authButton($sitename, $retpage);
+    }
     $tc.= "<form name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<table class=\"headoptions\"><thead>";
@@ -568,8 +571,8 @@ function getOptionsPage($options, $retpage, $allthings) {
 
     $tc.= "</tbody></table></div>";
     $tc.= "<div class=\"processoptions\">";
-    $tc.= "<input class=\"submitbutton\" value=\" \" name=\"submitoption\" type=\"submit\" />";
-    $tc.= "<input class=\"resetbutton\" value=\" \" name=\"canceloption\" type=\"reset\" />";
+    $tc.= "<input class=\"submitbutton\" value=\"Submit\" name=\"submitoption\" type=\"submit\" />";
+    $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
     $tc.= "</div>";
@@ -855,11 +858,11 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         
         // add the options tab
-        $tc.= getOptionsPage($options, $returnURL, $allthings);
+        $tc.= getOptionsPage($options, $returnURL, $allthings, $sitename);
         $tc.= "</div>";
-        if ($sitename) {
-            $tc.= authButton($sitename, $returnURL);
-        }
+//        if ($sitename) {
+//            $tc.= authButton($sitename, $returnURL);
+//        }
    
     } else {
 

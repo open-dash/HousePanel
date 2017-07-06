@@ -1,28 +1,42 @@
 * {
-    font-family: "Arial", sans-serif;
-    font-size: 12pt; padding: 0px; margin: 0px;
+    font-family: "Droid Sans", sans-serif;
+    font-size: 11pt; padding: 0px; margin: 0px;
 }
 
 h1, h2, h3 {
-    background: #eeeeee;
+    background: #ffffff;
     color: #000000;
     font-size: 24pt;
-    color: #eeeeee;
     margin-bottom: 2px;
     margin-top: 2px;
+    margin-left: 10px;
 }
-h3 {
-font-size: 18pt;
+
+.ui-widget.ui-widget-content{
+border-radius: 4px;
+width:100%;
+margin: 0px 0 0 0;
+border-right: 5px solid #666666;
+border-bottom: 5px solid #666666;
+
+}
+
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor{
+	text-decoration: none;
+	padding: .5em 1em;
 }
 
 div.ui-tabs, div.ui-tabs-panel, ui-widget-content {
     background: #333333;
 }
 
+
 ul.ui-tabs-nav {
-    background: #eeeeee;
+    background: #666666;
     color: #000000;
     font-size: 12pt;
+	border: none;
+	
 }
 
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
@@ -34,20 +48,34 @@ ul.ui-tabs-nav {
 }
 
 body {
-  background-color: #000000;
+  background-color: #ffffff;
   color: #ffffff;
 }
 
-div.sitename, input.authbutton {
-    margin-left: 10px; margin-top: 5px; margin-bottom: 2px;
+div.sitename {
     line-height: 1.5; text-align: left;
     background: #ffffff; 
-    color: #0033cc;
+}
+
+
+input.authbutton {
+	margin-left: 10px; margin-top: 5px; margin-bottom: 2px;
+	line-height: 1.5; text-align: center;
+	background: #007fff; 
+	color: #ffffff;
+	border-bottom: 5px solid rgba(0, 0, 0, 0.25) !important; 
+}
+
+input.authbutton:hover{
+	height: 28px;
+	border-bottom: 2px solid rgba(0, 0, 0, 0.25) !important; 
+	border-width: 0px;
 }
 
 .authbutton {
-    width: 120px;
-    cursor: pointer;
+	width: 120px;
+	cursor: pointer;
+	height: 30px;
 }
 
 .debug, .error {
@@ -60,43 +88,103 @@ form {
     border: 0px;
     padding: 0px;
     margin: 0px;
-    background: none;
+    background: #505050;
 }
 
 /* how the tab page shows up - this affects everything shown */
 .ui-tabs .ui-tabs-panel {
-    padding: 4px 1px;
+    padding-top: 15px;
+	padding-bottom: 5px;
+	padding-left: 1px;
+	padding-right: 1px;
+	text-align: left;
+	
 }
 
 /* specific tabs can be fully customized by ID as shown here */
 /* this would put the content on the right when uncommented */
-/*
-#thermostats-tab {
-    text-align: right;
-}
-*/
+
 
 #options-tab {
     background-color: #ffffff;
     color: #000000;
+	
 }
 
 /* all panels look like this */
 div.panel {
     display: inline-block;
-    border: 2px solid #3333cc;
+    border: 0px solid #3333cc;
     padding: 2px;
-    background-color: #666666;
-    position: relative; 
-    left: 0px; top: 0px; 
-    width: 68%
+    width: 100%;
+	margin: auto;
+    position:relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	
 }
+
+div.panel-family {
+	background-image: url('family.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    background-position: center;
+}
+
+div.panel-kitchen {
+	background-image: url('kitchenroom.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    background-position: center;
+}
+
+div.panel-formal {
+	background-image: url('formal.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    background-position: center;
+}
+
+a:hover {
+    background-position: 0 -32px;
+}
+
+
+div.panel-outside {
+	background-image: url('outside.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    background-position: center;
+}
+
+div.panel-office {
+	background-image: url('office.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    }
+
+div.panel-bedrooms {
+	background-image: url('bedroom.png');
+	background-attachment: fixed;	
+	background-repeat: no-repeat;
+    background-position: center;
+}
+
 
 /* make specific panels look however you wish */
 div.panel-music {
-  border: 4px solid #cc9900;
-  padding: 2px;
-  background-color: #660000;
+  background-image: url('music.png');
+  background-attachment: fixed;	
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+div.panel-thermostats {
+  background-image: url('thermostat.png');
+  background-attachment: fixed;	
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* locate and style the blocks of data for history info */
@@ -135,12 +223,12 @@ td.unshaded, tr.unshaded {
 }
 
 table.headoptions {
-    margin-top: 20px;
-    margin-left: 10px;
-    background-color: #eeeeee;
+    background-color: white;
     color: #000000;
     font-size: 11pt;
     height: 40px;
+    margin-left: 0px;
+    width: 1200px;
 }
 
 table.headoptions thead {
@@ -153,89 +241,201 @@ div.scrolltable {
 }
 
 table.roomoptions {
-    margin-left: 10px;
+    margin: 0px;
     background-color: #eeeeee;
     color: #000000;
     font-size: 11pt;
+    width: 1200px;
 }
 
 table.roomoptions td {
     text-align: center; width: 100px;
-    border-right: 1px solid #000000;
-    border-bottom: 1px solid #000000;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
     line-height: 1.5;
+    padding: 2px;
+    background-color: white;
 }
 
 table.roomoptions td.thingname {
-    text-align: left; width: 300px;
+    text-align: left; 
+    width: 300px;
+    padding: 2px;
     font-weight: bold;
-    border-left: 1px solid #000000;
-    border-right: 1px solid #000000;
-}
-
-table.headoptions th.roomname, table.headoptions th.thingname {
-    text-align: center; width: 101px;
-    border-bottom: 2px solid #11cccc;
-    background-color: #1111cc;
-    color:#ffffff;
-    font-weight: bold;
+    border-left: 0px solid #999999;
+    border-right: 2px solid #999999;
 }
 
 table.headoptions th.thingname {
-    text-align: left;
+    border-bottom: 5px solid rgba(0, 0, 80, 1);
+    background-color: #3a5795;
+    color:#ffffff;
+    font-weight: bold;
+    padding: 2px;
     width: 300px;
+    text-align: center;
+    line-height:1.5;
 }
+
+table.headoptions th.roomname {
+    text-align: center; width: 100px;
+    border-bottom: 10px solid rgba(0, 0, 0, 0.25);
+    background-color: #3a5795;
+    color:#ffffff;
+    font-weight: bold;
+    padding: 2px;
+    line-height: 1.5;
+    vertical-align: inherit;
+	
+}
+
 
 span.typeopt {
     font-weight: normal;
-    font-family: serif;
+    font-family: "Raleway", serif;
     font-style: italic;
     color: #666666;
 }
 
 div.processoptions {
-    margin-left: 30px; margin-top: 10px;
+    margin-left: 0px; margin-top: 0px;
+	padding-top: 10px;
+	background-color: white;
+	box-shadow: 0px 1px 10px rgba(0,0,0,.50);
 }
 
 input.submitbutton, input.resetbutton {
-    background-image: url("submit.jpg");
     background-repeat: no-repeat;
-    width: 120px; height: 40px;
-    margin-left: 30px;
+    width: 150px; height: 50px;
+    margin-left: 10px;
+	margin-right: 60px;
     cursor: pointer;
+	border: none;
+	padding: 8px 16px;
+	color: white;
+	font-family: 'Droid Sans', serif;
+	text-align: center;
+	font-weight: bold;
+	margin-after: 10px;
+	-webkit-margin-after: 10px;
+	-webkit-transition-property: width; /* Safari */
+    -webkit-transition-duration: .7s; /* Safari */
+    transition-property: width;
+    transition-duration: .7s;
 }
 
-input.resetbutton {
-    background-image: url("reset.jpg");
+input.submitbutton {
+	background-color: #3a5795;
+	border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
 }
+input.resetbutton {
+    background-color: #673AB7;
+	border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+}
+
+input.submitbutton:hover, input.resetbutton:hover{
+	width: 300px;
+    
+}
+
 
 /* all things look like this */
+
+  
 div.thing {
     display: inline-block;
-    margin: 2px;
+    margin: 3px;
     text-align: center;
     vertical-align: top;
-    border-top: 2px solid #cccccc; border-right: 2px solid #cccccc;
-    border-bottom: 2px solid #ffffff; border-left: 2px solid #ffffff;
-    background-color: #000000; 
+    border-top: 0px solid #cccccc; 
+    border-right: 0px solid #cccccc;
+    border-bottom: 0px solid #ffffff; 
+    border-left: 0px solid #ffffff;
+    background-color: rgba(0, 51, 204, 0.4);
+    box-shadow: 2px 2px 7px black;
     color: #eeeeee;
-    font-size: 14pt;
     cursor: default;
-    width: 120px; height: 120px;
+    width: 120px; 
+    height: auto;
 }
 
-div.thing.music-thing, div.thing.weather-thing {
+div.thing.thermostat-thing{
+    background-color: rgba(100,100,150,0.4) !important;
+}
+div.thing.music-thing {
+    background-color: rgba(150,100,150,0.4) !important;
     width: 180px;
-}
-div.thing.weather-thing {
-    height: 242px;
+    height: auto;
 }
 
 
-div.weather {
-    text-align: left; margin-left: 2px;
-    font-style: italic;
+div.thing:hover{
+	position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+
+
+/* the name of the thing  */
+div.thingname {
+    background-color: #303050;
     font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-bottom: 5px solid rgba(0,0,0,0.3);
+    height: 30px;
+    cursor: move;
+}
+
+/* what to do when you hover over an item */
+div.thingname:hover {
+    background-color: #5050a0; 
+    color: #cccccc;
+}
+
+/* style for thing name when it has been picked */
+div.thingname.sensorpick {
+    background-color: #333333;
+}
+
+div.thing.weather-thing, div.weather {
+    text-align: center;
+}
+
+div.weather.temperature {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 50px !important;
+	width: 50px;
+	padding: 4px 3px 0 3px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	border-radius: 50%;
+    font-size: 20px;
+    line-height: 45px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
+
+div.weather.feelsLike::before {
+    content: "Like: ";
+}
+
+div.weather.feelsLike::after {
+    content: " deg F";
 }
 
 div.weather.wind::before {
@@ -243,23 +443,7 @@ div.weather.wind::before {
 }
 
 div.weather.wind::after {
-    content: " MPH";
-}
-
-div.weather.city::before {
-    content: "City: ";
-}
-
-div.weather.temperature::before {
-    content: "Temperature: ";
-}
-
-div.weather.feelsLike::before {
-    content: "Feels Like: ";
-}
-
-div.weather.temperature::after, div.weather.feelsLike::after {
-    content: " deg F";
+    content: " mph";
 }
 
 div.weather.humidity::before {
@@ -267,7 +451,7 @@ div.weather.humidity::before {
 }
 
 div.weather.percentPrecip::before {
-    content: "Rain chance: ";
+    content: "Rain: ";
 }
 
 div.weather.humidity::after, div.weather.percentPrecip::after {
@@ -275,11 +459,11 @@ div.weather.humidity::after, div.weather.percentPrecip::after {
 }
 
 div.weather.localSunrise::before {
-    content: "Sunrise at: ";
+    content: "Sunrise: ";
 }
 
 div.weather.localSunset::before {
-    content: "Sunset at: ";
+    content: "Sunset: ";
 }
 
 div.weather.timeZoneOffset, div.weather.alertKeys,
@@ -287,15 +471,10 @@ div.weather.sunriseDate, div.weather.sunsetDate,
 div.weather.illuminance{
     display: none;
 }
-/* customize colors and shapes for a specific thing */
-div.thing.switch-thing, div.thing.switchlevel-thing {
-    background-color: #0033ff;
-    cursor: pointer;
-}
 
-div.thing.lock-thing {
-    background-color: #006666;
-    cursor: pointer;
+div.weather.weatherIcon.clear, div.weather.forecastIcon.clear {
+    background-image: url('http://cdn.device-icons.smartthings.com/Weather/weather14-icn@2x.png');
+    background-position: 0% 0%;
 }
 
 /* handle larger images */
@@ -304,25 +483,8 @@ div.thing.image-thing {
     width: 242px; height: 242px;
 }
 
-/* handle larger thermostats */
-div.thing.thermostat-thing, div.thing.music-thing {
-  height: 242px;
-}
 
-/* the name of the thing  */
-div.thingname {
-    background-color: #666666; 
-    color: #ffffff;
-    border-bottom: 3px solid #fffa90;
-    height: 40px;
-    cursor: move;
-}
 
-/* what to do when you hover over an item */
-div.thingname:hover {
-    background-color: #000000; 
-    color: #cccccc ;
-}
 
 /* style for thing name when it has been picked */
 div.thingname.sensorpick {
@@ -337,11 +499,22 @@ div.thead {
 /* styling for the actual item without its state */
 div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, div.music, div.thermostat {
     display: inline-block;
-    color: #ffffee;
-    cursor: pointer;
+    padding: 0px 0;
+    margin: 0;
+    cursor: default;
     width: 118px;
-    height: 24px;
-    border-bottom: 1px solid #ffffff;
+    height: 112px;
+}
+
+div.switch, div.switchlevel, div.momentary, div.lock {
+    cursor: pointer;
+}
+
+div.switchlevel.switch {
+    height: 80px;
+}
+div.switchlevel.level {
+    height: 32px;
 }
 
 div.music {
@@ -352,36 +525,24 @@ div.image {
     width: 238px;
 }
 
-div.switch, div.contact, div.lock, div.motion, div.momentary {
-    padding: 27px 0;
+div.switch, div.switchlevel, div.contact, div.lock, div.motion, div.momentary {
+    padding: 0px 0;
+    margin: 0;
 }
-
-div.switch.on, div.switch.off {
-    background-image: url("light_bulb.png");
-    background-position: center;
-    background-size: 30%;
-    background-repeat: no-repeat;
-    font-size: 0px;
-}
-
 
 /* for switches within switchlevels make room for level control */
-div.switchlevel-thing div.switch {
-    padding: 10px 0;
-}
 
 /* what to do when you hover over an item */
-div.switch:hover, div.lock:hover {
+/* div.switch:hover, div.lock:hover {
     background-color: #000000; 
     color: #cccccc ;
-}
+} */
 
 /* handle the block of controls for adjusting the thermostat and levels */
 div.thermostat.heat, div.thermostat.cool, div.music.level {
     display: inline-block;
-    background-color: #333333;
     color: #ffffee;
-    border: 1px solid #ffffff;
+    border: 0px solid #ffffff;
     width: 118px; height: auto;
     padding: 0px;
     cursor: default;
@@ -389,28 +550,77 @@ div.thermostat.heat, div.thermostat.cool, div.music.level {
 }
 
 div.music.level {
-    width: 178px;
+    width: 99%;
 }
 
 /* style the on and off states of switches */
-div.on, div.open, div.unlocked, div.active {
-  background-color: #339900;
-  color: #ffffff;
-  font-size: 14pt;
+/* set size to show text to avoid funky resizing, but use transparent color */
+div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, div.on, div.off {
+  background-position: 50% 20%;
+  background-repeat: no-repeat;
+  font-size: 12px;
+  color: rgba(255,255,255,0.05)
 }
 
-div.off, div.closed, div.locked, div.inactive {
-  background-color: #993300;
-  color: #ffffff;
-  font-size: 14pt;
+div.contact.open {
+    background-image: url('opendoor.png');
+    background-color: rgba(27,177,75,0.3);
+    background-position-y: 9px;
 }
 
+div.contact.closed {
+    background-image: url('closedoor.png');
+    background-color: rgba(27,177,75,0.6);
+    background-position-y: 9px;
+}
+
+div.motion.inactive {
+    background-image: url('stand.png');
+    background-color: rgba(0, 51, 204, 0.6);
+}
+
+div.motion.active {
+    background-image: url('run.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
+
+div.lock.locked {
+    background-image: url('lock.png');
+    background-color: rgba(204, 51, 0, 1);
+}
+
+div.lock.unlocked{
+    background-image: url('unlock.png');
+    background-color: rgba(204, 51, 0, 0.3);
+}
+
+div.switch.on, div.switchlevel.on{
+    background-image: url('bulbon.png');
+    background-color: rgba(0, 51, 204, 0.3);
+	
+}
+
+div.switch.off, div.switchlevel.off{
+    background-image: url('bulboff.png');
+    background-color: rgba(0, 51, 204, 0.6);
+}
+
+div.momentary.off, div.momentary.on{
+    background-image: url('3dbutton.png');
+    background-color: rgba(204, 51, 0, 0.6);
+}
+
+div.momentary.off {
+    background-color: rgba(0,51,204,0.6);
+}
+	
 /* hover over things that are clickable */
-div.on:hover, div.unlocked:hover {
-  background-color: #116600;
+div.on:hover, div.off:hover {
+  background-color: rgba(51, 51, 51, 0.3);
+  
 }
-div.off:hover, div.locked:hover {
-  background-color: #661100;
+div.unlocked:hover, div.locked:hover {
+  background-color: rgba(51, 51, 51, 0.3);
 }
 
 /* up and down arrows */
@@ -425,11 +635,21 @@ div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
+	border-top-left-radius: 25px;
+	border-bottom-left-radius: 25px;
+	box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
+	border-top-right-radius: 25px;
+	border-bottom-right-radius: 25px;
+	box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
@@ -438,6 +658,7 @@ div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-n
     background-repeat: no-repeat;
     height:38px; width: 32px;
     background-position: -160px -4px;
+	margin-top: 10px;
 }
 
 div.music-pause {
@@ -462,19 +683,38 @@ div.thermostat.temperature {
     width: 118px;
     background-color: #006666;
     color: #ffffee;
-    border: none;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
     cursor: default;
-    font-size: 30px;
     text-align: center;
-    height: 40px;
+    height: 50px !important;
+	width: 50px;
+	padding: 4px 3px 0 3px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	border-radius: 50%;
+    font-size: 20px;
+    line-height: 45px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
 }
 
 div.thermostat.thermofan, div.thermostat.thermomode {
     cursor: pointer;
+    height: auto;
+    padding: 0;
+}
+
+/* restore the thermostat off setting */
+div.thermostat.thermomode.off {
+	background-color: #333333;
+	font-size: 11pt;
+	height: auto;
+        padding: 0;
 }
 
 div.thermostat.thermomode.heat {
-    background-color: #cc3300;
+    background-color: #ff3300;
 }
 
 div.thermostat.thermomode.cool {
@@ -486,7 +726,10 @@ div.thermostat.thermomode.auto {
 }
 
 div.thermostat.thermostate {
+    background-color: #333333;
     cursor: default;
+    height: auto;
+    padding: 0;
 }
 
 /* values of the adjustable items */
@@ -505,18 +748,27 @@ div.heat-val, div.cool-val, div.level-val, div.switchlevel-val {
 }
 
 div.music div.level-val {
-    width: 112px;
+    width: 60%;
 }
 
 /* color specific values */
 div.heat-val {
     background-color: #cc3300;
+	box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
 div.cool-val {
   background-color: #0033cc;
+  box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
 div.switchlevel-val, div.level-val {
-    background-color: #009999;
+    background-color: #1bb14b;
+	box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
 
 /* hover over the adjustment arrows */
@@ -524,18 +776,24 @@ div.heat-up:hover, div.heat-dn:hover,
 div.cool-up:hover, div.cool-dn:hover,
 div.switchlevel-up:hover, div.switchlevel-dn:hover,
 div.level-up:hover, div.level-dn:hover {
-    border: 2px solid #666666;
+    border: 2px solid #303030;
     width: 28px;
     height: 28px;
 }
 
 /* use italic serif font for music titles and a custom size */
 div.music.track {
-    font-family: "Times New Roman",serif;
-    font-size: 12pt;
+    font-family: "Raleway",serif;
+    font-size: 11pt;
     font-style: italic;
     height: auto;
+	padding-top: 5px;
     border-bottom: none;
+}
+div.music.musicstatus, div.music.musicmute {
+    height: 28px;
+    font-size: 11pt;
+    border-top: 1px solid #ffffff;
 }
 
 div.paneldata {
@@ -553,9 +811,9 @@ margin-left: 30px;
 */
 
 .hidden {
-	display: none;
+    display: none;
 }
 
 .shown {
-	display: inline;
+    display: inline;
 }
