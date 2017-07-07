@@ -31,7 +31,9 @@ define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
  *            replaced main page bracket from table to div
  * 
  * 0.5-alpha  First public test version
- * 
+ * 0.6-alpha  Minor tweaks to above - this is the actual first public version
+ * 0.7-alpha  Create "skinning" feature by moving all CSS and graphics into a 
+ *            directory, make simple version, and offer option to switch
 */
 require_once "clientinfo.php";
 require_once "hmutils.php";
@@ -418,6 +420,17 @@ function getOptions($allthings) {
     
     if ( $options ) {
         
+        if ( !key_exists("skin", $options ) ) {
+            $options["skin"] = "skin-housepanel";
+        }
+        
+        // confirm css exists
+        if ( !file_exists($options["skin"] . "/housepanel.css") ) {
+            echo "<div class=\"error\">Error, Skin file = ";
+            echo $options["skin"] . "/housepanel.css  missing. Please correct and re-launch.</div>";
+            exit(1);
+        }
+        
         // make sure there is at least one room
         $rcount = count($options["rooms"]);
         if (!$rcount) {
@@ -470,13 +483,13 @@ function getOptions($allthings) {
         // generic room setup
         $rooms = array(
             "Kitchen" => "kitchen|sink|pantry|dinette" ,
-            "Family" => "family|mud|fireplace|casual",
-            "Formal" => "living|dining|entry|front door|foyer",
+            "FamilyRoom" => "family|mud|fireplace|casual",
+            "LivingRoom" => "living|dining|entry|front door|foyer",
             "Office" => "office|computer|desk|work",
             "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
-            "Garage" => "garage|yard|outside|porch|patio",
+            "Garage" => "garage|yard|outside|porch|patio|driveway",
             "Thermostats" => "thermostat|weather",
-            "Music" => "sonos|music|tv|stereo|bose|basement|samsung"
+            "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung"
         );
         
         // make a default options array based on the old logic
@@ -509,6 +522,9 @@ function getOptions($allthings) {
             }
             $k++;
         }
+        
+        // set default skin
+        $options["skin"] = "skin-housepanel";
 
 //        echo "<pre>";
 //        print_r($allthings);
@@ -857,6 +873,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $tc.= "Found Error msg:    " . $_SESSION['curl_error_msg'] . "</div>";
         unset($_SESSION['curl_error_no']);
         unset($_SESSION['curl_error_msg']);
+        $skindir = "skin-housepanel";
         
     // display the main page
     } else if ( $access_token && $endpt ) {
@@ -874,6 +891,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $thingoptions = $options["things"];
         $roomoptions = $options["rooms"];
         $indexoptions = $options["index"];
+        $skindir = $options["skin"];
         
         $tc.= '<div id="tabs"><ul>';
         // go through rooms in order of desired display
@@ -939,7 +957,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     }
 
     // display the dynamically created web site
-    echo htmlHeader();
+    echo htmlHeader($skindir);
     echo $tc;
     echo htmlFooter();
     

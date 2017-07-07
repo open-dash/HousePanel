@@ -1,6 +1,6 @@
 <?php
 // header and footer
-function htmlHeader() {
+function htmlHeader($skindir) {
     $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
     $tc.= '<html><head><title>Smart Motion Sensor Authorization</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
@@ -11,11 +11,10 @@ function htmlHeader() {
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
     
     // load custom .css and the main script file
-    $tc.= '<link rel="stylesheet" type="text/css" href="housemap.css">';
-    $tc.= '<script type="text/javascript" src="housemap.js"></script>';  
-    
-    // dynamically create the jquery startup routine to handle all types
-    $tc.= '<script type="text/javascript">';
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir\housepanel.css\">";
+    $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
+        // dynamically create the jquery startup routine to handle all types
+        $tc.= '<script type="text/javascript">';
         $thingtypes = array("switch","lock","momentary","heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
@@ -33,13 +32,11 @@ function htmlHeader() {
     // changed this to a div
     $tc.= '</head><body>';
     $tc.= '<div class="maintable">';
-    // $tc.= '<table class="maintable"><tr><td>';
     return $tc;
 }
 
 function htmlFooter() {
     $tc = "";
-    // $tc.= "</td></tr></table>";
     $tc.= "</div>";
     $tc.= "</body></html>";
     return $tc;
