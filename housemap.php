@@ -6,31 +6,40 @@
  * Must be paired with the housemap.groovy SmartApp on the SmartThings side
  * and the CLIENT_ID and CLIENT_SECRET must match what is specified here
  * to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
- * install this file and the accompanying .js and .css file on your server
- * and you should be good to go. A hmoptions.cfg file will be generated
- * your server must have write privileges turned for the web for this to work
  * 
- * note: I point to the public jQuery libraries but you can change this
- *       if you want faster response time. At least version 10 is required
+ * You must store your CLIENT_ID and CLIENT_SECRET information in
+ * a file called clientinfo.php saved to the same directory as this file
+ * it should look as follows but with real data as opposed to this fake data:
+
+define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
+define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
+
+ * note: there is no such file in the shared GitHub repository
+ * 
+ * To complete the install save all files on your server
+ * and you should be good to go. An options file named hmoptions.cfg 
+ * will be generated when the app first runs and each time any options change
+ * your web server must have write privileges enabled for this to work
+ * 
  *
  * Revision History
- * 1.0      Initial release
- * 1.1      Implement new architecture for files to support sortable jQuery
- * 1.2      Cleanup including fixing unsafe GET and POST calls
- *          Removed history call and moved to javascript side
- *          put reading and writing of options into function calls
- *          replaced main page bracket from table to div
+ * 0.0        Initial release
+ * 0.1        Implement new architecture for files to support sortable jQuery
+ * 0.2        Cleanup including fixing unsafe GET and POST calls
+ *            Removed history call and moved to javascript side
+ *            put reading and writing of options into function calls
+ *            replaced main page bracket from table to div
+ * 
+ * 0.5-alpha  First public test version
  * 
 */
+require_once "clientinfo.php";
 require_once "hmutils.php";
-
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
 
 session_start();
 define('APPNAME', 'House Panel');
-define('CLIENT_ID', 'f7d5bdf7-c6a5-475d-95ce-25e49efb6436');
-define('CLIENT_SECRET', 'b299a4b9-e2cf-48ef-995f-ed9c762ed820');
 define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
