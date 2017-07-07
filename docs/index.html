@@ -1,0 +1,42 @@
+<html>
+<body>
+<h2>House Panel</h2>
+
+House Panel web service PHP application for SmartThings
+author: Ken Washington  (c) 2017
+
+Must be paired with the housemap.groovy SmartApp on the SmartThings side
+and the CLIENT_ID and CLIENT_SECRET must match what is specified here
+to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
+
+You must store your CLIENT_ID and CLIENT_SECRET information in
+a file called clientinfo.php saved to the same directory as this file
+it should look as follows but with real data as opposed to this fake data:
+
+<blockquote>
+define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
+define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
+</blockquote>
+
+<div>
+<b>Note:</b><br />There is no such file in the shared GitHub repository
+To complete the install save all files on your server
+and you should be good to go. An options file named hmoptions.cfg 
+will be generated when the app first runs and each time any options change
+your web server must have write privileges enabled for this to work
+</div>
+
+<strong><ul>Revision History</ul></strong>
+<ul>
+<li> 0.0        Initial release
+<li> 0.1        Implement new architecture for files to support sortable jQuery
+<li> 0.2        Cleanup including fixing unsafe GET and POST calls
+                Removed history call and moved to javascript side
+                put reading and writing of options into function calls
+                replaced main page bracket from table to div
+  
+<li> 0.5-alpha  First public test version
+</ul>
+
+</body>
+</html>
