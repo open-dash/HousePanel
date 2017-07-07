@@ -1,5 +1,11 @@
 // jquery functions to do Ajax on housemap.php
 // old style setup of tabs to support maximum browsers
+var popupStatus = 0;
+var popupCell = null;
+var popupSave = "";
+var popupRoom = "";
+var popupVal = 0;
+
 window.addEventListener("load", function(event) {
     $( "#tabs" ).tabs();
     
@@ -26,7 +32,24 @@ window.addEventListener("load", function(event) {
                 k++;
             });
             $.post("housemap.php", 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
+                    function (presult, pstatus) {
+                        // alert("Updated page order with status= "+pstatus+" result= "+
+                        //       strObject(presult));
+                        // set the room numbers using the options
+                        if (pstatus==="success") {
+                            var newrooms = presult["order"];
+                            // alert(strObject(newrooms));
+                            $('table.headoptions th > input[type="hidden"]').each(function() {
+                               var rname = $(this).attr("name").substring(2);
+                               // var rvalue = parseInt($(this).attr("value"));
+                               var newval = parseInt(newrooms[rname]);
+                               // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
+                               $(this).attr("value",newval);
+                            });
+                        }
+                        // $("#options-tab").html(presult["optpage"]);
+                    }, "json"
             );
         }
     });
@@ -43,18 +66,35 @@ window.addEventListener("load", function(event) {
             var roomname = $(ui.item).attr("panel");
             var roomtitle = $(this).attr("title");
             // var bid = $(ui.helper).attr("bid");
-            // get the new list of pages in order
+            // get the new list of things in order
             $("div.panel-" + roomname + " > div.thing").each(function() {
                 var tilenum = parseInt( $(this).attr("tile") );
                 things[k] = tilenum;
                 k++;
             });
             $.post("housemap.php", 
-                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle},
-                   function (presult, pstatus) {
-//                        alert("Updated tile order with status= "+pstatus+" result= "+presult+ 
-//                              " in room= "+roomname+"\nNew list= "+strObject(things));
-                   }
+                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+                    /* ,
+                    function (presult, pstatus) {
+                        // alert("Updated page order with status= "+pstatus+" result= "+
+                        //       strObject(presult));
+                        // set the tile numbers using the options
+                        // disabled - don't need since I rewrote the options saver instead
+                        if (pstatus==="success") {
+                            var newtiles = presult["order"];
+                            // alert(strObject(newtiles));
+                            $('table.roomoptions td > input[checked="1"][name="'+roomtitle+'\[\]"]').each(function() {
+                                var oldval = parseInt($(this).attr("order"));
+                                var tileval = parseInt($(this).attr("value"));
+                                var newval = parseInt(newtiles.indexOf(tileval));
+                                // alert("room = "+roomtitle+" tileval= "+tileval+" oldval= "+oldval+" newval= "+newval);
+                                if (oldval !== newval) {
+                                    $(this).attr("order",newval);
+                                }
+                            });
+                        }
+                        // $("#options-tab").html(presult["optpage"]);
+                    }, "json"  */
             );
         }
     });
@@ -62,14 +102,147 @@ window.addEventListener("load", function(event) {
     // setup clicking on name of tiles
     // setupName();
     
+    // disable return key
+    $("form.options").keypress(function(e) {
+        if ( e.keyCode==13  && popupStatus==1){
+            processPopup();
+            return false;
+        }
+        else if (e.keyCode==13) {
+            return false;
+        } else if ( e.keyCode==27 && popupStatus==1 ){
+            disablePopup();
+        }
+    });
+    
+    // set up popup editing
+    setupPopup();
+        
     // setup time based updater
     setupTimers();
 });
 
+function setupPopup() {
+        //Click out event!
+    $("table.roomoptions").click(function(){
+        processPopup();
+    });
+    
+    //Press Escape event!
+    $(document).keypress(function(e){
+        if ( e.keyCode==13  && popupStatus==1){
+            var ineditvalue = $("#trueincell").val();
+            processEdit(ineditvalue);
+        } else if ( e.keyCode==27 && popupStatus===1 ){
+            disablePopup();
+        }
+    });
+
+    // disable input in our dynamic form item
+    $("#trueincell").keypress(function(e) {
+        if ( e.keyCode==27 ){
+            disablePopup();
+        }
+    });
+    
+    $("#trueincell").focus().blur(function() {
+        processPopup();
+    });
+    
+    $("table.headoptions th.roomname").each(function() {
+        // bind click events to incell editing
+        $(this).css({
+            "cursor": "pointer"
+        });
+        $(this).bind("click", jeditTableCell);
+    });
+   
+}
+
+var jeditTableCell = function(event) {
+    // alert(testdata);
+    // skip click invoke if we are already here
+    if ($(this).html().substr(0,9) == "<input id") { return true; }
+
+    // if another popup is active, process it
+    if (popupStatus === 1) {
+        // $(that).html().substring(0,8) === "<input id") { return true; }
+        processPopup();
+        // return true;
+    }
+    
+    var roomval = $(this).children().first().attr("value");
+    var roomname = $(this).text().trim();
+    
+    //do a real in-cell edit - save global parameters
+    // cellclicked = that;
+    popupStatus = 1;
+    popupSave = $(this).html();
+    popupCell = this;
+    popupVal = parseInt(roomval);
+    popupRoom = roomname;
+    
+    // change the content to an input box
+    var thesize = roomname.length + 2;
+    
+    // save anything after the pure text
+    // var savedhidden = $(that).html().substring(thesize);
+    
+    // if (thesize < maxlen+1) thesize = maxlen+1;
+    var oldhidden = '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
+    $(this).empty().html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
+
+    // set the focus and trigger blur to return things to normal
+    // save the trigger td cell object and update the content of the cell
+    // this removes the input field and replaces it with the edited text
+
+    // now we do a true inline edit so dont load a popup
+    // loadPopup(this, event.pageX, event.pageY);
+    return false;
+}
+
+function processPopup( ) {
+    // processEdit( ineditvalue );
+    // $(cellclicked).empty().html( ineditvalue );
+    // alert("ineditvalue = " + ineditvalue);
+
+    if (popupStatus==1) {
+        // put the new text on the screen
+        var thenewval = $("#trueincell").val();
+        
+        // clean the user provided room name to ensure it doesnt have crap in it
+        //TODO
+        
+        var newhidden = '<input type="hidden" name="o_' + thenewval + '" value="' + popupVal + '" />';
+        $(popupCell).empty().html( thenewval + newhidden );
+        
+        // replace the room name in the entire options table column
+        $('table.roomoptions td > input[name="'+popupRoom+'\[\]"]').each(function() {
+            // var tileval = parseInt($(this).attr("value"));
+            $(this).attr("name",thenewval + '[]');
+        });
+        //       
+    }
+
+    popupStatus = 0;
+}
+
+function disablePopup(){
+    //disables popup only if it is enabled
+    if( popupStatus==1){
+        $(popupCell).empty().html(popupSave);
+    }
+    popupStatus = 0;
+}
 function strObject(o) {
   var out = '';
   for (var p in o) {
-    out += p + ': ' + o[p] + '\n';
+    out += p + ': ';
+    if (typeof o[p] === "object") {
+        out += strObject(o[p]);
+    } else {
+        out += o[p] + '\n';
+    }
   }
   return out;
 }
@@ -155,16 +328,16 @@ function setupTimers() {
         switch (thetype) {
             case "switch":
             case "switchlevel":
-                timerval = 30000;
+                timerval = 60000;
                 break;
                 
             case "motion":
             case "contact":
-                timerval = 30000;
+                timerval = 120000;
                 break;
 
             case "thermostat":
-                timerval = 120000;
+                timerval = 60000;
                 break;
 
             case "music":
@@ -176,7 +349,7 @@ function setupTimers() {
                 break;
 
             case "lock":
-                timerval = 120000;
+                timerval = 60000;
                 break;
         }
         

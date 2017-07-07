@@ -52,32 +52,6 @@ body {
   color: #ffffff;
 }
 
-div.sitename {
-    line-height: 1.5; text-align: left;
-    background: #ffffff; 
-}
-
-
-input.authbutton {
-	margin-left: 10px; margin-top: 5px; margin-bottom: 2px;
-	line-height: 1.5; text-align: center;
-	background: #007fff; 
-	color: #ffffff;
-	border-bottom: 5px solid rgba(0, 0, 0, 0.25) !important; 
-}
-
-input.authbutton:hover{
-	height: 28px;
-	border-bottom: 2px solid rgba(0, 0, 0, 0.25) !important; 
-	border-width: 0px;
-}
-
-.authbutton {
-	width: 120px;
-	cursor: pointer;
-	height: 30px;
-}
-
 .debug, .error {
   background-color: #cc3300;
   color: #ffffff;
@@ -88,7 +62,12 @@ form {
     border: 0px;
     padding: 0px;
     margin: 0px;
-    background: #505050;
+    background: #ffffff;
+    width: 100%;
+}
+
+form.houseauth {
+    text-align: right;
 }
 
 /* how the tab page shows up - this affects everything shown */
@@ -132,14 +111,14 @@ div.panel-family {
     background-position: center;
 }
 
-div.panel-kitchen {
+div.panel-kitchen, div.panel-dinette {
 	background-image: url('kitchenroom.png');
 	background-attachment: fixed;	
 	background-repeat: no-repeat;
     background-position: center;
 }
 
-div.panel-formal {
+div.panel-formal, div.panel-living {
 	background-image: url('formal.png');
 	background-attachment: fixed;	
 	background-repeat: no-repeat;
@@ -151,29 +130,30 @@ a:hover {
 }
 
 
-div.panel-outside {
-	background-image: url('outside.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
+div.panel-outside, div.panel-garage {
+    background-image: url('outside.png');
+    background-attachment: fixed;	
+    background-repeat: no-repeat;
     background-position: center;
 }
 
 div.panel-office {
-	background-image: url('office.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
-    }
+    background-image: url('office.png');
+    background-attachment: fixed;	
+    background-repeat: no-repeat;
+    background-position: center;
+}
 
 div.panel-bedrooms {
-	background-image: url('bedroom.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
+    background-image: url('bedroom.png');
+    background-attachment: fixed;	
+    background-repeat: no-repeat;
     background-position: center;
 }
 
 
 /* make specific panels look however you wish */
-div.panel-music {
+div.panel-music, div.panel-theater {
   background-image: url('music.png');
   background-attachment: fixed;	
   background-repeat: no-repeat;
@@ -197,29 +177,9 @@ div.sensordata {
     vertical-align: top;
 }
 
-div.scrollit {
-    height: 600px;
-    overflow-y: auto;
-}
-
 table.sensordata {
     width: 100%;
     text-align: left;
-}
-
-th, tr.theader {
-    background-color: #111133;
-    color: #ffffff;
-}
-
-td.shaded, tr.shaded {
-    background-color: #eeeeee;
-    color: #000000;
-}
-
-td.unshaded, tr.unshaded {
-    background-color: #333333;
-    color: #ffffff;
 }
 
 table.headoptions {
@@ -235,17 +195,26 @@ table.headoptions thead {
     top: 20px; left: 10px;
 }
 
-div.scrolltable {
+div.scrollvtable {
     max-height: 600px;
     overflow-y: auto;
 }
 
-table.roomoptions {
+div.scrollhtable {
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: #ffffff;
+}
+
+table.roomoptions, table.headoptions {
     margin: 0px;
-    background-color: #eeeeee;
+    background-color: #ffffff;
     color: #000000;
     font-size: 11pt;
-    width: 1200px;
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid black;
 }
 
 table.roomoptions td {
@@ -254,7 +223,14 @@ table.roomoptions td {
     border-bottom: 1px solid #999999;
     line-height: 1.5;
     padding: 2px;
-    background-color: white;
+}
+
+table.roomoptions tr::even td {
+    background-color: #eeeeee;
+}
+
+table.roomoptions tr::odd td {
+    background-color: #ffffff;
 }
 
 table.roomoptions td.thingname {
@@ -262,31 +238,36 @@ table.roomoptions td.thingname {
     width: 300px;
     padding: 2px;
     font-weight: bold;
-    border-left: 0px solid #999999;
-    border-right: 2px solid #999999;
+    border-left: 1px solid #999999;
+    border-right: 1px solid #999999;
 }
 
-table.headoptions th.thingname {
+table.roomoptions thead th, table.headoptions thead th {
     border-bottom: 5px solid rgba(0, 0, 80, 1);
+    border-left: 1px solid #ffffff;
     background-color: #3a5795;
     color:#ffffff;
     font-weight: bold;
     padding: 2px;
-    width: 300px;
+    width: 100px;
     text-align: center;
-    line-height:1.5;
+    line-height: 1.5;
+    height: 30px;
+}
+table.headoptions thead th.roomname:last-child {
+    padding-right: 17px;
 }
 
-table.headoptions th.roomname {
-    text-align: center; width: 100px;
-    border-bottom: 10px solid rgba(0, 0, 0, 0.25);
-    background-color: #3a5795;
-    color:#ffffff;
-    font-weight: bold;
-    padding: 2px;
-    line-height: 1.5;
-    vertical-align: inherit;
-	
+table.roomoptions th.thingname, table.headoptions th.thingname {
+    text-align: left; width: 300px;
+    border-left: 1px solid #999999;
+}
+
+table.roomoptions tbody {
+  height: 600px;
+  overflow-y: scroll;
+  width: 100%;
+  border-top: 2px solid black;
 }
 
 
@@ -299,43 +280,59 @@ span.typeopt {
 
 div.processoptions {
     margin-left: 0px; margin-top: 0px;
-	padding-top: 10px;
-	background-color: white;
-	box-shadow: 0px 1px 10px rgba(0,0,0,.50);
+    padding-top: 10px;
+    background-color: white;
+    box-shadow: 0px 1px 10px rgba(0,0,0,.50);
 }
 
-input.submitbutton, input.resetbutton {
+input.submitbutton, input.resetbutton, input.authbutton {
     background-repeat: no-repeat;
     width: 150px; height: 50px;
     margin-left: 10px;
-	margin-right: 60px;
+    margin-right: 30px;
     cursor: pointer;
-	border: none;
-	padding: 8px 16px;
-	color: white;
-	font-family: 'Droid Sans', serif;
-	text-align: center;
-	font-weight: bold;
-	margin-after: 10px;
+    border: none;
+    padding: 8px 16px;
+    color: #eeeeee;
+    text-align: center;
+    font-weight: normal;
+    font-size: 14pt;
+        /*
 	-webkit-margin-after: 10px;
-	-webkit-transition-property: width; /* Safari */
-    -webkit-transition-duration: .7s; /* Safari */
+	-webkit-transition-property: width;
+    -webkit-transition-duration: .7s;
     transition-property: width;
     transition-duration: .7s;
+    */
 }
 
 input.submitbutton {
-	background-color: #3a5795;
-	border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+    background-color: #3a5795;
+    border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
 }
 input.resetbutton {
-    background-color: #673AB7;
-	border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+    background-color: #333333;
+    border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+}
+input.authbutton {
+    background-color: #993300;
+    border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+    margin: 0;
+    margin-left: 10px;
 }
 
-input.submitbutton:hover, input.resetbutton:hover{
-	width: 300px;
-    
+input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
+    font-weight: bold;
+    color: #ffffff;
+}
+
+div.sitename {
+    background: #ffffff; 
+    display: block;
+    position: relative;
+    left: 400px;
+    width: 300px;
+    bottom: 49px;
 }
 
 

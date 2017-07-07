@@ -117,7 +117,7 @@ function getEndpoint($access_token) {
 
 function authButton($sname, $returl) {
     $tc = "";
-    $tc.= "<form name=\"housemap\" action=\"" . $returl . "\"  method=\"POST\">";
+    $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
     $tc.= hidden("doauthorize", "1");
     $tc.= "<div class=\"sitename\">$sname";
     $tc .= "<input class=\"authbutton\" value=\"Re-Authorize\" name=\"submit1\" type=\"submit\" />";
@@ -310,8 +310,9 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
     return json_encode($response);
 }
 
-function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
+function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $retpage) {
 
+    
     $updated = false;
     $options = readOptions();
     
@@ -320,9 +321,18 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
     // function is being triggered by a drag completion event
     // it is here just in case something weird happened
     if (!$options) {
-        $allthings = getAllThings($endpt, $access_token);
+//        $allthings = getAllThings($endpt, $access_token);
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+        } else {
+            $allthings = getAllThings($endpt, $access_token);
+            $_SESSION["allthings"] = $allthings;
+        }
         $options= getOptions($allthings);
     }
+
+    $pgresult = array();
+    $pgresult["type"] = $swtype;
     
     // now update either the page or the tiles based on type
     switch($swtype) {
@@ -330,6 +340,7 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
             $options["rooms"] = $swval;
 //          $updated = print_r($options,true);
             $updated = true;
+            $pgresult["order"] = $options["rooms"];
             break;
             
         case "things":
@@ -341,6 +352,10 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
                 }
 //              $updated = print_r($swval,true);
                 $updated = true;
+                // disabled dynamic updating of Options page
+                // this is handled instead inside processOptions
+                // by reading the prior options order and preserving
+                // $pgresult["order"] = $options["things"][$swattr];
             }
             break;
     }
@@ -348,9 +363,11 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
     if ($updated!==false) {
         writeOptions($options);
     }
+   
+    // $pgresult["optpage"] = getOptionsPage($options, $retpage, $allthings, $sitename);
     
     // return successful update or not
-    return $updated . " type = $swtype attr = $swattr";
+    return json_encode($pgresult);
 }
 
 function readOptions() {
@@ -443,14 +460,14 @@ function getOptions($allthings) {
 
         // generic room setup
         $rooms = array(
-            "Kitchen" => "kitchen|sink|pantry" ,
-            "Family" => "family|mud|fireplace",
-            "Formal" => "living|dining|entry|front door",
-            "Office" => "office|computer|desk",
-            "Bedrooms" => "bedroom|kids|bathroom|closet|master",
-            "Outside" => "garage|yard|outside|porch|patio",
+            "Kitchen" => "kitchen|sink|pantry|dinette" ,
+            "Family" => "family|mud|fireplace|casual",
+            "Formal" => "living|dining|entry|front door|foyer",
+            "Office" => "office|computer|desk|work",
+            "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
+            "Garage" => "garage|yard|outside|porch|patio",
             "Thermostats" => "thermostat|weather",
-            "Music" => "sonos|music|tv|stereo|bose|basement"
+            "Music" => "sonos|music|tv|stereo|bose|basement|samsung"
         );
         
         // make a default options array based on the old logic
@@ -503,11 +520,12 @@ function getOptions($allthings) {
 function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
-    $tc.= "<div id=\"options-tab\">";
-    if ($sitename) {
-        $tc.= authButton($sitename, $retpage);
-    }
-    $tc.= "<form name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
+    // $tc.= "<div id=\"options-tab\">";
+//    if ($sitename) {
+//        $tc.= authButton($sitename, $retpage);
+//    }
+    $tc.= "<div class='scrollhtable'>";
+    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
@@ -528,8 +546,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
             $tc.= "</th>";
         }
     }
-    $tc.= "</tr></thead></table>";
-    $tc.= "<div class='scrolltable'><table class=\"roomoptions\">";
+    $tc.= "</tr></thead>";
+    $tc.= "</table>";
+    $tc.= "<div class='scrollvtable'>";
+    $tc.= "<table class=\"roomoptions\">";
     $tc.= "<tbody>";
 
     // now print our options matrix
@@ -558,7 +578,11 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 // now check for whether this thing is in this room
                 $tc.= "<td>";
                 if ( in_array($thingindex, $things) ) {
-                    $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" checked >";
+                // disabled this - see comments elsewhere about fixing this in processOptions
+                // $idx = array_search($thingindex, $things);
+                // if ( $idx!==FALSE ) {
+                    // $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" order=\"$idx\" checked=\"1\" >";
+                    $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" checked=\"1\" >";
                 } else {
                     // $checked = "";
                     $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" >";
@@ -569,13 +593,18 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $tc.= "</tr>";
     }
 
-    $tc.= "</tbody></table></div>";
+    $tc.= "</tbody></table>";
+    $tc.= "</div>";   // vertical scroll
     $tc.= "<div class=\"processoptions\">";
-    $tc.= "<input class=\"submitbutton\" value=\"Submit\" name=\"submitoption\" type=\"submit\" />";
+    $tc.= "<input class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"submit\" />";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
-    $tc.= "</div>";
+    if ($sitename) {
+        $tc.= authButton($sitename, $retpage);
+    }
+    $tc.= "</div>";   // horizontal scroll
+    // $tc.= "</div>";
 
     return $tc;
 }
@@ -589,6 +618,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
         echo "</pre>";
         exit(0);
     }
+    
+    $oldoptions = readOptions();
     
     // make an empty options array for saving
     $options = array("rooms" => array(), "index" => array(), "things" => array());
@@ -609,8 +640,23 @@ function processOptions($optarray, $retpage, $allthings=null) {
         if ( is_array($val) ) {
             $roomname = $key;
             $options["things"][$roomname] = array();
-            foreach ($val as $kindex) {
-                $options["things"][$roomname][] = intval($kindex);
+            
+            // first save the existing order of tiles if still there
+            if ($oldoptions) {
+                $oldthings = $oldoptions["things"][$roomname];
+                foreach ($oldthings as $tilenum) {
+                    if ( array_search($tilenum, $val)!== FALSE ) {
+                        $options["things"][$roomname][] = intval($tilenum);
+                    }
+                }
+            }
+            
+            // add any new ones that were not there before
+            $newthings = $options["things"][$roomname];
+            foreach ($val as $tilenum) {
+                if ( array_search($tilenum, $newthings)=== FALSE ) {
+                    $options["things"][$roomname][] = intval($tilenum);
+                }
             }
         // keys starting with o_ are room names with order as value
         } else if ( substr($key,0,2)=="o_") {
@@ -626,7 +672,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // write cookie to file
     $f = fopen("hmoptions.cfg","wb");
     $str =  json_encode($options);
-    $scnt = fwrite($f, $str);
+    fwrite($f, $str);
     fclose($f);
     
     // reload to show new options
@@ -778,7 +824,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
             case "pageorder":
                 $swval = $_POST["value"];
                 $swattr = $_POST["attr"];
-                echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr);
+                echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
         }
         exit(0);
@@ -812,6 +858,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
         // read all the smartthings from API
         $allthings = getAllThings($endpt, $access_token);
+        $_SESSION['allthings'] = $allthings;
         
         // get the options tab and options values
         $options= getOptions($allthings);
@@ -858,7 +905,11 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         
         // add the options tab
+        $tc.= "<div id=\"options-tab\">";
         $tc.= getOptionsPage($options, $returnURL, $allthings, $sitename);
+        $tc.= "</div>";
+        
+        // end of the tabs
         $tc.= "</div>";
 //        if ($sitename) {
 //            $tc.= authButton($sitename, $returnURL);
