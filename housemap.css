@@ -793,19 +793,6 @@ div.music.musicstatus, div.music.musicmute {
     border-top: 1px solid #ffffff;
 }
 
-div.paneldata {
-  border: 0px;
-  padding: 0px;
-}
-
-/*
-li {
-padding-top: 5px;
-padding-bottom: 5px;
-padding-right: 70px;
-margin-left: 30px;
-}
-*/
 
 .hidden {
     display: none;
