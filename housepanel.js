@@ -333,28 +333,26 @@ function setupTimers() {
                 
             case "motion":
             case "contact":
-                timerval = 120000;
+                timerval = 125000;
                 break;
 
             case "thermostat":
-                timerval = 60000;
+                timerval = 61000;
                 break;
 
             case "music":
-                timerval = 120000;
+                timerval = 124000;
                 break;
 
             case "weather":
-                timerval = 300000;
+                timerval = 303000;
                 break;
 
             case "lock":
-                timerval = 60000;
+                timerval = 62000;
                 break;
         }
         
-        // limit to closet for testing
-        // if (aid==47 && bid && thetype) {
         if ( timerval && aid && bid ) {
 
             // define the timer callback function to update this tile
@@ -446,6 +444,14 @@ function updAll(aid, bid, thetype, pvalue) {
 
     // update trigger tile first
     updateTile(aid, pvalue);
+    
+    // for music tiles, wait few seconds and refresh again to get new info
+    if (thetype==="music") {
+        // alert( strObject(pvalue));
+        setTimeout(function() {
+            refreshTile(aid, bid, thetype);
+        }, 2000);
+    }
         
     // go through all the tiles this bid and type (easy ones)
     // this will include the trigger tile so we skip it
