@@ -1,26 +1,29 @@
 /*
-* House Controller web service PHP application for SmartThings
+* House Panel PHP application for SmartThings
 * author: Ken Washington  (c) 2017
 *
 * general purpose routines included for authorizing a web service
 * specific application shows all switches, motion sensors, and door contacts
 * thermostats and doors to open and other capabilities will be added later
-* uses Ajax to query specific sensor to return most recent 20 historical events
 *
 * for switches the Ajax call is used to turn the switch on and off from the web
 * DEBUG flags can be used to show specific data details during installation
-* this must be paired with a SmartApp on the SmartThings side
-* and the CLIENT_ID and CLIENT_SECRET must match what is specified here
-* to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
+* this must be paired with the HousePanel SmartApp on the SmartThings side
 *
-* The endpoints must also match the names referenced in the routines below
-* Other requirements for using this web app include installing jquery and pointing to it
-* the references below are the directories that I use on my server but they can be anything
-* you can even point it to the code.jquery site but I didn't like the delay and security risk
-* 
-* Finally, install this file and the accompanying .js and .css file on your server
-* and you should be good to go. Don't forget to provide the CLIENT_ID and CLIENT_SECRET info
-* 
-* Rev 1.1  - Implemented permanent drag-drop
+* CLIENT_ID, CLIENT_SECRET, and ST_WEB must be in a file called clientinfo.php
+* which must look as follows:
 *
+<?php
+define('CLIENT_ID', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
+define('CLIENT_SECRET', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
+define('ST_WEB','https://graph.api.smartthings.com');
+
+* real data for CLIENT_ID and CLIENT_SECRET are found in SmartThings
+* after you enable OAUTH2 in the SmartApp panel
+*
+* Finally, install all files in any web server and you should be good to go
+* While any web server will do, I strongly recommend one with SSL or using
+* a local webserver on a Raspberry Pi that sits behind your home firewall
+* and on the same network as your ST hub. This will make the app run fast.
+* 
 */
