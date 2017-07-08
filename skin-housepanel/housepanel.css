@@ -72,12 +72,16 @@ form.houseauth {
 
 /* how the tab page shows up - this affects everything shown */
 .ui-tabs .ui-tabs-panel {
-    padding-top: 15px;
-	padding-bottom: 5px;
-	padding-left: 1px;
-	padding-right: 1px;
-	text-align: left;
+    padding-top: 0px;
+    padding-bottom: 5px;
+    padding-left: 0px;
+    padding-right: 1px;
+    text-align: left;
 	
+}
+
+#options-tab {
+    padding-top: 10px;
 }
 
 /* specific tabs can be fully customized by ID as shown here */
@@ -216,7 +220,7 @@ table.roomoptions, table.headoptions {
 }
 
 table.roomoptions td {
-    text-align: center; width: 100px;
+    text-align: center; width: 90px;
     border-right: 1px solid #999999;
     border-bottom: 1px solid #999999;
     line-height: 1.5;
@@ -247,7 +251,7 @@ table.roomoptions thead th, table.headoptions thead th {
     color:#ffffff;
     font-weight: bold;
     padding: 2px;
-    width: 100px;
+    width: 90px;
     text-align: center;
     line-height: 1.5;
     height: 30px;
@@ -355,10 +359,10 @@ div.thing {
 }
 
 div.thing.thermostat-thing{
-    background-color: rgba(100,100,150,0.4) !important;
+    background-color: rgba(100,100,100,0.4) !important;
 }
 div.thing.music-thing {
-    background-color: rgba(150,100,150,0.4) !important;
+    background-color: rgba(80,0,50,0.4) !important;
     width: 180px;
     height: auto;
 }
@@ -701,11 +705,12 @@ div.thermostat.thermofan, div.thermostat.thermomode {
 }
 
 /* restore the thermostat off setting */
-div.thermostat.thermomode.off {
+div.thermostat.thermomode.off, div.thermostat.thermofan.off {
 	background-color: #333333;
 	font-size: 11pt;
 	height: auto;
-        padding: 0;
+        margin: 0;
+        color: #ffffff;
 }
 
 div.thermostat.thermomode.heat {
@@ -716,12 +721,12 @@ div.thermostat.thermomode.cool {
     background-color: #3333ff;
 }
 
-div.thermostat.thermomode.auto {
+div.thermostat.thermomode.auto, div.thermostat.thermofan.fanAuto {
     background-color: #009999;
 }
 
 div.thermostat.thermostate {
-    background-color: #333333;
+    background-color: #000000;
     cursor: default;
     height: auto;
     padding: 0;
@@ -808,5 +813,5 @@ div.skinoption {
 }
 
 div.skinoption input {
-    width: 800px;
+    width: 600px;
 }

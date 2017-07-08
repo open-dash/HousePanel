@@ -561,7 +561,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
-    $tc.= "<div class=\"skinoption\">Skin directory name: <input width=\"120\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
+    $tc.= "<div class=\"skinoption\">Skin directory name: <input width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
    
