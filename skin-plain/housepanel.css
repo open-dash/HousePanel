@@ -104,80 +104,8 @@ div.panel {
 	
 }
 
-div.panel-family {
-	background-image: url('family.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
-    background-position: center;
-}
-
-div.panel-kitchen, div.panel-dinette {
-	background-image: url('kitchenroom.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
-}
-
-div.panel-formal, div.panel-living {
-	background-image: url('formal.png');
-	background-attachment: fixed;	
-	background-repeat: no-repeat;
-    background-position: center;
-}
-
 a:hover {
     background-position: 0 -32px;
-}
-
-
-div.panel-outside, div.panel-garage {
-    background-image: url('outside.png');
-    background-attachment: fixed;	
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-div.panel-office {
-    background-image: url('office.png');
-    background-attachment: fixed;	
-    background-repeat: no-repeat;
-}
-
-div.panel-bedrooms {
-    background-image: url('bedroom.png');
-    background-attachment: fixed;	
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-
-/* make specific panels look however you wish */
-div.panel-music, div.panel-theater {
-  background-image: url('music.png');
-  background-attachment: fixed;	
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-div.panel-thermostats {
-  background-image: url('thermostat.png');
-  background-attachment: fixed;	
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* locate and style the blocks of data for history info */
-div.sensordata {
-    display: inline-block;
-    position: relative;
-    top: 2px; right: 2px;
-    width: 30%; height: auto;
-    border-left: 4px solid #ffffff;
-    vertical-align: top;
-}
-
-table.sensordata {
-    width: 100%;
-    text-align: left;
 }
 
 table.headoptions {
@@ -346,7 +274,7 @@ div.thing {
     border-right: 0px solid #cccccc;
     border-bottom: 0px solid #ffffff; 
     border-left: 0px solid #ffffff;
-    background-color: rgba(0, 51, 204, 0.4);
+    background-color: rgba(0, 51, 204, 1);
     box-shadow: 2px 2px 7px black;
     color: #eeeeee;
     cursor: default;
@@ -355,10 +283,10 @@ div.thing {
 }
 
 div.thing.thermostat-thing{
-    background-color: rgba(100,100,150,0.4) !important;
+    background-color: rgba(100,100,150,1) !important;
 }
 div.thing.music-thing {
-    background-color: rgba(150,100,150,0.4) !important;
+    background-color: rgba(150,100,150,1) !important;
     width: 180px;
     height: auto;
 }
@@ -384,7 +312,7 @@ div.thingname {
     padding-bottom: 5px;
     padding-left: 4px;
     padding-right: 4px;
-    border-bottom: 5px solid rgba(0,0,0,0.3);
+    border-bottom: 5px solid rgba(255,255,255,1);
     height: 30px;
     cursor: move;
 }
@@ -467,29 +395,11 @@ div.weather.illuminance{
     display: none;
 }
 
-div.weather.weatherIcon.clear, div.weather.forecastIcon.clear {
-    background-image: url('http://cdn.device-icons.smartthings.com/Weather/weather14-icn@2x.png');
-    background-position: 0% 0%;
-}
-
 /* handle larger images */
 div.thing.image-thing {
     background-color: #ffffff;
     width: 242px; height: 242px;
 }
-
-
-
-
-/* style for thing name when it has been picked */
-div.thingname.sensorpick {
-    background-color: #333333;
-}
-
-div.thead {
-    position: fixed;
-}
-
 
 /* styling for the actual item without its state */
 div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, div.music, div.thermostat {
@@ -498,7 +408,7 @@ div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, d
     margin: 0;
     cursor: default;
     width: 118px;
-    height: 112px;
+    height: 72px;
 }
 
 div.switch, div.switchlevel, div.momentary, div.lock {
@@ -506,7 +416,7 @@ div.switch, div.switchlevel, div.momentary, div.lock {
 }
 
 div.switchlevel.switch {
-    height: 80px;
+    height: 40px;
 }
 div.switchlevel.level {
     height: 32px;
@@ -525,14 +435,6 @@ div.switch, div.switchlevel, div.contact, div.lock, div.motion, div.momentary {
     margin: 0;
 }
 
-/* for switches within switchlevels make room for level control */
-
-/* what to do when you hover over an item */
-/* div.switch:hover, div.lock:hover {
-    background-color: #000000; 
-    color: #cccccc ;
-} */
-
 /* handle the block of controls for adjusting the thermostat and levels */
 div.thermostat.heat, div.thermostat.cool, div.music.level {
     display: inline-block;
@@ -549,66 +451,15 @@ div.music.level {
 }
 
 /* style the on and off states of switches */
-/* set size to show text to avoid funky resizing, but use transparent color */
+/* in plain version show on/off etc */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, div.on, div.off {
   background-position: 50% 20%;
   background-repeat: no-repeat;
-  font-size: 12px;
-  color: rgba(255,255,255,0.05)
+  font-size: 18pt;
+  margin-top: 10px;
+  color: #ffffff;
 }
 
-div.contact.open {
-    background-image: url('opendoor.png');
-    background-color: rgba(27,177,75,0.3);
-    background-position-y: 9px;
-}
-
-div.contact.closed {
-    background-image: url('closedoor.png');
-    background-color: rgba(27,177,75,0.6);
-    background-position-y: 9px;
-}
-
-div.motion.inactive {
-    background-image: url('stand.png');
-    background-color: rgba(0, 51, 204, 0.6);
-}
-
-div.motion.active {
-    background-image: url('run.png');
-    background-color: rgba(0, 51, 204, 0.3);
-}
-
-div.lock.locked {
-    background-image: url('lock.png');
-    background-color: rgba(204, 51, 0, 1);
-}
-
-div.lock.unlocked{
-    background-image: url('unlock.png');
-    background-color: rgba(204, 51, 0, 0.3);
-}
-
-div.switch.on, div.switchlevel.on{
-    background-image: url('bulbon.png');
-    background-color: rgba(0, 51, 204, 0.3);
-	
-}
-
-div.switch.off, div.switchlevel.off{
-    background-image: url('bulboff.png');
-    background-color: rgba(0, 51, 204, 0.6);
-}
-
-div.momentary.off, div.momentary.on{
-    background-image: url('3dbutton.png');
-    background-color: rgba(204, 51, 0, 0.6);
-}
-
-div.momentary.off {
-    background-color: rgba(0,51,204,0.6);
-}
-	
 /* hover over things that are clickable */
 div.on:hover, div.off:hover {
   background-color: rgba(51, 51, 51, 0.3);
@@ -701,11 +552,11 @@ div.thermostat.thermofan, div.thermostat.thermomode {
 }
 
 /* restore the thermostat off setting */
-div.thermostat.thermomode.off {
+div.thermostat.thermomode.off, div.thermostat.thermofan.off {
 	background-color: #333333;
-	font-size: 11pt;
-	height: auto;
-        padding: 0;
+        font-size: 11pt;
+        height: auto;
+        margin: 0;
 }
 
 div.thermostat.thermomode.heat {
@@ -716,12 +567,12 @@ div.thermostat.thermomode.cool {
     background-color: #3333ff;
 }
 
-div.thermostat.thermomode.auto {
+div.thermostat.thermomode.auto, div.thermostat.thermofan.fanAuto {
     background-color: #009999;
 }
 
 div.thermostat.thermostate {
-    background-color: #333333;
+    background-color: #000000;
     cursor: default;
     height: auto;
     padding: 0;
@@ -789,24 +640,4 @@ div.music.musicstatus, div.music.musicmute {
     height: 28px;
     font-size: 11pt;
     border-top: 1px solid #ffffff;
-}
-
-
-.hidden {
-    display: none;
-}
-
-.shown {
-    display: inline;
-}
-
-div.skinoption {
-    font-size: 12pt;
-    font-weight: bold;
-    margin-left: 8px;
-    margin-bottom: 2px;
-}
-
-div.skinoption input {
-    width: 800px;
 }

@@ -32,11 +32,11 @@ define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
  * 
  * 0.5-alpha  First public test version
  * 0.6-alpha  Minor tweaks to above - this is the actual first public version
- * 0.7-alpha  Create "skinning" feature by moving all CSS and graphics into a 
- *            directory, make simple version, and offer option to switch
+ * 0.7-alpha  Enable a "skinning" feature by moving all CSS and graphics into a 
+ *            directory. Added parameter for API calls to support EU
 */
 require_once "clientinfo.php";
-require_once "hmutils.php";
+require_once "utils.php";
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
 
@@ -79,13 +79,13 @@ function getAuthCode($returl)
     $nvpreq="response_type=code&client_id=" . urlencode(CLIENT_ID) . "&scope=app&redirect_uri=" . urlencode($returl);
 
     // redirect to the smartthings api request page
-    $location = "https://graph.api.smartthings.com/oauth/authorize?" . $nvpreq;
+    $location = ST_WEB . "/oauth/authorize?" . $nvpreq;
     header("Location: $location");
 }
 
 function getAccessToken($returl, $code) {
 
-    $host = "https://graph.api.smartthings.com/oauth/token";
+    $host = ST_WEB . "/oauth/token";
     $ctype = "application/x-www-form-urlencoded";
     $headertype = array('Content-Type: ' . $ctype);
     
@@ -109,7 +109,7 @@ function getAccessToken($returl, $code) {
 // this only works if the clientid within theendpoint matches our auth version
 function getEndpoint($access_token) {
 
-    $host = "https://graph.api.smartthings.com/api/smartapps/endpoints";
+    $host = ST_WEB . "/api/smartapps/endpoints";
     $headertype = array("Authorization: Bearer " . $access_token);
     $response = curl_call($host, $headertype);
 
@@ -326,6 +326,9 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
     
     $updated = false;
     $options = readOptions();
+    if ( !key_exists("skin", $options ) ) {
+        $options["skin"] = "skin-housepanel";
+    }
     
     // if the options file doesn't exist, create it by reading all ST
     // this is very slow but hopefully it will never happen since this
@@ -402,8 +405,8 @@ function writeOptions($options) {
 
     // make the file easier to look at
     $str1 = str_replace(",\"",",\r\n\"",$str);
-    $str = str_replace(":{\"",":{\r\n\"",$str1);
-    fwrite($f, $str);
+    $str2 = str_replace(":{\"",":{\r\n\"",$str1);
+    fwrite($f, $str2);
 
     fclose($f);
 }
@@ -498,7 +501,8 @@ function getOptions($allthings) {
         // second element is an optional alternate name defaulted to room name
         // each subsequent item is then a tuple of ST id and ST type
         // encoded as ST-id|ST-type to enable an easy quick text search
-        $options = array("rooms" => array(), "index"=> array(), "things" => array());
+        $options = array("rooms" => array(), "index"=> array(), 
+                         "things" => array(), "skin" => "skin-housepanel");
         $k= 0;
         foreach(array_keys($rooms) as $room) {
             $options["rooms"][$room] = $k;
@@ -549,16 +553,18 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 //    if ($sitename) {
 //        $tc.= authButton($sitename, $retpage);
 //    }
-    $tc.= "<div class='scrollhtable'>";
-    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
-    $tc.= hidden("options",1);
-    $tc.= "<table class=\"headoptions\"><thead>";
-    $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
-    
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
+    $skinoptions = $options["skin"];
 
+    $tc.= "<div class='scrollhtable'>";
+    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
+    $tc.= hidden("options",1);
+    $tc.= "<div class=\"skinoption\">Skin directory name: <input width=\"120\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
+    $tc.= "<table class=\"headoptions\"><thead>";
+    $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
+   
     // list the room names in the proper order
     for ($k=0; $k < count($roomoptions); $k++) {
         // search for a room name index for this column
@@ -647,7 +653,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
     $oldoptions = readOptions();
     
     // make an empty options array for saving
-    $options = array("rooms" => array(), "index" => array(), "things" => array());
+    $options = array("rooms" => array(), "index" => array(), 
+                     "things" => array(), "skin" => "skin-housepanel");
     $roomoptions = $options["rooms"];
     foreach(array_keys($roomoptions) as $room) {
         $options["things"][$room] = array();
@@ -658,11 +665,15 @@ function processOptions($optarray, $retpage, $allthings=null) {
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
         if ($key=="options" || $key=="submitoption") { continue; }
-
+        
+        // set skin
+        if ($key=="skin") {
+            $options["skin"] = $val;
+        }
         // if the value is an array it must be a room name with
         // the values being either an array of indexes to things
         // or an integer indicating the order to display this room tab
-        if ( is_array($val) ) {
+        else if ( is_array($val) ) {
             $roomname = $key;
             $options["things"][$roomname] = array();
             
@@ -694,11 +705,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
     }
         
-    // write cookie to file
-    $f = fopen("hmoptions.cfg","wb");
-    $str =  json_encode($options);
-    fwrite($f, $str);
-    fclose($f);
+    // write options to file
+    writeOptions($options);
     
     // reload to show new options
     header("Location: $retpage");

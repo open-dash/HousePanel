@@ -11,6 +11,9 @@ function htmlHeader($skindir) {
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
     
     // load custom .css and the main script file
+    if (!$skindir) {
+        $skindir = "skin-housepanel";
+    }
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir\housepanel.css\">";
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types

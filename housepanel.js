@@ -1,4 +1,4 @@
-// jquery functions to do Ajax on housemap.php
+// jquery functions to do Ajax on housepanel.php
 // old style setup of tabs to support maximum browsers
 var popupStatus = 0;
 var popupCell = null;
@@ -31,7 +31,7 @@ window.addEventListener("load", function(event) {
                 pages[pagename] = k;
                 k++;
             });
-            $.post("housemap.php", 
+            $.post("housepanel.php", 
                 {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
                     function (presult, pstatus) {
                         // alert("Updated page order with status= "+pstatus+" result= "+
@@ -72,7 +72,7 @@ window.addEventListener("load", function(event) {
                 things[k] = tilenum;
                 k++;
             });
-            $.post("housemap.php", 
+            $.post("housepanel.php", 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
                     /* ,
                     function (presult, pstatus) {
@@ -288,7 +288,7 @@ function updateTile(aid, presult) {
 }
 
 function refreshTile(aid, bid, thetype) {
-    $.post("housemap.php", 
+    $.post("housepanel.php", 
         {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
@@ -422,7 +422,7 @@ function setupName() {
         $(this).addClass("sensorpick");
 
         // load history data and show in a window
-        $.post("housemap.php", 
+        $.post("housepanel.php", 
                {useajax: "dohistory", id: bid, type: thetype, value: thevalue},
                function (presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined ) {
@@ -504,7 +504,7 @@ function setupPage(sensortype) {
                 this[0].attr("class", this[1]);
                 this[0].html(this[2]);
             };
-            $.post("housemap.php", 
+            $.post("housepanel.php", 
                 {useajax: "doaction", id: bid, type: thetype, value: "push", attr: theclass});
             if ( thevalue.indexOf("on") >= 0 ) {
                 $(that).removeClass("on");
@@ -519,7 +519,7 @@ function setupPage(sensortype) {
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
                    thetype==="thermostat" || thetype==="music") {
 //             alert('targetid= ' + targetid+' type= '+thetype+' class= ['+theclass+'] value= '+thevalue);
-            $.post("housemap.php", 
+            $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
 //                        alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
