@@ -301,18 +301,18 @@ function refreshTile(aid, bid, thetype) {
 function setupTimers() {
     
     // force refresh when we click on a new page tab
-    $("li.ui-tab > a").click(function() {
-        var panel = $(this).text().toLowerCase();
-//        alert("panel = "+panel);
-        $("#panel-"+panel+" div.thing").each(function() {
-            var aid = $(this).attr("id").substring(2);
-            var bid = $(this).attr("bid");
-            var thetype = $(this).attr("type");
-            if (thetype!=="options") {
-                refreshTile(aid, bid, thetype);
-            }
-        });
-    });
+//    $("li.ui-tab > a").click(function() {
+//        var panel = $(this).text().toLowerCase();
+////        alert("panel = "+panel);
+//        $("#panel-"+panel+" div.thing").each(function() {
+//            var aid = $(this).attr("id").substring(2);
+//            var bid = $(this).attr("bid");
+//            var thetype = $(this).attr("type");
+//            if (thetype!=="options") {
+//                    refreshTile(aid, bid, thetype);
+//            }
+//        });
+//    });
     
     // set up a timer for each tile to update automatically
     // but only for tabs that are being shown
@@ -350,6 +350,11 @@ function setupTimers() {
 
             case "lock":
                 timerval = 62000;
+                break;
+
+            // update clock every minute
+            case "clock":
+                timerval = 60000;
                 break;
         }
         

@@ -150,6 +150,25 @@ function getAllThings($endpt, $access_token) {
             // $response = $response + $newitem;
         }
     }
+    
+    // add a few blank tiles
+    $response["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
+    $response["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
+    $response["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
+    $response["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
+    
+    // add a clock tile
+    $weekday = date("l");
+    $dateofmonth = date("M d, Y");
+    $timeofday = date("g:i a");
+    $timezone = date("T");
+    $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    
+    $response["clock|clockdigital"] = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
+    
+    // TODO - implement an analog clock
+    // $response["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
+    
     return $response;
 }
 
@@ -174,8 +193,9 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     // print out the thing name wrapped with tags for javascript to react to
     // status class will be the key to trigger click action. That will read $i attribute
     // wrap the name of the thing in this class to trigger hover and click and styling
-    $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname\" id=\"s-$i\">" . $thingname . "</div>";
-
+    
+    $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "</div>";
+   
     // create a thing in a HTML page using special tags so javascript can manipulate it
     // multiple classes provided. One is the type of thing. "on" and "off" provided for state
     // for multiple attribute things we provide a separate item for each one
@@ -224,8 +244,9 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
         $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
-        $extra = ($tkey==="track" || is_numeric($tval) || 
-                  $tval=="" || str_word_count($tval)!=1 ) ? "" : " " . $tval;
+        // also prevent dates from adding details
+        $extra = ($tkey==="track" || $thingtype=="clock" || is_numeric($tval) || 
+                  $tval=="" ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
 
         // fix track names for groups, empty, and super long
         if ($tkey==="track") {
@@ -304,20 +325,32 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
 }
 
 function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="none") {
-    // $host = $endpt . "/doaction";
-    $headertype = array("Authorization: Bearer " . $access_token);
-
-    $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-              "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-              "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-              "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-    $response = curl_call($host, $headertype, $nvpreq, "POST");
     
-    // this now returns an array of tile settings
-    // which could be a single value pair
-    if (!response) {
-        $response = array($swtype => $swval);
+    // intercept clock things to return updated date and time
+    if ($swtype==="clock") {
+        $weekday = date("l");
+        $dateofmonth = date("M d, Y");
+        $timeofday = date("g:i a");
+        $timezone = date("T");
+        $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    } else {
+    
+        // $host = $endpt . "/doaction";
+        $headertype = array("Authorization: Bearer " . $access_token);
+
+        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
+                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
+                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+        $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+        // this now returns an array of tile settings
+        // which could be a single value pair
+        if (!response) {
+            $response = array($swtype => $swval);
+        }
     }
+    
     return json_encode($response);
 }
 

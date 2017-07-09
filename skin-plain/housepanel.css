@@ -166,6 +166,7 @@ table.roomoptions tr::odd td {
 table.roomoptions td.thingname {
     text-align: left; 
     width: 300px;
+    height: 20px;
     padding: 2px;
     font-weight: bold;
     border-left: 1px solid #999999;
@@ -295,7 +296,6 @@ div.thing.music-thing {
     height: auto;
 }
 
-
 div.thing:hover{
 	position: relative;
     box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
@@ -305,32 +305,6 @@ div.thing:hover{
 	-webkit-transition-duration: .2s;
 }
 
-
-/* the name of the thing  */
-div.thingname {
-    background-color: #303050;
-    font-size: 11pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 4px;
-    padding-right: 4px;
-    border-bottom: 5px solid rgba(255,255,255,1);
-    height: 30px;
-    cursor: move;
-}
-
-/* what to do when you hover over an item */
-div.thingname:hover {
-    background-color: #5050a0; 
-    color: #cccccc;
-}
-
-/* style for thing name when it has been picked */
-div.thingname.sensorpick {
-    background-color: #333333;
-}
 
 div.thing.weather-thing, div.weather {
     text-align: center;
@@ -636,6 +610,30 @@ div.music.musicstatus, div.music.musicmute {
     border-top: 1px solid #ffffff;
 }
 
+/* the name of the thing  */
+div.thingname {
+    background-color: #303050;
+    font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    /* border-bottom: 5px solid rgba(255,255,255,1); */
+    height: 30px;
+    cursor: move;
+}
+
+/* what to do when you hover over an item */
+div.thingname:hover {
+    background-color: #5050a0; 
+    color: #cccccc;
+}
+
+/* style for thing name when it has been picked */
+div.thingname.sensorpick {
+    background-color: #333333;
+}
+
 div.skinoption {
     font-size: 12pt;
     font-weight: bold;
@@ -645,4 +643,68 @@ div.skinoption {
 
 div.skinoption input {
     width: 600px;
+}
+
+div.thing.blank-thing {
+    border: 0px none;
+    padding: 0;
+    background-color: #ffffff;
+    color: #ffffff;
+    box-shadow: none;
+    width: auto;
+    height: auto;
+    cursor: move;
+}
+
+div.blank {
+    border: 0px none;
+    padding: 0;
+    background-color: #ffffff;
+    color: #ffffff;
+    font-size: 0px;
+    height: 1px;
+    cursor: move;
+}
+
+div.blank:hover {
+    background-color: #ffffff;
+}
+
+div.b1x1, div.b1x2, div.b2x1, div.b2x2 {
+    width: 120px;
+    height: 124px;
+    background-color: #ffffff;
+    font-size: 0px;
+    padding-left: 2px;
+}
+
+div.b2x1, div.b2x2 {
+    height: 252px;
+}
+
+div.b1x2, div.b2x2 {
+    width: 244px;
+}
+
+div.thing.blank-thing:hover {
+	position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+
+div.thing.clock-thing {
+    height: 124px;
+}
+div.clock.weekday {
+    margin-top: 10px;
+}
+div.clock.time {
+    font-size: 16pt;
+    margin-top: 6px; margin-bottom: 6px
+}
+div.thingname.blank, div.thingname.clock {
+    display:none;
 }

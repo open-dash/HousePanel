@@ -238,6 +238,7 @@ table.roomoptions tr::odd td {
 table.roomoptions td.thingname {
     text-align: left; 
     width: 300px;
+    height: 20px;
     padding: 2px;
     font-weight: bold;
     border-left: 1px solid #999999;
@@ -263,6 +264,7 @@ table.headoptions thead th.roomname:last-child {
 table.roomoptions th.thingname, table.headoptions th.thingname {
     text-align: left; width: 300px;
     border-left: 1px solid #999999;
+    height: 30px;
 }
 
 table.roomoptions tbody {
@@ -377,31 +379,10 @@ div.thing:hover{
 	-webkit-transition-duration: .2s;
 }
 
-
-/* the name of the thing  */
-div.thingname {
-    background-color: #303050;
-    font-size: 11pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 4px;
-    padding-right: 4px;
-    border-bottom: 5px solid rgba(0,0,0,0.3);
-    height: 30px;
-    cursor: move;
-}
-
 /* what to do when you hover over an item */
 div.thingname:hover {
     background-color: #5050a0; 
     color: #cccccc;
-}
-
-/* style for thing name when it has been picked */
-div.thingname.sensorpick {
-    background-color: #333333;
 }
 
 div.thing.weather-thing, div.weather {
@@ -482,13 +463,6 @@ div.thing.image-thing {
     width: 242px; height: 242px;
 }
 
-
-
-
-/* style for thing name when it has been picked */
-div.thingname.sensorpick {
-    background-color: #333333;
-}
 
 div.thead {
     position: fixed;
@@ -571,6 +545,16 @@ div.contact.closed {
     background-image: url('closedoor.png');
     background-color: rgba(27,177,75,0.6);
     background-position-y: 9px;
+}
+
+#t-67 div.contact.open {
+    background-image: url('openwindow.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
+
+#t-67 div.contact.closed {
+    background-image: url('closewindow.png');
+    background-color: rgba(0, 51, 204, 0.3);
 }
 
 div.motion.inactive {
@@ -796,6 +780,19 @@ div.music.musicstatus, div.music.musicmute {
     border-top: 1px solid #ffffff;
 }
 
+/* the name of the thing  */
+div.thingname {
+    background-color: #303050;
+    font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom: 5px solid rgba(0,0,0,0.3);
+    height: 30px;
+    cursor: move;
+}
+
 
 .hidden {
     display: none;
@@ -814,4 +811,64 @@ div.skinoption {
 
 div.skinoption input {
     width: 600px;
+}
+
+div.thing.blank-thing {
+    border: 0px none;
+    padding: 0;
+    background-color: rgba(255,255,255,0.01);
+    color: #ffffff;
+    box-shadow: none;
+    width: auto;
+    height: auto;
+    cursor: move;
+}
+
+div.blank:hover {
+    background-color: rgba(255,255,255,0.01);
+}
+
+div.b1x1, div.b1x2, div.b2x1, div.b2x2 {
+    width: 120px;
+    height: 160px;
+    background-color: rgba(255,255,255,0.01);
+    font-size: 0px;
+    padding-left: 0px;
+}
+
+div.b2x1, div.b2x2 {
+    height: 252px;
+}
+
+div.b1x2, div.b2x2 {
+    width: 244px;
+}
+
+div.thing.blank-thing:hover {
+	position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+
+div.thing.clock-thing {
+    height: 160px;
+    width: 244px;
+    cursor: move;
+}
+div.clock.weekday {
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+div.clock.time {
+    font-size: 36pt;
+    margin-top: 12px;
+}
+div.clock.tzone{
+    display:none;
+}
+div.thingname.blank, div.thingname.clock {
+    display:none;
 }
