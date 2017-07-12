@@ -10,6 +10,9 @@ function htmlHeader($skindir) {
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
     
+    // include hack from touchpunch.furf.com to enable touch punch through for tablets
+    $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
+    
     // load custom .css and the main script file
     if (!$skindir) {
         $skindir = "skin-housepanel";
@@ -22,7 +25,7 @@ function htmlHeader($skindir) {
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
-                            "level-dn","level-up", "level-val");
+                            "level-dn","level-up", "level-val","mode");
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';

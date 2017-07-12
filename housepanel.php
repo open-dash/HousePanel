@@ -139,7 +139,7 @@ function authButton($sname, $returl) {
 function getAllThings($endpt, $access_token) {
     $thingtypes = array("switches","dimmers","momentaries","contacts",
                         "sensors", "locks", "thermostats", "musics",
-                        "weathers", "cameras", "others");
+                        "weathers", "modes", "others");
     $response = array();
     foreach ($thingtypes as $key) {
         $newitem = getResponse($endpt . "/" . $key, $access_token);
@@ -460,10 +460,16 @@ function getOptions($allthings) {
             $options["skin"] = "skin-housepanel";
         }
         
-        // confirm css exists
+        // if css doesn't exist set back to default
+        if ( !file_exists($options["skin"] . "/housepanel.css") ) {
+            $options["skin"] = "skin-housepanel";
+            $updated = true;
+        }
+        
+        // if our default also doesn't exist, fail and inform user to fix
         if ( !file_exists($options["skin"] . "/housepanel.css") ) {
             echo "<div class=\"error\">Error, Skin file = ";
-            echo $options["skin"] . "/housepanel.css  missing. Please correct and re-launch.</div>";
+            echo $options["skin"] . "/housepanel.css  missing. Please provide a valid skin file and re-launch.</div>";
             exit(1);
         }
         

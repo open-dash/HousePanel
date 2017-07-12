@@ -238,11 +238,11 @@ function strObject(o) {
   var out = '';
   for (var p in o) {
     out += p + ': ';
-    if (typeof o[p] === "object") {
-        out += strObject(o[p]);
-    } else {
+//    if (typeof o[p] === "object") {
+//        out += strObject(o[p]);
+//    } else {
         out += o[p] + '\n';
-    }
+//    }
   }
   return out;
 }
@@ -301,18 +301,21 @@ function refreshTile(aid, bid, thetype) {
 function setupTimers() {
     
     // force refresh when we click on a new page tab
-//    $("li.ui-tab > a").click(function() {
-//        var panel = $(this).text().toLowerCase();
-////        alert("panel = "+panel);
-//        $("#panel-"+panel+" div.thing").each(function() {
-//            var aid = $(this).attr("id").substring(2);
-//            var bid = $(this).attr("bid");
-//            var thetype = $(this).attr("type");
-//            if (thetype!=="options") {
-//                    refreshTile(aid, bid, thetype);
-//            }
-//        });
-//    });
+    $("li.ui-tab > a").click(function() {
+        var panel = $(this).text().toLowerCase();
+//        alert("panel = "+panel);
+        $("#panel-"+panel+" div.thing").each(function() {
+            var aid = $(this).attr("id").substring(2);
+            var bid = $(this).attr("bid");
+            var thetype = $(this).attr("type");
+            
+            // only do select types for speed
+            // if (thetype!=="options") {
+            if (thetype==="clock" || thetype==="switch" || thetype==="switchlevel" || thetype=="motion") {
+                    refreshTile(aid, bid, thetype);
+            }
+        });
+    });
     
     // set up a timer for each tile to update automatically
     // but only for tabs that are being shown
@@ -328,7 +331,7 @@ function setupTimers() {
         switch (thetype) {
             case "switch":
             case "switchlevel":
-                timerval = 60000;
+                timerval = 30000;
                 break;
                 
             case "motion":
@@ -346,6 +349,10 @@ function setupTimers() {
 
             case "weather":
                 timerval = 303000;
+                break;
+
+            case "mode":
+                timerval = 306000;
                 break;
 
             case "lock":
@@ -529,7 +536,6 @@ function setupPage(sensortype) {
             setTimeout(function(){classarray.myMethod();}, 1500);
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
                    thetype==="thermostat" || thetype==="music") {
-//             alert('targetid= ' + targetid+' type= '+thetype+' class= ['+theclass+'] value= '+thevalue);
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
@@ -539,6 +545,7 @@ function setupPage(sensortype) {
                         }
                    }, "json"
             );
+            
         } 
                             
     });
