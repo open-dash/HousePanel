@@ -21,6 +21,7 @@ window.addEventListener("load", function(event) {
         cancel: "li.nodrag",
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
+        delay: 300,
         revert: true,
         update: function(event, ui) {
             var pages = {};
@@ -48,7 +49,6 @@ window.addEventListener("load", function(event) {
                                $(this).attr("value",newval);
                             });
                         }
-                        // $("#options-tab").html(presult["optpage"]);
                     }, "json"
             );
         }
@@ -60,6 +60,7 @@ window.addEventListener("load", function(event) {
         items: "> div.thing",
         opacity: 0.5,
         revert: true,
+        delay: 200,
         update: function(event, ui) {
             var things = {};
             var k=0;
@@ -74,27 +75,6 @@ window.addEventListener("load", function(event) {
             });
             $.post("housepanel.php", 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
-                    /* ,
-                    function (presult, pstatus) {
-                        // alert("Updated page order with status= "+pstatus+" result= "+
-                        //       strObject(presult));
-                        // set the tile numbers using the options
-                        // disabled - don't need since I rewrote the options saver instead
-                        if (pstatus==="success") {
-                            var newtiles = presult["order"];
-                            // alert(strObject(newtiles));
-                            $('table.roomoptions td > input[checked="1"][name="'+roomtitle+'\[\]"]').each(function() {
-                                var oldval = parseInt($(this).attr("order"));
-                                var tileval = parseInt($(this).attr("value"));
-                                var newval = parseInt(newtiles.indexOf(tileval));
-                                // alert("room = "+roomtitle+" tileval= "+tileval+" oldval= "+oldval+" newval= "+newval);
-                                if (oldval !== newval) {
-                                    $(this).attr("order",newval);
-                                }
-                            });
-                        }
-                        // $("#options-tab").html(presult["optpage"]);
-                    }, "json"  */
             );
         }
     });

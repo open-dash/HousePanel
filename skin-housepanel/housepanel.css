@@ -129,7 +129,7 @@ div.panel-office {
     background-image: url('office.png');
 }
 
-div.panel-bedrooms {
+div.panel-bedroom, div.panel-bedrooms {
     background-image: url('bedroom.png');
 }
 
@@ -467,10 +467,6 @@ div.music {
     width: 178px;
 }
 
-div.image {
-    width: 238px;
-}
-
 div.switch, div.switchlevel, div.contact, div.lock, div.motion, div.momentary {
     padding: 0px 0;
     margin: 0;
@@ -804,7 +800,6 @@ div.blank:hover {
 div.b1x1, div.b1x2, div.b2x1, div.b2x2 {
     width: 120px;
     height: 160px;
-    background-color: rgba(255,255,255,0.01);
     font-size: 0px;
     padding-left: 0px;
 }
@@ -826,7 +821,7 @@ div.thing.blank-thing:hover {
 
 div.thing.clock-thing {
     height: 160px;
-    width: 244px;
+    width: 246px;
     cursor: move;
 }
 div.clock.weekday {
@@ -840,7 +835,7 @@ div.clock.time {
 div.clock.tzone{
     display:none;
 }
-div.thingname.blank, div.thingname.clock, div.thingname.mode {
+div.thingname.blank, div.thingname.clock, div.thingname.mode, div.thingname.image {
     display:none;
 }
 
@@ -859,4 +854,27 @@ div.mode.name {
 }
 div.mode.zipcode {
     display:none;
+}
+
+div.thing.image-thing {
+    border: 0px none;
+    padding: 0;
+    background-color: rgba(255,255,255,0.01);
+    color: #ffffff;
+    box-shadow: none;
+    width: auto;
+    height: auto;
+    cursor: move;
+}
+
+div.image.url {
+    width: 246px;
+    height: 160px;
+    font-size: 0px;
+    padding-left: 0px;
+    background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/000/23d/087/2e87cb0.jpg");
+    
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
 }

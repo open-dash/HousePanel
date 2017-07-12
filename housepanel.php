@@ -163,12 +163,15 @@ function getAllThings($endpt, $access_token) {
     $timeofday = date("g:i a");
     $timezone = date("T");
     $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    
     $response["clock|clockdigital"] = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
-    
     // TODO - implement an analog clock
     // $response["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
-    
+
+    // add user specified number of generic graphic tiles
+    $response["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
+    $response["image|img2"] = array("id" => "img2", "name" => "Image 2", "value" => array("url"=>"img2"), "type" => "image");
+    $response["image|img3"] = array("id" => "img3", "name" => "Image 3", "value" => array("url"=>"img3"), "type" => "image");
+    $response["image|img4"] = array("id" => "img4", "name" => "Image 4", "value" => array("url"=>"img4"), "type" => "image");
     return $response;
 }
 
