@@ -137,13 +137,13 @@ function authButton($sname, $returl) {
 }
 
 function getAllThings($endpt, $access_token) {
-    $thingtypes = array("switches","dimmers","momentaries","contacts",
+    $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
                         "sensors", "locks", "thermostats", "musics",
-                        "weathers", "modes", "others");
+                        "weathers", "presences", "modes", "others");
     $response = array();
     foreach ($thingtypes as $key) {
         $newitem = getResponse($endpt . "/" . $key, $access_token);
-        if (count($newitem)>0) {
+        if ($newitem && count($newitem)>0) {
            // use array_merge to avoid duplicates or
             // the line with + to create master list with duplicates
             $response = array_merge($response, $newitem);

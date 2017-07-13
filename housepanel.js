@@ -291,7 +291,8 @@ function setupTimers() {
             
             // only do select types for speed
             // if (thetype!=="options") {
-            if (thetype==="clock" || thetype==="switch" || thetype==="switchlevel" || thetype=="motion") {
+            if (thetype==="clock" || thetype==="switch" || thetype==="switchlevel" || 
+                thetype=="bulb" || thetype=="motion") {
                     refreshTile(aid, bid, thetype);
             }
         });
@@ -310,6 +311,7 @@ function setupTimers() {
         
         switch (thetype) {
             case "switch":
+            case "bulb":
             case "switchlevel":
                 timerval = 30000;
                 break;
@@ -453,7 +455,7 @@ function updAll(aid, bid, thetype, pvalue) {
     });
     
     // if this is a switch go through and set all switchlevels
-    if (thetype==="switch") {
+    if (thetype==="switch" || thetype==="bulb") {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
@@ -463,6 +465,10 @@ function updAll(aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     if (thetype==="switchlevel") {
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+        });
+        $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
         });
@@ -515,7 +521,7 @@ function setupPage(sensortype) {
             }
             setTimeout(function(){classarray.myMethod();}, 1500);
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-                   thetype==="thermostat" || thetype==="music") {
+                   thetype==="thermostat" || thetype==="music" || thetype==="bulb") {
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {

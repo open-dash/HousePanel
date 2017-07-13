@@ -443,7 +443,8 @@ div.thead {
 
 
 /* styling for the actual item without its state */
-div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, div.music, div.thermostat {
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
+div.contact, div.music, div.thermostat, div.presence {
     display: inline-block;
     padding: 0px 0;
     margin: 0;
@@ -452,7 +453,7 @@ div.switch, div.switchlevel, div.momentary, div.motion, div.lock, div.contact, d
     height: 112px;
 }
 
-div.switch, div.switchlevel, div.momentary, div.lock, div.mode.mode {
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.lock, div.mode.mode {
     cursor: pointer;
 }
 
@@ -465,11 +466,6 @@ div.switchlevel.level {
 
 div.music {
     width: 178px;
-}
-
-div.switch, div.switchlevel, div.contact, div.lock, div.motion, div.momentary {
-    padding: 0px 0;
-    margin: 0;
 }
 
 /* for switches within switchlevels make room for level control */
@@ -497,11 +493,12 @@ div.music.level {
 
 /* style the on and off states of switches */
 /* set size to show text to avoid funky resizing, but use transparent color */
-div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, div.on, div.off {
+div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
+div.on, div.off, div.present, div.absent {
   background-position: 50% 20%;
   background-repeat: no-repeat;
   font-size: 12px;
-  color: rgba(255,255,255,0.05)
+  color: rgba(255,255,255,0.01)
 }
 
 div.contact.open {
@@ -546,13 +543,13 @@ div.lock.unlocked{
     background-color: rgba(204, 51, 0, 0.3);
 }
 
-div.switch.on, div.switchlevel.on{
+div.switch.on, div.switchlevel.on, div.bulb.on, div.light.on {
     background-image: url('bulbon.png');
     background-color: rgba(0, 51, 204, 0.3);
 	
 }
 
-div.switch.off, div.switchlevel.off{
+div.switch.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('bulboff.png');
     /* background-color: rgba(0, 51, 204, 0.6); */
 }
@@ -877,4 +874,16 @@ div.image.url {
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
+}
+
+div.presence.present {
+    background-image: url('stand.png');
+    background-color: rgba(0, 51, 204, 0.6);
+
+}
+
+div.presence.absent {
+    background-image: url('run.png');
+    background-color: rgba(0, 51, 204, 0.6);
+
 }

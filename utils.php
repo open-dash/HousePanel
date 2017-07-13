@@ -21,7 +21,7 @@ function htmlHeader($skindir) {
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch","lock","momentary","heat-dn","heat-up",
+        $thingtypes = array("switch","bulb","lock","momentary","heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
@@ -102,12 +102,12 @@ function curl_call($host, $headertype=FALSE, $nvpstr=FALSE, $calltype="GET")
         // header("Location: $location");  
         // echo "Error from curl<br />" . $_SESSION['curl_error_msg'];
         // $nvpResArray = false;
-        $nvpResArray = array( "error" => curl_errno($ch), "response" => print_r($response,true) );
+        $nvpResArray = false; // array( "error" => curl_errno($ch), "response" => print_r($response,true) );
     } else {
         // convert json returned by Groovy into associative array
         $nvpResArray = json_decode($response, TRUE);
         if (!$nvpResArray) {
-            $nvpResArray = array( "error" => curl_errno($ch), "response" => print_r($response,true) );
+            $nvpResArray = false; // array( "error" => curl_errno($ch), "response" => print_r($response,true) );
             // $nvpResArray = "Error - not json<br />" . print_r($response,true);
         }
     }
