@@ -430,13 +430,6 @@ div.weather.weatherIcon.clear, div.weather.forecastIcon.clear {
     background-position: 0% 0%;
 }
 
-/* handle larger images */
-div.thing.image-thing {
-    background-color: #ffffff;
-    width: 242px; height: 242px;
-}
-
-
 div.thead {
     position: fixed;
 }
@@ -832,6 +825,8 @@ div.clock.time {
 div.clock.tzone{
     display:none;
 }
+
+/* do not display the titles for these tiles  */
 div.thingname.blank, div.thingname.clock, div.thingname.mode, div.thingname.image {
     display:none;
 }
@@ -869,7 +864,8 @@ div.image.url {
     height: 160px;
     font-size: 0px;
     padding-left: 0px;
-    background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/000/23d/087/2e87cb0.jpg");
+    /* background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/000/23d/087/2e87cb0.jpg"); */
+    background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAZKAAAAJDFmMzE0Nzc2LTljMzUtNDZjNy1iYWU3LTY0YjNmNDA4NDRiOQ.jpg");
     
     background-repeat: no-repeat;
     background-position: center;
