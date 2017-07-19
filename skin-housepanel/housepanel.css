@@ -26,7 +26,7 @@ border-bottom: 5px solid #666666;
 	padding: .5em 1em;
 }
 
-div.ui-tabs, div.ui-tabs-panel, ui-widget-content {
+div.ui-tabs-panel, ui-widget-content {
     background: #333333;
 }
 
@@ -35,17 +35,17 @@ ul.ui-tabs-nav {
     background: #666666;
     color: #000000;
     font-size: 12pt;
-	border: none;
+    border: none;
 	
 }
 
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
 }
-
+/*
 .ui.widget-header {
     background: #cccccc
-}
+}*/
 
 body {
   background-color: #ffffff;
@@ -67,7 +67,7 @@ form {
 }
 
 form.houseauth {
-    text-align: right;
+    text-align: left;
 }
 
 /* how the tab page shows up - this affects everything shown */
@@ -241,7 +241,6 @@ table.roomoptions th.thingname, table.headoptions th.thingname {
 }
 
 table.roomoptions tbody {
-  height: 600px;
   overflow-y: scroll;
   width: 100%;
   border-top: 2px solid black;
@@ -863,13 +862,22 @@ div.image.url {
     width: 246px;
     height: 160px;
     font-size: 0px;
-    padding-left: 0px;
-    /* background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/6/000/23d/087/2e87cb0.jpg"); */
-    background-image: url("https://media.licdn.com/mpr/mpr/shrinknp_400_400/AAEAAQAAAAAAAAZKAAAAJDFmMzE0Nzc2LTljMzUtNDZjNy1iYWU3LTY0YjNmNDA4NDRiOQ.jpg");
-    
+    background-color: #000000;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: contain;
+    background-size: cover;
+}
+
+div.image.url.img1 {
+    background-image: url("/smartthings/garagecam/livingroom.jpg");
+}
+
+div.image.url.img2 {
+    background-image: url("/smartthings/garagecam/officecam.jpg");
+}
+
+div.image.url.img3 {
+    background-image: url("/smartthings/garagecam/garagepic.jpg");
 }
 
 div.presence.present {

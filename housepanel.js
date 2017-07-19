@@ -290,11 +290,10 @@ function setupTimers() {
             var thetype = $(this).attr("type");
             
             // only do select types for speed
-            // if (thetype!=="options") {
-            if (thetype==="clock" || thetype==="switch" || thetype==="switchlevel" || 
-                thetype=="bulb" || thetype=="motion") {
-                    refreshTile(aid, bid, thetype);
+            if (thetype!=="options") {
+                refreshTile(aid, bid, thetype);
             }
+            
         });
     });
     
@@ -339,6 +338,10 @@ function setupTimers() {
 
             case "lock":
                 timerval = 62000;
+                break;
+
+            case "image":
+                timerval = 60000;
                 break;
 
             // update clock every minute

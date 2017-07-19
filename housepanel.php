@@ -3,19 +3,15 @@
  * House Panel web service PHP application for SmartThings
  * author: Ken Washington  (c) 2017
  *
- * Must be paired with the housemap.groovy SmartApp on the SmartThings side
+ * Must be paired with the housepanel.groovy SmartApp on the SmartThings side
  * and the CLIENT_ID and CLIENT_SECRET must match what is specified here
  * to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
  * 
  * You must store your CLIENT_ID and CLIENT_SECRET information in
  * a file called clientinfo.php saved to the same directory as this file
- * it should look as follows but with real data as opposed to this fake data:
+ * it should look as follows but with real data as opposed to the fake data
+ * in the file that is provided in the repository
 
-define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
-define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
-
- * note: there is no such file in the shared GitHub repository
- * 
  * To complete the install save all files on your server
  * and you should be good to go. An options file named hmoptions.cfg 
  * will be generated when the app first runs and each time any options change
@@ -139,7 +135,7 @@ function authButton($sname, $returl) {
 function getAllThings($endpt, $access_token) {
     $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
                         "sensors", "locks", "thermostats", "musics",
-                        "weathers", "presences", "modes", "others");
+                        "weathers", "presences", "modes", "routines", "others");
     $response = array();
     foreach ($thingtypes as $key) {
         $newitem = getResponse($endpt . "/" . $key, $access_token);
@@ -336,6 +332,8 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
         $timeofday = date("g:i a");
         $timezone = date("T");
         $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    } else if ($swtype ==="image") {
+        $response = array("url" => $swid);
     } else {
     
         // $host = $endpt . "/doaction";
@@ -603,7 +601,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
-    $tc.= "<div class=\"skinoption\">Skin directory name: <input width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
+    $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
    
@@ -866,7 +864,6 @@ function processOptions($optarray, $retpage, $allthings=null) {
     if (!$endpt || !$access_token) {
         $first = true;
         $tc .= "<div><h2>" . APPNAME . "</h2>";
-        $tc.= "<h3>Authorize this web service to access SmartThings</h3>";
         $tc.= authButton($sitename, $returnURL);
         $tc.= "</div>";
     }
