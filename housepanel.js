@@ -21,7 +21,7 @@ window.addEventListener("load", function(event) {
         cancel: "li.nodrag",
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
-        delay: 50,
+        delay: 300,
         revert: true,
         update: function(event, ui) {
             var pages = {};
@@ -60,7 +60,7 @@ window.addEventListener("load", function(event) {
         items: "> div.thing",
         opacity: 0.5,
         revert: true,
-        delay: 50,
+        delay: 300,
         update: function(event, ui) {
             var things = {};
             var k=0;
@@ -84,13 +84,13 @@ window.addEventListener("load", function(event) {
     
     // disable return key
     $("form.options").keypress(function(e) {
-        if ( e.keyCode==13  && popupStatus==1){
+        if ( e.keyCode===13  && popupStatus===1){
             processPopup();
             return false;
         }
-        else if (e.keyCode==13) {
+        else if (e.keyCode===13) {
             return false;
-        } else if ( e.keyCode==27 && popupStatus==1 ){
+        } else if ( e.keyCode===27 && popupStatus===1 ){
             disablePopup();
         }
     });
@@ -110,17 +110,17 @@ function setupPopup() {
     
     //Press Escape event!
     $(document).keypress(function(e){
-        if ( e.keyCode==13  && popupStatus==1){
+        if ( e.keyCode===13  && popupStatus===1){
             var ineditvalue = $("#trueincell").val();
             processEdit(ineditvalue);
-        } else if ( e.keyCode==27 && popupStatus===1 ){
+        } else if ( e.keyCode===27 && popupStatus===1 ){
             disablePopup();
         }
     });
 
     // disable input in our dynamic form item
     $("#trueincell").keypress(function(e) {
-        if ( e.keyCode==27 ){
+        if ( e.keyCode===27 ){
             disablePopup();
         }
     });
@@ -136,7 +136,11 @@ function setupPopup() {
         });
         $(this).bind("click", jeditTableCell);
     });
-   
+    
+    $("table.headoptions th.thingname").click(function() {
+        alert("clicked on Room names row");
+    });
+       
 }
 
 var jeditTableCell = function(event) {

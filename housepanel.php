@@ -133,42 +133,45 @@ function authButton($sname, $returl) {
 }
 
 function getAllThings($endpt, $access_token) {
-    $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
-                        "sensors", "locks", "thermostats", "musics",
-                        "weathers", "presences", "modes", "routines", "others");
-    $response = array();
-    foreach ($thingtypes as $key) {
-        $newitem = getResponse($endpt . "/" . $key, $access_token);
-        if ($newitem && count($newitem)>0) {
-           // use array_merge to avoid duplicates or
-            // the line with + to create master list with duplicates
-            $response = array_merge($response, $newitem);
-            // $response = $response + $newitem;
+    if ( isset($_SESSION["allthings"]) ) {
+        $allthings = $_SESSION["allthings"];
+    } else {
+        $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
+                            "sensors", "locks", "thermostats", "musics",
+                            "weathers", "presences", "modes", "others");
+        $allthings = array();
+        foreach ($thingtypes as $key) {
+            $newitem = getResponse($endpt . "/" . $key, $access_token);
+            if ($newitem && count($newitem)>0) {
+                $allthings = array_merge($allthings, $newitem);
+            }
         }
-    }
-    
-    // add a few blank tiles
-    $response["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
-    $response["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
-    $response["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
-    $response["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
-    
-    // add a clock tile
-    $weekday = date("l");
-    $dateofmonth = date("M d, Y");
-    $timeofday = date("g:i a");
-    $timezone = date("T");
-    $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    $response["clock|clockdigital"] = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
-    // TODO - implement an analog clock
-    // $response["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
-    // add user specified number of generic graphic tiles
-    $response["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
-    $response["image|img2"] = array("id" => "img2", "name" => "Image 2", "value" => array("url"=>"img2"), "type" => "image");
-    $response["image|img3"] = array("id" => "img3", "name" => "Image 3", "value" => array("url"=>"img3"), "type" => "image");
-    $response["image|img4"] = array("id" => "img4", "name" => "Image 4", "value" => array("url"=>"img4"), "type" => "image");
-    return $response;
+        // add a few blank tiles
+        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
+        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
+        $allthings["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
+        $allthings["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
+
+        // add a clock tile
+        $weekday = date("l");
+        $dateofmonth = date("M d, Y");
+        $timeofday = date("g:i a");
+        $timezone = date("T");
+        $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+        $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
+        // TODO - implement an analog clock
+        // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
+
+        // add user specified number of generic graphic tiles
+        $allthings["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
+        $allthings["image|img2"] = array("id" => "img2", "name" => "Image 2", "value" => array("url"=>"img2"), "type" => "image");
+        $allthings["image|img3"] = array("id" => "img3", "name" => "Image 3", "value" => array("url"=>"img3"), "type" => "image");
+        $allthings["image|img4"] = array("id" => "img4", "name" => "Image 4", "value" => array("url"=>"img4"), "type" => "image");
+
+        $_SESSION["allthings"] = $allthings;
+    }
+    return $allthings;
 }
 
 function makeThing($i, $kindex, $thesensor, $panelname) {
@@ -193,26 +196,60 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     // status class will be the key to trigger click action. That will read $i attribute
     // wrap the name of the thing in this class to trigger hover and click and styling
     
-    $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "</div>";
-   
-    // create a thing in a HTML page using special tags so javascript can manipulate it
-    // multiple classes provided. One is the type of thing. "on" and "off" provided for state
-    // for multiple attribute things we provide a separate item for each one
-    // the first class tag is the type and a second class tag is for the state - either on/off or open/closed
-    // ID is used to send over the groovy thing id number passed in as $bid
-    // and title is used for searching and reordering of the tiles
-    // for multiple row ID's the prefix is a$j-$bid where $j is the jth row
-    // otherwise the ID is a-$bid
-    // $i and $j are j read from the title and then used to point to the value holding element $bid
-    if (is_array($thingvalue)) {
-        $j = 0;
+    // special handling for weather tiles
+    if ($thingtype==="weather") {
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "<br />" . $thingvalue["city"] . "</div>";
+        $tc.= putElement($i, 0, $thingtype, $thingvalue["temperature"], "temperature");
+        $tc.= putElement($i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
+        // $tc.= putElement($i, 2, $thingtype, $thingvalue["city"], "city");
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
+        $tc.= '<img src="' . $thingvalue["weatherIcon"] . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
+        $tc.= '<br />' . $thingvalue["weatherIcon"];
+        $tc.= "</div>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
+        $tc.= '<img src="' . $thingvalue["forecastIcon"] . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
+        $tc.= '<br />' . $thingvalue["forecastIcon"];
+        $tc.= "</div>";
+        $tc.= putElement($i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
+        $j = 3;
         foreach($thingvalue as $tkey => $tval) {
-            $tc.= putElement($i, $j, $thingtype, $tval, $tkey);
-            $j++;
+            if ($tkey!=="temperature" &&
+                $tkey!=="feelsLike" &&
+                $tkey!=="city" &&
+                $tkey!=="weather" &&
+                $tkey!=="weatherIcon" &&
+                $tkey!=="forecastIcon" &&
+                $tkey!=="alertKeys" &&
+                $tkey!=="localSunrise" &&
+                $tkey!=="localSunset" ) 
+            {
+                $tc.= putElement($i, $j, $thingtype, $tval, $tkey);
+                $j++;
+            }
         }
-    } 
-    else {
-        $tc.= putElement($i, 0, $thingtype, $thingvalue);
+    } else {
+
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "</div>";
+
+        // create a thing in a HTML page using special tags so javascript can manipulate it
+        // multiple classes provided. One is the type of thing. "on" and "off" provided for state
+        // for multiple attribute things we provide a separate item for each one
+        // the first class tag is the type and a second class tag is for the state - either on/off or open/closed
+        // ID is used to send over the groovy thing id number passed in as $bid
+        // and title is used for searching and reordering of the tiles
+        // for multiple row ID's the prefix is a$j-$bid where $j is the jth row
+        // otherwise the ID is a-$bid
+        // $i and $j are j read from the title and then used to point to the value holding element $bid
+        if (is_array($thingvalue)) {
+            $j = 0;
+            foreach($thingvalue as $tkey => $tval) {
+                $tc.= putElement($i, $j, $thingtype, $tval, $tkey);
+                $j++;
+            }
+        } 
+        else {
+            $tc.= putElement($i, 0, $thingtype, $thingvalue);
+        }
     }
     $tc.= "</div>";
     return $tc;
@@ -271,7 +308,8 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
         } else {
             $tkeyshow = " ".$tkey;
         }
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"action-$i\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        // $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"action-$i\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
     }
     return $tc;
 }
@@ -622,7 +660,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div class='scrollvtable'>";
     $tc.= "<table class=\"roomoptions\">";
     $tc.= "<tbody>";
-
+    
     // now print our options matrix
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
@@ -898,6 +936,15 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 $swattr = $_POST["attr"];
                 echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
+        
+            case "showoptions":
+                $allthings = getAllThings($endpt, $access_token);
+                $options= getOptions($allthings);
+                $optpage = getOptionsPage($options, $returnURL, $allthings, $sitename);
+                echo htmlHeader($skindir);
+                echo $optpage;
+                echo htmlFooter();
+                break;
         }
         exit(0);
     }
@@ -930,8 +977,10 @@ function processOptions($optarray, $retpage, $allthings=null) {
 //        }
 
         // read all the smartthings from API
+        // force re-read of all physical things
+        unset($_SESSION["allthings"]);
         $allthings = getAllThings($endpt, $access_token);
-        $_SESSION['allthings'] = $allthings;
+        $_SESSION["allthings"] = $allthings;
         
         // get the options tab and options values
         $options= getOptions($allthings);
@@ -954,9 +1003,10 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 $tc.= "<li class=\"drag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
             }
         }
+        
         // create a configuration tab
-        $room = "Options";
-        $tc.= "<li class=\"nodrag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
+//        $room = "Options";
+//        $tc.= "<li class=\"nodrag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
         $tc.= '</ul>';
         
         $cnt = 0;
@@ -978,16 +1028,21 @@ function processOptions($optarray, $retpage, $allthings=null) {
             }
         }
         
-        // add the options tab
-        $tc.= "<div id=\"options-tab\">";
-        $tc.= getOptionsPage($options, $returnURL, $allthings, $sitename);
-        $tc.= "</div>";
-        
+        // add the options tab - changed to show as a separate page; see below
+//        $tc.= "<div id=\"options-tab\">";
+//        $tc.= getOptionsPage($options, $returnURL, $allthings, $sitename);
+//        $tc.= "</div>";
         // end of the tabs
         $tc.= "</div>";
-//        if ($sitename) {
-//            $tc.= authButton($sitename, $returnURL);
-//        }
+        
+        // create button to show the Options page instead of as a Tab
+        $tc.= "<div>";
+        $tc.= "<form class=\"invokeoption\" action=\"$returnURL\"  method=\"POST\">";
+        $tc.= hidden("useajax", "showoptions");
+        $tc.= hidden("type", "none");
+        $tc.= hidden("id", 0);
+        $tc.= "<input class=\"submitbutton\" value=\"Show Options\" name=\"submitoption\" type=\"submit\" />";
+        $tc.= "</form></div>";
    
     } else {
 
