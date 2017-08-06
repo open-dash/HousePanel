@@ -19,17 +19,21 @@
  * 
  *
  * Revision History
- * 0.0        Initial release
- * 0.1        Implement new architecture for files to support sortable jQuery
+ * 0.8 beta   Many fixes based on alpha user feedback - first beta release
+ *            Includes webCoRE integration, Modes, and Weather tile reformatting
+ *            Also includes a large time tile in the default skin file
+ *            Squashed a few bugs including a typo in file usage
+ * 0.7-alpha  Enable a "skinning" feature by moving all CSS and graphics into a 
+ *            directory. Added parameter for API calls to support EU
+ * 0.6-alpha  Minor tweaks to above - this is the actual first public version
+ * 0.5-alpha  First public test version
  * 0.2        Cleanup including fixing unsafe GET and POST calls
  *            Removed history call and moved to javascript side
  *            put reading and writing of options into function calls
  *            replaced main page bracket from table to div
+ * 0.1        Implement new architecture for files to support sortable jQuery
+ * 0.0        Initial release
  * 
- * 0.5-alpha  First public test version
- * 0.6-alpha  Minor tweaks to above - this is the actual first public version
- * 0.7-alpha  Enable a "skinning" feature by moving all CSS and graphics into a 
- *            directory. Added parameter for API calls to support EU
 */
 require_once "clientinfo.php";
 require_once "utils.php";
@@ -42,6 +46,55 @@ define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
+
+// header and footer
+function htmlHeader($skindir) {
+    $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
+    $tc.= '<html><head><title>Smart Motion Sensor Authorization</title>';
+    $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
+    
+    // load jQuery and themes
+    $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
+    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
+    $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
+    
+    // include hack from touchpunch.furf.com to enable touch punch through for tablets
+    $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
+    
+    // load custom .css and the main script file
+    if (!$skindir) {
+        $skindir = "skin-housepanel";
+    }
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir\housepanel.css\">";
+    $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
+        // dynamically create the jquery startup routine to handle all types
+        $tc.= '<script type="text/javascript">';
+        $thingtypes = array("switch","bulb","lock","momentary","heat-dn","heat-up",
+                            "cool-dn","cool-up","thermomode","thermofan",
+                            "musicmute","musicstatus", 
+                            "music-previous","music-pause","music-play","music-stop","music-next",
+                            "level-dn","level-up", "level-val","mode","piston");
+        $tc.= '$(document).ready(function(){';
+        foreach ($thingtypes as $thing) {
+            $tc.= '  setupPage("' . $thing . '");';
+        }
+        $tc.= "});";
+    $tc.= '</script>';
+
+    // begin creating the main page
+    // can be wrapped in a table but that messes up sortable feature
+    // changed this to a div
+    $tc.= '</head><body>';
+    $tc.= '<div class="maintable">';
+    return $tc;
+}
+
+function htmlFooter() {
+    $tc = "";
+    $tc.= "</div>";
+    $tc.= "</body></html>";
+    return $tc;
+}
 
 function getResponse($host, $access_token) {
 
@@ -138,7 +191,7 @@ function getAllThings($endpt, $access_token) {
     } else {
         $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics",
-                            "weathers", "presences", "modes", "others");
+                            "weathers", "presences", "modes", "pistons", "others");
         $allthings = array();
         foreach ($thingtypes as $key) {
             $newitem = getResponse($endpt . "/" . $key, $access_token);
@@ -281,7 +334,7 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
     } else {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
-        $extra = ($tkey==="track" || $thingtype=="clock" || is_numeric($tval) || 
+        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || is_numeric($tval) || 
                   $tval=="" ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
 
         // fix track names for groups, empty, and super long
@@ -472,7 +525,7 @@ function readOptions() {
 }
 
 function writeOptions($options) {
-    $f = \fopen("hmoptions.cfg","wb");
+    $f = fopen("hmoptions.cfg","wb");
     $str =  json_encode($options);
 
     // make the file easier to look at
@@ -563,13 +616,12 @@ function getOptions($allthings) {
 
         // generic room setup
         $rooms = array(
-            "Kitchen" => "kitchen|sink|pantry|dinette" ,
-            "FamilyRoom" => "family|mud|fireplace|casual",
-            "LivingRoom" => "living|dining|entry|front door|foyer",
+            "Kitchen" => "kitchen|sink|pantry|dinette|clock" ,
+            "Family" => "family|mud|fireplace|casual|thermostat|weather",
+            "Living" => "living|dining|entry|front door|foyer",
             "Office" => "office|computer|desk|work",
             "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
-            "Garage" => "garage|yard|outside|porch|patio|driveway",
-            "Thermostats" => "thermostat|weather",
+            "Outside" => "garage|yard|outside|porch|patio|driveway",
             "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung"
         );
         
@@ -815,7 +867,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     $returnURL = $url . $uri;
     
     // check if this is a return from a code authorization call
-    $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
     if ( $code ) {
     
         // grab the returned code and make the next call

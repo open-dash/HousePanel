@@ -104,7 +104,7 @@ div.panel {
 	
 }
 
-div.panel-family {
+div.panel-family, div.panel-familyroom {
     background-image: url('family.png');
 }
 
@@ -112,7 +112,7 @@ div.panel-kitchen, div.panel-dinette {
     background-image: url('kitchenroom.png');
 }
 
-div.panel-formal, div.panel-living {
+div.panel-formal, div.panel-living, div.panel-livingroom {
     background-image: url('formal.png');
 }
 /*
@@ -125,7 +125,7 @@ div.panel-outside, div.panel-garage {
     background-image: url('outside.png');
 }
 
-div.panel-office {
+div.panel-office, div.panel-library {
     background-image: url('office.png');
 }
 
@@ -134,11 +134,11 @@ div.panel-bedroom, div.panel-bedrooms {
 }
 
 /* make specific panels look however you wish */
-div.panel-music, div.panel-theater {
+div.panel-music, div.panel-theater, div.panel-entertainment {
     background-image: url('music.png');
 }
 
-div.panel-thermostats {
+div.panel-thermostats, div.panel-thermostat {
   background-image: url('thermostat.png');
 }
 
@@ -442,6 +442,22 @@ div.weather.weatherIcon, div.weather.forecastIcon {
     display: inline-block;
 }
 
+div.piston-thing {
+    cursor: pointer;
+    height: 120px;
+}
+
+div.piston.webcore {
+    display: none;
+}
+
+div.piston.pistonName {
+    font-size: 12px;
+    margin-top: 30px;
+    color: #ffffff;
+    background-color: rgba(0,51,204,0.6);
+}
+
 div.thead {
     position: fixed;
 }
@@ -499,7 +515,7 @@ div.music.level {
 /* style the on and off states of switches */
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
-div.on, div.off, div.present, div.absent {
+div.on, div.off, div.present, div.absent, div.firing {
   background-position: 50% 20%;
   background-repeat: no-repeat;
   font-size: 12px;

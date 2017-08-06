@@ -507,7 +507,7 @@ function setupPage(sensortype) {
 //        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
 
         // turn momentary items on or off temporarily
-        if (thetype==="momentary") {
+        if (thetype==="momentary" || thetype==="piston") {
             var that = targetid;
             // define a class with method to reset momentary button
             var classarray = [$(that), tarclass, thevalue];
@@ -516,8 +516,12 @@ function setupPage(sensortype) {
                 this[0].html(this[2]);
             };
             $.post("housepanel.php", 
-                {useajax: "doaction", id: bid, type: thetype, value: "push", attr: theclass});
-            if ( thevalue.indexOf("on") >= 0 ) {
+                {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass});
+            if (thetype==="piston") {
+                $(that).addClass("on");
+                $(that).html("Piston Firing...");
+            }
+            else if ( thevalue.indexOf("on") >= 0 ) {
                 $(that).removeClass("on");
                 $(that).addClass("off");
                 $(that).html("off");
@@ -528,12 +532,12 @@ function setupPage(sensortype) {
             }
             setTimeout(function(){classarray.myMethod();}, 1500);
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-                   thetype==="thermostat" || thetype==="music" || thetype==="bulb") {
+                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
 //                        alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
-                        if (pstatus==="success" && presult!==undefined ) {
+                        if (pstatus==="success" && presult!==undefined && presult!==false ) {
                             updAll(aid,bid,thetype,presult);
                         }
                    }, "json"
