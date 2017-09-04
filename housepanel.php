@@ -42,7 +42,7 @@ ini_set('max_input_vars', 20);
 
 session_start();
 define('APPNAME', 'House Panel');
-define('TIMEZONE', 'America/Detroit');
+// define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
@@ -188,8 +188,13 @@ function authButton($sname, $returl) {
 function getAllThings($endpt, $access_token) {
     if ( isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
-    } else {
-        $thingtypes = array("switches", "bulbs", "dimmers","momentaries","contacts",
+    }
+    
+    // if a prior call failed then we need to reset the session and reload
+    if (count($allthings) <= 9 && $endpt && $access_token ) {
+        session_unset();
+        
+        $thingtypes = array("switches", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics",
                             "weathers", "presences", "modes", "pistons", "others");
         $allthings = array();
@@ -200,12 +205,6 @@ function getAllThings($endpt, $access_token) {
             }
         }
 
-        // add a few blank tiles
-        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
-        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
-        $allthings["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
-        $allthings["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
-
         // add a clock tile
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
@@ -215,6 +214,12 @@ function getAllThings($endpt, $access_token) {
         $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
         // TODO - implement an analog clock
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
+
+        // add a few blank tiles
+        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
+        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
+        $allthings["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
+        $allthings["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
 
         // add user specified number of generic graphic tiles
         $allthings["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
@@ -256,11 +261,19 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         $tc.= putElement($i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         // $tc.= putElement($i, 2, $thingtype, $thingvalue["city"], "city");
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
-        $tc.= '<img src="' . $thingvalue["weatherIcon"] . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
+        $iconstr = $thingvalue["weatherIcon"];
+        if (substr($iconstr,0,3) === "nt_") {
+            $iconstr = substr($iconstr,3);
+        }
+        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["weatherIcon"];
         $tc.= "</div>";
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
-        $tc.= '<img src="' . $thingvalue["forecastIcon"] . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
+        $iconstr = $thingvalue["forecastIcon"];
+        if (substr($iconstr,0,3) === "nt_") {
+            $iconstr = substr($iconstr,3);
+        }
+        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["forecastIcon"];
         $tc.= "</div>";
         $tc.= putElement($i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
@@ -436,6 +449,9 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
                   "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
         $response = curl_call($host, $headertype, $nvpreq, "POST");
 
+        // echo $nvpreq;
+        // echo '<br />';
+        
         // this now returns an array of tile settings
         // which could be a single value pair
         if (!response) {
@@ -914,7 +930,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
         header("Location: $location");
     	
     // check for call to start a new authorization process
-    } else if ( isset($_POST["doauthorize"]) ) {
+    // added GET option to enable easier Python and EventGhost use
+    } else if ( isset($_POST["doauthorize"]) || isset($_GET["doauthorize"]) ) {
     
     	getAuthCode($returnURL);
     	exit(0);
@@ -928,15 +945,20 @@ function processOptions($optarray, $retpage, $allthings=null) {
     $access_token = false;
 
     // check for valid available token and access point
+    // added GET option to enable easier Python and EventGhost use
     if ( isset($_COOKIE["hmtoken"]) && isset($_COOKIE["hmendpoint"]) ) {
-    
         $access_token = $_COOKIE["hmtoken"];
         $endpt = $_COOKIE["hmendpoint"];
+    } else if ( isset($_REQUEST["hmtoken"]) && isset($_REQUEST["hmendpoint"]) ) {
+        $access_token = $_REQUEST["hmtoken"];
+        $endpt = $_REQUEST["hmendpoint"];
+    }
+    if ( $access_token && $endpt ) {
         if ( isset($_COOKIE["hmsitename"]) ) {
             $sitename = $_COOKIE["hmsitename"];
         } else {
             $sitename = "SmartHome";
-            setcookie("hmsitename", $sitename, $expiry, "/", $serverName);
+            // setcookie("hmsitename", $sitename, $expiry, "/", $serverName);
         }
 
         if (DEBUG) {       
@@ -963,15 +985,26 @@ function processOptions($optarray, $retpage, $allthings=null) {
 // ********************************************************************************************
 
     // check for switch setting Ajax call
-    if (isset($_POST["useajax"]) && isset($_POST["type"]) && isset($_POST["id"])) {
-        $useajax = $_POST["useajax"];
-        $swid = $_POST["id"];
-        $swtype = $_POST["type"];
-        
+    // updated this logic to enable auto calling of any type of id
+    $useajax = false;
+    $swtype = "auto";
+    $swid = "";
+    $swval = "";
+    $swattr = "";
+    if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+    if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
+    if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
+    if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+    if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
+    if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
+    
+    if ($useajax) {
         switch ($useajax) {
             case "doaction":
-                $swval = $_POST["value"];
-                $swattr = $_POST["attr"];
+                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo doAction($endpt . "/doaction", $access_token, $swid, $swtype, $swval, $swattr);
                 break;
         
@@ -984,8 +1017,10 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 break;
         
             case "pageorder":
-                $swval = $_POST["value"];
-                $swattr = $_POST["attr"];
+                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
         
@@ -997,6 +1032,42 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 echo $optpage;
                 echo htmlFooter();
                 break;
+            
+            // an Ajax option to display all the ID value for use in Python and EventGhost
+            case "showid":
+                $allthings = getAllThings($endpt, $access_token);
+                $tc = "";
+                $tc.= "<h3>End Points</h3>";
+                $tc.= "<div>sitename = $sitename </div>";
+                $tc.= "<div>access_token = $access_token </div>";
+                $tc.= "<div>endpt = $endpt </div>";
+                $tc.= "<div>url = $returnURL </div>";
+                $tc.= "<table class=\"showid\">";
+                $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
+                      "</th><th class=\"thingvalue\">" . "Thing id" . "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
+                foreach ($allthings as $bid => $thing) {
+                    if (is_array($thing["value"])) {
+                        $value = "[";
+                        foreach ($thing["value"] as $key => $val) {
+                            $value.= $key . "=" . $val . " ";
+                        }
+                        $value .= "]";
+                    } else {
+                        $value = $thing["value"];
+                    }
+                    $tc.= "<tr><td class=\"thingname\">" . $thing["name"] . 
+                          "</td><td class=\"thingvalue\">" . $value . 
+                          "</td><td class=\"thingvalue\">" . $thing["id"] . 
+                          "</td><td class=\"thingvalue\">" . $thing["type"] . "</td></tr>";
+                }
+                $tc.= "</table>";
+                echo htmlHeader();
+                echo $tc;
+                echo htmlFooter();
+                break;
+                
+            // default:
+            //    echo "Unknown AJAX call useajax = [" . $useajax . "]";
         }
         exit(0);
     }

@@ -502,12 +502,20 @@ function setupPage(sensortype) {
 
         // get target id and contents
         var targetid = '#a-'+aid+'-'+subid;
-        var thevalue = $(targetid).html();
-        var tarclass = $(targetid).attr("class");
+        var thevalue;
+        
+        // for switches and locks set the command to toggle
+        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||thetype==="bulb") {
+            thevalue = "toggle";
+        } else {
+            thevalue = $(targetid).html();
+        }
+
 //        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
 
         // turn momentary items on or off temporarily
         if (thetype==="momentary" || thetype==="piston") {
+            var tarclass = $(targetid).attr("class");
             var that = targetid;
             // define a class with method to reset momentary button
             var classarray = [$(that), tarclass, thevalue];
