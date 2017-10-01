@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<browserconfig>  
+  <msapplication>
+    <tile>
+      <square70x70logo src="mstile-70x70.png"/>
+      <square150x150logo src="mstile-270x270.png"/>
+      <square310x310logo src="mstile-310x310.png"/>
+      <wide310x150logo src="mstile-310x150.png"/>
+      <TileColor>#2b5797</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>  

@@ -19,6 +19,16 @@
  * 
  *
  * Revision History
+ * 1.1 beta   Added cool piston graph for Webcore tiles 
+ *            Added png icons for browser and Apple products
+ *            Show all fields supported - some hidden via CSS
+ *            Battery display on battery powered sensors
+ *            Support Valves - only tested with Rachio sprinklers
+ *            Weather tile changed to show actual and feels like side by side
+ *            Power and Energy show up now in metered plugs
+ *            Fix name of web page in title
+ *            Changed backgrounds to jpg to make them smaller and load faster
+ *            Motion sensor with temperature readings now show temperature too
  * 0.8 beta   Many fixes based on alpha user feedback - first beta release
  *            Includes webCoRE integration, Modes, and Weather tile reformatting
  *            Also includes a large time tile in the default skin file
@@ -50,8 +60,16 @@ define('DEBUG3', false);
 // header and footer
 function htmlHeader($skindir) {
     $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
-    $tc.= '<html><head><title>Smart Motion Sensor Authorization</title>';
+    $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
+    $tc.= '<meta name="msapplication-TileColor" content="#2b5797">';
+    $tc.= '<meta name="msapplication-TileImage" content="mstile-144x144.png">';
+    
+    // specify icons for browsers and apple
+    $tc.= '<link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16"> ';
+    $tc.= '<link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32"> ';
+    $tc.= '<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96"> ';
+    $tc.= '<link rel="apple-touch-icon" href="apple-touch-icon.png">';
     
     // load jQuery and themes
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
@@ -69,11 +87,11 @@ function htmlHeader($skindir) {
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch","bulb","lock","momentary","heat-dn","heat-up",
+        $thingtypes = array("switch","bulb","light","lock","momentary","heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
-                            "level-dn","level-up", "level-val","mode","piston");
+                            "level-dn","level-up", "level-val","mode","piston"."valve");
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';
@@ -194,8 +212,8 @@ function getAllThings($endpt, $access_token) {
     if (count($allthings) <= 9 && $endpt && $access_token ) {
         session_unset();
         
-        $thingtypes = array("switches", "dimmers","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "musics",
+        $thingtypes = array("switches", "lights", "dimmers","momentaries","contacts",
+                            "sensors", "locks", "thermostats", "musics", "valves",
                             "weathers", "presences", "modes", "pistons", "others");
         $allthings = array();
         foreach ($thingtypes as $key) {

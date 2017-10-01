@@ -105,15 +105,15 @@ div.panel {
 }
 
 div.panel-family, div.panel-familyroom {
-    background-image: url('family.png');
+    background-image: url('family.jpg');
 }
 
 div.panel-kitchen, div.panel-dinette {
-    background-image: url('kitchenroom.png');
+    background-image: url('kitchenroom.jpg');
 }
 
 div.panel-formal, div.panel-living, div.panel-livingroom {
-    background-image: url('formal.png');
+    background-image: url('formal.jpg');
 }
 /*
 a:hover {
@@ -122,24 +122,24 @@ a:hover {
 
 
 div.panel-outside, div.panel-garage {
-    background-image: url('outside.png');
+    background-image: url('outside.jpg');
 }
 
 div.panel-office, div.panel-library {
-    background-image: url('office.png');
+    background-image: url('office.jpg');
 }
 
 div.panel-bedroom, div.panel-bedrooms {
-    background-image: url('bedroom.png');
+    background-image: url('bedroom.jpg');
 }
 
 /* make specific panels look however you wish */
 div.panel-music, div.panel-theater, div.panel-entertainment {
-    background-image: url('music.png');
+    background-image: url('music.jpg');
 }
 
 div.panel-thermostats, div.panel-thermostat {
-  background-image: url('thermostat.png');
+  background-image: url('thermostat.jpg');
 }
 
 /* locate and style the blocks of data for history info */
@@ -453,7 +453,6 @@ div.weather.weatherIcon, div.weather.forecastIcon {
 
 div.piston-thing {
     cursor: pointer;
-    height: 120px;
 }
 
 div.piston.webcore {
@@ -461,10 +460,12 @@ div.piston.webcore {
 }
 
 div.piston.pistonName {
-    font-size: 12px;
-    margin-top: 30px;
+    font-size: 12pt;
+    height: 24px;
+    padding-top: 88px;
     color: #ffffff;
-    background-color: rgba(0,51,204,0.6);
+    background-color: rgba(102, 102, 102, 1);
+    background-image: url('piston.png');
 }
 
 div.thead {
@@ -483,6 +484,10 @@ div.contact, div.music, div.thermostat, div.presence {
     height: 112px;
 }
 
+div.motion, div.contact, div.lock {
+    height: 98px;
+}
+
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.lock, div.mode.mode {
     cursor: pointer;
 }
@@ -492,6 +497,13 @@ div.switchlevel.switch {
 }
 div.switchlevel.level {
     height: 32px;
+}
+
+div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
+div.switch.checkInterval, div.switch.indicatorStatus, 
+div.contact.checkInterval, div.switchlevel.colorTemperature,
+div.switch.colorTemperature, div.lock.checkInterval {
+    display: none;
 }
 
 div.music {
@@ -524,7 +536,7 @@ div.music.level {
 /* style the on and off states of switches */
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
-div.on, div.off, div.present, div.absent, div.firing {
+div.on, div.off, div.present, div.absent, div.firing, div.piston {
   background-position: 50% 20%;
   background-repeat: no-repeat;
   font-size: 12px;
@@ -535,12 +547,14 @@ div.contact.open {
     background-image: url('opendoor.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
+    background-size: 40px;
 }
 
 div.contact.closed {
     background-image: url('closedoor.png');
     background-color: rgba(27,177,75,0.6);
     background-position-y: 9px;
+    background-size: 40px;
 }
 
 #t-67 div.contact.open {
@@ -563,14 +577,45 @@ div.motion.active {
     background-color: rgba(0, 51, 204, 0.3);
 }
 
+div.motion.checkInterval {
+    display: none;
+}
+
+div.motion.battery, div.contact.battery, div.lock.battery {
+    background-color: rgba(0, 102, 102, 1);
+    height: 14px; font-size: 9pt; color: #ffffff;
+}
+
+div.motion.battery::before, div.contact.battery::before, div.lock.battery:before {
+    content: "Battery: ";
+}
+
+div.motion.battery::after, div.contact.battery::after, div.lock.battery::after {
+    content: " %";
+}
+
+div.switch.energy, div.switch.power {
+    height: 14px; font-size: 9pt; 
+    background-color: rgba(204,51,0,1); 
+    color: #ffffff;
+}
+
+div.switch.energy::before {
+    content: "E (KwH): ";
+}
+
+div.switch.power::before {
+    content: "P (W): ";
+}
+
 div.lock.locked {
     background-image: url('lock.png');
-    background-color: rgba(204, 51, 0, 1);
+    background-color: rgba(102, 51, 0, 1);
 }
 
 div.lock.unlocked{
     background-image: url('unlock.png');
-    background-color: rgba(204, 51, 0, 0.3);
+    background-color: rgba(102, 51, 0, 0.7);
 }
 
 div.switch.on, div.switchlevel.on, div.bulb.on, div.light.on {
@@ -582,6 +627,10 @@ div.switch.on, div.switchlevel.on, div.bulb.on, div.light.on {
 div.switch.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('bulboff.png');
     /* background-color: rgba(0, 51, 204, 0.6); */
+}
+
+div.switch.level {
+    display: none;
 }
 
 div.momentary.off, div.momentary.on{
@@ -657,7 +706,7 @@ div.music-next {
 }
 
 /* individual temperature value inside a thermostat */
-div.thermostat.temperature {
+div.thermostat.temperature, div.motion.temperature {
     display: inline-block;
     width: 118px;
     background-color: #006666;

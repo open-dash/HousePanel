@@ -505,7 +505,8 @@ function setupPage(sensortype) {
         var thevalue;
         
         // for switches and locks set the command to toggle
-        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||thetype==="bulb") {
+        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
+            thetype==="bulb" || thetype==="light" || thetype==="valve") {
             thevalue = "toggle";
         } else {
             thevalue = $(targetid).html();
@@ -540,7 +541,8 @@ function setupPage(sensortype) {
             }
             setTimeout(function(){classarray.myMethod();}, 1500);
         } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
+                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ||
+                   thetype==="light" || thetype==="valve") {
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
