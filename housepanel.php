@@ -965,7 +965,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // check for valid available token and access point
     // added GET option to enable easier Python and EventGhost use
     // add option for browsers that don't support cookies where user provided in config file
-    if (USER_ACCESS_TOKEN && USER_ENDPT) {
+    if (USER_ACCESS_TOKEN!==FALSE  && USER_ENDPT!==FALSE) {
         $access_token = USER_ACCESS_TOKEN;
         $endpt = USER_ENDPT;
     } else if ( isset($_COOKIE["hmtoken"]) && isset($_COOKIE["hmendpoint"]) ) {
@@ -976,7 +976,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $endpt = $_REQUEST["hmendpoint"];
     }
     if ( $access_token && $endpt ) {
-        if (USER_SITENAME) {
+        if (USER_SITENAME!==FALSE) {
             $sitename = USER_SITENAME;
         } else if ( isset($_COOKIE["hmsitename"]) ) {
             $sitename = $_COOKIE["hmsitename"];
@@ -990,7 +990,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
             $tc.= "access_token = $access_token<br />";
             $tc.= "endpt = $endpt<br />";
             $tc.= "sitename = $sitename<br />";
-            if (USER_ACCESS_TOKEN && USER_ENDPT) {
+            if (USER_ACCESS_TOKEN!==FALSE && USER_ENDPT!==FALSE) {
                 $tc.= "cookies skipped - user provided the access_token and endpt values listed above<br />";
             } else {
                 $tc.= "<br />cookies = <br /><pre>";

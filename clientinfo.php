@@ -10,6 +10,6 @@ define('TIMEZONE', 'America/Detroit');
 // the access_token and endpt information can be obtained by going through authentication once
 // and then loading your webpage using mypanel.com/housepanel.php?useajax=showid
 // this will return a page with the access_point and endpt data plus other info about your devices
-define(USER_ACCESS_TOKEN,FALSE);
-define(USER_ENDPT,FALSE);
-define(USER_SITENAME,FALSE);
+define('USER_ACCESS_TOKEN',FALSE);
+define('USER_ENDPT',FALSE);
+define('USER_SITENAME',FALSE);
