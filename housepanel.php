@@ -58,7 +58,7 @@ define('DEBUG2', false);
 define('DEBUG3', false);
 
 // header and footer
-function htmlHeader($skindir) {
+function htmlHeader($skindir="skin-housepanel") {
     $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
     $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
@@ -83,7 +83,7 @@ function htmlHeader($skindir) {
     if (!$skindir) {
         $skindir = "skin-housepanel";
     }
-    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir\housepanel.css\">";
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
@@ -964,7 +964,11 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
     // check for valid available token and access point
     // added GET option to enable easier Python and EventGhost use
-    if ( isset($_COOKIE["hmtoken"]) && isset($_COOKIE["hmendpoint"]) ) {
+    // add option for browsers that don't support cookies where user provided in config file
+    if (USER_ACCESS_TOKEN && USER_ENDPT) {
+        $access_token = USER_ACCESS_TOKEN;
+        $endpt = USER_ENDPT;
+    } else if ( isset($_COOKIE["hmtoken"]) && isset($_COOKIE["hmendpoint"]) ) {
         $access_token = $_COOKIE["hmtoken"];
         $endpt = $_COOKIE["hmendpoint"];
     } else if ( isset($_REQUEST["hmtoken"]) && isset($_REQUEST["hmendpoint"]) ) {
@@ -972,7 +976,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $endpt = $_REQUEST["hmendpoint"];
     }
     if ( $access_token && $endpt ) {
-        if ( isset($_COOKIE["hmsitename"]) ) {
+        if (USER_SITENAME) {
+            $sitename = USER_SITENAME;
+        } else if ( isset($_COOKIE["hmsitename"]) ) {
             $sitename = $_COOKIE["hmsitename"];
         } else {
             $sitename = "SmartHome";
@@ -984,9 +990,14 @@ function processOptions($optarray, $retpage, $allthings=null) {
             $tc.= "access_token = $access_token<br />";
             $tc.= "endpt = $endpt<br />";
             $tc.= "sitename = $sitename<br />";
-            $tc.= "<br />cookies = <br /><pre>";
-            $tc.= print_r($_COOKIE, true);
-            $tc.= "</pre></div>";
+            if (USER_ACCESS_TOKEN && USER_ENDPT) {
+                $tc.= "cookies skipped - user provided the access_token and endpt values listed above<br />";
+            } else {
+                $tc.= "<br />cookies = <br /><pre>";
+                $tc.= print_r($_COOKIE, true);
+                $tc.= "</pre>";
+            }
+            $tc.= "</div>";
         }
     }
 
