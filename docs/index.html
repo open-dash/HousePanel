@@ -1,13 +1,142 @@
 <html>
 <body>
+
 <h2>House Panel</h2>
 
-House Panel web service PHP application for SmartThings
-author: Ken Washington  (c) 2017
+<p>House Panel web service PHP application for SmartThings</p>
+<i>author: Ken Washington  (c) 2017</i>
 
-Must be paired with the housemap.groovy SmartApp on the SmartThings side
-and the CLIENT_ID and CLIENT_SECRET must match what is specified here
-to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
+<h2>Introduction</h2>
+House Panel (HP) is the highly customizable SmartThings web application for accessing and
+controlling a SmartThings equipped smart home from a Tablet, Computer, or even Smart Phone.
+HP is designed to give the user full control over the look and feel of their controller.
+It does require some effort to install and configure, but once set up initially making fine tunings
+and adjustments is a relatively simple task, that typically only involved editing a CSS file.
+HP runs on a customer-provided web server and does not expose your personal data
+nor any details about your SmartThings environment to the developer or any other party.
+You are in total control. The default settings are designed by a professional web designer
+to create a highly acceptable user interface for non-technical people. This was the motive for
+writing HP in the first place. It is designed to not look and feel "geeky". The tiles by default that
+one uses to control a home are large and colorful, placed on beautiful full color backgrounds.
+
+<h2>Features</h2>
+HousePanel can control most commonly used types of things in the SmartThings ecosystem.
+This includes switches, momentary buttons, contact sensors, thermostats, locks, bulbs, and valves
+A number of special tiles are also supported including weather tiles, mode status, WebCoRE pistons,
+Images, and Blanks. Images can be any still or dynamically updated graphic that can be referenced
+via the Internet in the CSS file. Blanks are spacers and can take any form or size, giving the user
+maximum flexibility in the layout of the pages.<br/><br/>
+
+A very important feature of HousePanel is the Tab layout. All controllable things are presented on one
+of several Tabs that can be quickly swapped in and out of view. This uses the tabbed display capability
+of modern web browsers. Under the hood we use jQuery to make this efficient. This means that any
+number of user pages can be displayed, and on each page, any number of "things" can be shown
+and controlled. Later in this document we will explain how to customize the names of pages and
+the number of pages used. The default is 7 pages and each page has a fixed name. Pages can be
+easily renamed from within the web page - we will show how to do this later.
+
+<h2>Requirements - What You Need to Use HousePanel</h2>
+House Panel is a web application written in PHP that is paired with a SmartThings
+SmartApp written in the groovy language. Obviously you will need a SmartThings
+account with owner access. You will also need to have owner access to a web
+server of some type capable of hosting PHP applications. You should also have
+access to a good CSS editor that you will use to make custom changes to your
+HousePanel configuration. You can do this with any text editor, but trust me you will
+be much happier if you are using a coding editor that assists you with the crazy syntax
+of CSS and graphical aids for color selections. I personally use NetBeans which is
+my favorite coding editor. You can get a copy from the Oracle website at www.netbeans.org
+
+<h2>Installation Options and Instructions</h2>
+
+<h3>Option 1 - A public facing hosted web server</h3>
+<p>This option is perhaps the simplest and provides the most flexibility, but less security and speed than
+the other two options below. To use this option you need to simply create a directory on the server
+that hosts your public-facing web pages, such as "housepanel". For the purposes of this documentation
+we will assume that the directory name is "housepanel". You can use any method you like to do this
+but the easiest is probably using a full-featured FTP program. An important step before proceeding
+is to set the permissions of that directory to enable write access. How this is done depends a lot on
+what type of server you are using. Most public web servers are Linux and Apache based in which case
+you can use chmod 666 on the directory. Some FTP programs will support this, others won't. You may need
+to use the file browser function of your web hosting service to change the permissions to "666" which means
+the owner, groups, and the world can read and write to the folder.</p>
+
+<h3>Option 2 - dedicated computer on your LAN</h3>
+This option has great flexibility and speed as well as more security over a public facing web server.
+It is more secure because it runs on your LAN and is typically not exposed to the Internet. Your home
+router shields all computers from the Internet from outside access unless you bypass that using
+either DMZ or port forwarding. The disadvantage of course is you can't access your home unless you
+are at home on the same network. This can be a big restriction but many people don't control their
+homes using a panel when they are away so I personally don't think this is a major limitation. To use this option
+you will need to have a web server installed on your dedicated computer, and you will need to leave that
+computer on at all times that you want the panel to work. Instructions for installing Apache on a
+dedicated home PC or Mac can be found at http://www.apache.org <br /><br/>
+
+You will then need to install PHP on your web server and enable curl. Instructions for doing this are beyond
+the scope of this Wiki. You can find excellent instructions and examples for how to do this all over the
+Internet.
+
+<h3>Option 3 - Raspberry Pi</h3>
+This is by far my favorite and preferred option. Raspberry Pi single board hobby computers are perfect
+for projects like HousePanel. This is because take up very little space, use a small amount of energy,
+and they are relatively easy to configure. Unlike a dedicated computer, a Raspberry Pi can be neatly tucked
+away just about anywhere and go un-noticed. To use this option you will need to first of all own a Raspberry Pi
+and you will need to know how to manipulate it and program it. There are many web tutorials out there
+that show you how to do this. When you instlal a rPi for use with HousePanel I recommend that you use
+a fixed IP address so that you know where to find it every time. This can be accomplished in several ways. The
+easiest way is to use your router to tell it to give your rPi a fixed IP based on its Mac address. Next you will
+need to have the Apache web server installed on the rPi. The recipe below will point you in the right direction
+but if you get stuck please refer to any number of online tutorials about how to set up a rPi and install
+both Apache and PHP.<br />
+
+Start by either connecting your rPi to a monitor and keyboard, or logging into it remotely using SSH. If
+you are using a PC I recommend using the "putty" program for SSH. It can be downloaded for free.
+You may need to first use the monitor and keyboard to enable SSH.<br />
+
+<blockquote<pre>
+sudo raspi-config
+     > Interfacing Options > SSH then enable
+     > Change the default timezone. 
+
+I recommend changing the default password from "raspberry" to whatever you want.
+ssh in as username = pi   and   password = your-password
+modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".
+
+Next several lines will install key applications you will need on the rPi.
+sudo apt-get update
+sudo apt-get -y upgrade
+sudo apt-get -y install apache2 php5 php5-gd wiringpi raspi-gpio rpi-update --fix-missing
+sudo rpi-update
+
+Next configure PHP to use curl. This should be on by default, but check php.ini to be sure.
+if you find a line commented out that loads the curl library, uncomment it.
+
+Finally, restart Apache using:
+sudo service apache2 restart
+ </pre></blockquote>
+
+<h3>Installing the Application</h3>
+Start with installing the housepanel.groovy file in your SmartThings smartapp IDE repository.
+The easy way is to configure your IDE to automatically install updates from my GitHub id = kewashi
+You can also do this manually - both work. Either way, once you have the groovy file installed, be sure to
+enable OAUTH2 in the IDE app settings. This will reveal a new CLIENT_ID and CLIENT_SECRET values.
+These values will be used in the installation of the PHP files below.
+
+Once you have your web server set up and the groovy app installed, you are ready to 
+install the PHP application by copying the
+files from the following GitHub into a directory of your choice - say /housepanel.
+http://www.github.com/kewashi/hpanel-server
+
+Be sure to preserve the directory structure when you download and then upload the files to your web server.
+Once you do that, you will need to edit the file named "clientinfo.php"
+This file has placeholder data in it for your CLIENT_ID and CLIENT_SECRET constants that must
+be obtained from your installation of the housepanel.groovy file in the SmartThings IDE.
+
+The first thing one should do to install HousePanel is to grab a copy of the groovy SmartThings app.
+THis can be found in my GitHub repository under SmartThingsPublic found here:
+https://github.com/kewashi/SmartThingsPublic/tree/master/smartapps/kewashi/house-panel.src
+
+You can configure your IDE to automatically install and later update the groovy ST app by 
+linking to my "kewashi" repository. No password is required.
 
 You must store your CLIENT_ID and CLIENT_SECRET information in
 a file called clientinfo.php saved to the same directory as this file
@@ -25,18 +154,6 @@ and you should be good to go. An options file named hmoptions.cfg
 will be generated when the app first runs and each time any options change
 your web server must have write privileges enabled for this to work
 </div>
-
-<strong><ul>Revision History</ul></strong>
-<ul>
-<li> 0.0        Initial release
-<li> 0.1        Implement new architecture for files to support sortable jQuery
-<li> 0.2        Cleanup including fixing unsafe GET and POST calls
-                Removed history call and moved to javascript side
-                put reading and writing of options into function calls
-                replaced main page bracket from table to div
-  
-<li> 0.5-alpha  First public test version
-</ul>
 
 </body>
 </html>

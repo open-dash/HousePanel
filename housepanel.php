@@ -19,6 +19,10 @@
  * 
  *
  * Revision History
+ * 1.2        Cleaned up the Groovy file and streamlined a few things
+ *            Added smoke, illuminance, and doors (for Garages)
+ *            Reorganized categories to be more logical when selecting things
+ * 
  * 1.1 beta   Added cool piston graph for Webcore tiles 
  *            Added png icons for browser and Apple products
  *            Show all fields supported - some hidden via CSS
@@ -87,7 +91,7 @@ function htmlHeader($skindir) {
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch","bulb","light","lock","momentary","heat-dn","heat-up",
+        $thingtypes = array("switch","bulb","light","lock","door","momentary","heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
@@ -213,7 +217,8 @@ function getAllThings($endpt, $access_token) {
         session_unset();
         
         $thingtypes = array("switches", "lights", "dimmers","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "musics", "valves",
+                            "sensors", "locks", "thermostats", "musics", "valves", 
+                            "doors", "illuminances", "smokes", "waters",
                             "weathers", "presences", "modes", "pistons", "others");
         $allthings = array();
         foreach ($thingtypes as $key) {
