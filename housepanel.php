@@ -318,7 +318,12 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         }
     } else {
 
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "</div>";
+        if (strlen($thingname) > 32 ) {
+            $thingpr = substr($thingname,0,30) . " ...";
+        } else {
+            $thingpr = $thingname;
+        }
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingpr . "</div>";
 
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state

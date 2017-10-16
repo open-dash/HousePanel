@@ -475,7 +475,7 @@ div.thead {
 
 /* styling for the actual item without its state */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
-div.contact, div.music, div.thermostat, div.presence {
+div.contact, div.music, div.thermostat, div.presence, div.door, div.valve, div.illuminance {
     display: inline-block;
     padding: 0px 0;
     margin: 0;
@@ -488,7 +488,7 @@ div.motion, div.contact, div.lock {
     height: 98px;
 }
 
-div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.lock, div.mode.mode {
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.lock, div.mode.mode, div.door {
     cursor: pointer;
 }
 
@@ -549,12 +549,30 @@ div.contact.open {
     background-position-y: 9px;
     background-size: 40px;
 }
-
 div.contact.closed {
     background-image: url('closedoor.png');
-    background-color: rgba(27,177,75,0.6);
     background-position-y: 9px;
     background-size: 40px;
+}
+
+div.door.open {
+    background-image: url('garage-opened.png');
+    background-color: rgba(27,177,75,0.3);
+    background-position-y: 9px;
+    background-size: 80px;
+}
+div.door.closed {
+    background-image: url('garage-closed.png');
+    background-color: rgba(27,177,75,0.6);
+    background-position-y: 9px;
+    background-size: 80px;
+}
+
+div.valve.open, div.valve.closed {
+    background-image: url('sprinkler-on.png');
+    background-color: rgba(0,110,10,0.8);
+    background-position-y: 30px;
+    background-size: 80px;
 }
 
 #t-67 div.contact.open {
