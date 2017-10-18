@@ -95,7 +95,7 @@ function htmlHeader($skindir="skin-housepanel") {
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
-                            "level-dn","level-up", "level-val","mode","piston"."valve");
+                            "level-dn","level-up", "level-val","mode","piston","valve");
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';
