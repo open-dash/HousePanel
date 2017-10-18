@@ -1,6 +1,12 @@
 <?php
-define('CLIENT_ID', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
-define('CLIENT_SECRET', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
+
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+define('CLIENT_ID', 'abc123abc1234-1234-1234-1234abcd1234');
+define('CLIENT_SECRET', 'abcd123-abcd-1234-12345465abcd12');
 define('ST_WEB','https://graph.api.smartthings.com');
 define('TIMEZONE', 'America/Detroit');
 // provide the access_token and endpt values below if your browser does not support cookies
