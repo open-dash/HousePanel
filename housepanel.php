@@ -19,6 +19,11 @@
  * 
  *
  * Revision History
+ * 1.3        Intelligent class filters and force feature
+ *            user can add any class to a thing using <<custom>>
+ *            or <<!custom>> the only difference being ! signals
+ *            to avoid putting custom in the name of the tile
+ *            Note - it will still look really ugly in the ST app
  * 1.2        Cleaned up the Groovy file and streamlined a few things
  *            Added smoke, illuminance, and doors (for Garages)
  *            Reorganized categories to be more logical when selecting things
@@ -217,7 +222,7 @@ function getAllThings($endpt, $access_token) {
         session_unset();
         
         $thingtypes = array("switches", "lights", "dimmers","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "musics", "valves", 
+                            "sensors", "locks", "thermostats", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters",
                             "weathers", "presences", "modes", "pistons", "others");
         $allthings = array();
@@ -255,19 +260,66 @@ function getAllThings($endpt, $access_token) {
     return $allthings;
 }
 
+// function to search for triggers in the name to include as classes to style
+// includes ability for user to force a sub-class style using << >> brackets
+function processName($thingname, $thingtype) {
+
+    // establish the pattern which is "name <<!tag>> rest of name"
+    // which also trims white space from ends and from the tag
+    // and if user puts ! in front of tag then it won't be included in the name
+    $pregpattern = "/^(.*)<<(!{0,1})(.*)>>(.*)$/";
+    if ( preg_match($pregpattern, $thingname, $pnames) ) {
+        // if ! is first character then don't include subtype
+        if ($pnames[2]=="!") {
+            $thingname = rtrim($pnames[1]) . " " . ltrim($pnames[4]);
+        } else {
+            $thingname = $pnames[1] . $pnames[3] . $pnames[4];
+        }
+        $subtype = strtolower($pnames[3]);
+        
+        // protect against user forced subtype from being same as type
+        if ($subtype==$thingtype) {
+            $subtype = "";
+        } else {
+            $subtype = " " . trim($subtype);
+        } 
+    } else {
+        // get rid of 's and split along white space
+        if ( $thingtype!=="weather") {
+            $ignores = array("'s","*","<",">","!","{","}");
+            $lowname = str_replace($ignores, "", strtolower($thingname));
+            $subopts = preg_split("/[\s,;|]+/", $lowname);
+            $subtype = "";
+            $k = 0;
+            foreach ($subopts as $key) {
+                if ($key!= $thingtype) {
+                    $subtype.= " " . $key;
+                    $k++;
+                }
+                if ($k == 3) break;
+            }
+        }
+    }
+    
+    return array($thingname, $subtype);
+}
+
 function makeThing($i, $kindex, $thesensor, $panelname) {
 // rewritten to use thing numbers as primary keys
     
     // $bname = "type-$bid";
     $bid = $thesensor["id"];
-    $thingname = $thesensor["name"];
     $thingvalue = $thesensor["value"];
     $thingtype = $thesensor["type"];
 
+    $pnames = processName($thesensor["name"], $thingtype);
+    $thingname = $pnames[0];
+    $subtype = $pnames[1];
+    
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
     //             so one must now use the id to get the value of "i" to find elements
-    $tc= "<div id=\"t-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" panel=\"$panelname\" class=\"thing $thingtype" . "-thing\">";
+    $tc= "<div id=\"t-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" panel=\"$panelname\" class=\"thing $thingtype" . "-thing" . "\">";
 
     // add a hidden field for passing thing type to js
     // $tc.= hidden("type-$i", $thingtype, "type-$i");
@@ -337,12 +389,12 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         if (is_array($thingvalue)) {
             $j = 0;
             foreach($thingvalue as $tkey => $tval) {
-                $tc.= putElement($i, $j, $thingtype, $tval, $tkey);
+                $tc.= putElement($i, $j, $thingtype, $tval, $tkey, $subtype);
                 $j++;
             }
         } 
         else {
-            $tc.= putElement($i, 0, $thingtype, $thingvalue);
+            $tc.= putElement($i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
     }
     $tc.= "</div>";
@@ -362,21 +414,22 @@ function fixTrack($tval) {
     return $tval;
 }
 
-function putElement($i, $j, $thingtype, $tval, $tkey="value") {
+function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
     $tc = "";
     
     if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
         $tkeyval = $tkey . "-val";
         $tc.= "<div class=\"$thingtype $tkey\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval" . $subtype . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
+        // and finally if the value is complex with spaces or other characters, skip
         $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || is_numeric($tval) || 
-                  $tval=="" ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
+                  $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
 
         // fix track names for groups, empty, and super long
         if ($tkey==="track") {
@@ -395,15 +448,16 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value") {
             $tc.= "</div>";
         }
 
-        // ignore keys for single attribute items
-        
-        if ( ($tkey===$thingtype || $tkey==="value") && $j===0 ) {
+        // ignore keys for single attribute items and keys that match types
+        if ( ($tkey===$thingtype) || 
+             ($thingtype=="switchlevel" && $tkey=="switch") ||
+             ($tkey==="value" && $j===0) ) {
             $tkeyshow= "";
         } else {
             $tkeyshow = " ".$tkey;
         }
-        // $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"action-$i\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"$thingtype" . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        // include class for main thing type, the subtype, a sub-key, and a state (extra)
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"$thingtype" . $subtype . $tkeyshow . $extra . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
     }
     return $tc;
 }
@@ -889,6 +943,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
     // set timezone so dates work where I live instead of where code runs
     date_default_timezone_set(TIMEZONE);
+    $skindir = "skin-housepanel";
     
     // save authorization for this app for about one month
     $expiry = time()+31*24*3600;
@@ -1015,7 +1070,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     if (!$endpt || !$access_token) {
         $first = true;
         $tc .= "<div><h2>" . APPNAME . "</h2>";
-        $tc.= authButton($sitename, $returnURL);
+        $tc.= authButton("SmartHome", $returnURL);
         $tc.= "</div>";
     }
        
