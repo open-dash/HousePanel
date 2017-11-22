@@ -19,11 +19,14 @@
  * 
  *
  * Revision History
+ * 1.31       Minor bug fixes - fixed switchlevel to include switch class
  * 1.3        Intelligent class filters and force feature
  *            user can add any class to a thing using <<custom>>
  *            or <<!custom>> the only difference being ! signals
  *            to avoid putting custom in the name of the tile
  *            Note - it will still look really ugly in the ST app
+ *            Also adds first three words of the thing name to class
+ *            this is the preferred customizing approach
  * 1.2        Cleaned up the Groovy file and streamlined a few things
  *            Added smoke, illuminance, and doors (for Garages)
  *            Reorganized categories to be more logical when selecting things
@@ -450,7 +453,6 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
 
         // ignore keys for single attribute items and keys that match types
         if ( ($tkey===$thingtype) || 
-             ($thingtype=="switchlevel" && $tkey=="switch") ||
              ($tkey==="value" && $j===0) ) {
             $tkeyshow= "";
         } else {
@@ -493,7 +495,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
         $tc.= "</div></form>";
                 
         // create block where history results will be shown
-        $tc.= "<div class=\"sensordata\" id=\"data-$roomname" . "\"></div>";
+        // $tc.= "<div class=\"sensordata\" id=\"data-$roomname" . "\"></div>";
         // $tc.= hidden("end",$keyword);
     
     } else {
