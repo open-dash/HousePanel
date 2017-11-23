@@ -220,6 +220,8 @@ function authButton($sname, $returl) {
 }
 
 function getAllThings($endpt, $access_token) {
+    $allthings = array();
+     
     if ( isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
     }
@@ -232,7 +234,6 @@ function getAllThings($endpt, $access_token) {
                             "sensors", "locks", "thermostats", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters",
                             "weathers", "presences", "modes", "pistons", "others");
-        $allthings = array();
         foreach ($thingtypes as $key) {
             $newitem = getResponse($endpt . "/" . $key, $access_token);
             if ($newitem && count($newitem)>0) {
