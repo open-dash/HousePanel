@@ -69,6 +69,8 @@ define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
 
+error_reporting(E_ERROR | E_WARNING);
+
 // header and footer
 function htmlHeader($skindir="skin-housepanel") {
     $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
@@ -131,6 +133,7 @@ function getResponse($host, $access_token) {
     $headertype = array("Authorization: Bearer " . $access_token);
     $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . "&scope=app&client_id=" . urlencode(CLIENT_ID);
     $response = curl_call($host, $headertype, $nvpreq, "POST");
+    $content = array("id"=>"", "type"=>"", "name"=>"", "value"=>"", "type"=>"");
     
     // configure returned array with the "id" as the key and check for proper return
     // no longer do this - index simply with integers
