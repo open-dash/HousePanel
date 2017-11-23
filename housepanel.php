@@ -69,7 +69,8 @@ define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
 
-error_reporting(E_ERROR | E_WARNING);
+// set error reporting to just show fatal errors
+error_reporting(E_ERROR);
 
 // header and footer
 function htmlHeader($skindir="skin-housepanel") {
