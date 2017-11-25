@@ -276,7 +276,7 @@ div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
 
 /* make room for battery state */
 div.motion, div.contact, div.lock {
-    height: 98px;
+    height: 96px;
 }
 
 /* the name of the thing - must be after the above heights */
@@ -299,7 +299,7 @@ div.thingname:hover {
 
 /* items that have a pointer */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
-div.lock, div.mode.mode, div.piston, div.valve {
+div.lock, div.mode.mode, div.piston, div.valve, div.routine.label {
     cursor: pointer;
 }
 
@@ -344,6 +344,14 @@ div.contact.garage.open {
 div.contact.garage.closed {
     background-image: url('garage-closed.png');
 }
+/* special handling of garage entry which is a door */
+div.contact.garage.entry.open {
+    background-image: url('opendoor.png');
+}
+div.contact.garage.entry.closed {
+    background-image: url('closedoor.png');
+}
+
 
 /* motion styling */
 div.motion.inactive {
@@ -356,8 +364,8 @@ div.motion.active {
 }
 div.motion.battery, div.contact.battery, 
 div.lock.battery, div.motion.temperature {
-    background-color: rgba(0, 102, 102, 1);
-    height: 14px; font-size: 9pt; color: #ffffff;
+    /* background-color: rgba(0, 102, 102, 0.5); */
+    height: 13px; font-size: 9pt; color: #ffffff;
 }
 div.motion.battery::before, div.contact.battery::before, div.lock.battery:before {
     content: "Battery: ";
@@ -397,14 +405,6 @@ div.switch.plug.on {
 }
 div.switch.plug.off {
     background-image: url('plugoff.png');
-    background-color: rgba(0, 51, 204, 0.3);
-}
-div.switch.rock.on {
-    background-image: url('rockon.png');
-    background-color: rgba(0, 51, 204, 0.3);
-}
-div.switch.rock.off {
-    background-image: url('rockoff.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.level {
@@ -652,7 +652,9 @@ div.piston.pistonName {
     background-color: rgba(102, 102, 102, 1);
     background-image: url('piston.png');
 }
-
+div.piston.pistonName.firing {
+    background-image: url('pistonfiring.png');
+}
 /* weather styling */
 div.thing.weather-thing, div.weather {
     text-align: center;
@@ -775,22 +777,33 @@ div.clock.tzone{
     display:none;
 }
 
-/* mode styling */
+/* mode and routine styling */
 div.thing.mode-thing {
-    width: 120px;
+    width: auto;
     height: 160px;
     cursor: move;
 }
+div.mode1x1, div.mode1x2 {
+    width: 120px;
+}
+div.mode2x1, div.mode2x2 {
+    width: 246px;
+}
+div.mode1x2, div.mode2x2 {
+    height: 326px;
+}
 div.mode.themode {
-    font-size: 24pt;
-    margin-top: 10px;
+    font-size: 24pt;    margin-top: 10px;
+    cursor: pointer;
 }
 div.mode.name {
-    font-size: 12pt;
-    margin-top: 50px;
+    font-size: 12pt;    margin-top: 50px;
 }
 div.mode.zipcode {
     display:none;
+}
+div.routine.label {
+    font-size: 18pt;    margin-top: 20px;
 }
 
 /* images */
@@ -862,6 +875,26 @@ div.contact.checkInterval, div.switchlevel.colorTemperature,
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes,
-div.thingname.blank, div.thingname.clock, div.thingname.mode, div.thingname.image {
+div.thingname.blank, div.thingname.clock, div.thingname.mode,
+div.thingname.image, div.thingname.routine {
     display:none;
+}
+
+/* custom settings for Ken's home only */
+/* motion detector in family room that also has temperature */
+div.motion.family.room {
+    height: 80px;
+}
+div.motion.family.room.battery, div.motion.family.room.temperature {
+    height: 13px; font-size: 9pt; color: #ffffff;
+}
+
+/* smart switch on my rock fountain */
+div.switch.rock.on {
+    background-image: url('rockon.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
+div.switch.rock.off {
+    background-image: url('rockoff.png');
+    background-color: rgba(0, 51, 204, 0.3);
 }
