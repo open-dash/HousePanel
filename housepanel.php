@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.32       Added routines capabilities and cleaned up default icons
  * 1.31       Minor bug fixes - fixed switchlevel to include switch class
  * 1.3        Intelligent class filters and force feature
  *            user can add any class to a thing using <<custom>>
@@ -102,11 +103,14 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch","bulb","light","lock","door","momentary","heat-dn","heat-up",
+        $thingtypes = array("switch.on","switch.off","bulb","light",
+                            "lock","door","momentary",
+                            "heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
-                            "level-dn","level-up", "level-val","mode","piston","valve");
+                            "level-dn","level-up", "level-val","mode.themode",
+                            "piston.pistonName","valve","routine");
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';
@@ -230,7 +234,7 @@ function getAllThings($endpt, $access_token) {
     if (count($allthings) <= 9 && $endpt && $access_token ) {
         session_unset();
         
-        $thingtypes = array("switches", "lights", "dimmers","momentaries","contacts",
+        $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters",
                             "weathers", "presences", "modes", "pistons", "others");
