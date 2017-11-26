@@ -840,14 +840,12 @@ div.image.url.img3 {
 
 /* presence styling */
 div.presence.present {
-    background-image: url('stand.png');
-    background-color: rgba(0, 51, 204, 0.6);
-
+    background-image: url('boypresent.png');
+    background-color: rgba(255, 255, 255, 0.6);
 }
 div.presence.absent {
-    background-image: url('run.png');
-    background-color: rgba(0, 51, 204, 0.6);
-
+    background-image: url('boyabsent.png');
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* style for modal dialog boxes - presently not used */
@@ -881,6 +879,15 @@ div.thingname.image, div.thingname.routine {
 }
 
 /* custom settings for Ken's home only */
+
+/* girl sillhouette for wife's phone */
+div.presence.jana.present {
+    background-image: url('girlpresent.png');
+}
+div.presence.jana.absent {
+    background-image: url('girlabsent.png');
+}
+
 /* motion detector in family room that also has temperature */
 div.motion.family.room {
     height: 80px;
