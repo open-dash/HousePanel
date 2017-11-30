@@ -340,6 +340,7 @@ function setupTimers() {
                 break;
 
             case "lock":
+            case "door":
                 timerval = 62000;
                 break;
 

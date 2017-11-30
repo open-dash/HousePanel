@@ -327,9 +327,11 @@ div.contact.closed {
 
 /* specific contact types one might find */
 div.contact.door.open {
+    height: 112px;
     background-image: url('opendoor.png');
 }
 div.contact.door.closed {
+    height: 112px;
     background-image: url('closedoor.png');
 }
 div.contact.window.open {
@@ -344,12 +346,25 @@ div.contact.garage.open {
 div.contact.garage.closed {
     background-image: url('garage-closed.png');
 }
+div.valve.open {
+    background-image: url('sprinkler-on.png');
+    background-color: rgba(27,177,75,0.6);
+}
+div.valve.closed {
+    background-image: url('sprinkler-on.png');
+    background-color: rgba(0, 51, 204, 0.6);
+}
+div.valve.switch, div.valve.contact {
+    display: none;
+}
 /* special handling of garage entry which is a door */
 div.contact.garage.entry.open {
     background-image: url('opendoor.png');
+    background-color: rgba(27,177,75,0.6);
 }
 div.contact.garage.entry.closed {
     background-image: url('closedoor.png');
+    background-color: rgba(0, 51, 204, 0.6);
 }
 
 
