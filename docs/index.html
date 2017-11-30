@@ -1,29 +1,53 @@
 <html>
-<body>
+    <head>
+        <title>House Panel Wiki</title>
+        <link rel="stylesheet" type="text/css" href="doc.css">        
+    </head>
 
-<h2>House Panel</h2>
+    <body>
+<div class="center">
+    <h1>House Panel</h1>
+    <p>House Panel web service PHP application for SmartThings<br/>
+<i>author: Ken Washington  (c) 2017</i></p>
+</div>
 
-<p>House Panel web service PHP application for SmartThings</p>
-<i>author: Ken Washington  (c) 2017</i>
-
-<h2>Introduction</h2>
+        <div>
+<h1>Introduction</h1>
 House Panel (HP) is the highly customizable SmartThings web application for accessing and
 controlling a SmartThings equipped smart home from a Tablet, Computer, or even Smart Phone.
-HP is designed to give the user full control over the look and feel of their controller.
-It does require some effort to install and configure, but once set up initially making fine tunings
-and adjustments is a relatively simple task, that typically only involved editing a CSS file.
+HP is designed to give the user full control over the look and feel of their panel controller.
+It does require some effort to install and configure, but once set up, making fine tunings
+and adjustments are relatively simple.  Most customizations involve editing a CSS file.
 HP runs on a customer-provided web server and does not expose your personal data
 nor any details about your SmartThings environment to the developer or any other party.
 You are in total control. The default settings are designed by a professional web designer
 to create a highly acceptable user interface for non-technical people. This was the motive for
-writing HP in the first place. It is designed to not look and feel "geeky". The tiles by default that
-one uses to control a home are large and colorful, placed on beautiful full color backgrounds.
+writing HP in the first place. It is designed to not look and feel "geeky". By default the tiles 
+are large and colorful, placed on beautiful full color backgrounds. Finally, a more advanced
+application of HP is that it can be used as a text-based web service to return
+json strings of status about your home to any other web application. This advanced
+feature is mostly for developers and can be safely ignored, but if you are a developer
+then you should read the final section of this Wiki on Advanced Applications of HP.
 
 <h2>Features</h2>
-HousePanel can control most commonly used types of things in the SmartThings ecosystem.
-This includes switches, momentary buttons, contact sensors, thermostats, locks, bulbs, and valves
-A number of special tiles are also supported including weather tiles, mode status, WebCoRE pistons,
-Images, and Blanks. Images can be any still or dynamically updated graphic that can be referenced
+HousePanel can control most types of things in the SmartThings ecosystem, including:
+<ul>
+<li>switches <li>dimmers <li>momentary buttons <li>contact sensors
+<li>doors <li>thermostats <li>lights <li>locks <li>bulbs <li>water sensors 
+<li>valves
+</ul>
+
+A number of special tiles are also supported, including: 
+<ul>
+<li>time 
+<li>weather
+<li>mode
+<li>routines
+<li>WebCoRE pistons,
+<li>blanks 
+</ul>
+
+Images can be any still or dynamically updated graphic that can be referenced
 via the Internet in the CSS file. Blanks are spacers and can take any form or size, giving the user
 maximum flexibility in the layout of the pages.<br/><br/>
 
@@ -32,7 +56,7 @@ of several Tabs that can be quickly swapped in and out of view. This uses the ta
 of modern web browsers. Under the hood we use jQuery to make this efficient. This means that any
 number of user pages can be displayed, and on each page, any number of "things" can be shown
 and controlled. Later in this document we will explain how to customize the names of pages and
-the number of pages used. The default is 7 pages and each page has a fixed name. Pages can be
+the number of pages used. The default is 6 pages and each page has a fixed name. Pages can be
 easily renamed from within the web page - we will show how to do this later.
 
 <h2>Requirements - What You Need to Use HousePanel</h2>
@@ -41,15 +65,19 @@ SmartApp written in the groovy language. Obviously you will need a SmartThings
 account with owner access. You will also need to have owner access to a web
 server of some type capable of hosting PHP applications. You should also have
 access to a good CSS editor that you will use to make custom changes to your
-HousePanel configuration. You can do this with any text editor, but trust me you will
+HousePanel configuration. You can do this with any text editor, but you will
 be much happier if you are using a coding editor that assists you with the crazy syntax
 of CSS and graphical aids for color selections. I personally use NetBeans which is
 my favorite coding editor. You can get a copy from the Oracle website at www.netbeans.org
+If you do use NetBeans be sure to install the plugin for PHP editing. 
+I also find the color code preview plugin to be useful for picking colors easily.
 
-<h2>Installation Options and Instructions</h2>
+<h1>Installation</h1>
+
+<h2>Server Options and Instructions</h2>
 
 <h3>Option 1 - A public facing hosted web server</h3>
-<p>This option is perhaps the simplest and provides the most flexibility, but less security and speed than
+This option is perhaps the simplest and provides the most flexibility, but less security and speed than
 the other two options below. To use this option you need to simply create a directory on the server
 that hosts your public-facing web pages, such as "housepanel". For the purposes of this documentation
 we will assume that the directory name is "housepanel". You can use any method you like to do this
@@ -58,7 +86,7 @@ is to set the permissions of that directory to enable write access. How this is 
 what type of server you are using. Most public web servers are Linux and Apache based in which case
 you can use chmod 666 on the directory. Some FTP programs will support this, others won't. You may need
 to use the file browser function of your web hosting service to change the permissions to "666" which means
-the owner, groups, and the world can read and write to the folder.</p>
+the owner, groups, and the world can read and write to the folder.<br/><br/>
 
 <h3>Option 2 - dedicated computer on your LAN</h3>
 This option has great flexibility and speed as well as more security over a public facing web server.
@@ -73,15 +101,21 @@ dedicated home PC or Mac can be found at http://www.apache.org <br /><br/>
 
 You will then need to install PHP on your web server and enable curl. Instructions for doing this are beyond
 the scope of this Wiki. You can find excellent instructions and examples for how to do this all over the
-Internet.
+Internet. As with the public web server option, you will also need to set the permissions of the directory
+where you want to install HousePanel. Since this is a local computer you can do this using standard
+methods for your local computer. On a PC this involves right-clicking on the directory and setting
+permissions. But first you will need to create the directory within your web hosting area.
+For example, make a directory called "housepanel" under c:\htdocs on a standard Apache install. I have
+not tested HousePanel on IIS but it should work fine.<br /><br/>
 
 <h3>Option 3 - Raspberry Pi</h3>
-This is by far my favorite and preferred option. Raspberry Pi single board hobby computers are perfect
+This is by far my favorite and the strongly preferred option. 
+Raspberry Pi single board hobby computers are perfect
 for projects like HousePanel. This is because take up very little space, use a small amount of energy,
 and they are relatively easy to configure. Unlike a dedicated computer, a Raspberry Pi can be neatly tucked
 away just about anywhere and go un-noticed. To use this option you will need to first of all own a Raspberry Pi
 and you will need to know how to manipulate it and program it. There are many web tutorials out there
-that show you how to do this. When you instlal a rPi for use with HousePanel I recommend that you use
+that show you how to do this. When you install a rPi for use with HousePanel I recommend that you use
 a fixed IP address so that you know where to find it every time. This can be accomplished in several ways. The
 easiest way is to use your router to tell it to give your rPi a fixed IP based on its Mac address. Next you will
 need to have the Apache web server installed on the rPi. The recipe below will point you in the right direction
@@ -90,70 +124,541 @@ both Apache and PHP.<br />
 
 Start by either connecting your rPi to a monitor and keyboard, or logging into it remotely using SSH. If
 you are using a PC I recommend using the "putty" program for SSH. It can be downloaded for free.
-You may need to first use the monitor and keyboard to enable SSH.<br />
+You may need to first use a monitor and keyboard to enable SSH.
+Once you are logged into your rPi use the following commands to configure Apache with PHP.
+<br />
 
-<blockquote<pre>
+<blockquote><pre>
 sudo raspi-config
      > Interfacing Options > SSH then enable
      > Change the default timezone. 
+ </pre></blockquote>
 
 I recommend changing the default password from "raspberry" to whatever you want.
 ssh in as username = pi   and   password = your-password
-modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".
+modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".<br/>
+Next several lines will install the Apache and PHP applications you will need on the rPi.
 
-Next several lines will install key applications you will need on the rPi.
+<blockquote><pre>
 sudo apt-get update
 sudo apt-get -y upgrade
 sudo apt-get -y install apache2 php5 php5-gd wiringpi raspi-gpio rpi-update --fix-missing
 sudo rpi-update
+</pre></blockquote>
 
 Next configure PHP to use curl. This should be on by default, but check php.ini to be sure.
-if you find a line commented out that loads the curl library, uncomment it.
+Look for your php.ini file and then edit it using nano or vim. Within php.ini
+search for "curl". You should find a line that loads the curl library. Sometimes
+that line is commented out with a "#" in the first column. If you have that
+activate the loading of the curl library by uncommenting that line.<br/>
 
 Finally, restart Apache using:
+<blockquote><pre>
 sudo service apache2 restart
  </pre></blockquote>
 
-<h3>Installing the Application</h3>
-Start with installing the housepanel.groovy file in your SmartThings smartapp IDE repository.
-The easy way is to configure your IDE to automatically install updates from my GitHub id = kewashi
-You can also do this manually - both work. Either way, once you have the groovy file installed, be sure to
-enable OAUTH2 in the IDE app settings. This will reveal a new CLIENT_ID and CLIENT_SECRET values.
-These values will be used in the installation of the PHP files below.
-
-Once you have your web server set up and the groovy app installed, you are ready to 
-install the PHP application by copying the
-files from the following GitHub into a directory of your choice - say /housepanel.
-http://www.github.com/kewashi/hpanel-server
-
-Be sure to preserve the directory structure when you download and then upload the files to your web server.
-Once you do that, you will need to edit the file named "clientinfo.php"
-This file has placeholder data in it for your CLIENT_ID and CLIENT_SECRET constants that must
-be obtained from your installation of the housepanel.groovy file in the SmartThings IDE.
-
-The first thing one should do to install HousePanel is to grab a copy of the groovy SmartThings app.
-THis can be found in my GitHub repository under SmartThingsPublic found here:
-https://github.com/kewashi/SmartThingsPublic/tree/master/smartapps/kewashi/house-panel.src
-
-You can configure your IDE to automatically install and later update the groovy ST app by 
-linking to my "kewashi" repository. No password is required.
-
-You must store your CLIENT_ID and CLIENT_SECRET information in
-a file called clientinfo.php saved to the same directory as this file
-it should look as follows but with real data as opposed to this fake data:
+<h2>Testing your PHP Web Server</h2>
+Before proceeding I highly recommend that you test your web server
+and confirm that it works with PHP and cUrl. To do that create a simple file with
+just the following in it:<br/>
+<blockquote><pre>
+    &lt;?php 
+    phpinfo();
+</pre></blockquote>
+Save this file to phpinfo.php and upload it to your server. Open a browser
+and point it to this file. For example, let's assume you are using a
+rPi on static IP address 192.168.1.50 and your HP is installed in /housepanel
+then you would go to:
 
 <blockquote>
-define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
-define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
+http://192.168.1.50/housepanel/phpinfo.php
 </blockquote>
 
-<div>
-<b>Note:</b><br />There is no such file in the shared GitHub repository
-To complete the install save all files on your server
-and you should be good to go. An options file named hmoptions.cfg 
-will be generated when the app first runs and each time any options change
-your web server must have write privileges enabled for this to work
-</div>
+If things are working you should see a PHP information page returned. Scroll
+down and look for cUrl to see if it is activated. The HP distribution
+files that we will download later includes a phpinfo.php file so if you
+prefer you can wait and perform this test after uploading the files, in which
+case you won't have to worry about creating this file.<br/><br/>
 
+If loading this page generates an error, then you your web server was
+not installed correctly and it will need to be addressed before you can proceed.
+
+
+<h2>Installing the Application</h2>
+
+<h3>Step 1 - Install and Configure HousePanel.groovy</h3>
+Start with installing the HousePanel.groovy file in your SmartThings smartapp IDE repository.
+Unfortunately I was not able to get the IDE install option to work with my account
+so you will have to install this manually. First, go to my GitHub "kewashi" account and
+copy the "raw" code. Do this by browsing to:
+<blockquote>
+    <pre>
+    <a href="http://github.com/kewashi/HousePanel">http://github.com/kewashi/HousePanel</a>
+    </pre>
+</blockquote>
+Navigate down to </b></i>housepanel.src/HousePanel.groovy</i></b>
+Open this file and then click on the "raw" icon in the upper right corner.
+This will open a window showing just the lines of code. Copy the entire file
+using Control-A or Command-A on mac, then Control-C or Command-C on a mac.
+Navigate back to your ST IDE at graph.api.smartthings.com. Make sure you are
+logged in. Then go to the SmartApps section using the top menu. Click on create
+new SmartApp then select "from code". In the blank window that opens, paste
+the code that you copied to the clipboard here using Control-V or Command-V
+on a mac. Then select Save  then Publish "for me".<br/><br/>
+
+If you are an experienced GitHub user you can also feel free to just clone
+or fork your own copy into your GitHub account and work with it from there.
+The advantage of this is you can track and manage any local tweaks you make
+and GitHub will do all of the work of managing your changes for you as usual.
+The other advantage of that approach is if you make improvements, I would
+appreciate seeing them via a pull request.
+
+<h3>Step 2 - Configure clientinfo.php Authentication File</h3>
+Before you leave the ST IDE, you will need to 
+enable OAUTH2 in the IDE app settings. To do this, select App Settings
+then turn on OAUTH2 in the options that show on the lower left of the screen.
+This will reveal two long strings of data called <b>CLIENT_ID</b> and 
+<strong>CLIENT_SECRET</strong>. 
+These values are important and must be copied and saved for use in the
+next step when you are configuring your web server.
+
+<h3>Step 3 - Install PHP Code on Web Server</h3>
+In this step you will install the PHP application by copying the
+files from the following GitHub into a directory of your choice:
+<blockquote>
+    <pre>
+    <a href="http://github.com/kewashi/hpanel-server">http://github.com/kewashi/hpanel-server</a>
+    </pre>
+</blockquote>
+A typical place would be in its own directory called /housepanel. Be sure 
+to preserve the directory structure when you download and then upload the 
+files to your web server.<br/><br/>
+
+As with the groovy file, you can also fork this to your own GitHub space
+and then clone it down to your local PC or mac if you are familiar with using GitHub. 
+If you are using Git on your local PC I recommend this approach since it
+will allow you to make local tweaks and pull requests for any improvements
+you want to be considered. As a bonus, if you are using NetBeans editor
+that editor talks nicely to Git to tell you want edits have been made
+using visual cues.<br/><br/>
+
+The final install step is to edit the file named "clientinfo.php"
+This file has placeholder data in it for your CLIENT_ID and CLIENT_SECRET 
+constants that must be obtained from your installation of housepanel.groovy.
+You will find that information in the SmartThings IDE as described
+in the previous section. The clientinfo.php file will look like this:
+
+<blockquote><pre>
+&lt;?php
+define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
+define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
+define('ST_WEB','https://graph.api.smartthings.com');
+define('TIMEZONE', 'America/Detroit');
+// provide the access_token and endpt values below if your browser does not support cookies
+// this can also be used to skip the authentication step if you are operating in a secure internal environment
+// *** WARNING *** do not do this if your website is exposed to the world and discoverable via search
+//                              doing so will enable anyone in the world to control your home
+// the access_token and endpt information can be obtained by going through authentication once
+// and then loading your webpage using mypanel.com/housepanel.php?useajax=showid
+// this will return a page with the access_point and endpt data plus other info about your devices
+define('USER_ACCESS_TOKEN',FALSE);
+define('USER_ENDPT',FALSE);
+define('USER_SITENAME',FALSE);
+</pre></blockquote>
+
+You must put your own CLIENT_ID and CLIENT_SECRET information into
+this file and then re-upload it to your web server. Note that the
+information in the above sample is fake data and will not work
+without being changed to include your real OAUTH2 information. Again,
+you find this information in Step 2 above in your SmartThings IDE.<br/><br/>
+
+The ST_WEB variable can also be changed here if your IDE is at a different location
+which will be the case if you are in Europe. The TIMEZONE can also be updated in
+this file to reflect where your house is located. The times displayed will
+always be shown in this time zone.<br/><br/>
+
+For now you can ignore the last three variables. These will be discussed
+later when we explain how to customize HousePanel or how to use it as
+a GhostScript endpoint or as a generic SmartThings web service. The comments
+provided in the sample file above should give you a pretty good hint as to what
+these options are for and how they are used.
+
+
+<h3>Step 4 - Set Server Permissions</h3>
+This step ensures that your web server can create and update as needed
+an options file that is generated dynamically when you run the app.
+To do this you will need to either SSH into your server or use a FTP
+program that allows file permissions to be established and edited. If you are
+using Option 1 then FTP is your best bet. Alternatively some web hosting
+services provide separate tools for setting permissions. Whichever method
+you use, the directory where you installed all the files must be set to
+read/write. In Linux/Unix terminology this is done using "chmod 666 /housepanel"
+assuming your directory name is /housepanel. If you are using Option 2
+then your local web server configuration tool should be used to set
+the directory to read/write. If you are using Option 3 - Raspberry Pi - then your
+best option is to SSH over to the Raspberry Pi and then use the Linux
+command "chmod 666 /var/www/htdocs/housepanel". Replace the directory name
+here with where your Apache stores html files and the name of your install
+directory.
+
+<h3>Step 5 - Final Check</h3>
+If you have made it this far, you are ready to do an initial test. Before
+you do, let's review to confirm that you have the following set up. If
+you don't go back to the section noted and complete that step:<br/><br/>
+<ul>
+    <li>Web server set up with PHP configured
+    <li>Confirmed that cUrl is activated in your PHP
+    <li>HousePanel.groovy installed in your SmartThings IDE with OAUTH2 activated
+    <li>clientinfo.php file updated to include your CLIENT_ID and CLIENT_SECRET real information
+    <li>hpanel-server files uploaded to its own directory on your web server
+    <li>the directory above configured to read/write using "chmod 666 yourdirectory"
+    <li>Web browser with javascrpt and cookies enabled
+</ul>
+
+If all of the above is true, you are ready to run HousePanel for the first time.
+Before trying this on your Tablet or Cell phone, confirm that it loads
+properly in a desktop browser. I have tested HousePanel with Chrome,
+Microsoft Edge, IE 11, Safari on mac, and Fully Kiosk Browser on PC. All have been
+confirmed to work but others are likely to as well. Chrome and Edge appear
+to work best and are fastest. Before testing make sure cookies and Javascript are enabled.
+Browse to the web server that you installed in the first step and the directory
+where you stored HousePanel. Using the same name examples we have been using
+throughout this guide, that would be:
+
+<blockquote><pre>
+    http://192.168.1.50/HousePanel/housepanel.php
+</pre></blockquote>
+
+If all goes well, HousePanel will launch and display an authentication challenge.
+If this happens, congratulations! You can proceed to the next section on how
+to operate HousePanel. If not, please post in the community form what error
+you are seeing and either I or other users will assist you.<br/>
+
+<h1>Running HousePanel</h1>
+
+<h2>First Time Launch - Authenticating</h2>
+
+When you first run HP it should look something like:<br/><br/>
+[[TODO: include image]]<br/><br/>
+
+If you have used other Web-based SmartThings apps this should look familiar
+to you. This is where you provide your credentials. This should be the
+same username and password that you use to access the SmartThings Web IDE
+and your account online. It is this authentication step that prevents anyone
+from accessing your HousePanel installation. This is why it is important to
+protect this login information; otherwise, anyone who has it will also be
+able to access your HousePanel and control your smart home. On the other hand,
+if you installed HousePanel on a Raspberry Pi on your home local network, then
+only people with access to your home network will have access to HousePanel.
+This gives you one extra layer of protection and is why I prefer the
+Raspberry Pi installation option (see Option 3 in Section 1). This same
+extra layer of protection exists for Option 2 installations on a PC or Mac with 
+a web server, but such a server must stay on and can be more easily accessed
+via a keyboard than a rPi that has been tucked inside a cabinet. Anyway, 
+enough preaching about the benefits of the rPi install. <br/><br/>
+
+Once you have authenticated using your credentials, HousePanel will present
+a list of your hubs. Select which hub you want to associate with HP. Most
+people only have 1 hub so there isn't any decision to make here, but you will
+still need to explicitly click on the one hub that you have. I have two hubs
+so in my case I have to pick the one that I want to control. Anyway, after you
+click on the hub, all of the supported things will be shown in a list that
+looks something like this:<br/><br/>
+
+[[TODO: include image]]<br/><br/>
+
+This is where you select which things you want HousePanel to have the
+option of displaying and controlling. <strong>IMPORTANT!!</strong> I am saying the
+"option of" here because HP does not have to display everything you select here.
+It is just that ONLY the things selected here will be possible to display.
+The way you select what is displayed where and how they are displayed will be
+described in the next few sections. What I recommend doing here is to just
+select everything that is supported, which will be everything shown. In my
+installation the only thing I didn't include is a light that I have in my
+food pantry that is activated by a door open sensor, since I don't
+ever anticipate needing to turn the lights on in a closed food pantry. Anyway,
+just select everything and you will be good to go. To finish this step click
+on the Save button at the bottom of the screen. This will be the moment you
+waited for...<br/><br/>
+
+What happens next is control is returned to HousePanel and the app starts by
+reading all things and their states that you selected. It then assigns unique
+ID numbers to each thing, it automatically organizes each thing selected into
+one of several pre-defined Rooms. That information is then all save in a file
+called "hmoptions.cfg" that is saved on your server. In our example case, it
+will be stored in: "http://192.168.1.50/housepanel/hmoptions.cfg". As an aside,
+this is why you had to do the step of making your server directory Read/Write.
+Without that setting HousePanel will not be able to save this file. As it turns
+out it will actually run just fine even if it can't create this file, but each
+time you run it you will get the same default configuration. If all goes well
+HousePanel will then render the page and display it to you. It will look
+something like:<br/><br/>
+
+[[TODO: include image]]<br/><br/>
+
+If you are curious how HousePanel decides what thing to put in which room by
+default, here is how it does it. First, HP creates seven default rooms 
+named Kitchen, Family, Living, Office, Bedrooms, Outside, and Music.
+Then it places and activates any thing whose name contains one of several
+keywords into the corresponding mapped room. The keywords are listed below
+separated by "|" for the rooms noted. This keyword map can be found in the
+housepanel.php source code in the getOptions subroutine roughly around line 700.
+If you are comfortable with editing source code, feel free to change these
+keywords to your liking; however, end users will have other ways of moving
+things around and renaming rooms. We'll also discuss how to add or delete
+rooms in a later section by editing the hmoptions.cfg file.
+
+<blockquote><pre>
+        Kitchen:   "kitchen|sink|pantry|dinette|clock|mode" ,
+        Family:    "family|mud|fireplace|casual|thermostat|weather",
+        Living:    "living|dining|entry|front door|foyer",
+        Office:    "office|computer|desk|work",
+        Bedrooms:  "bedroom|kid|bathroom|closet|master|guest",
+        Outside:   "garage|yard|outside|porch|patio|driveway",
+        Music:     "sonos|music|tv|television|alexa|stereo|bose|samsung"
+</pre></blockquote>
+
+<h2>Using HousePanel</h2>
+Your default HP page should look something like:<br/><br/>
+
+[[TODO: include image]]<br/><br/>
+
+Before getting into how to customize things, lets first explore how to use
+HP to get the most out of it. Most of it will be obvious and intuitive, but
+a few hidden gems require explanation. For starters, you can browse different
+rooms by clicking on any tab at the top of the page. Notice that the room
+display changes INSTANTLY! This is because HP renders all pages in advance
+and organizes them into tabs. When you select a different tab you are just
+telling HP to show that tab that was previously created.<br/><br/>
+
+<h3>Turning Things On and Off</h3>
+While on any page, you can click or tap on any thing tile to change its state.
+For example, clicking on "Kitchen Light" will turn the light off if it is
+on, and will turn it on if it is off. If you click on a closed door, it will open.
+However, not all things support state changes from HP. Door and motion sensors
+for example are display only tiles so clicking on them will do nothing. Same
+for the clock and blank tiles. Tiles that support mode changes include switch,
+dimmers, doors, mode, routines, thermostats, and music tiles. Within thermostat
+and music tiles there are multiple controls that can be individually activated
+by clicking on them. For example, heat and cool settings up and down are all
+distinct controls on the thermostat tiles. Same for play, pause, skip, etc on
+the music tiles. On dimmer tiles when you change the intensity of the light
+the light will always come on too. Dimmer intensity is changed by clicking on
+the bottom green arrows on any dimmer tile.
+
+<h3>Moving Things and Rooms Around</h3>
+One of the most exciting features of HousePanel is the ability to highly
+customize its look and feel. The first level of customization involves
+simply moving existing tiles around on a page. To do this, click and hold
+down any tile and then move it. It will move with you. Release it and it will
+permanently be relocated to that spot. <strong>Note: this will only be permanent
+if your hmoptions.cfg file is read/write</strong>. You can apply this same
+maneuver to page tabs. Simple click and hold a tab and move it left or right
+to reorder your rooms. The new room location will be permanent on this server.
+
+<h3>Adding or Removing Things from Rooms</h3>
+Deeper customization involves adding or removing things to your rooms. To do
+this scroll to the bottom of the page and click on the Options button
+in the lower left corner of the page. This will load a page with a
+two-dimensional matrix of all your things and all you rooms that looks
+like this:<br/><br/>
+
+[[TODO: include image]]<br/><br/>
+
+Everywhere you see a check mark, that means the thing of that "row" will
+be shown in the room of that "column". You can add or remove a check
+mark in any room for any thing. Duplicates are allowed. For example, at one
+extreme, if you want all things to show in all rooms, you would just
+check all of the boxes. This wouldn't make any sense but hopefully this
+extreme example indicates the tool's extreme flexibility. A more realistic
+example might be to check a thing with a name that didn't match one of
+the default keywords, or to uncheck a thing that matched that you don't
+want shown in the default room. For example, in my installation I added a
+check to "Rock Waterfall" to the Outside room, and removed the
+"Garage Entry Door" from the Outside room. I also added the appropriate
+motion and door sensors to the right rooms. Finally, I also made a new room
+just for my thermostats. The following section explains how to do that.
+
+<h1>Customizing HousePanel</h1>
+
+<h2>Styling the CSS</h2>
+The most important type of customization is performed by either creating your
+own custom style sheet or editing the provided on in the "skin-housepanel"
+directory. When you unpack or clone the master source files this directory
+will exist underneath the master root location where you installed
+hpanel-server. It is best to keep a local copy of all files to edit and then
+upload them when you are ready to your server. If you are using NetBeans then
+that IDE can handle uploads for you automatically if you set up the project
+files with your FTP username and password. Doing this is beyond the scope of
+this Wiki but you can find instructions in the NetBeans help file. To begin
+customizing open the <span class="filename">housepanel.css</span> file into your
+editor. That file will have many well designed defaults for most types of
+HTML classes and tags that you will find in the displayed webpage. In the
+following sections we define how you would alter these settings.
+
+<h3>Background Images on Tab Pages</h3>
+All tabbed pages inherit the property of the "div.panel" style that is
+defined in the default CSS file. The default should look something like this:<br/>
+<blockquote><pre>
+div.panel {
+    display: inline-block;
+    border: 0px solid #3333cc;
+    padding: 2px;    width: 100%;    margin: auto;
+    position:relative;    background-repeat: no-repeat;
+    background-position: left;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+}
+</pre></blockquote>
+So if you want all pages to by default to be squeezed onto 75% of the page
+you could change "width:100%" to "width:75%".<br/><br/>
+
+Each specific tabbed page is identified by a &lt;div class="panel-name"> style with the name
+"panel-" pre-pended to the name of the page shown on the tab. Case is not
+significant when doing this styling. For example, the Kitchen
+page is tagged with div.panel-kitchen. This is the setting one would alter
+in the CSS file to provide a unique styling for any page with the tab
+named "kitchen". The default styling is defined here:<br/>
+
+<blockquote><pre>
+div.panel-family, div.panel-familyroom {
+    background-image: url('family.jpg');
+}
+div.panel-kitchen, div.panel-dinette {
+    background-image: url('kitchenroom.jpg');
+}
+div.panel-formal, div.panel-living, div.panel-livingroom {
+    background-image: url('formal.jpg');
+}
+div.panel-outside, div.panel-garage {
+    background-image: url('outside.jpg');
+}
+div.panel-office, div.panel-library {
+    background-image: url('office.jpg');
+}
+div.panel-bedroom, div.panel-bedrooms {
+    background-image: url('bedroom.jpg');
+}
+div.panel-music, div.panel-theater, div.panel-entertainment {
+    background-image: url('music.jpg');
+}
+div.panel-thermostats, div.panel-thermostat {
+  background-image: url('thermostat.jpg');
+    </pre></blockquote>
+
+If you want to change the background image just provide your custom image
+and upload it to your server and refer to it in the above section of the CSS.
+
+<h3>Default Thing Styling</h3>
+All things displayed in HousePanel inherit the syling tied to the
+&lt;div class="thing"> tag style. The default should look something like this:<br/>
+
+<blockquote><pre>
+div.thing {
+    display: inline-block;
+    margin: 3px;
+    text-align: center;
+    vertical-align: top;
+    border-top: 0px solid #cccccc; 
+    border-right: 0px solid #cccccc;
+    border-bottom: 0px solid #ffffff; 
+    border-left: 0px solid #ffffff;
+    background-color: rgba(0, 51, 204, 0.6);
+    box-shadow: 2px 2px 7px black;
+    color: #eeeeee;
+    cursor: default;
+    width: 120px; 
+    height: 160px;
+}    
+</pre></blockquote>
+If you want all tiles displayed to be a different size or have a different border
+color, this is where you would specify your custom information.
+
+<h3>Specific Thing Type Styling</h3>
+Any given thing has a known thing type and each type can be styled distinctly.
+This is done by providing styling information tied to the
+&lt;div class="thingtype"> tag, where thingtype is one of the recognized types
+of things that HousePanel supports. For example, if you wanted to make all
+things of type "switch" look a certain way, you would style the following block:<br/>
+<blockquote><pre>
+div.switch {
+    width: 118px;
+    height: 112px;
+}    
+</pre></blockquote>
+
+This would just style the switch portion of the tile. Each tile also has
+a title and potentially other elements. The entire tile can be styled by
+referencing "div.thing.switch-thing". This approach will take priority over
+anything you provided previously to "div.thing" described above, but only
+for switch things. For example, let's say you wanted to put a photo of your
+cat into all switch things, you could do that by doing something like:
+<blockquote><pre>
+div.thing.switch-thing {
+  background-image: url('mycat.jpg');
+</pre></blockquote>
+
+<h3>Styling Things Based on State</h3>
+Things in HousePanel that can be clicked upon typically also change state.
+The current state of all such things is available to be used to provide
+state based styling. The most common example of this is a switch, which changes
+the styling "div" to include "on" or "off" based on whether the switch is
+on or off in state. Using this one can provide a unique image or unique color
+styling based on whether the switch is on or off. The default CSS uses this
+to style "on" switches to use a bright light bulb, and "off" switches to use
+a dim light bulb. The pertinent lines in the default CSS file are here:
+
+<blockquote><pre>
+div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
+    background-image: url('bulbon.png');
+}
+div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
+    background-image: url('bulboff.png');
+}
+</pre></blockquote>
+
+Notice that this styling applies to switches, dimmers, bulbs, and lights.
+Any image styling provided in the div.switch section will be overridden by this.
+This same concept applies to open and closed doors, momentary buttons that are
+pushed, and locked and unlocked locks. Other single word states provided by
+the SmartThings system will be available to use for styling.
+
+<h3>Thermostat, Music, Weather, and other Complex Formatting</h3>
+The principles and concepts described above apply equally well to thermostats
+and music thing tiles. The difference is that these tile types involve
+more complex elements. The important thing to note is that each individual
+element can be styled individually or all of them can be styled using the master
+div information that wraps around the entire tile. For thermostats, the 
+master div information is tagged with div.thing.thermostat-thing 
+following a similar pattern as the simpler tiles. Same applies to all complex
+tiles. The following styling from the default file presents the temperature
+reading inside of a blue-green circle. This can be changed to whatever you prefer.
+
+<blockquote><pre>
+div.thermostat.temperature {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 50px !important;
+    width: 50px;
+    padding: 4px 3px 0 3px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 45px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
+</pre></blockquote>
+
+
+</div>
 </body>
 </html>

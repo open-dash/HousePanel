@@ -79,9 +79,6 @@ window.addEventListener("load", function(event) {
         }
     });
 
-    // setup clicking on name of tiles
-    // setupName();
-    
     // disable return key
     $("form.options").keypress(function(e) {
         if ( e.keyCode===13  && popupStatus===1){
@@ -137,9 +134,9 @@ function setupPopup() {
         $(this).bind("click", jeditTableCell);
     });
     
-    $("table.headoptions th.thingname").click(function() {
-        alert("clicked on Room names row");
-    });
+//    $("table.headoptions th.thingname").click(function() {
+//        alert("clicked on Room names row");
+//    });
        
 }
 
@@ -222,11 +219,11 @@ function strObject(o) {
   var out = '';
   for (var p in o) {
     out += p + ': ';
-//    if (typeof o[p] === "object") {
-//        out += strObject(o[p]);
-//    } else {
+    if (typeof o[p] === "object") {
+        out += strObject(o[p]);
+    } else {
         out += o[p] + '\n';
-//    }
+    }
   }
   return out;
 }
@@ -250,7 +247,7 @@ function updateTile(aid, presult) {
         if ($(targetid) && value) {
             var oldvalue = $(targetid).html();
             var oldclass = $(targetid).attr("class");
-//            alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
+            // alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
 
             // remove the old class type and replace it if they are both
             // single word text fields like open/closed/on/off
@@ -264,7 +261,7 @@ function updateTile(aid, presult) {
             }
 
             // update the content 
-            if (oldvalue.length) {
+            if (oldvalue && value) {
                 $(targetid).html(value);
             }
         }
@@ -285,6 +282,7 @@ function refreshTile(aid, bid, thetype) {
 function setupTimers() {
     
     // force refresh when we click on a new page tab
+    /*
     $("li.ui-tab > a").click(function() {
         var panel = $(this).text().toLowerCase();
 //        alert("panel = "+panel);
@@ -300,6 +298,7 @@ function setupTimers() {
             
         });
     });
+    */
     
     // set up a timer for each tile to update automatically
     // but only for tabs that are being shown
@@ -316,7 +315,7 @@ function setupTimers() {
             case "switch":
             case "bulb":
             case "switchlevel":
-                timerval = 30000;
+                timerval = 60000;
                 break;
                 
             case "motion":
@@ -345,7 +344,7 @@ function setupTimers() {
                 break;
 
             case "image":
-                timerval = 60000;
+                timerval = 600000;
                 break;
 
             // update clock every minute
@@ -375,75 +374,11 @@ function setupTimers() {
     });
 }
 
-function createOutput(swtype, presult) {
-    alert('presult = ' + strObject(presult));
-    var tc= "<table class=\"sensortable\">";
-    tc= tc + "<tr class=\"theader\"><td width=\"80\">" + swtype + " Status" + "</td><td>Date / Time</td></tr>";
-    var shaded = "shaded";
-    var tval;
-    $.each( presult, function(k, timestamp)  {
-        // if ($timestamp["name"] == $swtype) {
-        shaded = (shaded ==="shaded") ? "unshaded" : "shaded";
-        var fulldate = timestamp["date"];
-        var tvalue = timestamp["value"];
-        if (Array.isArray(tvalue)) {
-            tval = "";
-            $.each( tvalue, function (key, val)  {
-                tval = tval + key + ' = ' + val + "<br />";
-            });
-        } else {
-            tval = tvalue;
-        }
-        tc= tc + "<tr class=\"$shaded\"><td width=\"80\">" + tvalue + "</td><td>" + fulldate + "</td></tr>";
-    });
-    tc= tc+"</table>";
-  
-}
-
-// setup clicking event for the tile name
-function setupName() {
-// click on all the thing names for status window to show
-
-    var jqflag = "div.thing div.thingname";
-    $(jqflag).click(function() {
-      
-        var thevalue = $(this).html();
-        var aid = $(this).attr("aid");
-        var tile = '#t-'+aid;
-        var bid = $(tile).attr("bid");
-        var thetype = $(tile).attr("type");
-        var panelname = $(tile).attr("panel");
-//        var kindex = $(tile).attr("tile");
-//        alert("type= " + thetype + " aid= " + aid + " kindex= " + kindex + " bid= "+bid);
-
-        // add class to highlight last one picked
-        $(jqflag).removeClass("sensorpick");
-        $(this).addClass("sensorpick");
-
-        // load history data and show in a window
-        $.post("housepanel.php", 
-               {useajax: "dohistory", id: bid, type: thetype, value: thevalue},
-               function (presult, pstatus) {
-                    if (pstatus==="success" && presult!==undefined ) {
-                        var output = createOutput(thetype,presult);
-                        if (panelname) {
-                            $("#data-"+panelname).html(output);
-                        } else {
-                            var width = screen.width / 2;
-                            var height = (screen.height * 3) / 4;
-                            var mywindow = window.open("", "Thing Status", "width=" + width + ", height=" + height + ", menubar=no, status=no");
-                            mywindow.document.write(output);
-                        }
-                    }
-               }, "json"
-        );        
-    });
-}
-
 // find all the things with "bid" and update the value clicked on somewhere
 function updAll(aid, bid, thetype, pvalue) {
 
     // update trigger tile first
+    // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
     updateTile(aid, pvalue);
     
     // for music tiles, wait few seconds and refresh again to get new info
@@ -462,7 +397,7 @@ function updAll(aid, bid, thetype, pvalue) {
     });
     
     // if this is a switch go through and set all switchlevels
-    if (thetype==="switch" || thetype==="bulb") {
+    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
@@ -476,6 +411,10 @@ function updAll(aid, bid, thetype, pvalue) {
             updateTile(otheraid, pvalue);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+        });
+        $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
         });
@@ -505,14 +444,13 @@ function setupPage(sensortype) {
         var thevalue;
         
         // for switches and locks set the command to toggle
-        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-            thetype==="bulb" || thetype==="light" || thetype==="valve") {
+        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||thetype==="bulb") {
             thevalue = "toggle";
         } else {
             thevalue = $(targetid).html();
         }
 
-//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
+        // alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
 
         // turn momentary items on or off temporarily
         if (thetype==="momentary" || thetype==="piston") {
@@ -525,29 +463,36 @@ function setupPage(sensortype) {
                 this[0].html(this[2]);
             };
             $.post("housepanel.php", 
-                {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass});
-            if (thetype==="piston") {
-                $(that).addClass("on");
-                $(that).html("Piston Firing...");
-            }
-            else if ( thevalue.indexOf("on") >= 0 ) {
-                $(that).removeClass("on");
-                $(that).addClass("off");
-                $(that).html("off");
-            } else {
-                $(that).removeClass("off");
-                $(that).addClass("on");
-                $(that).html("on");
-            }
-            setTimeout(function(){classarray.myMethod();}, 1500);
-        } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ||
-                   thetype==="light" || thetype==="valve") {
+                {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
+                function(presult, pstatus) {
+                    // alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
+                    if (pstatus==="success" && presult!==undefined && presult!==false) {
+                        if (thetype==="piston") {
+                            $(that).addClass("firing");
+                            $(that).html("Piston Firing...");
+                        }
+                        else if ( thevalue.indexOf("on") >= 0 ) {
+                            $(that).removeClass("on");
+                            $(that).addClass("off");
+                            $(that).html("off");
+                        } else {
+                            $(that).removeClass("off");
+                            $(that).addClass("on");
+                            $(that).html("on");
+                        }
+                        setTimeout(function(){classarray.myMethod();}, 1500);
+                    }
+                });
+//        } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
+//                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
+        } else {
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
-//                        alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
-                        if (pstatus==="success" && presult!==undefined && presult!==false ) {
+//                        if (thetype) {
+//                            alert("pstatus= ["+pstatus+ "] type= "+thetype+" aid= "+aid+" bid= "+bid+" presult= "+strObject(presult)); 
+//                        }
+                        if (pstatus=="success" ) {
                             updAll(aid,bid,thetype,presult);
                         }
                    }, "json"
