@@ -227,7 +227,7 @@ In this step you will install the PHP application by copying the
 files from the following GitHub into a directory of your choice:
 <blockquote>
     <pre>
-    <a href="http://github.com/kewashi/hpanel-server">http://github.com/kewashi/hpanel-server</a>
+    <a href="http://github.com/open-dash/HousePanel/hpanel-server">http://github.com/kewashi/hpanel-server</a>
     </pre>
 </blockquote>
 A typical place would be in its own directory called /housepanel. Be sure 
@@ -338,8 +338,8 @@ you are seeing and either I or other users will assist you.<br/>
 
 <h2>First Time Launch - Authenticating</h2>
 
-When you first run HP it should look something like:<br/><br/>
-[[TODO: include image]]<br/><br/>
+When you first run HP it should look something like:<br/>
+<div><img src="kitchen.png" alt=""/></div>
 
 If you have used other Web-based SmartThings apps this should look familiar
 to you. This is where you provide your credentials. This should be the
@@ -481,7 +481,7 @@ just for my thermostats. The following section explains how to do that.
 
 <h1>Customizing HousePanel</h1>
 
-<h2>Styling the CSS</h2>
+<h2>Styling Things Using CSS</h2>
 The most important type of customization is performed by either creating your
 own custom style sheet or editing the provided on in the "skin-housepanel"
 directory. When you unpack or clone the master source files this directory
@@ -658,6 +658,75 @@ div.thermostat.temperature {
 }
 </pre></blockquote>
 
+<h2>Customizing Special Things and Tiles</h2>
+HousePanel includes a number of special things/tiles that are by default styled
+appropriately; however, in keeping with the flexibility principle of
+HousePanel, all of them can be customized to your liking. The custom
+tiles and how to customize them are described below.
+
+<h3>Clock Thing</h3>
+The clock special thing is a digital clock tile that by default shows
+the day of the week, the date in MMM dd, yyyy format, and the time
+in hh:mm AM/PM format. All three can be styled using the tags:
+div.clock.weekday, div.clock.date, and div.clock.time respectively.
+Unfortunately the actual format of the fields cannot be modified,
+but their font, color, size, and placement are all fair game. The overall
+tile size can be styled using div.thing.clock-thing. By default this
+element is styled to be a 246x160 blue tile but it need not be. Finally
+this tile has a name bar just like all others, but by default it is
+hidden. It can be displayed and uniquely styled using the tag name of
+div.thingname.clock.
+
+<h2>Advanced Styling of Specific Tiles</h2>
+Up to this point we have described how to manipulate and style
+specific categories of things. In this section the overall format of the
+rendering of things on the webpage is described. Using this information
+one can uniquely style any one given thing or device. For example,
+using the methods in this section it will be possible to style
+a specific door using a unique icon (such as a barn door), 
+while all other doors use a regular door icon. <br/><br/>
+
+To understand how this works it is best to start with defining 
+how all tiles are organized and accounted for. All tiles on the 
+HousePanel webpage follow the following template:
+
+<blockquote>
+<pre>
+
+&lt;div id="t-n" tile="x" bid="uniqueidnumber" type="swtype" 
+panel="kitchen" class="thing swtype-thing">
+  
+    &lt;div id="s-n" aid="n" class="thingname swtype">
+        tilename
+    &lt;/div>
+
+    {
+
+      &lt;div id="a-n-subitem[i]" >
+         variable content
+      &lt;/div>
+    }
+
+&lt;/div>
+
+</pre>
+</blockquote>
+
+Every visible element on screen has a unique number. For our sample
+template, let's call this unique number "n". 
+Every thing that can be displayed has a unique name that matches
+whatever name you gave the "thing" in your mobile SmartThings app.
+The first three words of this name are important for unique styling.
+For our sample template, lets say the thing is called "my custom plug" 
+and is of thing type = "swtype". For example, "swtype" might be
+"switch", "switchlevel", "contact", or "thermostat" just to name a few.
+And finally, all tiles can have any number of sub-items and each sub-item
+has its own subtitle and flag that is included in the class.
+For example, switchlevel things have at least two sub-items:
+a switch and a level. So each switchlevel switch will have two
+sub-sections - one labeled <i>subid="switch"</i> and one <i>subid="level"</i>. 
+
+In the above template, the items in italics are unique numbers.
 
 </div>
 </body>
