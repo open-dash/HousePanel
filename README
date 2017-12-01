@@ -13,6 +13,8 @@
 * CLIENT_ID, CLIENT_SECRET, and ST_WEB must be in a file called clientinfo.php
 * which must look as follows:
 *
+* HousePanel is now part of Open-Dash
+*
 <?php
 define('CLIENT_ID', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
 define('CLIENT_SECRET', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
