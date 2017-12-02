@@ -5,16 +5,20 @@
     </head>
 
     <body>
+<div class="main">
 <div class="center">
     <h1>House Panel</h1>
-    <p>House Panel web service PHP application for SmartThings<br/>
-<i>author: Ken Washington  (c) 2017</i></p>
+    <p>House Panel Open Source Web App for SmartThings<br/>
+    <i>Ken Washington  (c) 2017</i></p>
 </div>
 
-        <div>
 <h1>Introduction</h1>
-House Panel (HP) is the highly customizable SmartThings web application for accessing and
+HousePanel (HP) is the highly customizable open source
+web application for accessing and
 controlling a SmartThings equipped smart home from a Tablet, Computer, or even Smart Phone.
+HousePanel is the primary app of the 
+<a href="http://open-dash.com">Open-Dash</a> open source community.<br/><br/>
+
 HP is designed to give the user full control over the look and feel of their panel controller.
 It does require some effort to install and configure, but once set up, making fine tunings
 and adjustments are relatively simple.  Most customizations involve editing a CSS file.
@@ -30,21 +34,24 @@ feature is mostly for developers and can be safely ignored, but if you are a dev
 then you should read the final section of this Wiki on Advanced Applications of HP.
 
 <h2>Features</h2>
-HousePanel can control most types of things in the SmartThings ecosystem, including:
+HousePanel can display and/or control most types of things in the 
+SmartThings ecosystem, including:
 <ul>
 <li>switches <li>dimmers <li>momentary buttons <li>contact sensors
-<li>doors <li>thermostats <li>lights <li>locks <li>bulbs <li>water sensors 
+<li>doors <li>thermostats <li>lights <li>locks 
+<li>motion sensors<li>bulbs <li>water sensors 
 <li>valves
 </ul>
 
 A number of special tiles are also supported, including: 
 <ul>
-<li>time 
-<li>weather
+<li>blanks 
+<li>clock
+<li>images
 <li>mode
 <li>routines
+<li>weather
 <li>WebCoRE pistons,
-<li>blanks 
 </ul>
 
 Images can be any still or dynamically updated graphic that can be referenced
@@ -57,19 +64,22 @@ of modern web browsers. Under the hood we use jQuery to make this efficient. Thi
 number of user pages can be displayed, and on each page, any number of "things" can be shown
 and controlled. Later in this document we will explain how to customize the names of pages and
 the number of pages used. The default is 6 pages and each page has a fixed name. Pages can be
-easily renamed from within the web page - we will show how to do this later.
+easily renamed from within the web app. We will show how to do this later.
 
 <h2>Requirements - What You Need to Use HousePanel</h2>
-House Panel is a web application written in PHP that is paired with a SmartThings
-SmartApp written in the groovy language. Obviously you will need a SmartThings
+HousePanel is a web application written in PHP and Javascript that is 
+paired with a SmartThings SmartApp written in the Groovy language. 
+To use Housepanel you will need a modern browser with Javascript support.
+Obviously you will also need a SmartThings
 account with owner access. You will also need to have owner access to a web
 server of some type capable of hosting PHP applications. You should also have
 access to a good CSS editor that you will use to make custom changes to your
 HousePanel configuration. You can do this with any text editor, but you will
 be much happier if you are using a coding editor that assists you with the crazy syntax
 of CSS and graphical aids for color selections. I personally use NetBeans which is
-my favorite coding editor. You can get a copy from the Oracle website at www.netbeans.org
-If you do use NetBeans be sure to install the plugin for PHP editing. 
+my favorite coding editor. You can get a copy from the Oracle website 
+at <a href="www.netbeans.org">www.netbeans.org</a>. If you do use 
+NetBeans be sure to install the plugin for PHP editing. 
 I also find the color code preview plugin to be useful for picking colors easily.
 
 <h1>Installation</h1>
@@ -88,21 +98,27 @@ you can use chmod 666 on the directory. Some FTP programs will support this, oth
 to use the file browser function of your web hosting service to change the permissions to "666" which means
 the owner, groups, and the world can read and write to the folder.<br/><br/>
 
-<h3>Option 2 - dedicated computer on your LAN</h3>
-This option has great flexibility and speed as well as more security over a public facing web server.
-It is more secure because it runs on your LAN and is typically not exposed to the Internet. Your home
-router shields all computers from the Internet from outside access unless you bypass that using
-either DMZ or port forwarding. The disadvantage of course is you can't access your home unless you
-are at home on the same network. This can be a big restriction but many people don't control their
-homes using a panel when they are away so I personally don't think this is a major limitation. To use this option
-you will need to have a web server installed on your dedicated computer, and you will need to leave that
-computer on at all times that you want the panel to work. Instructions for installing Apache on a
+<h3>Option 2 - Dedicated computer on your LAN</h3>
+This option has great flexibility and speed as well as more security 
+over a public facing web server. It is more secure because it runs on 
+your LAN and is typically not exposed to the Internet. Your home
+router shields all computers from the Internet from outside access 
+unless you bypass that usin either DMZ or port forwarding. The 
+disadvantage is you can't access this server unless you are at home 
+and on the same network. This can be a big restriction but many people 
+don't control their smart homes using a panel when they are away, so 
+I personally don't think this is a major limitation. To use this option
+you will need to have a web server installed on your dedicated computer, 
+and you will need to leave that computer on at all times that you want 
+the panel to work. Instructions for installing Apache on a
 dedicated home PC or Mac can be found at http://www.apache.org <br /><br/>
 
-You will then need to install PHP on your web server and enable curl. Instructions for doing this are beyond
-the scope of this Wiki. You can find excellent instructions and examples for how to do this all over the
-Internet. As with the public web server option, you will also need to set the permissions of the directory
-where you want to install HousePanel. Since this is a local computer you can do this using standard
+You will then need to install PHP on your web server and enable cUrl. 
+Instructions for doing this are beyond the scope of this Wiki. You 
+can find excellent instructions and examples for how to do this all over the
+Internet. As with the public web server option, you will also need to 
+set the permissions of the directory where you want to install 
+HousePanel. Since this is a local computer you can do this using standard
 methods for your local computer. On a PC this involves right-clicking on the directory and setting
 permissions. But first you will need to create the directory within your web hosting area.
 For example, make a directory called "housepanel" under c:\htdocs on a standard Apache install. I have
@@ -135,9 +151,9 @@ sudo raspi-config
  </pre></blockquote>
 
 I recommend changing the default password from "raspberry" to whatever you want.
-ssh in as username = pi   and   password = your-password
-modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".<br/>
-Next several lines will install the Apache and PHP applications you will need on the rPi.
+Then you should "ssh" into your rPi as username = pi and password = your-password
+modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".
+Enter the next several lines to install the Apache and PHP applications onto the rPi.
 
 <blockquote><pre>
 sudo apt-get update
@@ -146,16 +162,14 @@ sudo apt-get -y install apache2 php5 php5-gd wiringpi raspi-gpio rpi-update --fi
 sudo rpi-update
 </pre></blockquote>
 
-Next configure PHP to use curl. This should be on by default, but check php.ini to be sure.
+Next, you need to configure PHP to use cUrl. This should be on by default, 
+but check php.ini to be sure.
 Look for your php.ini file and then edit it using nano or vim. Within php.ini
 search for "curl". You should find a line that loads the curl library. Sometimes
 that line is commented out with a "#" in the first column. If you have that
-activate the loading of the curl library by uncommenting that line.<br/>
+activate the loading of the curl library by uncommenting that line.<br/><br/>
 
-Finally, restart Apache using:
-<blockquote><pre>
-sudo service apache2 restart
- </pre></blockquote>
+Finally, restart Apache using <span class="var">sudo service apache2 restart</span>
 
 <h2>Testing your PHP Web Server</h2>
 Before proceeding I highly recommend that you test your web server
@@ -168,38 +182,33 @@ just the following in it:<br/>
 Save this file to phpinfo.php and upload it to your server. Open a browser
 and point it to this file. For example, let's assume you are using a
 rPi on static IP address 192.168.1.50 and your HP is installed in /housepanel
-then you would go to:
-
-<blockquote>
-http://192.168.1.50/housepanel/phpinfo.php
-</blockquote>
+then you would browse over to: 
+<span class="var">http://192.168.1.50/housepanel/phpinfo.php</span><br/><br/>
 
 If things are working you should see a PHP information page returned. Scroll
-down and look for cUrl to see if it is activated. The HP distribution
+down and look for a section named cUrl to see if it is activated. The HP distribution
 files that we will download later includes a phpinfo.php file so if you
 prefer you can wait and perform this test after uploading the files, in which
 case you won't have to worry about creating this file.<br/><br/>
 
-If loading this page generates an error, then you your web server was
+If loading this page generates an error, then you know your web server was
 not installed correctly and it will need to be addressed before you can proceed.
+Detailed troubleshooting of the install steps for Apache, PHP, and cUrl
+are beyond the scope of this Wiki but there are ample resources on the
+web that can help you troubleshoot this and get it working before you proceed.
 
+<h2>Installing the HousePanel Application</h2>
 
-<h2>Installing the Application</h2>
-
-<h3>Step 1 - Install and Configure HousePanel.groovy</h3>
+<h3>Install and Configure HousePanel.groovy</h3>
 Start with installing the HousePanel.groovy file in your SmartThings smartapp IDE repository.
-Unfortunately I was not able to get the IDE install option to work with my account
-so you will have to install this manually. First, go to my GitHub "kewashi" account and
-copy the "raw" code. Do this by browsing to:
-<blockquote>
-    <pre>
-    <a href="http://github.com/kewashi/HousePanel">http://github.com/kewashi/HousePanel</a>
-    </pre>
-</blockquote>
-Navigate down to </b></i>housepanel.src/HousePanel.groovy</i></b>
-Open this file and then click on the "raw" icon in the upper right corner.
-This will open a window showing just the lines of code. Copy the entire file
-using Control-A or Command-A on mac, then Control-C or Command-C on a mac.
+Unfortunately I was not able to get the SmartThings IDE option to work with my account
+so you will have to install this manually. 
+First, go to the Open-Dash GitHub account at 
+<a href="http://github.com/open-dash/HousePanel">http://github.com/open-dash/HousePanel</a>
+and open the <span class="var">HousePanel.groovy file</span>.
+With this file open click on the "raw" icon in the upper right corner.
+This will open a window showing just the "raw" lines of code. Copy the entire file
+to the clipboard using Control-A or Command-A on mac, then Control-C or Command-C on a mac.
 Navigate back to your ST IDE at graph.api.smartthings.com. Make sure you are
 logged in. Then go to the SmartApps section using the top menu. Click on create
 new SmartApp then select "from code". In the blank window that opens, paste
@@ -208,21 +217,22 @@ on a mac. Then select Save  then Publish "for me".<br/><br/>
 
 If you are an experienced GitHub user you can also feel free to just clone
 or fork your own copy into your GitHub account and work with it from there.
-The advantage of this is you can track and manage any local tweaks you make
+The advantage of this is you can track and manage any local edits you make
 and GitHub will do all of the work of managing your changes for you as usual.
-The other advantage of that approach is if you make improvements, I would
-appreciate seeing them via a pull request.
+The other advantage of that approach is if you make improvements, you can
+contribute them to the Open-Dash movement by making a pull request. I would
+appreciate seeing such community contributions that will of course
+help make HousePanel get much better over time.<br/><br/>
 
-<h3>Step 2 - Configure clientinfo.php Authentication File</h3>
 Before you leave the ST IDE, you will need to 
 enable OAUTH2 in the IDE app settings. To do this, select App Settings
-then turn on OAUTH2 in the options that show on the lower left of the screen.
-This will reveal two long strings of data called <b>CLIENT_ID</b> and 
-<strong>CLIENT_SECRET</strong>. 
+and turn on OAUTH2 in the options. This will reveal two long strings 
+of data called <span class="var">CLIENT_ID</span> and 
+<span class="var">CLIENT_SECRET</span>. 
 These values are important and must be copied and saved for use in the
 next step when you are configuring your web server.
 
-<h3>Step 3 - Install PHP Code on Web Server</h3>
+<h3>Install PHP Code on Web Server</h3>
 In this step you will install the PHP application by copying the
 files from the following GitHub into a directory of your choice:
 <blockquote>
@@ -237,7 +247,7 @@ files to your web server.<br/><br/>
 As with the groovy file, you can also fork this to your own GitHub space
 and then clone it down to your local PC or mac if you are familiar with using GitHub. 
 If you are using Git on your local PC I recommend this approach since it
-will allow you to make local tweaks and pull requests for any improvements
+will allow you to make local edits and pull requests for any improvements
 you want to be considered. As a bonus, if you are using NetBeans editor
 that editor talks nicely to Git to tell you want edits have been made
 using visual cues.<br/><br/>
@@ -279,14 +289,16 @@ always be shown in this time zone.<br/><br/>
 
 For now you can ignore the last three variables. These will be discussed
 later when we explain how to customize HousePanel or how to use it as
-a GhostScript endpoint or as a generic SmartThings web service. The comments
+a <a href="www.ghostscript.com">GhostScript</a> endpoint or as a 
+generic SmartThings web service. The comments
 provided in the sample file above should give you a pretty good hint as to what
-these options are for and how they are used.
+these options are for and how they are used, but don't worry, we will
+explain this in detail later.
 
 
-<h3>Step 4 - Set Server Permissions</h3>
+<h3>Set Server Permissions</h3>
 This step ensures that your web server can create and update as needed
-an options file that is generated dynamically when you run the app.
+an options file that is generated dynamically when you run the web App.
 To do this you will need to either SSH into your server or use a FTP
 program that allows file permissions to be established and edited. If you are
 using Option 1 then FTP is your best bet. Alternatively some web hosting
@@ -297,14 +309,15 @@ assuming your directory name is /housepanel. If you are using Option 2
 then your local web server configuration tool should be used to set
 the directory to read/write. If you are using Option 3 - Raspberry Pi - then your
 best option is to SSH over to the Raspberry Pi and then use the Linux
-command "chmod 666 /var/www/htdocs/housepanel". Replace the directory name
-here with where your Apache stores html files and the name of your install
-directory.
+command <span class="var">"chmod 666 /var/www/htdocs/housepanel"</span>. Replace the directory name
+here with where your Apache stores html files and the name of the
+directory where you installed the HousePanel files.
 
-<h3>Step 5 - Final Check</h3>
+<h3>Final Check</h3>
 If you have made it this far, you are ready to do an initial test. Before
-you do, let's review to confirm that you have the following set up. If
-you don't go back to the section noted and complete that step:<br/><br/>
+you do, let's review things to confirm that you have the following set up. If
+you are missing anything, you should go back to the relevant section
+and complete that step:<br/><br/>
 <ul>
     <li>Web server set up with PHP configured
     <li>Confirmed that cUrl is activated in your PHP
@@ -313,14 +326,18 @@ you don't go back to the section noted and complete that step:<br/><br/>
     <li>hpanel-server files uploaded to its own directory on your web server
     <li>the directory above configured to read/write using "chmod 666 yourdirectory"
     <li>Web browser with javascrpt and cookies enabled
-</ul>
+</ul><br/>
 
 If all of the above is true, you are ready to run HousePanel for the first time.
 Before trying this on your Tablet or Cell phone, confirm that it loads
-properly in a desktop browser. I have tested HousePanel with Chrome,
-Microsoft Edge, IE 11, Safari on mac, and Fully Kiosk Browser on PC. All have been
-confirmed to work but others are likely to as well. Chrome and Edge appear
-to work best and are fastest. Before testing make sure cookies and Javascript are enabled.
+properly in a desktop browser. I have tested HousePanel with Chrome
+(on a PC, iPhone, iPad, and Android table),
+Microsoft Edge (on a Windows 10 PC), 
+IE 11 (on a Windows 7 and Windows 10 PC), 
+Safari (on a Mac and iPhone), and Fully Kiosk Browser (on PC and an
+Android tablet). All have been confirmed to work but others options are
+likely to work as well. Chrome and Edge appear
+to work best and are fastest. Before testing make sure Cookies and Javascript are enabled.
 Browse to the web server that you installed in the first step and the directory
 where you stored HousePanel. Using the same name examples we have been using
 throughout this guide, that would be:
@@ -330,16 +347,15 @@ throughout this guide, that would be:
 </pre></blockquote>
 
 If all goes well, HousePanel will launch and display an authentication challenge.
-If this happens, congratulations! You can proceed to the next section on how
-to operate HousePanel. If not, please post in the community form what error
-you are seeing and either I or other users will assist you.<br/>
+If this happens, congratulations - you are ready to proceed.
 
 <h1>Running HousePanel</h1>
 
 <h2>First Time Launch - Authenticating</h2>
 
 When you first run HP it should look something like:<br/>
-<div><img src="kitchen.png" alt=""/></div>
+
+[[TODO: Authentication image]]
 
 If you have used other Web-based SmartThings apps this should look familiar
 to you. This is where you provide your credentials. This should be the
@@ -384,29 +400,30 @@ waited for...<br/><br/>
 What happens next is control is returned to HousePanel and the app starts by
 reading all things and their states that you selected. It then assigns unique
 ID numbers to each thing, it automatically organizes each thing selected into
-one of several pre-defined Rooms. That information is then all save in a file
-called "hmoptions.cfg" that is saved on your server. In our example case, it
+one of several pre-defined Rooms. That information is then saved in a file
+called <span class="var">hmoptions.cfg</span> that is saved on your 
+server. In our example case, it
 will be stored in: "http://192.168.1.50/housepanel/hmoptions.cfg". As an aside,
 this is why you had to do the step of making your server directory Read/Write.
 Without that setting HousePanel will not be able to save this file. As it turns
 out it will actually run just fine even if it can't create this file, but each
-time you run it you will get the same default configuration. If all goes well
+time you run you will see the same default configuration. If all goes well
 HousePanel will then render the page and display it to you. It will look
 something like:<br/><br/>
 
-[[TODO: include image]]<br/><br/>
+<div><img src="kitchen.png" alt=""/></div>
 
 If you are curious how HousePanel decides what thing to put in which room by
 default, here is how it does it. First, HP creates seven default rooms 
 named Kitchen, Family, Living, Office, Bedrooms, Outside, and Music.
 Then it places and activates any thing whose name contains one of several
-keywords into the corresponding mapped room. The keywords are listed below
+keywords into the corresponding room. The keywords are listed below
 separated by "|" for the rooms noted. This keyword map can be found in the
 housepanel.php source code in the getOptions subroutine roughly around line 700.
 If you are comfortable with editing source code, feel free to change these
 keywords to your liking; however, end users will have other ways of moving
 things around and renaming rooms. We'll also discuss how to add or delete
-rooms in a later section by editing the hmoptions.cfg file.
+rooms in a later section by editing the hmoptions.cfg file directly.
 
 <blockquote><pre>
         Kitchen:   "kitchen|sink|pantry|dinette|clock|mode" ,
@@ -418,12 +435,9 @@ rooms in a later section by editing the hmoptions.cfg file.
         Music:     "sonos|music|tv|television|alexa|stereo|bose|samsung"
 </pre></blockquote>
 
-<h2>Using HousePanel</h2>
-Your default HP page should look something like:<br/><br/>
-
-[[TODO: include image]]<br/><br/>
-
-Before getting into how to customize things, lets first explore how to use
+<h1>Using HousePanel</h1>
+Your default HP page should look something like the image in the prior
+section. Before getting into how to customize things, lets first explore how to use
 HP to get the most out of it. Most of it will be obvious and intuitive, but
 a few hidden gems require explanation. For starters, you can browse different
 rooms by clicking on any tab at the top of the page. Notice that the room
@@ -431,22 +445,28 @@ display changes INSTANTLY! This is because HP renders all pages in advance
 and organizes them into tabs. When you select a different tab you are just
 telling HP to show that tab that was previously created.<br/><br/>
 
-<h3>Turning Things On and Off</h3>
+<h2>Turning Things On and Off</h2>
 While on any page, you can click or tap on any thing tile to change its state.
 For example, clicking on "Kitchen Light" will turn the light off if it is
 on, and will turn it on if it is off. If you click on a closed door, it will open.
 However, not all things support state changes from HP. Door and motion sensors
 for example are display only tiles so clicking on them will do nothing. Same
 for the clock and blank tiles. Tiles that support mode changes include switch,
-dimmers, doors, mode, routines, thermostats, and music tiles. Within thermostat
-and music tiles there are multiple controls that can be individually activated
-by clicking on them. For example, heat and cool settings up and down are all
-distinct controls on the thermostat tiles. Same for play, pause, skip, etc on
-the music tiles. On dimmer tiles when you change the intensity of the light
-the light will always come on too. Dimmer intensity is changed by clicking on
-the bottom green arrows on any dimmer tile.
+dimmers, doors, mode, routines, thermostats, and music tiles. 
+If you are using a computer, the cursor will change to a pointer when
+you hover over thing tiles that can be clicked on to change state. Other
+thing tiles will remain an arrow icon.<br/><br/>
 
-<h3>Moving Things and Rooms Around</h3>
+Dimmer, thermostat and music tiles have multiple controls that can 
+be individually controlled by clicking on them. 
+For example, each thermostat has a heater and an AC control
+and each one has up and down arrows that can be clicked on to adjust
+the temperature setting. On music tiles, play, pause, skip, and stop 
+can also be clicke on. On dimmer tiles you change the intensity 
+of the light by clicking on the up or down arrows. When you do this
+the light will always come if it is off.
+
+<h2>Moving Things and Rooms Around</h2>
 One of the most exciting features of HousePanel is the ability to highly
 customize its look and feel. The first level of customization involves
 simply moving existing tiles around on a page. To do this, click and hold
@@ -456,14 +476,14 @@ if your hmoptions.cfg file is read/write</strong>. You can apply this same
 maneuver to page tabs. Simple click and hold a tab and move it left or right
 to reorder your rooms. The new room location will be permanent on this server.
 
-<h3>Adding or Removing Things from Rooms</h3>
+<h2>Adding or Removing Things from Rooms</h2>
 Deeper customization involves adding or removing things to your rooms. To do
 this scroll to the bottom of the page and click on the Options button
 in the lower left corner of the page. This will load a page with a
 two-dimensional matrix of all your things and all you rooms that looks
 like this:<br/><br/>
 
-[[TODO: include image]]<br/><br/>
+<div><img src="options.png" alt=""/></div>
 
 Everywhere you see a check mark, that means the thing of that "row" will
 be shown in the room of that "column". You can add or remove a check
@@ -474,9 +494,9 @@ extreme example indicates the tool's extreme flexibility. A more realistic
 example might be to check a thing with a name that didn't match one of
 the default keywords, or to uncheck a thing that matched that you don't
 want shown in the default room. For example, in my installation I added a
-check to "Rock Waterfall" to the Outside room, and removed the
-"Garage Entry Door" from the Outside room. I also added the appropriate
-motion and door sensors to the right rooms. Finally, I also made a new room
+check to "Back Yard Rock" to the Outside room, and removed the
+"Garage Entry Door" from the Outside room. I also checked the clock row
+for every room so I have a clock on all pages. Finally, I also made a new room
 just for my thermostats. The following section explains how to do that.
 
 <h1>Customizing HousePanel</h1>
@@ -510,6 +530,7 @@ div.panel {
     -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
     -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
 }
+
 </pre></blockquote>
 So if you want all pages to by default to be squeezed onto 75% of the page
 you could change "width:100%" to "width:75%".<br/><br/>
@@ -545,14 +566,16 @@ div.panel-music, div.panel-theater, div.panel-entertainment {
 }
 div.panel-thermostats, div.panel-thermostat {
   background-image: url('thermostat.jpg');
-    </pre></blockquote>
+}
 
+</pre></blockquote>
 If you want to change the background image just provide your custom image
 and upload it to your server and refer to it in the above section of the CSS.
 
 <h3>Default Thing Styling</h3>
 All things displayed in HousePanel inherit the syling tied to the
-&lt;div class="thing"> tag style. The default should look something like this:<br/>
+<span class="var">&lt;div class="thing"></span> tag style. 
+The default should look something like this:<br/>
 
 <blockquote><pre>
 div.thing {
@@ -570,7 +593,8 @@ div.thing {
     cursor: default;
     width: 120px; 
     height: 160px;
-}    
+}
+    
 </pre></blockquote>
 If you want all tiles displayed to be a different size or have a different border
 color, this is where you would specify your custom information.
@@ -581,22 +605,26 @@ This is done by providing styling information tied to the
 &lt;div class="thingtype"> tag, where thingtype is one of the recognized types
 of things that HousePanel supports. For example, if you wanted to make all
 things of type "switch" look a certain way, you would style the following block:<br/>
+
 <blockquote><pre>
 div.switch {
     width: 118px;
     height: 112px;
 }    
-</pre></blockquote>
 
+</pre></blockquote>
 This would just style the switch portion of the tile. Each tile also has
-a title and potentially other elements. The entire tile can be styled by
+a title bar and potentially other elements. The entire tile can be styled by
 referencing "div.thing.switch-thing". This approach will take priority over
 anything you provided previously to "div.thing" described above, but only
 for switch things. For example, let's say you wanted to put a photo of your
 cat into all switch things, you could do that by doing something like:
+
 <blockquote><pre>
 div.thing.switch-thing {
   background-image: url('mycat.jpg');
+}
+
 </pre></blockquote>
 
 <h3>Styling Things Based on State</h3>
@@ -627,13 +655,14 @@ the SmartThings system will be available to use for styling.
 <h3>Thermostat, Music, Weather, and other Complex Formatting</h3>
 The principles and concepts described above apply equally well to thermostats
 and music thing tiles. The difference is that these tile types involve
-more complex elements. The important thing to note is that each individual
+more complex multi-part elements. The important thing to note is that each individual
 element can be styled individually or all of them can be styled using the master
 div information that wraps around the entire tile. For thermostats, the 
-master div information is tagged with div.thing.thermostat-thing 
-following a similar pattern as the simpler tiles. Same applies to all complex
-tiles. The following styling from the default file presents the temperature
-reading inside of a blue-green circle. This can be changed to whatever you prefer.
+master div information is tagged with <span class="var">div.thing.thermostat-thing</span> 
+following a similar pattern as the simpler tiles. This applies to all complex
+tiles such as Music and Weather tiles. 
+The following styling from the default file presents the temperature
+reading as a blue-green circle. This can be changed to whatever you prefer.
 
 <blockquote><pre>
 div.thermostat.temperature {
@@ -645,11 +674,9 @@ div.thermostat.temperature {
     box-shadow: 5px 4px 15px black;
     cursor: default;
     text-align: center;
-    height: 50px !important;
-    width: 50px;
+    height: 50px !important;    width: 50px;
     padding: 4px 3px 0 3px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 10px;    margin-bottom: 10px;
     border-radius: 50%;
     font-size: 20px;
     line-height: 45px;
@@ -664,20 +691,201 @@ appropriately; however, in keeping with the flexibility principle of
 HousePanel, all of them can be customized to your liking. The custom
 tiles and how to customize them are described below.
 
-<h3>Clock Thing</h3>
+<h3>Blank Tiles</h3>
+Blanks are just that - blank. They are used as spacers. Four blanks
+are provided that can be added to any page using the Options feature
+described previously. All blanks are styled as transparent in a
+standard tile size. The div tag used to style all blanks is
+<span class="var">div.thing.blank-thing</span> so this div can be 
+styled to make blanks look differently. For example, one might want
+to use blanks as dividing lines to separate tiles into sections.
+Four different blank sizes are provided under the names
+b1x1, b1x2, b2x1, and b2x2. The names indicate the default sizes of
+these four blank tiles using the following default styling:
+
+<blockquote><pre>
+div.b1x1, div.b1x2, div.b2x1, div.b2x2 {
+    width: 120px;    height: 160px;
+    font-size: 0px;    padding-left: 0px;
+}
+div.b2x1, div.b2x2 {
+    width: 244px;
+}
+div.b1x2,div.b2x2 {
+    height: 320px;
+}
+</pre></blockquote>
+
+The above makes b2x1 a double-wide, b1x2 a double-high, and a
+b2x2 a double wide and double high tile. 
+Again, these four default sizes can be changed to whatever you like.
+For example, all four can be made the same size and then the gap size
+can be driven by how many of them you include on any given page.
+
+<h3>Clock Tile</h3>
 The clock special thing is a digital clock tile that by default shows
 the day of the week, the date in MMM dd, yyyy format, and the time
-in hh:mm AM/PM format. All three can be styled using the tags:
-div.clock.weekday, div.clock.date, and div.clock.time respectively.
-Unfortunately the actual format of the fields cannot be modified,
-but their font, color, size, and placement are all fair game. The overall
-tile size can be styled using div.thing.clock-thing. By default this
-element is styled to be a 246x160 blue tile but it need not be. Finally
+in hh:mm AM/PM format. The overall clock tile can be styled by modifying
+the div tag <span class="var">div.thing.clock-thing</span>. By default this
+element is styled to be a 246x160 blue tile but it need not be.  
+All three sub-items can be styled using the tags:
+<span class="var">div.clock.weekday</span>, 
+<span class="var">div.clock.date</span>, and 
+<span class="var">div.clock.time</span> respectively.
+Unfortunately the actual format of the sub-item fields cannot be modified, but
+their font, color, size, and placement are all fair game. The overall
+tile size can be styled using div.thing.clock-thing. Finally
 this tile has a name bar just like all others, but by default it is
 hidden. It can be displayed and uniquely styled using the tag name of
-div.thingname.clock.
+<span class="var">div.thingname.clock</span>.
 
-<h2>Advanced Styling of Specific Tiles</h2>
+<h3>Image Tiles</h3>
+Four place-holder image tiles are provided for end-user unique styling.
+These tiles are named "img1" through "img4" and are styled using
+the div tag <span class="var">div.thing.image-thing</span>. By default
+this styling is a double-wide tile that forces the image to stretch
+to fill the tile (using background-size: cover). Each individual
+image tile is where one would provide the online asset containing
+the graphical image to display. For example, the img1 tile would be
+styled to display a "jpg" file using the following:
+
+<blockquote><pre>
+div.image.url.img1 {
+    background-image: url("livingroom.jpg");
+}
+</pre></blockquote>
+In the above example the jpg file must be on the same server as
+the HousePanel app and in the same directory as the CSS file, but
+any valid Web URL can be provided here. The other three img tags
+can be similarly styled.
+
+<h3>Mode Tiles</h3>
+Four mode tiles are provided that each can be used to show the
+current state of the SmartThings location. This will be one of
+the modes defined by the user in  the SmartThings app, such as
+Home, Away, or Night. Mode tiles can be styled by modifying
+the div tag <span class="var">div.thing.mode-thing</span>. 
+There are four mode tiles that parallel the naming convention
+used for blank tiles: mode1x1, mode1x2, mode2x1, and mode2x2.
+The default sizes are the same as their equivalent blank defaults.
+Each mode tile contains three sub-items: mode.themode, mode.name,
+and mode.zipcode. By default mode.zipcode is hidden. The actual mode
+within the "mode.themode" sub-item is styled to be larger than the
+name of the hub, which is in the mode.name sub-item. Again, these
+sub-items can be uniquely styled or even hidden to your liking.
+
+
+<h3>Routine Tiles</h3>
+Routines are "Hello Home" actions that are defined in the mobile app.
+These are presented as boxes without title bars by default.
+The name of the routine is shown by default as simple text
+in an 18 point font. The tag div.thing.routine-thing can be used
+to create a unique look for routine tiles. Alternatively the specific
+label sub-item under the div.routine.label tag can be styled. The latter
+is what is in the default CSS.
+
+<h3>Weather Tile</h3>
+Of all the special tiles the weather tile is the most complex.
+Unlike other tiles this tile is associated with a specific device
+instead of with a generic capability. For this reason there can only
+be one weather tile. This one weather tile can be displayed in any
+or all rooms. It can look different in each room because each room
+is wrapped with a room "div" tag that can be used as a qualifier.
+The overall weather block is styled using the tags
+<span class="var">div.thing.weather-thing</span> and 
+<span class="var">div.weather</span><br/><br/>
+
+Weather tiles have many sub-items and each one can be uniquely styled.
+The code block below is from the default CSS file showing just
+one of many possibilities. Note that several sub-items are hidden
+by default in this example. The outside temperature is shown using
+a similar circle as is used with thermostat tiles.
+
+<blockquote><pre>
+div.thing.weather-thing, div.weather {
+    text-align: center;
+    height: auto;
+}
+div.thing.weather-thing {
+    background-color: rgba(50,50,50,0.4) !important;
+    width: 240px;
+}
+div.weather.temperature, div.weather.feelsLike {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 60px !important;
+    width: 60px;
+    padding: 4px 3px 0 3px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 55px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
+div.weather.feelsLike::before {
+    content: "~";
+}
+div.weather img {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+div.weather.wind::before {
+    content: "Wind: ";
+}
+div.weather.wind::after {
+    content: " mph";
+}
+div.weather.humidity::before {
+    content: "Humidity: ";
+}
+div.weather.percentPrecip::before {
+    content: "Rain: ";
+}
+div.weather.humidity::after, div.weather.percentPrecip::after {
+    content: "%";
+}
+div.weather.sunriseset {
+    margin-top: 10px;
+}
+div.weather.sunriseset, div.weather.humidity,
+div.weather.wind, div.weather.percentPrecip, div.weather.alerts{
+    background-color: #333333;
+    margin-bottom: 4px;
+}
+div.weather.timeZoneOffset, div.weather.alertKeys,
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.illuminance {
+    display: none;
+}
+div.weather.weatherIcon, div.weather.forecastIcon {
+    display: inline-block;
+}
+
+</pre></blockquote>
+
+<h3>WebCoRE Pistons</h3>
+WebCoRE is the wildly popular "Community Owned Rule Engine" by
+@ady624 on the SmartThings forum. If you are a WebCoRE user then
+you will see all of your WebCoRE pistons in the Options matrix
+as described in a previous section. You will need to select the
+pistons you want to display in the room columns where you want them
+to show up. Once you do that they will appear in a style defined by
+the tags: div.piston-thing, div.piston, div.piston.webcore, 
+div.piston.pistonName, and div.piston.pistonName.firing.
+The default shows a graphic that looks like an automotive piston
+and when it is fired it looks like it is on fire.
+
+<h3>Advanced Styling of Specific Tiles</h3>
 Up to this point we have described how to manipulate and style
 specific categories of things. In this section the overall format of the
 rendering of things on the webpage is described. Using this information
@@ -693,40 +901,114 @@ HousePanel webpage follow the following template:
 <blockquote>
 <pre>
 
-&lt;div id="t-n" tile="x" bid="uniqueidnumber" type="swtype" 
-panel="kitchen" class="thing swtype-thing">
+&lt;div id="t-<span class="var">n</span>" class="thing <span class="var">type</span>-thing">
   
-    &lt;div id="s-n" aid="n" class="thingname swtype">
+    &lt;div id="s-<span class="var">n</span>" class="thingname <span class="var">type</span>">
         tilename
     &lt;/div>
 
-    {
-
-      &lt;div id="a-n-subitem[i]" >
-         variable content
+    <strong>Loop i = 1 to N (</strong>
+      &lt;div id="a-<span class="var">n</span>-<span class="var">subitem[i]</span>" class="<span class="var">type {subitem[i]} {status[i]} names[i]</span>" >
+         content {status[i]}
       &lt;/div>
-    }
+    <strong>)</strong>
 
 &lt;/div>
 
 </pre>
 </blockquote>
 
-Every visible element on screen has a unique number. For our sample
-template, let's call this unique number "n". 
-Every thing that can be displayed has a unique name that matches
-whatever name you gave the "thing" in your mobile SmartThings app.
-The first three words of this name are important for unique styling.
-For our sample template, lets say the thing is called "my custom plug" 
-and is of thing type = "swtype". For example, "swtype" might be
-"switch", "switchlevel", "contact", or "thermostat" just to name a few.
-And finally, all tiles can have any number of sub-items and each sub-item
-has its own subtitle and flag that is included in the class.
-For example, switchlevel things have at least two sub-items:
-a switch and a level. So each switchlevel switch will have two
-sub-sections - one labeled <i>subid="switch"</i> and one <i>subid="level"</i>. 
+I know this looks intimidating, but it will make sense as we go through
+each element and the nomenclature. First, everything in <span class="var">green italics</span> is
+a variable that changes with each thing and sub-item. 
+Second, the <span class="var">type</span>
+variable is the type of the thing, such as switch, switchlevel, contact,
+thermostat, weather, or piston. Third, everything 
+inside of curly backets { } is optional and may not be present at all.
+The rules for what shows up in the file and what doesn't are as follows:<br/><br/>
 
-In the above template, the items in italics are unique numbers.
+The {subitem[i]} parameter is shown if it is a different word than the thing "type".
+This is because the thing type is already included in the class name
+so this avoids listing it twice. The word "value" is also skipped if
+it is the first sub-type. This is done because subitems named "value"
+only happen when there is one and only one sub-type. The {status[i]}
+value is shown if it is a single state word such as "on", "closed",
+or "locked". Multiple state values are not listed in the class. This
+treatment is used to allow state-specific styling as described earlier.
+For example, switches that are "on" will have the word "on" included
+in the class name so that can be used to make on switches look different
+than off switches. <br/><br/>
+
+The Loop statement is intended to indicate that there are
+potentially multiple "N" blocks that follow the shown template.
+For example, in dimmer switchlevel things the value of N is 3 where
+one sub-item is the switch and a second sub-item is the level. The
+third sub-item is an indicator light that is hidden by default.
+More complex tiles like Weather tiles have 
+more sub-items so N will be larger.<br/><br/>
+
+The {names[i]} parameter included in the class name deserves special mention.
+This represents the first three whole words taken from the name of
+the thing. For exmaple if I have a switch named "Kitchen Table Lamp Upstairs"
+then the class for this item will include the words "kitchen", "table",
+and "lamp" -- but not the word "upstairs". The full class name if the
+switch is on will be "div.switch.kitchen.table.lamp.on". Now if we
+assume this same thing is a dimmer switchlevel thing, the second subitem
+of type level will add the subtype "level" to the class making the full
+class name "div.switch.level.kitchen.table.lamp.on". Note that in our first
+example of a non-dimmer regular switch, the word switch didn't get listed
+twice because the sub-item matched the type and it was skipped.<br/><br/>
+
+Finally, the parameter "n" shown in the template is a unique number
+assigned to every visible element on screen. This is the number that
+you must use if you want to style a specific thing to look different
+than all other things of the same type and capability. You can find
+this unique number by inspecting the visible thing in your browser or
+by revealing the source code. Warning - the screen will be very messy
+if you use the source code method. Once you know this number you can
+style any specific sub-item using "#a-n-subitem[i]" or you can style
+the entire tile using "#t-n". Note that this is not a "div" based
+styling but an "id" based styling in CSS.
+
+<h2>Renaming, Adding and Deleting Pages</h2>
+
+Pages can be easily renamed from the Options page. While on any page
+scroll to the bottom and click on the Options button. This will bring
+up the matrix shown earlier. On this matrix, the room names listed 
+on the top row can be edited in-place by clicking or tapping on them.
+This will bring up a text box where you can type in any room name you want.
+It is strongly recommended that single word room names be used. This is
+because single room names simplify the class name framework for
+customizing each room. <br/><br/>
+
+Unfortunately there is presently no way to add or remove a room
+directly from the web interface of HousePanel. To add or delete rooms
+you must do so manually by editing the hmoptions.cfg file. You will find
+this file in the home directory of your HousePanel configuration. This
+file is a direct write of the room options in "json" format so care must
+be taken to ensure that your edited file follows 
+strict "json" formatting rules. Note that this file will not exist on
+your local machine unless you download it first, because it is
+dynamically generated by HousePanel when you run it for the first time
+and it is updated every time you make an edit to the options. So download
+the file and load it into your favorite editor. You will see the names
+of the rooms listed in two places. You will need to make any changes
+in both places. When done, save the file and re-upload it to your server.<br/><br/>
+
+Important!!! Please be sure to confirm that your uploaded
+hmoptions.cfg file retains read/write privileges after you upload it.
+Many FTP programs do not retain the permissions of files when they
+are overwritten. Once you have made this change, you will need to force
+a re-read of your things and the room configuration. The easiest way
+to do this is to load the page with the following:
+
+<blockquote><pre>
+www.yourwebpage.com/housepanel.php?code=reset
+</pre></blockquote>
+
+You will have to reauthenticate and then your new room setup will be active.
+
+
 
 </div>
 </body>

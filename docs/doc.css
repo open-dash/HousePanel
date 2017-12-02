@@ -8,12 +8,22 @@ and open the template in the editor.
     Author     : ken
 */
 * {
-    font-family: "Times New Roman", serif;
+    font-family: "Arial", "Droid Sans", sans-serif;
     font-size: 16pt;
 }
 body {
-  background-color: #ffffff;
-  color: #000000;
+    background-color: #333333;
+    color: #ffffff;
+}
+div.main {
+    background-color: #eeebe7;
+    color: black;
+    width: 80%;
+    margin-top: 0;
+    margin-left: 10%;
+    margin-top: 0;
+    padding-left: 20px;
+    padding-right: 10px;
 }
 h1, h2, h3 {
     color: #000000;
@@ -21,6 +31,9 @@ h1, h2, h3 {
     margin-top: 48px;
     margin-bottom: 2px;    
     font-weight: bold;
+}
+div.center h1 {
+    margin-top: 0px;
 }
 h2 {
     font-size: 24;
@@ -33,12 +46,24 @@ h3 {
     margin-top: 12px;
     margin-bottom: 2px;
 }
+
+img {
+    width: 900px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
 div.center {
     text-align: center;
 }
 blockquote, div.code {
     font-size: 11pt;
     color: #3333ff;
+}
+span.var {
+    font-family: "Times New Roman", serif;
+    font-style: italic;
+    font-weight: bold;
+    color: #1ccc20;
 }
 .debug, .error {
   background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
