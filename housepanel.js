@@ -99,7 +99,8 @@ window.addEventListener("load", function(event) {
     setupTimers();
     
     // setup click on a page
-    setupTabclick();
+    // this appears to be painfully slow so disable
+    // setupTabclick();
 });
 
 function setupPopup() {
@@ -290,7 +291,8 @@ function refreshTile(aid, bid, thetype) {
 
     // force refresh when we click on a new page tab
 function setupTabclick() {
-    $("li.ui-tab > a").click(function() {
+    // $("li.ui-tab > a").click(function() {
+    $("a.ui-tabs-anchor").click(function() {
         var panel = $(this).text().toLowerCase();
         // alert("panel = "+panel);
         $("#panel-"+panel+" div.thing").each(function() {
