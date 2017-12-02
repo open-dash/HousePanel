@@ -97,6 +97,9 @@ window.addEventListener("load", function(event) {
         
     // setup time based updater
     setupTimers();
+    
+    // setup click on a page
+    setupTabclick();
 });
 
 function setupPopup() {
@@ -236,7 +239,9 @@ function lenObject(o) {
   return cnt;
 }
 
-// find all the things with "bid" and update the value clicked on somewhere
+// update all the subitems of any given specific tile
+// note that some sub-items can update the values of other subitems
+// this is exactly what happens in music tiles when you hit next and prev song
 function updateTile(aid, presult) {
 
     // do something for each tile item returned by ajax call
@@ -253,9 +258,11 @@ function updateTile(aid, presult) {
             // single word text fields like open/closed/on/off
             // this avoids putting names of songs into classes
             // also only do this if the old class was there in the first place
-            if ( $.isNumeric(value)===false && $.isNumeric(oldvalue)===false &&
-//                  value.includes(' ')===false && oldvalue.includes(' ')===false &&
-                  oldclass.indexOf(oldvalue)>=0 ) {
+            if ( oldclass && oldvalue && value &&
+                 $.isNumeric(value)===false && 
+                 $.isNumeric(oldvalue)===false &&
+                 oldclass.indexOf(oldvalue)>=0 ) 
+            {
                 $(targetid).removeClass(oldvalue);
                 $(targetid).addClass(value);
             }
@@ -268,6 +275,8 @@ function updateTile(aid, presult) {
     });
 }
 
+// this differs from updateTile by calling ST to get the latest data first
+// it then calls the updateTile function to update each subitem in the tile
 function refreshTile(aid, bid, thetype) {
     $.post("housepanel.php", 
         {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
@@ -279,26 +288,29 @@ function refreshTile(aid, bid, thetype) {
     );
 }
 
-function setupTimers() {
-    
     // force refresh when we click on a new page tab
-    /*
+function setupTabclick() {
     $("li.ui-tab > a").click(function() {
         var panel = $(this).text().toLowerCase();
-//        alert("panel = "+panel);
+        // alert("panel = "+panel);
         $("#panel-"+panel+" div.thing").each(function() {
             var aid = $(this).attr("id").substring(2);
             var bid = $(this).attr("bid");
             var thetype = $(this).attr("type");
             
             // only do select types for speed
-            if (thetype!=="options") {
+            if (thetype==="switch" || thetype==="switchlevel" ||
+                thetype==="contact" || thetype==="motion" || 
+                thetype==="clock" || thetype==="lock" || thetype==="mode") {
+                // alert("updating tile aid = "+aid+" type = "+thetype+" on panel="+panel);
                 refreshTile(aid, bid, thetype);
             }
             
         });
     });
-    */
+}
+
+function setupTimers() {
     
     // set up a timer for each tile to update automatically
     // but only for tabs that are being shown
@@ -314,6 +326,7 @@ function setupTimers() {
         switch (thetype) {
             case "switch":
             case "bulb":
+            case "light":
             case "switchlevel":
                 timerval = 60000;
                 break;
@@ -336,6 +349,7 @@ function setupTimers() {
                 break;
 
             case "mode":
+            case "routine":
                 timerval = 306000;
                 break;
 
@@ -345,7 +359,7 @@ function setupTimers() {
                 break;
 
             case "image":
-                timerval = 600000;
+                timerval = 120000;
                 break;
 
             // update clock every minute
@@ -361,7 +375,8 @@ function setupTimers() {
             apparray.myMethod = function() {
                 
                 // only call and update things if this panel is visible
-                if ( $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
+                // or if it is a clock tile
+                if ( this[2]=="clock" || $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
                     var that = this;
 //                    alert("aid= "+that[0]+" bid= "+that[1]+" type= "+that[2]);
                     refreshTile(that[0], that[1], that[2]);
@@ -376,6 +391,10 @@ function setupTimers() {
 }
 
 // find all the things with "bid" and update the value clicked on somewhere
+// this routine is called every time we click on something to update its value
+// but we also update similar things that are impacted by this click
+// that way we don't need to wait for the timers to kick in to update
+// the visual items that people will expect to see right away
 function updAll(aid, bid, thetype, pvalue) {
 
     // update trigger tile first
@@ -388,6 +407,14 @@ function updAll(aid, bid, thetype, pvalue) {
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
         }, 2000);
+    }
+    
+    // for doors wait half a minute and refresh
+    if (thetype==="door") {
+        // alert( strObject(pvalue));
+        setTimeout(function() {
+            refreshTile(aid, bid, thetype);
+        }, 30000);
     }
         
     // go through all the tiles this bid and type (easy ones)
@@ -403,6 +430,19 @@ function updAll(aid, bid, thetype, pvalue) {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
         });
+    }
+    
+    // if this is a routine action then update the modes immediately
+    // use the same delay technique used for music tiles noted above
+    if (thetype==="routine") {
+        $('div.thing.mode-thing').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "mode");
+            }, 2000);
+        });
+        
     }
     
     // if this is a switchlevel go through and set all switches
@@ -445,7 +485,8 @@ function setupPage(sensortype) {
         var thevalue;
         
         // for switches and locks set the command to toggle
-        if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||thetype==="bulb") {
+        if (thetype==="switch" || thetype==="lock" || 
+            thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";
         } else {
             thevalue = $(targetid).html();
@@ -472,7 +513,7 @@ function setupPage(sensortype) {
                             $(that).addClass("firing");
                             $(that).html("Piston Firing...");
                         }
-                        else if ( thevalue.indexOf("on") >= 0 ) {
+                        else if ( thevalue && thevalue.hasOwnProperty("indexOf") && thevalue.indexOf("on") >= 0 ) {
                             $(that).removeClass("on");
                             $(that).addClass("off");
                             $(that).html("off");
@@ -486,14 +527,13 @@ function setupPage(sensortype) {
                 });
 //        } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
 //                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
+        // now we invoke action for everything
+        // within the groovy code if action isn't relevant then nothing happens
         } else {
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
-//                        if (thetype) {
-//                            alert("pstatus= ["+pstatus+ "] type= "+thetype+" aid= "+aid+" bid= "+bid+" presult= "+strObject(presult)); 
-//                        }
-                        if (pstatus=="success" ) {
+                        if (pstatus==="success" ) {
                             updAll(aid,bid,thetype,presult);
                         }
                    }, "json"

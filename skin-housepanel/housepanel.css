@@ -342,9 +342,11 @@ div.contact.window.closed {
 }
 div.contact.garage.open {
     background-image: url('garage-opened.png');
+    background-size: 80px;
 }
 div.contact.garage.closed {
     background-image: url('garage-closed.png');
+    background-size: 80px;
 }
 div.valve.open {
     background-image: url('sprinkler-on.png');
@@ -361,10 +363,12 @@ div.valve.switch, div.valve.contact {
 div.contact.garage.entry.open {
     background-image: url('opendoor.png');
     background-color: rgba(27,177,75,0.6);
+    background-size: 40px;
 }
 div.contact.garage.entry.closed {
     background-image: url('closedoor.png');
     background-color: rgba(0, 51, 204, 0.6);
+    background-size: 40px;
 }
 
 
