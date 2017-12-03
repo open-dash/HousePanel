@@ -19,6 +19,9 @@
  * 
  *
  * Revision History
+ * 1.4        Official merge with Open-Dash
+ *            Misc bug fixes in CSS and javascript files
+ *            Added kiosk mode flag to options file for hiding options button
  * 1.32       Added routines capabilities and cleaned up default icons
  * 1.31       Minor bug fixes - fixed switchlevel to include switch class
  * 1.3        Intelligent class filters and force feature
@@ -666,6 +669,14 @@ function getOptions($allthings) {
             $options["skin"] = "skin-housepanel";
         }
         
+        // add option for kiosk mode
+        if ( !key_exists("kiosk", $options ) ) {
+            $options["kiosk"] = "false";
+            $updated = true;
+        } else {
+            $options["kiosk"] = strtolower($options["kiosk"]);
+        }
+        
         // if css doesn't exist set back to default
         if ( !file_exists($options["skin"] . "/housepanel.css") ) {
             $options["skin"] = "skin-housepanel";
@@ -674,8 +685,9 @@ function getOptions($allthings) {
         
         // if our default also doesn't exist, fail and inform user to fix
         if ( !file_exists($options["skin"] . "/housepanel.css") ) {
-            echo "<div class=\"error\">Error, Skin file = ";
-            echo $options["skin"] . "/housepanel.css  missing. Please provide a valid skin file and re-launch.</div>";
+            echo "<div class=\"error\">Error, Skin file = <b>";
+            echo $options["skin"] . "/housepanel.css</b>  missing. Please provide a valid skin file.<br />";
+            echo "To fix this error you may need to edit and re-upload your \"hmoptions.cfg\" file and re-launch.</div>";
             exit(1);
         }
         
@@ -773,6 +785,7 @@ function getOptions($allthings) {
         
         // set default skin
         $options["skin"] = "skin-housepanel";
+        $options["kiosk"] = "true";
 
 //        echo "<pre>";
 //        print_r($allthings);
@@ -801,11 +814,14 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
     $skinoptions = $options["skin"];
+    $kioskoptions = $options["kiosk"];
 
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
+    $tc.= "<div class=\"skinoption\">Kiosk Mode: <input id=\"kioskid\" width=\"240\" type=\"text\" name=\"kiosk\"  value=\"$kioskoptions\"/></div>";
+    $tc.= "<br /><br />";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
    
@@ -913,6 +929,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // set skin
         if ($key=="skin") {
             $options["skin"] = $val;
+        }
+        else if ( $key=="kiosk") {
+            $options["kiosk"] = strtolower($val);
         }
         // if the value is an array it must be a room name with
         // the values being either an array of indexes to things
@@ -1269,13 +1288,16 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $tc.= "</div>";
         
         // create button to show the Options page instead of as a Tab
-        $tc.= "<div>";
-        $tc.= "<form class=\"invokeoption\" action=\"$returnURL\"  method=\"POST\">";
-        $tc.= hidden("useajax", "showoptions");
-        $tc.= hidden("type", "none");
-        $tc.= hidden("id", 0);
-        $tc.= "<input class=\"submitbutton\" value=\"Show Options\" name=\"submitoption\" type=\"submit\" />";
-        $tc.= "</form></div>";
+        // but only do this if we are not in kiosk mode
+        if ($options["kiosk"] !== "true") {
+            $tc.= "<div>";
+            $tc.= "<form class=\"invokeoption\" action=\"$returnURL\"  method=\"POST\">";
+            $tc.= hidden("useajax", "showoptions");
+            $tc.= hidden("type", "none");
+            $tc.= hidden("id", 0);
+            $tc.= "<input class=\"submitbutton\" value=\"Options\" name=\"submitoption\" type=\"submit\" />";
+            $tc.= "</form></div>";
+        }
    
     } else {
 
