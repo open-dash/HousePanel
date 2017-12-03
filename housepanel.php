@@ -1003,9 +1003,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // check if this is a return from a code authorization call
     $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
     if ( $code ) {
-    
-        // grab the returned code and make the next call
-        // $code = $_GET["code"];
+
+        // unset session to force re-read of things since they could have changed
+        unset($_SESSION["allthings"]);
         
         // check for manual reset flag for debugging purposes
         if ($code=="reset") {
@@ -1104,6 +1104,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // cheeck if cookies are set
     if (!$endpt || !$access_token) {
         $first = true;
+        unset($_SESSION["allthings"]);
         $tc .= "<div><h2>" . APPNAME . "</h2>";
         $tc.= authButton("SmartHome", $returnURL);
         $tc.= "</div>";
@@ -1167,6 +1168,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 $allthings = getAllThings($endpt, $access_token);
                 $tc = "";
                 $tc.= "<h3>End Points</h3>";
+                $tc.= "<div><a href=\"$returnURL\">Return to HousePanel for $sitename </a></div><br />";
                 $tc.= "<div>sitename = $sitename </div>";
                 $tc.= "<div>access_token = $access_token </div>";
                 $tc.= "<div>endpt = $endpt </div>";
@@ -1230,7 +1232,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
         // read all the smartthings from API
         // force re-read of all physical things
-        unset($_SESSION["allthings"]);
+        // unset($_SESSION["allthings"]);
         $allthings = getAllThings($endpt, $access_token);
         $_SESSION["allthings"] = $allthings;
         
