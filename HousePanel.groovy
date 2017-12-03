@@ -942,6 +942,7 @@ def setThermostat(swid, curtemp, swattr) {
     def resp = false
     def newsw = 72
     def tempint
+    def cmd = curtemp
 
     def item  = mythermostats.find {it.id == swid }
     if (item) {
