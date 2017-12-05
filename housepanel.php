@@ -986,17 +986,19 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // get name of this webpage without any get parameters
     $serverName = $_SERVER['SERVER_NAME'];
     $serverPort = $_SERVER['SERVER_PORT'];
-    $uri = $_SERVER['REQUEST_URI'];
+
+// fix logic of self discovery
+//    $uri = $_SERVER['REQUEST_URI'];
+//    $ipos = strpos($uri, '?');
+//    if ( $ipos > 0 ) {  
+//        $uri = substr($uri, 0, $ipos);
+//    }
+    $uri = $_SERVER['PHP_SELF'];
     
-    $ipos = strpos($uri, '?');
-    if ( $ipos > 0 ) {  
-        $uri = substr($uri, 0, $ipos);
-    }
-    
-    if ( $_SERVER['HTTPS'] && $_SERVER['HTTPS']!="off" ) {
-       $url = "https://" . $serverName . ':' . $serverPort;
-    } else {
+    if ( $_SERVER['REQUEST_SCHEME'] && $_SERVER['REQUEST_SCHEME']=="http" ) {
        $url = "http://" . $serverName . ':' . $serverPort;
+    } else {
+       $url = "https://" . $serverName . ':' . $serverPort;
     }
     $returnURL = $url . $uri;
     
