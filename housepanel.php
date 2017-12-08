@@ -19,6 +19,11 @@
  * 
  *
  * Revision History
+ * 1.41       Added filters on the Options page
+ *            Numerous bug fixes including default Kiosk set to false
+ *            Automatically add newly identified things to rooms per base logic
+ *            Fix tablet alignment of room tabs
+ *            Add hack to force background to show on near empty pages
  * 1.4        Official merge with Open-Dash
  *            Misc bug fixes in CSS and javascript files
  *            Added kiosk mode flag to options file for hiding options button
@@ -491,7 +496,8 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
         $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\"  method=\"POST\">";
         $tc.= "<div id=\"panel-$roomname\" title=\"" . $roomtitle . "\" class=\"panel panel-$roomname\">";
         // $tc.= hidden("panelname",$keyword);
-        
+
+        $thiscnt = 0;
         foreach ($things as $kindex) {
             
             // get the index into the main things list
@@ -504,10 +510,16 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
 
                 // keep running count of things to use in javascript logic
                 $cnt++;
+                $thiscnt++;
                 $tc.= makeThing($cnt, $kindex, $thesensor, $roomname);
             }
         }
-
+        
+        // add a placeholder dummy to force background if almost empty page
+        if ($thiscnt < 10) {
+            $tc.= '<div class="minheight"> </div>';
+        }
+       
         // end the form and this panel
         $tc.= "</div></form>";
                 
@@ -654,7 +666,25 @@ function writeOptions($options) {
 }
 
 function getOptions($allthings) {
+    
+    // same list as in getAllThings plus the manual items
+    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+                        "motion", "lock", "thermostat", "music", "valve",
+                        "door", "illuminance", "smoke", "water",
+                        "weather", "presence", "mode", "piston", "other",
+                        "clock","blank","image");
 
+    // generic room setup
+    $defaultrooms = array(
+        "Kitchen" => "kitchen|sink|pantry|dinette|clock" ,
+        "Family" => "family|mud|fireplace|casual|thermostat|weather",
+        "Living" => "living|dining|entry|front door|foyer",
+        "Office" => "office|computer|desk|work",
+        "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
+        "Outside" => "garage|yard|outside|porch|patio|driveway",
+        "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung"
+    );
+    
     // read options from a local server file
     // TODO: convert this over to a database tied to a user login
     //       so that multiple people can use this same website for their ST
@@ -675,6 +705,12 @@ function getOptions($allthings) {
             $updated = true;
         } else {
             $options["kiosk"] = strtolower($options["kiosk"]);
+        }
+
+        // make all the user options visible by default
+        if ( !key_exists("useroptions", $options )) {
+            $options["useroptions"] = $thingtypes;
+            $updated = true;
         }
         
         // if css doesn't exist set back to default
@@ -708,6 +744,15 @@ function getOptions($allthings) {
         foreach ($allthings as $thingid =>$thesensor) {
             if ( !key_exists($thingid, $options["index"]) ) {
                 $options["index"][$thingid] = $cnt;
+                
+                // put the newly added sensor in a default room
+                $thename= $thesensor["name"];
+                foreach($defaultrooms as $room => $regexp) {
+                    $regstr = "/(".$regexp.")/i";
+                    if ( preg_match($regstr, $thename) ) {
+                        $options["things"][$room][] = $cnt;   // $thingid;
+                    }
+                }
                 $cnt++;
                 $updated = true;
             }
@@ -740,17 +785,6 @@ function getOptions($allthings) {
         
         $updated = true;
 
-        // generic room setup
-        $rooms = array(
-            "Kitchen" => "kitchen|sink|pantry|dinette|clock" ,
-            "Family" => "family|mud|fireplace|casual|thermostat|weather",
-            "Living" => "living|dining|entry|front door|foyer",
-            "Office" => "office|computer|desk|work",
-            "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
-            "Outside" => "garage|yard|outside|porch|patio|driveway",
-            "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung"
-        );
-        
         // make a default options array based on the old logic
         // protocol for the options array is an array of room names
         // where each item is an array with the first element being the order number
@@ -760,7 +794,7 @@ function getOptions($allthings) {
         $options = array("rooms" => array(), "index"=> array(), 
                          "things" => array(), "skin" => "skin-housepanel");
         $k= 0;
-        foreach(array_keys($rooms) as $room) {
+        foreach(array_keys($defaultrooms) as $room) {
             $options["rooms"][$room] = $k;
             $options["things"][$room] = array();
             $k++;
@@ -774,7 +808,7 @@ function getOptions($allthings) {
         foreach ($allthings as $thingid =>$thesensor) {
             $thename= $thesensor["name"];
             $options["index"][$thingid] = $k;
-            foreach($rooms as $room => $regexp) {
+            foreach($defaultrooms as $room => $regexp) {
                 $regstr = "/(".$regexp.")/i";
                 if ( preg_match($regstr, $thename) ) {
                     $options["things"][$room][] = $k;   // $thingid;
@@ -783,9 +817,10 @@ function getOptions($allthings) {
             $k++;
         }
         
-        // set default skin
+        // set default skin, kiosk, and user options
         $options["skin"] = "skin-housepanel";
-        $options["kiosk"] = "true";
+        $options["kiosk"] = "false";
+        $options["useroptions"] = $thingtypes;
 
 //        echo "<pre>";
 //        print_r($allthings);
@@ -803,24 +838,66 @@ function getOptions($allthings) {
     
 }
 
+function mysortfunc($cmpa, $cmpb) {
+    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+                        "motion", "lock", "thermostat", "music", "valve",
+                        "door", "illuminance", "smoke", "water",
+                        "weather", "presence", "mode", "piston", "other",
+                        "clock","blank","image");
+    $namea = $cmpa["name"];
+    $typea = $cmpa["type"];
+    $nameb = $cmpb["name"];
+    $typeb = $cmpb["type"];
+    $k1 = array_search($typea, $thingtypes);
+    $k2 = array_search($typeb, $thingtypes);
+    
+    $t = $k1*100 - $k2*100;
+    if ($namea < $nameb) $t--;
+    if ($namea > $nameb) $t++;
+    if ($t ==0 ) $t= 1;
+    return $t;
+}
+
 function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
-//    if ($sitename) {
-//        $tc.= authButton($sitename, $retpage);
-//    }
+    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+                        "motion", "lock", "thermostat", "music", "valve",
+                        "door", "illuminance", "smoke", "water",
+                        "weather", "presence", "mode", "piston", "other",
+                        "clock","blank","image");
+    
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
     $skinoptions = $options["skin"];
     $kioskoptions = $options["kiosk"];
-
+    $useroptions = $options["useroptions"];
+    
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
-    $tc.= "<div class=\"skinoption\">Kiosk Mode: <input id=\"kioskid\" width=\"240\" type=\"text\" name=\"kiosk\"  value=\"$kioskoptions\"/></div>";
+    $tc.= "<div class=\"kioskoption\">Kiosk Mode: ";
+    $tc.= "<input id=\"kioskid\" width=\"240\" type=\"text\" name=\"kiosk\"  value=\"$kioskoptions\"/></div>";
+    $tc.= "<div class=\"filteroption\">Option Filters: </div>";
+    $tc.= "<table class=\"useroptions\"><tr>";
+    $i= 0;
+    foreach ($thingtypes as $opt) {
+        $i++;
+        if ( in_array($opt,$useroptions ) ) {
+            $tc.= "<td><input type=\"checkbox\" name=\"useroptions[]\" value=\"" . $opt . "\" checked=\"1\"></td>";
+        } else {
+            $tc.= "<td><input type=\"checkbox\" name=\"useroptions[]\" value=\"" . $opt . "\"></td>";
+        }
+        $tc.= "<td class=\"optname\">" .  $opt . "</td>";
+        if ( $i % 5 == 0) {
+            $tc.= "</tr><tr>";
+        }
+    }
+    $tc.= "</tr></table>";
+    
     $tc.= "<br /><br />";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
@@ -842,11 +919,20 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div class='scrollvtable'>";
     $tc.= "<table class=\"roomoptions\">";
     $tc.= "<tbody>";
+
+    // sort the things
+    uasort($allthings, "mysortfunc");
     
     // now print our options matrix
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
-        $tc.= "<tr>";
+        
+        $thetype = $thesensor["type"];
+        if (in_array($thetype, $useroptions)) {
+            $tc.= "<tr type=\"$thetype\" class=\"showrow\">";
+        } else {
+            $tc.= "<tr type=\"$thetype\" class=\"hiderow\">";
+        }
         $tc.= "<td class=\"thingname\">" . $thesensor["name"] . 
               " <span class=\"typeopt\">(" . $thesensor["type"] . ")</span>";
 
@@ -909,12 +995,18 @@ function processOptions($optarray, $retpage, $allthings=null) {
         echo "</pre>";
         exit(0);
     }
+    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+                        "motion", "lock", "thermostat", "music", "valve",
+                        "door", "illuminance", "smoke", "water",
+                        "weather", "presence", "mode", "piston", "other",
+                        "clock","blank","image");
     
     $oldoptions = readOptions();
     
     // make an empty options array for saving
     $options = array("rooms" => array(), "index" => array(), 
-                     "things" => array(), "skin" => "skin-housepanel");
+                     "things" => array(), "skin" => "skin-housepanel",
+                     "kiosk" => "false", "useroptions" => $thingtypes);
     $roomoptions = $options["rooms"];
     foreach(array_keys($roomoptions) as $room) {
         $options["things"][$room] = array();
@@ -932,6 +1024,16 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         else if ( $key=="kiosk") {
             $options["kiosk"] = strtolower($val);
+        }
+        else if ( $key=="useroptions" && is_array($val) ) {
+            $newuseroptions = $val;
+//            $newuseroptions = array();
+//            foreach ($thingtypes as $opt) {
+//                if ( in_array($opt,$val) !== FALSE) {
+//                    $newuseroptions[] = $opt;
+//                }
+//            }
+            $options["useroptions"] = $newuseroptions;
         }
         // if the value is an array it must be a room name with
         // the values being either an array of indexes to things
@@ -1293,7 +1395,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
-        if ($options["kiosk"] !== "true") {
+        if ($options["kiosk"] !== "1") {
             $tc.= "<div>";
             $tc.= "<form class=\"invokeoption\" action=\"$returnURL\"  method=\"POST\">";
             $tc.= hidden("useajax", "showoptions");

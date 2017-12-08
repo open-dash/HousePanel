@@ -50,7 +50,7 @@ ul.ui-tabs-nav {
     display: inline;
 }
 
-div.skinoption {
+div.skinoption, div.kioskoption, div.filteroption, td.optname {
     font-size: 12pt;
     font-weight: bold;
     margin-left: 8px;
@@ -60,6 +60,19 @@ div.skinoption {
 
 div.skinoption input {
     width: 600px;
+}
+div.filteroption {
+    margin-top: 12px;
+}
+table.useroptions {
+    margin-left: 8px;
+    background-color: #f5f6de;
+    border-top: solid 1px black;
+    border-bottom: solid 1px black;
+}
+td.optname {
+    padding-left: 5px;
+    padding-right: 30px;
 }
 
 form {
@@ -89,6 +102,14 @@ form.houseauth {
     color: #000000;
 }
 
+/* this dummy element adds space to show backgrounds */
+div.minheight {
+    display: inline-block;
+    width: 1px;
+    height: 600px;
+    color: rgba(0,0,0,0.01);
+}
+
 /* all panels look like this */
 div.panel {
     display: inline-block;
@@ -99,6 +120,7 @@ div.panel {
     box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
     -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
     -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    height: auto;
 }
 
 div.panel-family, div.panel-familyroom {
@@ -144,15 +166,23 @@ table.showid td, table.showid th {
 div.thead {
     position: fixed;
 }
-table.headoptions {
-    background-color: white; color: #000000;    
-    font-size: 11pt;    height: 40px;    margin-left: 0px;    width: 1200px;
-}
-table.headoptions thead {
-    top: 20px; left: 10px;
-}
 div.scrollvtable {
-    max-height: 600px;    overflow-y: auto;
+    overflow-y: auto;
+}
+@media only screen and (orientation: landscape) {
+    div.scrollvtable {
+        max-height: 400px;
+    }
+}
+@media only screen and (orientation: portrait) {
+    div.scrollvtable {
+        max-height: 800px;
+    }
+}
+@media only screen and (hover: hover) {
+    div.scrollvtable {
+        max-height: 600px;
+    }
 }
 div.scrollhtable {
     max-height: 100%;    overflow-x: auto;    overflow-y: hidden;
@@ -162,39 +192,52 @@ table.roomoptions, table.headoptions {
     margin: 0px;    background-color: #ffffff;    color: #000000;
     font-size: 11pt;    width: 100%;
     border-collapse: collapse;    border: 2px solid black;
+    height: 24px;
 }
-table.roomoptions td {
-    text-align: center; width: 90px;
-    border-right: 1px solid #999999;
-    border-bottom: 1px solid #999999;
-    line-height: 1.5;    padding: 2px;
+table.headoptions {
+    height: 40px;
 }
-table.roomoptions tr::even td {
-    background-color: #cccccc;
-}
-table.roomoptions tr::odd td {
-    background-color: #ffffff;
-}
-table.roomoptions td.thingname {
-    text-align: left; 
-    width: 300px;    height: 20px;    padding: 2px;    font-weight: bold;
-    border-left: 1px solid #999999;    border-right: 1px solid #999999;
-}
-table.roomoptions thead th, table.headoptions thead th {
+table.headoptions thead th {
     border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
     background-color: #3a5795;    color:#ffffff;
-    font-weight: bold;    padding: 2px;    width: 90px;
+    font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
 }
-table.headoptions thead th.roomname:last-child {
-    padding-right: 17px;
+table.headoptions td, table.roomoptions td {
+    width: 100px;
+    color:#000000;
+    text-align: center;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
 }
-table.roomoptions th.thingname, table.headoptions th.thingname {
-    text-align: left; width: 300px;    border-left: 1px solid #999999;
-    height: 30px;
+table.roomoptions td.thingname, table.headoptions th.thingname {
+    text-align: left; 
+    width: 20%;    
+    border-left: 1px solid #999999;
+    font-weight: bold;
+    border-left: 1px solid #999999;    
+    border-right: 1px solid #999999;
 }
-table.roomoptions tbody {
-    overflow-y: scroll;  width: 100%;  border-top: 2px solid black;
+
+table.roomoptions tr.showrow {
+    height: 24px;
+    background-color: #ffffff;
+}
+table.roomoptions tr.showrow.odd {
+    background-color: #cccccc;
+}
+table.roomoptions tr.hiderow {
+    display: none;
+}
+
+/* only adjust for scrollbar on screens with hover */
+@media only screen and (hover: hover) {
+    table.roomoptions tbody {
+        overflow-y: scroll;  width: 95%;
+    }
+    table.headoptions thead th.roomname:last-child {
+        padding-right: 17px;
+    }
 }
 span.typeopt {
     font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;

@@ -98,10 +98,38 @@ window.addEventListener("load", function(event) {
     // setup time based updater
     setupTimers();
     
+    // set up option box clicks
+    setupFilters();
+    
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
 });
+
+function setupFilters() {
+   // set up option box clicks
+    $('input[name="useroptions[]"]').click(function() {
+        var theval = $(this).val();
+        var ischecked = $(this).prop("checked");
+        // var that = this;
+        // alert("clicked on val = "+theval+ " ischecked = " + ischecked + " ... about to change screen...");
+        
+        // set the class of all rows to invisible or visible
+        $('tr[type="'+theval+'"]').each(function() {
+            var theclass = $(this).attr("class");
+            if ( ischecked ) {
+                $(this).attr("class", "showrow");
+                // $(that).attr("checked","1");
+            } else {
+                $(this).attr("class", "hiderow");
+                // $(that).attr("checked","0");
+           }
+        });
+        
+        // setupFilters();
+        
+    });
+}
 
 function setupPopup() {
         //Click out event!
