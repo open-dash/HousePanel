@@ -144,6 +144,10 @@ mappings {
   path("/doquery") {
      action: [       POST: "doQuery"     ]
   }
+  
+  path("/getallthings") {
+     action: [       POST: "getAllThings"     ]
+  }
 
 }
 
@@ -276,7 +280,14 @@ def getmyMode(swid, item=null) {
 }
 
 def getBlank(swid, item=null) {
-    def resp << [name: "Blank"]
+    def resp = [:]
+    resp << [name: "Blank"]
+    return resp
+}
+
+def getImage(swid, item=null) {
+    def resp = [:]
+    resp << [name: "Image"]
     return resp
 }
 
@@ -352,16 +363,33 @@ def getAllThings() {
     def incpistons = params.incpistons
 
     def resp = []
-    resp << getModes() << getSwitches() << getDimmers() << getMomentaries()
-    resp << getLights() << getBulbs() << getContacts() << getDoors()
-    resp << getLocks() << getSensors() << getPresences()
-    resp << getThermostats() << getTemperatures() << getIlluminances()
-    resp << getWeathers() << getValves() << getWaters() << getMusics()
-    resp << getSmokes() << getRoutines() << getOthers()
+    resp.addAll(getModes())
+    resp.addAll(getSwitches())
+    resp.addAll(getDimmers())
+    resp.addAll(getMomentaries())
+    resp.addAll(getLights())
+    resp.addAll(getBulbs())
+    resp.addAll(getContacts())
+    resp.addAll(getDoors())
+    resp.addAll(getLocks())
+    resp.addAll(getSensors())
+    resp.addAll(getPresences())
+    resp.addAll(getThermostats())
+    resp.addAll(getTemperatures())
+    resp.addAll(getIlluminances())
+    resp.addAll(getWeathers())
+    resp.addAll(getValves())
+    resp.addAll(getWaters())
+    resp.addAll(getMusics())
+    resp.addAll(getSmokes())
+    resp.addAll(getRoutines())
+    resp.addAll(getOthers())
+    resp.addAll(getBlanks())
+    resp.addAll(getImages())
 
     // optionally include pistons based on user option
     if (incpistons) {
-        resp << getPistons()
+        resp.pulAll(getPistons())
     }
 
     return resp
@@ -384,10 +412,21 @@ def getBlanks() {
     def resp = []
     log.debug "Getting the blank tiles"
     def val = getBlank(0)
-    resp << [name: "Blank", id: "b1x1", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b1x2", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b2x1", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b2x2", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b1", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b2", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b3", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b4", value: val, type: "blank"]
+    return resp
+}
+
+def getImages() {
+    def resp = []
+    log.debug "Getting the image tiles"
+    def val = getImage(0)
+    resp << [name: "Image", id: "img1", value: val, type: "image"]
+    resp << [name: "Image", id: "img2", value: val, type: "image"]
+    resp << [name: "Image", id: "img3", value: val, type: "image"]
+    resp << [name: "Image", id: "img4", value: val, type: "image"]
     return resp
 }
 

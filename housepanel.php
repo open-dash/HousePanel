@@ -77,6 +77,7 @@ define('APPNAME', 'House Panel');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
+define('DEBUG4', true);
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -243,13 +244,20 @@ function getAllThings($endpt, $access_token) {
     // if a prior call failed then we need to reset the session and reload
     if (count($allthings) <= 9 && $endpt && $access_token ) {
         session_unset();
+        
+/*        
         $headertype = array("Authorization: Bearer " . $access_token);
         $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
                   "&scope=app&client_id=" . urlencode(CLIENT_ID) .
                   "&incpistons=true";
-        $response = curl_call($endpt . "/getallthings", $headertype, $nvpreq, "POST");
-
-/*        
+        $allthings = curl_call($endpt . "/getallthings", $headertype, $nvpreq, "POST");
+*/
+    
+//        if (DEBUG4) {
+//            print_r($allthings);
+//            exit(0);
+//        }
+        
         $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters",
@@ -260,7 +268,7 @@ function getAllThings($endpt, $access_token) {
                 $allthings = array_merge($allthings, $newitem);
             }
         }
-*/
+
         // add a clock tile
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
@@ -285,7 +293,7 @@ function getAllThings($endpt, $access_token) {
 
         $_SESSION["allthings"] = $allthings;
     }
-    return $allthings;
+    return $allthings; 
 }
 
 // function to search for triggers in the name to include as classes to style

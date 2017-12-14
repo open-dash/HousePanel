@@ -319,12 +319,12 @@ div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
     margin: 0;
     cursor: default;
     width: 118px;
-    height: 112px;
+    height: auto;
 }
 
-/* make room for battery state */
-div.motion, div.contact, div.lock {
-    height: 96px;
+div.switch.on, div.switch.off, div.light.on, div.light.off, 
+div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off {
+    height: 112px;
 }
 
 /* the name of the thing - must be after the above heights */
@@ -399,10 +399,12 @@ div.contact.garage.closed {
 div.valve.open {
     background-image: url('sprinkler-on.png');
     background-color: rgba(27,177,75,0.6);
+    height: 112px;
 }
 div.valve.closed {
     background-image: url('sprinkler-on.png');
     background-color: rgba(0, 51, 204, 0.6);
+    height: 112px;
 }
 div.valve.switch, div.valve.contact {
     display: none;
@@ -412,11 +414,13 @@ div.contact.garage.entry.open {
     background-image: url('opendoor.png');
     background-color: rgba(27,177,75,0.6);
     background-size: 40px;
+    height: 112px;
 }
 div.contact.garage.entry.closed {
     background-image: url('closedoor.png');
     background-color: rgba(0, 51, 204, 0.6);
     background-size: 40px;
+    height: 112px;
 }
 
 
@@ -424,10 +428,12 @@ div.contact.garage.entry.closed {
 div.motion.inactive {
     background-image: url('stand.png');
     background-color: rgba(0, 51, 204, 0.6);
+    height: 96px;
 }
 div.motion.active {
     background-image: url('run.png');
     background-color: rgba(0, 51, 204, 0.3);
+    height: 96px;
 }
 div.motion.battery, div.contact.battery, 
 div.lock.battery, div.motion.temperature {
@@ -457,22 +463,31 @@ div.lock.unlocked{
     background-color: rgba(102, 51, 0, 0.7);
 }
 
+/* make room for battery state */
+div.motion, div.contact, div.lock {
+    height: 96px;
+}
+
 /* switch styling */
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
     background-image: url('bulbon.png');
     background-color: rgba(0, 51, 204, 0.3);
+    height: 112px;
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('bulboff.png');
+    height: 112px;
 }
 div.switch.plug.on {
     background-image: url('plugon.png');
     background-color: rgba(204, 51, 0, 0.3);
+    height: 112px;
 }
 div.switch.plug.off {
     background-image: url('plugoff.png');
     background-color: rgba(0, 51, 204, 0.3);
+    height: 112px;
 }
 div.switch.level {
     display: none;
@@ -508,6 +523,7 @@ div.switchlevel.level {
 div.momentary.off, div.momentary.on{
     background-image: url('3dbutton.png');
     background-color: rgba(204, 51, 0, 0.6);
+    height: 112px;
 }
 div.momentary.off {
     background-color: rgba(0,51,204,0.6);
@@ -713,9 +729,8 @@ div.piston.webcore {
     display: none;
 }
 div.piston.pistonName {
-    height: 24px;
-    padding-top: 88px;
-    color: #ffffff;
+    height: 112px;
+    color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
     background-image: url('piston.png');
 }
@@ -946,7 +961,7 @@ div.thingname.image, div.thingname.routine,
 div.thermostat.name, div.switch.name, div.contact.name,
 div.switchlevel.name, div.momentary.name, div.routine.name,
 div.lock.name, div.light.name, div.door.name, div.bulb.name,
-div.valve.name, div.water.name {
+div.valve.name, div.water.name, div.piston.name, div.thermostat.name, div.music.name {
     display:none;
 }
 
