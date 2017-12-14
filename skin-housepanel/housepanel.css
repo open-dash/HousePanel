@@ -145,7 +145,12 @@ div.panel-music, div.panel-theater, div.panel-entertainment {
     background-image: url('music.jpg');
 }
 div.panel-thermostats, div.panel-thermostat {
-  background-image: url('thermostat.jpg');
+    background-image: url('thermostat.jpg');
+}
+
+/* style the panel with all things listed */
+div.panel-all {
+    background-image: none;
 }
 
 /* formatting for endpoint mode query of access id information */
@@ -351,7 +356,7 @@ div.lock, div.mode.mode, div.piston, div.valve, div.routine.label {
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
 div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
   background-position: 50% 20%;  font-size: 12px;
-  color: rgba(255,255,255,0.01)
+  color: rgba(255,255,255,0.01);
 }
 
 /* contact styling - note we changed to generic contact */
@@ -934,10 +939,56 @@ div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus,
 div.contact.checkInterval, div.switchlevel.colorTemperature,
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
-div.lock.codeReport, div.lock.maxCodes,
+div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
+div.lock.minCodeLength, div.lock.codeLength,
 div.thingname.blank, div.thingname.clock, div.thingname.mode,
-div.thingname.image, div.thingname.routine {
+div.thingname.image, div.thingname.routine, 
+div.thermostat.name, div.switch.name, div.contact.name,
+div.switchlevel.name, div.momentary.name, div.routine.name,
+div.lock.name, div.light.name, div.door.name, div.bulb.name,
+div.valve.name, div.water.name {
     display:none;
+}
+
+/* simple things for the All panel */
+div.panel-all div.thing {
+    display: inline-block;
+    font-size: 9pt;
+    text-align: center;
+    margin: 1px;
+    vertical-align: top;
+    border: 1px solid #000000; 
+    background-color: #eeeeee;
+    color: #000000;
+    cursor: default;
+    width: 60px; 
+    height: 20px;
+}
+div.panel-all div.thing:hover{
+    color: #eeeeee;
+    background-color: #000000;
+}
+div.panel-all div.thingname {
+    background-color: #303050;
+    font-size: 9pt;
+    text-align: center;
+    color: #ffffff;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    border-bottom: 1px solid rgba(0,0,0,0.3);
+    height: 20px;
+    cursor: move;
+}
+div.panel-all div.open, div.panel-all div.closed, 
+div.panel-all div.inactive, div.panel-all div.active, 
+div.panel-all div.locked, div.panel-all div.unlocked, 
+div.panel-all div.on, div.panel-all div.off, 
+div.panel-all div.present, div.panel-all div.absent, 
+div.panel-all div.firing, div.panel-all div.piston.pistonName {
+    background-position: center;
+    text-align: center;
+    font-size: 9px;
+    color: #000000;
 }
 
 /* custom settings for Ken's home only */

@@ -231,6 +231,8 @@ function authButton($sname, $returl) {
     return $tc;
 }
 
+// rewrite this to use our new groovy code to get all things
+// this should be considerably faster
 function getAllThings($endpt, $access_token) {
     $allthings = array();
      
@@ -241,7 +243,13 @@ function getAllThings($endpt, $access_token) {
     // if a prior call failed then we need to reset the session and reload
     if (count($allthings) <= 9 && $endpt && $access_token ) {
         session_unset();
-        
+        $headertype = array("Authorization: Bearer " . $access_token);
+        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
+                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
+                  "&incpistons=true";
+        $response = curl_call($endpt . "/getallthings", $headertype, $nvpreq, "POST");
+
+/*        
         $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters",
@@ -252,7 +260,7 @@ function getAllThings($endpt, $access_token) {
                 $allthings = array_merge($allthings, $newitem);
             }
         }
-
+*/
         // add a clock tile
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
@@ -553,7 +561,6 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
         $response = array("url" => $swid);
     } else {
     
-        // $host = $endpt . "/doaction";
         $headertype = array("Authorization: Bearer " . $access_token);
 
         $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
@@ -594,7 +601,6 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
             $allthings = $_SESSION["allthings"];
         } else {
             $allthings = getAllThings($endpt, $access_token);
-            $_SESSION["allthings"] = $allthings;
         }
         $options= getOptions($allthings);
     }
@@ -676,13 +682,13 @@ function getOptions($allthings) {
 
     // generic room setup
     $defaultrooms = array(
-        "Kitchen" => "kitchen|sink|pantry|dinette|clock" ,
+        "Kitchen" => "kitchen|sink|pantry|dinette|clock|hello|goodbye|goodnight" ,
         "Family" => "family|mud|fireplace|casual|thermostat|weather",
         "Living" => "living|dining|entry|front door|foyer",
-        "Office" => "office|computer|desk|work",
-        "Bedrooms" => "bedroom|kid|bathroom|closet|master|guest",
+        "Office" => "office|computer|desk|work|clock",
+        "Bedrooms" => "bedroom|kid|kids|bathroom|closet|master|guest",
         "Outside" => "garage|yard|outside|porch|patio|driveway",
-        "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung"
+        "Music" => "sonos|music|tv|television|alexa|stereo|bose|samsung|amp"
     );
     
     // read options from a local server file
@@ -697,6 +703,7 @@ function getOptions($allthings) {
         
         if ( !key_exists("skin", $options ) ) {
             $options["skin"] = "skin-housepanel";
+            $updated = true;
         }
         
         // add option for kiosk mode
@@ -726,12 +733,6 @@ function getOptions($allthings) {
             echo "To fix this error you may need to edit and re-upload your \"hmoptions.cfg\" file and re-launch.</div>";
             exit(1);
         }
-        
-        // make sure there is at least one room
-        $rcount = count($options["rooms"]);
-        if (!$rcount) {
-            $options["rooms"]["All"] = 0;
-        }
 
         // find the largest index number for a sensor in our index
         $cnt = count($options["index"]) - 1;
@@ -757,6 +758,12 @@ function getOptions($allthings) {
                 $updated = true;
             }
         }
+        
+        // make sure there is at least one room
+//        $rcount = count($options["rooms"]);
+//        if (!$rcount) {
+//            $options["rooms"]["All"] = 0;
+//        }
         
         // make sure all options are arrays and keys are in a valid room
         // we don't need to check for valid thing as that is done later
@@ -829,6 +836,19 @@ function getOptions($allthings) {
 //        echo "</pre>";
 //        exit(0);
     }
+    
+    // make a room with everything in it called "All"
+    // we will style all tiles in this room to be small and simple
+    // can't get this to work so commented out for now
+//    $maxroom = 0;
+//    foreach($options["rooms"] as $roomidx) {
+//        $maxroom = ($roomidx >= $maxroom) ? $roomidx + 1 : $maxroom;
+//    }
+//    $options["rooms"]["All"] = $maxroom;
+//    foreach ($allthings as $thingid =>$thesensor) {
+//        $idall = $options["index"][$thingid];
+//        $options["things"]["All"][] = $idall;
+//    }
 
     if ($updated) {
         writeOptions($options);
@@ -1216,6 +1236,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
        
 
 // *** handle the Ajax calls here ***
+// fix security bug... only do this if authenticated
 // ********************************************************************************************
 
     // check for switch setting Ajax call
@@ -1232,7 +1253,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
     
-    if ($useajax) {
+    if ( $useajax && $endpt && $access_token ) {
         switch ($useajax) {
             case "doaction":
                 if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
@@ -1244,10 +1265,6 @@ function processOptions($optarray, $retpage, $allthings=null) {
         
             case "doquery":
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
-                break;
-        
-            case "dohistory":
-                echo doAction($endpt . "/dohistory", $access_token, $swid, $swtype);
                 break;
         
             case "pageorder":
@@ -1310,7 +1327,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // process options submit request
     // handle the options and then reload the page from scratch
     // because just about everything could have changed
-    if (isset($_POST["options"])) {
+    if ($endpt && $access_token && isset($_POST["options"])) {
         // $allthings = getAllThings($endpt, $access_token);
         processOptions($_POST, $returnURL);
         exit(0);
@@ -1338,7 +1355,6 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // force re-read of all physical things
         // unset($_SESSION["allthings"]);
         $allthings = getAllThings($endpt, $access_token);
-        $_SESSION["allthings"] = $allthings;
         
         // get the options tab and options values
         $options= getOptions($allthings);
@@ -1409,10 +1425,10 @@ function processOptions($optarray, $retpage, $allthings=null) {
 
 // this should never ever happen...
         if (!$first) {
-            echo "<br />Something went wrong";
-            echo "<br />access_token = $access_token";
-            echo "<br />endpoint = $endpt";
-            echo "<br />tc dump: <br />";
+            echo "<br />Invalid request... you are not authorized for this action.";
+            // echo "<br />access_token = $access_token";
+            // echo "<br />endpoint = $endpt";
+            echo "<br /><br />";
             echo $tc;
             exit;    
         }

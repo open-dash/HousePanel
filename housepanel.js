@@ -363,29 +363,30 @@ function setupTimers() {
                 
             case "motion":
             case "contact":
-                timerval = 125000;
+                timerval = 60006;
                 break;
 
             case "thermostat":
-                timerval = 61000;
+                timerval = 60005;
                 break;
 
             case "music":
-                timerval = 124000;
+                timerval = 120003;
                 break;
 
             case "weather":
-                timerval = 303000;
+                timerval = 300000;
                 break;
 
             case "mode":
             case "routine":
-                timerval = 306000;
+                timerval = 60002;
                 break;
 
             case "lock":
             case "door":
-                timerval = 62000;
+            case "valve":
+                timerval = 60001;
                 break;
 
             case "image":

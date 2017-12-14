@@ -10,11 +10,15 @@
  *
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language git stgoverning permissions and limitations under the License.
+ *  for the specific language governing permissions and limitations under the License.
  *
  * This app started life displaying the history of various ssmartthings
  * but it has morphed into a full blown smart panel web application
  * it displays and enables interaction with switches, dimmers, locks, etc
+ * 
+ * Revision history:
+ * 12/10/2017 - Added name to each thing query return
+ *            - Remove old code block of getHistory code
  * 
  */
 public static String version() { return "v1.0.alpha.rev.2" }
@@ -141,10 +145,6 @@ mappings {
      action: [       POST: "doQuery"     ]
   }
 
-  path("/gethistory") {
-     action: [       POST: "getHistory"    ]
-  }
-
 }
 
 def installed() {
@@ -209,7 +209,7 @@ def getLock(swid, item=null) {
 
 def getMusic(swid, item=null) {
     item = item? item : mymusics.find {it.id == swid }
-    def resp = item ?   [track: item.currentValue("trackDescription"),
+    def resp = item ?   [name: item.displayName, track: item.currentValue("trackDescription"),
                               musicstatus: item.currentValue("status"),
                               level: item.currentValue("level"),
                               musicmute: item.currentValue("mute")
@@ -219,7 +219,7 @@ def getMusic(swid, item=null) {
 
 def getThermostat(swid, item=null) {
     item = item? item : mythermostats.find {it.id == swid }
-    def resp = item ?   [temperature: item.currentValue("temperature"),
+    def resp = item ?   [name: item.displayName, temperature: item.currentValue("temperature"),
                               heat: item.currentValue("heatingSetpoint"),
                               cool: item.currentValue("coolingSetpoint"),
                               thermofan: item.currentValue("thermostatFanMode"),
@@ -233,7 +233,7 @@ def getThermostat(swid, item=null) {
 // use absent instead of "not present" for absence state
 def getPresence(swid, item=null) {
     item = item ? item : mypresences.find {it.id == swid }
-    def resp = item ? [presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
+    def resp = item ? [name: item.displayName, presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
     return resp
 }
 
@@ -275,16 +275,23 @@ def getmyMode(swid, item=null) {
     return resp
 }
 
-def getRoutine(swid, item=null) {
-	def routines = location.helloHome?.getPhrases()
-    def routine = item ? item : routines.find{it.id == swid}
-    def resp = [label: routine.label]
+def getBlank(swid, item=null) {
+    def resp << [name: "Blank"]
     return resp
 }
 
+def getRoutine(swid, item=null) {
+	def routines = location.helloHome?.getPhrases()
+    def routine = item ? item : routines.find{it.id == swid}
+    def resp = routine ? [name: routine.label, label: routine.label] : false
+    return resp
+}
+
+// change pistonName to name to be consistent
+// but retain original for backward compatibility reasons
 def getPiston(swid, item=null) {
     item = item ? item : webCoRE_list().find {it.id == swid}
-    def resp = [webcore: "webCoRE", pistonName: item.name]
+    def resp = [name: item.name, pistonName: item.name]
     return resp
 }
 
@@ -310,6 +317,9 @@ def getDevice(mydevices, swid, item=null) {
 def getThing(things, swid, item=null) {
     item = item ? item : things.find {it.id == swid }
     def resp = item ? [:] : false
+    if ( resp && item ) {
+        resp.put("name",item.displayName)
+    }
 
             item?.capabilities.each {cap ->
                 // def capname = cap.getName()
@@ -336,16 +346,48 @@ def getThings(things, thingtype) {
     return resp
 }
 
+// This retrieves and returns all things
+// we use this up front and again to resync with the mobile app
+def getAllThings() {
+    def incpistons = params.incpistons
+
+    def resp = []
+    resp << getModes() << getSwitches() << getDimmers() << getMomentaries()
+    resp << getLights() << getBulbs() << getContacts() << getDoors()
+    resp << getLocks() << getSensors() << getPresences()
+    resp << getThermostats() << getTemperatures() << getIlluminances()
+    resp << getWeathers() << getValves() << getWaters() << getMusics()
+    resp << getSmokes() << getRoutines() << getOthers()
+
+    // optionally include pistons based on user option
+    if (incpistons) {
+        resp << getPistons()
+    }
+
+    return resp
+}
+
 // this returns just a single active mode, not the list of available modes
 // this is done so we can treat this like any other set of tiles
 def getModes() {
     def resp = []
     // log.debug "Getting the mode tile"
     def val = getmyMode(0)
-    resp << [name: "Mode1x1", id: "mode1x1", value: val, type: "mode"]
-    resp << [name: "Mode1x2", id: "mode1x2", value: val, type: "mode"]
-    resp << [name: "Mode2x1", id: "mode2x1", value: val, type: "mode"]
-    resp << [name: "Mode2x2", id: "mode2x2", value: val, type: "mode"]
+    resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
+    resp << [name: "Mode", id: "m1x2", value: val, type: "mode"]
+    resp << [name: "Mode", id: "m2x1", value: val, type: "mode"]
+    resp << [name: "Mode", id: "m2x2", value: val, type: "mode"]
+    return resp
+}
+
+def getBlanks() {
+    def resp = []
+    log.debug "Getting the blank tiles"
+    def val = getBlank(0)
+    resp << [name: "Blank", id: "b1x1", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b1x2", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b2x1", value: val, type: "blank"]
+    resp << [name: "Blank", id: "b2x2", value: val, type: "blank"]
     return resp
 }
 
@@ -942,7 +984,6 @@ def setThermostat(swid, curtemp, swattr) {
     def resp = false
     def newsw = 72
     def tempint
-    def cmd = curtemp
 
     def item  = mythermostats.find {it.id == swid }
     if (item) {
