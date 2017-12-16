@@ -21,7 +21,7 @@ window.addEventListener("load", function(event) {
         cancel: "li.nodrag",
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
-        delay: 2000,
+        delay: 200,
         revert: true,
         update: function(event, ui) {
             var pages = {};
@@ -60,7 +60,7 @@ window.addEventListener("load", function(event) {
         items: "> div.thing",
         opacity: 0.5,
         revert: true,
-        delay: 2000,
+        delay: 200,
         update: function(event, ui) {
             var things = {};
             var k=0;

@@ -102,7 +102,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
     
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
-    $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
+    // $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
     // load custom .css and the main script file
     if (!$skindir) {
