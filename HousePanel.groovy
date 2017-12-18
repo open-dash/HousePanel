@@ -328,7 +328,7 @@ def getDevice(mydevices, swid, item=null) {
 def getThing(things, swid, item=null) {
     item = item ? item : things.find {it.id == swid }
     def resp = item ? [:] : false
-    if ( resp && item ) {
+    if ( item ) {
         resp.put("name",item.displayName)
     }
 
