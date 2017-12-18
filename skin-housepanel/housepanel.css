@@ -257,11 +257,17 @@ div.processoptions {
 input {
     background-repeat: no-repeat;
 }
+
+div.buttons, form.buttons {
+    display: inline;
+}
+
 input.submitbutton, input.resetbutton, input.authbutton {
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;    padding: 8px 16px;
     color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+    border-bottom: 4px solid rgba(0, 0, 0, 0.25); 
+    border-right: 4px solid rgba(0, 0, 0, 0.25); 
     font-size: 14pt;
 }
 input.submitbutton {
@@ -327,6 +333,11 @@ div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off {
     height: 112px;
 }
 
+div.lock.locked, div.lock.unlocked, div.motion.active, div.motion.inactive,
+div.contact.open, div.contact.closed {
+    height: 96px;
+}
+
 /* the name of the thing - must be after the above heights */
 div.thingname, div.thingname.motion, div.thingname.contact, 
 div.thingname.lock, div.thingname.piston {
@@ -375,11 +386,9 @@ div.contact.closed {
 
 /* specific contact types one might find */
 div.contact.door.open {
-    height: 112px;
     background-image: url('opendoor.png');
 }
 div.contact.door.closed {
-    height: 112px;
     background-image: url('closedoor.png');
 }
 div.contact.window.open {
@@ -428,12 +437,10 @@ div.contact.garage.entry.closed {
 div.motion.inactive {
     background-image: url('stand.png');
     background-color: rgba(0, 51, 204, 0.6);
-    height: 96px;
 }
 div.motion.active {
     background-image: url('run.png');
     background-color: rgba(0, 51, 204, 0.3);
-    height: 96px;
 }
 div.motion.battery, div.contact.battery, 
 div.lock.battery, div.motion.temperature {
@@ -463,21 +470,14 @@ div.lock.unlocked{
     background-color: rgba(102, 51, 0, 0.7);
 }
 
-/* make room for battery state */
-div.motion, div.contact, div.lock {
-    height: 96px;
-}
-
 /* switch styling */
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
     background-image: url('bulbon.png');
     background-color: rgba(0, 51, 204, 0.3);
-    height: 112px;
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('bulboff.png');
-    height: 112px;
 }
 div.switch.plug.on {
     background-image: url('plugon.png');
@@ -958,7 +958,7 @@ div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
 div.lock.minCodeLength, div.lock.codeLength,
 div.thingname.blank, div.thingname.clock, div.thingname.mode,
 div.thingname.image, div.thingname.routine, 
-div.thermostat.name, div.switch.name, div.contact.name,
+div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
 div.switchlevel.name, div.momentary.name, div.routine.name,
 div.lock.name, div.light.name, div.door.name, div.bulb.name,
 div.valve.name, div.water.name, div.piston.name, div.thermostat.name, div.music.name {

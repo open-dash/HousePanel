@@ -159,7 +159,7 @@ function getResponse($host, $access_token) {
             
             // make a unique index for this thing based on id and type
             $idx = $thetype . "|" . $id;
-            $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $content["type"]);
+            $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $thetype);
         }
     }
     return $edited;
@@ -577,13 +577,22 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
                   "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
         $response = curl_call($host, $headertype, $nvpreq, "POST");
 
-        // echo $nvpreq;
-        // echo '<br />';
+        // update session with new status
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+            $idx = $swtype . "|" . $swid;
+            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                $newval = array_merge($allthings[$idx]["value"], $response);
+                $allthings[$idx]["value"] = $newval;
+                $_SESSION["allthings"] = $allthings;
+                $response["updated"] = "updated";
+            }
+        }
         
         // this now returns an array of tile settings
         // which could be a single value pair
         if (!response) {
-            $response = array($swtype => $swval);
+            $response = array("name" => "Unknown", $swtype => $swval);
         }
     }
     
@@ -1044,7 +1053,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     // note that the list of checkboxes can come in any random order
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
-        if ($key=="options" || $key=="submitoption") { continue; }
+        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh") { continue; }
         
         // set skin
         if ($key=="skin") {
@@ -1291,6 +1300,16 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 echo $optpage;
                 echo htmlFooter();
                 break;
+        
+            case "refresh":
+                
+                unset($_SESSION["allthings"]);
+                $allthings = getAllThings($endpt, $access_token);
+    
+                // reload the page
+                $location = $returnURL;
+                header("Location: $location");
+                break;
             
             // an Ajax option to display all the ID value for use in Python and EventGhost
             case "showid":
@@ -1420,12 +1439,18 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
         if ($options["kiosk"] !== "1") {
-            $tc.= "<div>";
-            $tc.= "<form class=\"invokeoption\" action=\"$returnURL\"  method=\"POST\">";
+            $tc.= "<div class=\"buttons\">";
+            $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
             $tc.= hidden("useajax", "showoptions");
             $tc.= hidden("type", "none");
             $tc.= hidden("id", 0);
             $tc.= "<input class=\"submitbutton\" value=\"Options\" name=\"submitoption\" type=\"submit\" />";
+            $tc.= "</form>";
+            $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
+            $tc.= hidden("useajax", "refresh");
+            $tc.= hidden("type", "none");
+            $tc.= hidden("id", 0);
+            $tc.= "<input class=\"submitbutton\" value=\"Refresh\" name=\"submitrefresh\" type=\"submit\" />";
             $tc.= "</form></div>";
         }
    

@@ -43,7 +43,6 @@ window.addEventListener("load", function(event) {
                             // alert(strObject(newrooms));
                             $('table.headoptions th > input[type="hidden"]').each(function() {
                                var rname = $(this).attr("name").substring(2);
-                               // var rvalue = parseInt($(this).attr("value"));
                                var newval = parseInt(newrooms[rname]);
                                // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
                                $(this).attr("value",newval);
@@ -125,9 +124,6 @@ function setupFilters() {
                 // $(that).attr("checked","0");
            }
         });
-        
-        // setupFilters();
-        
     });
 }
 
@@ -311,6 +307,7 @@ function refreshTile(aid, bid, thetype) {
         {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
+                // alert( strObject(presult) );
                 updateTile(aid, presult);
             }
         }, "json"
@@ -565,6 +562,7 @@ function setupPage(sensortype) {
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
+                            // alert( strObject(presult) );
                             updAll(aid,bid,thetype,presult);
                         }
                    }, "json"
