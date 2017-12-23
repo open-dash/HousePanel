@@ -260,8 +260,8 @@ function getAllThings($endpt, $access_token) {
         
         $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
                             "sensors", "locks", "thermostats", "musics", "valves",
-                            "doors", "illuminances", "smokes", "waters",
-                            "weathers", "presences", "modes", "pistons", "others");
+                            "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
+                            "modes", "blanks", "images", "pistons", "others");
         foreach ($thingtypes as $key) {
             $newitem = getResponse($endpt . "/" . $key, $access_token);
             if ($newitem && count($newitem)>0) {
@@ -280,16 +280,16 @@ function getAllThings($endpt, $access_token) {
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
         // add a few blank tiles
-        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank 1x1", "value" => array("size"=>"b1x1"), "type" => "blank");
-        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank 1x2", "value" => array("size"=>"b1x2"), "type" => "blank");
-        $allthings["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank 2x1", "value" => array("size"=>"b2x1"), "type" => "blank");
-        $allthings["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank 2x2", "value" => array("size"=>"b2x2"), "type" => "blank");
-
-        // add user specified number of generic graphic tiles
-        $allthings["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
-        $allthings["image|img2"] = array("id" => "img2", "name" => "Image 2", "value" => array("url"=>"img2"), "type" => "image");
-        $allthings["image|img3"] = array("id" => "img3", "name" => "Image 3", "value" => array("url"=>"img3"), "type" => "image");
-        $allthings["image|img4"] = array("id" => "img4", "name" => "Image 4", "value" => array("url"=>"img4"), "type" => "image");
+//        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank", "value" => array("size"=>"b1x1"), "type" => "blank");
+//        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank", "value" => array("size"=>"b1x2"), "type" => "blank");
+//        $allthings["blank|b2x1"] = array("id" => "b2x1", "name" => "Blank", "value" => array("size"=>"b2x1"), "type" => "blank");
+//        $allthings["blank|b2x2"] = array("id" => "b2x2", "name" => "Blank", "value" => array("size"=>"b2x2"), "type" => "blank");
+//
+//        // add user specified number of generic graphic tiles
+//        $allthings["image|img1"] = array("id" => "img1", "name" => "Image 1", "value" => array("url"=>"img1"), "type" => "image");
+//        $allthings["image|img2"] = array("id" => "img2", "name" => "Image 2", "value" => array("url"=>"img2"), "type" => "image");
+//        $allthings["image|img3"] = array("id" => "img3", "name" => "Image 3", "value" => array("url"=>"img3"), "type" => "image");
+//        $allthings["image|img4"] = array("id" => "img4", "name" => "Image 4", "value" => array("url"=>"img4"), "type" => "image");
 
         $_SESSION["allthings"] = $allthings;
     }
@@ -328,7 +328,7 @@ function processName($thingname, $thingtype) {
             $subtype = "";
             $k = 0;
             foreach ($subopts as $key) {
-                if ($key!= $thingtype) {
+                if (strtolower($key) != $thingtype) {
                     $subtype.= " " . $key;
                     $k++;
                 }
@@ -469,7 +469,8 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || is_numeric($tval) || 
+        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || 
+                  is_numeric($tval) || $thingtype==$tval ||
                   $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
 
         // fix track names for groups, empty, and super long
@@ -490,7 +491,7 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
         }
 
         // ignore keys for single attribute items and keys that match types
-        if ( ($tkey===$thingtype) || 
+        if ( ($tkey===$thingtype ) || 
              ($tkey==="value" && $j===0) ) {
             $tkeyshow= "";
         } else {

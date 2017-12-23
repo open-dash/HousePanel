@@ -136,6 +136,12 @@ mappings {
   path("/routines") {
     action: [      POST: "getRoutines"    ]
   }
+  path("/blanks") {
+    action: [      POST: "getBlanks"    ]
+  }
+  path("/images") {
+    action: [      POST: "getImages"    ]
+  }
   
   path("/doaction") {
      action: [       POST: "doAction"     ]
@@ -281,13 +287,13 @@ def getmyMode(swid, item=null) {
 
 def getBlank(swid, item=null) {
     def resp = [:]
-    resp << [name: "Blank"]
+    resp << [name: "Blank ${swid}", size: "${swid}"]
     return resp
 }
 
 def getImage(swid, item=null) {
     def resp = [:]
-    resp << [name: "Image"]
+    resp << [name: "Image ${swid}", url: "${swid}"]
     return resp
 }
 
@@ -409,24 +415,34 @@ def getModes() {
 }
 
 def getBlanks() {
-    def resp = []
     log.debug "Getting the blank tiles"
-    def val = getBlank(0)
-    resp << [name: "Blank", id: "b1", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b2", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b3", value: val, type: "blank"]
-    resp << [name: "Blank", id: "b4", value: val, type: "blank"]
+    def resp = []
+    def vals = ["b1x1","b1x2","b2x1","b2x2"]
+    def val
+    vals.each {
+        val = getBlank(it)
+        resp << [name: "Blank ${it}", id: "${it}", value: val, type: "blank"]
+    }
+//    val = getBlank("b1x1")
+//    resp << [name: "Blank b1x1", id: "blx1", value: val, type: "blank"]
+//    val = getBlank("b1x2")
+//    resp << [name: "Blank b1x2", id: "b1x2", value: val, type: "blank"]
+//    val = getBlank("b2x1")
+//    resp << [name: "Blank b2x1", id: "b2x1", value: val, type: "blank"]
+//    val = getBlank("b2x2")
+//    resp << [name: "Blank b2x2", id: "b2x2", value: val, type: "blank"]
     return resp
 }
 
 def getImages() {
     def resp = []
     log.debug "Getting the image tiles"
-    def val = getImage(0)
-    resp << [name: "Image", id: "img1", value: val, type: "image"]
-    resp << [name: "Image", id: "img2", value: val, type: "image"]
-    resp << [name: "Image", id: "img3", value: val, type: "image"]
-    resp << [name: "Image", id: "img4", value: val, type: "image"]
+    def vals = ["img1","img2","img3","img4"]
+    def val
+    vals.each {
+        val = getImage(it)
+        resp << [name: "Image ${it}", id: "${it}", value: val, type: "image"]
+    }
     return resp
 }
 

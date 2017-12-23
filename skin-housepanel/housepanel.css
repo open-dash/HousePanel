@@ -400,10 +400,12 @@ div.contact.window.closed {
 div.contact.garage.open {
     background-image: url('garage-opened.png');
     background-size: 80px;
+    height: 112px;
 }
 div.contact.garage.closed {
     background-image: url('garage-closed.png');
     background-size: 80px;
+    height: 112px;
 }
 div.valve.open {
     background-image: url('sprinkler-on.png');
@@ -421,15 +423,13 @@ div.valve.switch, div.valve.contact {
 /* special handling of garage entry which is a door */
 div.contact.garage.entry.open {
     background-image: url('opendoor.png');
-    background-color: rgba(27,177,75,0.6);
     background-size: 40px;
-    height: 112px;
+    height: 96px;
 }
 div.contact.garage.entry.closed {
     background-image: url('closedoor.png');
-    background-color: rgba(0, 51, 204, 0.6);
     background-size: 40px;
-    height: 112px;
+    height: 96px;
 }
 
 
@@ -821,15 +821,15 @@ div.thing.blank-thing {
 div.blank:hover {
     background-color: rgba(255,255,255,0.01);
 }
-div.b1x1, div.b1x2, div.b2x1, div.b2x2 {
+div.blank.size.b1x1, div.blank.size.b1x2, div.blank.size.b2x1, div.blank.size.b2x2 {
     width: 120px;    height: 160px;
     font-size: 0px;    padding-left: 0px;
 }
 /* add special sizes for the b1x2, b2x1, and b2x2 tiles  */
-div.b2x1, div.b2x2 {
+div.blank.size.b2x1, div.blank.size.b2x2 {
     width: 244px;
 }
-div.b1x2,div.b2x2 {
+div.blank.size.b1x2, div.blank.size.b2x2 {
     height: 320px;
 }
 div.thing.blank-thing:hover {
@@ -961,7 +961,8 @@ div.thingname.image, div.thingname.routine,
 div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
 div.switchlevel.name, div.momentary.name, div.routine.name,
 div.lock.name, div.light.name, div.door.name, div.bulb.name,
-div.valve.name, div.water.name, div.piston.name, div.thermostat.name, div.music.name {
+div.valve.name, div.water.name, div.piston.name, div.thermostat.name, 
+div.music.name, div.blank.name, div.image.name {
     display:none;
 }
 
