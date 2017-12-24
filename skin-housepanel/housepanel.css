@@ -316,6 +316,10 @@ div.thing:hover{
     -webkit-transition-duration: .2s;
 }
 
+div.thing.switch-thing, div.thing.switchlevel-thing {
+    height: auto;
+}
+
 /* styling defaults without state or specific thing subtypes */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
 div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
@@ -328,7 +332,8 @@ div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
     height: auto;
 }
 
-div.switch.on, div.switch.off, div.light.on, div.light.off, 
+div.switch.on, div.switch.off, div.light.on, div.light.off,
+div.presence.present, div.presence.absent,
 div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off {
     height: 112px;
 }
@@ -358,7 +363,7 @@ div.thingname:hover {
 
 /* items that have a pointer */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
-div.lock, div.mode.mode, div.piston, div.valve, div.routine.label {
+div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
     cursor: pointer;
 }
 
@@ -489,29 +494,32 @@ div.switch.plug.off {
     background-color: rgba(0, 51, 204, 0.3);
     height: 112px;
 }
+/* enable this if you want to show levels for switches and bulbs */
+/* this will duplicate the switchlevel functionality */
 div.switch.level {
     display: none;
 }
-div.switch.energy {
+div.switch.energy, div.switchlevel.energy {
     height: 14px; font-size: 9pt; 
-    position: relative; top: -16px;
-    background-color: rgba(51,204,0,0.5); 
+/*    position: relative; top: -16px; */
+    background-color: rgba(51,204,0,0.7); 
     color: #ffffff;
 }
-div.switch.power {
+div.switch.power, div.switchlevel.power {
     height: 14px; font-size: 9pt; 
-    position: relative; top: -48px;
-    background-color: rgba(51,204,0,0.5); 
+/*    position: relative; top: -48px; */
+    background-color: rgba(51,204,0,0.7); 
     color: #ffffff;
 }
-div.switch.energy::before {
+div.switch.energy::before, div.switchlevel.energy:before {
     content: "E (KwH): ";
 }
-div.switch.power::before {
+div.switch.power::before, div.switchlevel.power:before {
     content: "P (W): ";
 }
 
 /* switchlevel / dimmer styling - make room for the dimmer controls */
+/* if you have a dimmer with power and energy controls - see custom below */
 div.switchlevel.switch {
     height: 80px;
 }
@@ -554,8 +562,8 @@ div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
-    border-top-left-radius: 25px;
-    border-bottom-left-radius: 25px;
+/*    border-top-left-radius: 25px;
+    border-bottom-left-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -564,8 +572,8 @@ div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
-    border-top-right-radius: 25px;
-    border-bottom-right-radius: 25px;
+/*    border-top-right-radius: 25px;
+    border-bottom-right-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -865,7 +873,7 @@ div.thing.mode-thing {
     height: 160px;
     cursor: move;
 }
-div.mode1x1, div.mode1x2 {
+div.mode, div.mode1x1, div.mode1x2 {
     width: 120px;
 }
 div.mode2x1, div.mode2x2 {
@@ -875,11 +883,11 @@ div.mode1x2, div.mode2x2 {
     height: 326px;
 }
 div.mode.themode {
-    font-size: 24pt;    margin-top: 10px;
+    font-size: 20pt;    margin-top: 10px;
     cursor: pointer;
 }
 div.mode.name {
-    font-size: 12pt;    margin-top: 50px;
+    font-size: 12pt;    margin-top: 30px;
 }
 div.mode.zipcode {
     display:none;
@@ -907,17 +915,6 @@ div.image.url {
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-}
-
-/* images - must be customized to show anything */
-div.image.url.img1 {
-    background-image: url("/smartthings/garagecam/livingroom.jpg");
-}
-div.image.url.img2 {
-    background-image: url("/smartthings/garagecam/officecam.jpg");
-}
-div.image.url.img3 {
-    background-image: url("/smartthings/garagecam/garagepic.jpg");
 }
 
 /* presence styling */
@@ -956,17 +953,18 @@ div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
 div.lock.minCodeLength, div.lock.codeLength,
-div.thingname.blank, div.thingname.clock, div.thingname.mode,
+div.thingname.blank, div.thingname.clock,
 div.thingname.image, div.thingname.routine, 
 div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
 div.switchlevel.name, div.momentary.name, div.routine.name,
-div.lock.name, div.light.name, div.door.name, div.bulb.name,
+div.lock.name, div.light.name, div.door.name, div.bulb.name, div.mode.name,
 div.valve.name, div.water.name, div.piston.name, div.thermostat.name, 
-div.music.name, div.blank.name, div.image.name {
+div.music.name, div.blank.name, div.image.name, div.presence.name {
     display:none;
 }
 
 /* simple things for the All panel */
+/* note - the code for an ALL panel is disabled */
 div.panel-all div.thing {
     display: inline-block;
     font-size: 9pt;
@@ -1007,7 +1005,24 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
     color: #000000;
 }
 
-/* custom settings for Ken's home only */
+/* Place all your customization edits below to make updates simple */
+
+/* Example custom settings from Ken's home */
+/* you should remove these since they will likely do nothing */
+
+/* images - can be customized to show any valid jpg or png on the web */
+div.image.url.img1 {
+    background-image: url("/smartthings/garagecam/livingroom.jpg");
+}
+div.image.url.img2 {
+    background-image: url("/smartthings/garagecam/officecam.jpg");
+}
+div.image.url.img3 {
+    background-image: url("/smartthings/garagecam/garagepic.jpg");
+}
+div.image.url.img4 {
+    background-image: url("../custom/myhouse.jpg");
+}
 
 /* girl sillhouette for wife's phone */
 div.presence.jana.present {
@@ -1033,4 +1048,32 @@ div.switch.rock.on {
 div.switch.rock.off {
     background-image: url('rockoff.png');
     background-color: rgba(0, 51, 204, 0.3);
+}
+div.switch.screen.on, div.switch.screen.off {
+    height: 80px;
+}
+
+div.switchlevel.screen.switch, div.switchlevel.screen.on, div.switchlevel.screen.off {
+    height: 80px;
+}
+
+/* hide the power and energy for my screen switch */
+div.switchlevel.screen.power, div.switchlevel.screen.energy {
+    display:none;
+}
+
+/* this custom setting moves power and energy up for my yard switches */
+/* note that I have to also change the size of the wrapper tile to fixed */
+/* alternatively you could change the height of just a specific switch */
+/* to a fixed height of 160 - if you do that you need the id */
+/* and do something like #t-82 where 82 is the ID of the thing you want */
+ div.thing.switch-thing, div.thing.switchlevel-thing {
+    height: 160px;
+}
+div.switch.yard.energy {
+    position: relative; top: -16px;
+/*    position: relative; top: -48px; */
+}
+div.switch.yard.power {
+    position: relative; top: -48px;
 }

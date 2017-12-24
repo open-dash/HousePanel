@@ -19,6 +19,13 @@
  * 
  *
  * Revision History
+ * 1.42       Clean up CSS file to show presence and other things correctly
+ *            Change blank and image logic to read from Groovy code
+ *            Keep session updated for similar things when they change
+ *              -- this was done in the js file by calling refreshTile
+ *            Fix default size for switch tiles with power meter and level
+ *              -- by default will be larger but power can be disabled in CSS
+ * 
  * 1.41       Added filters on the Options page
  *            Numerous bug fixes including default Kiosk set to false
  *            Automatically add newly identified things to rooms per base logic
@@ -371,7 +378,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         $tc.= putElement($i, 0, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         // $tc.= putElement($i, 2, $thingtype, $thingvalue["city"], "city");
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
+        $tc.= "<br /><div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
         $iconstr = $thingvalue["weatherIcon"];
         if (substr($iconstr,0,3) === "nt_") {
             $iconstr = substr($iconstr,3);
@@ -586,7 +593,7 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
                 $newval = array_merge($allthings[$idx]["value"], $response);
                 $allthings[$idx]["value"] = $newval;
                 $_SESSION["allthings"] = $allthings;
-                $response["updated"] = "updated";
+                // $response["updated"] = "updated";
             }
         }
         

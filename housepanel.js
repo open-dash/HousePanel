@@ -442,7 +442,7 @@ function updAll(aid, bid, thetype, pvalue) {
         // alert( strObject(pvalue));
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
-        }, 30000);
+        }, 15000);
     }
         
     // go through all the tiles this bid and type (easy ones)
@@ -453,10 +453,18 @@ function updAll(aid, bid, thetype, pvalue) {
     });
     
     // if this is a switch go through and set all switchlevels
+    // change to use refreshTile function so it triggers PHP session update
+    // but we have to do this after waiting a few seconds for ST to catch up
+    // actually we do both for instant on screen viewing
+    // the second call is needed to make screen refreshes work properly
     if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "switchlevel");
+            }, 5000);
         });
     }
     
@@ -474,18 +482,32 @@ function updAll(aid, bid, thetype, pvalue) {
     }
     
     // if this is a switchlevel go through and set all switches
+    // change to use refreshTile function so it triggers PHP session update
+    // but we have to do this after waiting a few seconds for ST to catch up
     if (thetype==="switchlevel") {
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "switch");
+            }, 5000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "bulb");
+            }, 5000);
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "light");
+            }, 5000);
         });
     }
     
