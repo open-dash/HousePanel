@@ -33,6 +33,9 @@ ul.ui-tabs-nav {
     font-size: 12pt;
     border: none;
 	
+    background-color: rgba(27,177,75,0.3);
+    background-position-y: 9px;
+    background-size: 40px;
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
@@ -322,7 +325,7 @@ div.thing.switch-thing, div.thing.switchlevel-thing {
 
 /* styling defaults without state or specific thing subtypes */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
-div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
+div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve, div.door {
     display: inline-block;
     background-repeat: no-repeat;
     padding: 0px 0;
@@ -390,11 +393,24 @@ div.contact.closed {
 }
 
 /* specific contact types one might find */
-div.contact.door.open {
+div.door.open {
     background-image: url('opendoor.png');
+    background-color: rgba(27,177,75,0.3);
+    background-position-y: 9px;
+    background-size: 40px;
 }
-div.contact.door.closed {
+div.door.closed {
     background-image: url('closedoor.png');
+    background-color: rgba(27,177,75,0.3);
+    background-position-y: 9px;
+    background-size: 40px;
+    cursor: pointer;
+}
+div.garage.door.contact {
+    display: none;
+}
+div.door.garage.open, div.door.garage.closed {
+    cursor: pointer;
 }
 div.contact.window.open {
     background-image: url('openwindow.png');
@@ -402,12 +418,12 @@ div.contact.window.open {
 div.contact.window.closed {
     background-image: url('closewindow.png');
 }
-div.contact.garage.open {
+div.door.garage.open {
     background-image: url('garage-opened.png');
     background-size: 80px;
     height: 112px;
 }
-div.contact.garage.closed {
+div.door.garage.closed {
     background-image: url('garage-closed.png');
     background-size: 80px;
     height: 112px;

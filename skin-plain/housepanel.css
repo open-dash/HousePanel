@@ -50,7 +50,7 @@ ul.ui-tabs-nav {
     display: inline;
 }
 
-div.skinoption {
+div.skinoption, div.kioskoption, div.filteroption, td.optname {
     font-size: 12pt;
     font-weight: bold;
     margin-left: 8px;
@@ -60,6 +60,19 @@ div.skinoption {
 
 div.skinoption input {
     width: 600px;
+}
+div.filteroption {
+    margin-top: 12px;
+}
+table.useroptions {
+    margin-left: 8px;
+    background-color: #f5f6de;
+    border-top: solid 1px black;
+    border-bottom: solid 1px black;
+}
+td.optname {
+    padding-left: 5px;
+    padding-right: 30px;
 }
 
 form {
@@ -87,6 +100,150 @@ form.houseauth {
 #options-tab {
     background-color: #ffffff;
     color: #000000;
+}
+
+/* this dummy element adds space to show backgrounds */
+div.minheight {
+    display: inline-block;
+    width: 1px;
+    height: 600px;
+    color: rgba(0,0,0,0.01);
+}
+
+/* formatting for endpoint mode query of access id information */
+table.showid {
+    background-color: white;
+    color: #000000;
+    width: 90%;
+    text-align: left;
+    
+}
+table.showid td, table.showid th {
+    width: 200px;
+    font-size: 12pt;
+    padding-left: 2px; padding-right: 2px;
+}
+
+/* format the options page */
+div.thead {
+    position: fixed;
+}
+div.scrollvtable {
+    overflow-y: auto;
+}
+@media only screen and (orientation: landscape) {
+    div.scrollvtable {
+        max-height: 400px;
+    }
+}
+@media only screen and (orientation: portrait) {
+    div.scrollvtable {
+        max-height: 800px;
+    }
+}
+@media only screen and (hover: hover) {
+    div.scrollvtable {
+        max-height: 600px;
+    }
+}
+div.scrollhtable {
+    max-height: 100%;    overflow-x: auto;    overflow-y: hidden;
+    background-color: #ffffff;
+}
+table.roomoptions, table.headoptions {
+    margin: 0px;    background-color: #ffffff;    color: #000000;
+    font-size: 11pt;    width: 100%;
+    border-collapse: collapse;    border: 2px solid black;
+    height: 24px;
+}
+table.headoptions {
+    height: 40px;
+}
+table.headoptions thead th {
+    border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
+    background-color: #3a5795;    color:#ffffff;
+    font-weight: bold;    padding: 2px;    width: 100px;
+    text-align: center;    line-height: 1.5;    height: 30px;
+}
+table.headoptions td, table.roomoptions td {
+    width: 100px;
+    color:#000000;
+    text-align: center;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+}
+table.roomoptions td.thingname, table.headoptions th.thingname {
+    text-align: left; 
+    width: 20%;    
+    border-left: 1px solid #999999;
+    font-weight: bold;
+    border-left: 1px solid #999999;    
+    border-right: 1px solid #999999;
+}
+
+table.roomoptions tr.showrow {
+    height: 24px;
+    background-color: #ffffff;
+}
+table.roomoptions tr.showrow.odd {
+    background-color: #cccccc;
+}
+table.roomoptions tr.hiderow {
+    display: none;
+}
+
+/* only adjust for scrollbar on screens with hover */
+@media only screen and (hover: hover) {
+    table.roomoptions tbody {
+        overflow-y: scroll;  width: 95%;
+    }
+    table.headoptions thead th.roomname:last-child {
+        padding-right: 17px;
+    }
+}
+span.typeopt {
+    font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;
+    color: #666666;
+}
+div.processoptions {
+    margin-left: 0px; margin-top: 0px;    padding-top: 10px;
+    background-color: white;    box-shadow: 0px 1px 10px rgba(0,0,0,.50);
+}
+
+/* buttons */
+input {
+    background-repeat: no-repeat;
+}
+
+div.buttons, form.buttons {
+    display: inline;
+}
+
+input.submitbutton, input.resetbutton, input.authbutton {
+    width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
+    cursor: pointer;    border: none;    padding: 8px 16px;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.25); 
+    border-right: 4px solid rgba(0, 0, 0, 0.25); 
+    font-size: 14pt;
+}
+input.submitbutton {
+    background-color: #3a5795;
+}
+input.resetbutton {
+    background-color: #333333;
+}
+input.authbutton {
+    background-color: #993300;
+    margin: 0;
+    margin-left: 10px;
+}
+input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
+    font-weight: bold;    color: #ffffff;
+}
+div.sitename {
+    background: #ffffff;     display: block;    position: relative;
+    left: 400px;    width: 300px;    bottom: 49px;
 }
 
 /* all panels look like this */
@@ -235,9 +392,13 @@ div.thing:hover{
     -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
 }
 
+div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.door-thing {
+    height: 160px;
+}
+
 /* styling defaults without state or specific thing subtypes */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
-div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
+div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve, div.door {
     display: inline-block;
     background-repeat: no-repeat;
     padding: 0px 0;
@@ -247,9 +408,17 @@ div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve {
     height: 112px;
 }
 
+div.door.contact {
+    display: none;
+}
+
 /* make room for battery state */
 div.motion, div.contact, div.lock {
     height: 96px;
+}
+
+div.valve.switch, div.valve.contact {
+    display: none;
 }
 
 /* the name of the thing - must be after the above heights */
@@ -280,8 +449,9 @@ div.lock, div.mode.mode, div.piston, div.valve, div.routine.label {
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
 div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
-  background-position: 50% 20%;  font-size: 11px;
-  color: rgba(255,255,255,1)
+  background-position: 50% 20%;  
+  font-size: 18px;
+  color: rgba(255,255,255,1);
 }
 
 div.motion.battery, div.contact.battery, 
@@ -303,22 +473,22 @@ div.motion.temperature::after {
 div.switch.level {
     display: none;
 }
-div.switch.energy {
+div.switch.energy, div.switchlevel.energy {
     height: 14px; font-size: 9pt; 
     position: relative; top: -16px;
     background-color: rgba(51,204,0,1); 
     color: #ffffff;
 }
-div.switch.power {
+div.switch.power, div.switchlevel.power {
     height: 14px; font-size: 9pt; 
     position: relative; top: -48px;
     background-color: rgba(51,204,0,1); 
     color: #ffffff;
 }
-div.switch.energy::before {
+div.switch.energy::before, div.switchlevel.energy::before {
     content: "E (KwH): ";
 }
-div.switch.power::before {
+div.switch.power::before, div.switchlevel.power::before {
     content: "P (W): ";
 }
 
@@ -393,7 +563,7 @@ div.music-next {
 
 /* make thermostat height auto */
 div.thing.thermostat-thing{
-    background-color: rgba(100,100,100,0.4) !important;
+    background-color: rgba(100,100,100,1) !important;
     height: auto;
 }
 
@@ -491,7 +661,7 @@ div.level-up:hover, div.level-dn:hover {
 
 /* music styling */
 div.thing.music-thing {
-    background-color: rgba(80,0,50,0.4) !important;
+    background-color: rgba(80,0,50,1) !important;
     width: 180px;
     height: auto;
 }
@@ -521,9 +691,8 @@ div.piston.webcore {
     display: none;
 }
 div.piston.pistonName {
-    height: 24px;
-    padding-top: 88px;
-    color: #ffffff;
+    height: 112px;
+    color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
     background-image: url('piston.png');
 }
@@ -658,7 +827,7 @@ div.thing.mode-thing {
     height: 160px;
     cursor: move;
 }
-div.mode1x1, div.mode1x2 {
+div.mode, div.mode1x1, div.mode1x2 {
     width: 120px;
 }
 div.mode2x1, div.mode2x2 {
@@ -720,15 +889,22 @@ div.image.url {
     display: block;
 }
 
+
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
 div.contact.checkInterval, div.switchlevel.colorTemperature,
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
-div.lock.codeReport, div.lock.maxCodes,
-div.thingname.blank, div.thingname.clock, div.thingname.mode,
-div.thingname.image, div.thingname.routine {
+div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
+div.lock.minCodeLength, div.lock.codeLength,
+div.thingname.blank, div.thingname.clock,
+div.thingname.image, div.thingname.routine, 
+div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
+div.switchlevel.name, div.momentary.name, div.routine.name,
+div.lock.name, div.light.name, div.door.name, div.bulb.name, div.mode.name,
+div.valve.name, div.water.name, div.piston.name, div.thermostat.name, 
+div.music.name, div.blank.name, div.image.name, div.presence.name {
     display:none;
 }
 
@@ -739,4 +915,28 @@ div.motion.family.room {
 }
 div.motion.family.room.battery, div.motion.family.room.temperature {
     height: 13px; font-size: 9pt; color: #ffffff;
+}
+
+/* Place all your customization edits below to make updates simple */
+
+/* Example custom settings from Ken's home */
+/* you should remove these since they will likely do nothing */
+
+/* images - can be customized to show any valid jpg or png on the web */
+div.image.url.img1 {
+    background-image: url("/smartthings/garagecam/livingroom.jpg");
+}
+div.image.url.img2 {
+    background-image: url("/smartthings/garagecam/officecam.jpg");
+}
+div.image.url.img3 {
+    background-image: url("/smartthings/garagecam/garagepic.jpg");
+}
+div.image.url.img4 {
+    background-image: url("../custom/myhouse.jpg");
+}
+
+/* hide the power and energy for my screen switch */
+div.switchlevel.screen.power, div.switchlevel.screen.energy {
+    display:none;
 }
