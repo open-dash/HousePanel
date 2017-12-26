@@ -257,14 +257,23 @@ def getValve(swid, item=null) {
 def getDoor(swid, item=null) {
     getThing(mydoors, swid, item)
 }
+// return just illuminance
 def getIlluminance(swid, item=null) {
-    getThing(myilluminances, swid, item)
+    // getThing(myilluminances, swid, item)
+    item = item ? item : myilluminances.find {it.id == swid }
+    def resp = item ? [name: item.displayName, illuminance : item.currentValue("illuminance")] : false
+    return resp
 }
 def getSmoke(swid, item=null) {
     getThing(mysmokes, swid, item)
 }
+
+// return just temperature for this capability
 def getTemperature(swid, item=null) {
-    getThing(mytemperatures, swid, item)
+    // getThing(mytemperatures, swid, item)
+    item = item ? item : mytemperatures.find {it.id == swid }
+    def resp = item ? [name: item.displayName, temperature : item.currentValue("temperature")] : false
+    return resp
 }
 
 def getWeather(swid, item=null) {
@@ -544,6 +553,14 @@ def getSmokes() {
 }
 def getTemperatures() {
     getThings(mytemperatures, "temperature")
+    def resp = []
+    def n  = mytemperatures ? mytemperatures.size() : 0
+    log.debug "Number of temperatures = ${n}"
+    mytemperatures?.each {
+        def val = getTemperature(it.id, it)
+        resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
+    }
+    return resp
 }
 
 def getWeathers() {
@@ -558,7 +575,7 @@ def getWeathers() {
 // get hellohome routines - thanks to ady264 for the tip
 def getRoutines() {
     def resp = []
-	def routines = location.helloHome?.getPhrases()
+    def routines = location.helloHome?.getPhrases()
     log.debug "Number of routines = " + routines?.size() ?: 0
     routines?.each {
         def multivalue = getRoutine(it.id, it)

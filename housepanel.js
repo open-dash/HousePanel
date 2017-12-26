@@ -114,14 +114,22 @@ function setupFilters() {
         // alert("clicked on val = "+theval+ " ischecked = " + ischecked + " ... about to change screen...");
         
         // set the class of all rows to invisible or visible
+        var rowcnt = 0;
+        var odd = "";
         $('tr[type="'+theval+'"]').each(function() {
             var theclass = $(this).attr("class");
             if ( ischecked ) {
-                $(this).attr("class", "showrow");
-                // $(that).attr("checked","1");
+                $(this).attr("class", "showrow"+odd);
             } else {
                 $(this).attr("class", "hiderow");
-                // $(that).attr("checked","0");
+           }
+        });
+        $('table.roomoptions tr').each(function() {
+            var theclass = $(this).attr("class");
+            if ( theclass != "hiderow" ) {
+                rowcnt++;
+                rowcnt % 2 == 0 ? odd = " odd" : odd = "";
+                $(this).attr("class", "showrow"+odd);
            }
         });
     });
@@ -355,6 +363,7 @@ function setupTimers() {
             case "bulb":
             case "light":
             case "switchlevel":
+            case "presence":
                 timerval = 60000;
                 break;
                 
@@ -364,6 +373,7 @@ function setupTimers() {
                 break;
 
             case "thermostat":
+            case "temperature":
                 timerval = 60005;
                 break;
 

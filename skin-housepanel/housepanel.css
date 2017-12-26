@@ -28,12 +28,10 @@ div.ui-tabs-panel, ui-widget-content {
     background: #333333;
 }
 ul.ui-tabs-nav {
-    background: #666666;
+    background-color: #666666;
     color: #000000;
     font-size: 12pt;
     border: none;
-	
-    background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
 }
@@ -180,15 +178,18 @@ div.scrollvtable {
 @media only screen and (orientation: landscape) {
     div.scrollvtable {
         max-height: 400px;
+        overflow-y: hidden;
     }
 }
 @media only screen and (orientation: portrait) {
     div.scrollvtable {
         max-height: 800px;
+        overflow-y: hidden;
     }
 }
 @media only screen and (hover: hover) {
     div.scrollvtable {
+        overflow-y: scroll;
         max-height: 600px;
     }
 }
@@ -205,7 +206,7 @@ table.roomoptions, table.headoptions {
 table.headoptions {
     height: 40px;
 }
-table.headoptions thead th {
+table.headoptions th.roomname, table.headoptions th.thingname {
     border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
     background-color: #3a5795;    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
@@ -244,7 +245,7 @@ table.roomoptions tr.hiderow {
         overflow-y: scroll;  width: 95%;
     }
     table.headoptions thead th.roomname:last-child {
-        padding-right: 17px;
+        padding-right: 12px;
     }
 }
 span.typeopt {
@@ -348,7 +349,7 @@ div.contact.open, div.contact.closed {
 
 /* the name of the thing - must be after the above heights */
 div.thingname, div.thingname.motion, div.thingname.contact, 
-div.thingname.lock, div.thingname.piston {
+div.thingname.lock, div.thingname.piston, div.thingname.temperature {
     background-color: #303050;
     font-size: 11pt;
     text-align: center;
@@ -464,7 +465,7 @@ div.motion.active {
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.motion.battery, div.contact.battery, 
-div.lock.battery, div.motion.temperature {
+div.lock.battery {
     /* background-color: rgba(0, 102, 102, 0.5); */
     height: 13px; font-size: 9pt; color: #ffffff;
 }
@@ -474,12 +475,14 @@ div.motion.battery::before, div.contact.battery::before, div.lock.battery:before
 div.motion.battery::after, div.contact.battery::after, div.lock.battery::after {
     content: " %";
 }
+/*
 div.motion.temperature::before {
     content: "T: ";
 }
 div.motion.temperature::after {
     content: " degF";
 }
+*/
 
 /* lock styling */
 div.lock.locked {
@@ -630,7 +633,7 @@ div.thing.thermostat-thing{
 }
 
 /* individual temperature value inside a thermostat */
-div.thermostat.temperature {
+div.thermostat.temperature, div.temperature.room {
     display: inline-block;
     width: 118px;
     background-color: #006666;
@@ -650,6 +653,23 @@ div.thermostat.temperature {
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
 }
+/*
+div.thingname.temperature {
+    border-radius: 0%;
+    border: 0;
+    background-color: #303050;
+    font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-bottom: 5px solid rgba(0,0,0,0.3);
+    width: 120px;
+    height: 30px; line-height: 14px; margin-top: 0;
+    cursor: move;
+}
+*/
+
 div.thermostat.thermofan, div.thermostat.thermomode {
     cursor: pointer;
     height: auto;
@@ -1052,7 +1072,7 @@ div.presence.jana.absent {
 div.motion.family.room {
     height: 80px;
 }
-div.motion.family.room.battery, div.motion.family.room.temperature {
+div.motion.family.room.battery {
     height: 13px; font-size: 9pt; color: #ffffff;
 }
 

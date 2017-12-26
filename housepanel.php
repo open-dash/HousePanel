@@ -266,7 +266,7 @@ function getAllThings($endpt, $access_token) {
 //        }
         
         $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "musics", "valves",
+                            "sensors", "locks", "thermostats", "temperatures", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
                             "modes", "blanks", "images", "pistons", "others");
         foreach ($thingtypes as $key) {
@@ -908,7 +908,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
     $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
-                        "motion", "lock", "thermostat", "music", "valve",
+                        "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
                         "clock","blank","image");
@@ -969,12 +969,15 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     uasort($allthings, "mysortfunc");
     
     // now print our options matrix
+    $rowcnt = 0;
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
         
         $thetype = $thesensor["type"];
         if (in_array($thetype, $useroptions)) {
-            $tc.= "<tr type=\"$thetype\" class=\"showrow\">";
+            $rowcnt++;
+            $rowcnt % 2 == 0 ? $odd = " odd" : $odd = "";
+            $tc.= "<tr type=\"$thetype\" class=\"showrow" . $odd . "\">";
         } else {
             $tc.= "<tr type=\"$thetype\" class=\"hiderow\">";
         }
@@ -1041,7 +1044,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         exit(0);
     }
     $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
-                        "motion", "lock", "thermostat", "music", "valve",
+                        "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
                         "clock","blank","image");
