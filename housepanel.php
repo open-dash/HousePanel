@@ -376,9 +376,9 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     // special handling for weather tiles
     if ($thingtype==="weather") {
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "<br />" . $thingvalue["city"] . "</div>";
-        $tc.= putElement($bid, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
-        $tc.= putElement($bid, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
-        // $tc.= putElement($bid, $i, 2, $thingtype, $thingvalue["city"], "city");
+        $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
+        $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
+        // $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["city"], "city");
         $tc.= "<br /><div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
         $iconstr = $thingvalue["weatherIcon"];
         if (substr($iconstr,0,3) === "nt_") {
@@ -395,7 +395,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["forecastIcon"];
         $tc.= "</div>";
-        $tc.= putElement($bid, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
+        $tc.= putElement($kindex, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
         $j = 3;
         foreach($thingvalue as $tkey => $tval) {
             if ($tkey!=="temperature" &&
@@ -408,7 +408,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
                 $tkey!=="localSunrise" &&
                 $tkey!=="localSunset" ) 
             {
-                $tc.= putElement($bid, $i, $j, $thingtype, $tval, $tkey);
+                $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey);
                 $j++;
             }
         }
@@ -419,8 +419,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         } else {
             $thingpr = $thingname;
         }
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\"><span class=\"N$bid\">" . $thingpr . "</span></div>";
-
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\"><span class=\"N$kindex\">" . $thingpr . "</span></div>";
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
         // for multiple attribute things we provide a separate item for each one
@@ -437,13 +436,13 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
                 // also skip the checkInterval since we never display this
                 if ( strpos($tkey, "DeviceWatch-") === FALSE &&
                      strpos($tkey, "checkInterval") === FALSE   ) { 
-                    $tc.= putElement($bid, $i, $j, $thingtype, $tval, $tkey, $subtype);
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype);
                     $j++;
                 }
             }
         } 
         else {
-            $tc.= putElement($bid, $i, 0, $thingtype, $thingvalue, "value", $subtype);
+            $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
     }
     $tc.= "</div>";
@@ -463,7 +462,7 @@ function fixTrack($tval) {
     return $tval;
 }
 
-function putElement($bid, $i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
+function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
     $tc = "";
     
     if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
@@ -506,7 +505,7 @@ function putElement($bid, $i, $j, $thingtype, $tval, $tkey="value", $subtype="")
             $tkeyshow = " ".$tkey;
         }
         // include class for main thing type, the subtype, a sub-key, and a state (extra)
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"$thingtype" . $subtype . $tkeyshow . $extra . "\" id=\"P$bid\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"$thingtype" . $subtype . $tkeyshow . $extra . "\" id=\"P$kindex\">" . $tval . "</div>";
     }
     return $tc;
 }
