@@ -1,0 +1,26 @@
+/* Example Custom Tile Name / Title Displayed */
+.N92BDBD1A-F921-44D9-80AB-99B591FA6E2B {
+  text-indent: -9999px;
+  line-height: 0;
+  visibility: hidden;
+}
+.N92BDBD1A-F921-44D9-80AB-99B591FA6E2B:before {
+  content: "My Lamp";
+  text-indent: 0;
+  display: block;
+  line-height: initial;
+  visibility: visible;
+}
+
+/* Example Custom On/Off Icons */
+#P92BDBD1A-F921-44D9-80AB-99B591FA6E2B.on{
+
+    background-image: url('lampon.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
+
+#P92BDBD1A-F921-44D9-80AB-99B591FA6E2B.off{
+
+    background-image: url('lampoff.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
