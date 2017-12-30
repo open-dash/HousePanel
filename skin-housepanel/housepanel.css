@@ -1113,3 +1113,10 @@ div.switch.yard.energy {
 div.switch.yard.power {
     position: relative; top: -48px;
 }
+div.video-thing {
+    width: 369px;
+    height: 240px;
+}
+div.thingname.video {
+    display: none;
+}

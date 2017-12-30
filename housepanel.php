@@ -107,7 +107,10 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
-    
+
+    // load quicktime script for video
+    $tc.= '<script src="ac_quicktime.js"></script>';
+
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
     // $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
@@ -249,7 +252,7 @@ function getAllThings($endpt, $access_token) {
     }
     
     // if a prior call failed then we need to reset the session and reload
-    if (count($allthings) <= 9 && $endpt && $access_token ) {
+    if (count($allthings) <= 2 && $endpt && $access_token ) {
         session_unset();
         
 /*        
@@ -286,6 +289,9 @@ function getAllThings($endpt, $access_token) {
         // TODO - implement an analog clock
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
+        // add a video tile
+        $allthings["video|vid1"] = array("id" => "vid1", "name" => "Video", "value" => array("name"=>"Sample Video", "url"=>"vid1"), "type" => "video");
+        
         // add a few blank tiles
 //        $allthings["blank|b1x1"] = array("id" => "b1x1", "name" => "Blank", "value" => array("size"=>"b1x1"), "type" => "blank");
 //        $allthings["blank|b1x2"] = array("id" => "b1x2", "name" => "Blank", "value" => array("size"=>"b1x2"), "type" => "blank");
@@ -411,6 +417,40 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
                 $j++;
             }
         }
+    // temporary crude video tag hack - must replace the small.mp4 or small.ogv
+    // with the video stream from your camera source or a video of your choice
+    } else if ( $thingtype === "video") {
+        
+    // add video hack for quicktime support
+        $vidname = $thingvalue["name"];
+        $tkey = "url";
+        $vidname = $thingvalue["url"];
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingpr . "</div>";
+        // wrap the video tag in our standard HP div pattern
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video url\" id=\"a-$i"."-$tkey\">";
+        
+        $tc.= '<video width="369" height="240" autoplay >';
+        $tc.= '  <source src="media/small.mp4" type="video/mp4">';
+        // $tc.= '  <source src="media/last-time-race-start.ogg" type="video/ogg">';
+        $tc.= '<div id="QuickTimeLayer" align="center"></div>';
+        $tc.= '  <script>';
+        $tc.= 'var isIE = /*@cc_on!@*/false || !!document.documentMode;' . 
+              'var isEdge = !isIE && !!window.StyleMedia;' . 
+              'var isChrome = !!window.chrome && !!window.chrome.webstore;';
+  
+        $tc.= " if ( isChrome ) {       QT_WriteOBJECT('media/small.ogv',";
+        $tc.= "                '369px', '240px',            "; // width & height
+        $tc.= "                '',                          "; // required version of the ActiveX control, we're OK with the default value
+        $tc.= "                'scale', 'tofit',            "; // scale to fit element size exactly so resizing works
+        $tc.= "                'autoplay', 'true', ";
+        $tc.= "                'controller', 'true', ";
+        $tc.= "                'qtsrc', 'media/small.ogv', ";
+        $tc.= "                'emb#id', 'qtrtsp_embed', "; // ID for embed tag only
+        $tc.= "                'obj#id', 'qtrtsp_object');  "; // ID for object tag only
+        $tc.= "}        </script>";
+        $tc.= "</video>";
+        $tc.= "</div>";
+        
     } else {
 
         if (strlen($thingname) > 32 ) {
@@ -440,8 +480,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
                     $j++;
                 }
             }
-        } 
-        else {
+        } else {
             $tc.= putElement($i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
     }
@@ -703,7 +742,7 @@ function getOptions($allthings) {
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image");
+                        "clock","blank","image","video");
 
     // generic room setup
     $defaultrooms = array(
@@ -888,7 +927,7 @@ function mysortfunc($cmpa, $cmpb) {
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image");
+                        "clock","blank","image","video");
     $namea = $cmpa["name"];
     $typea = $cmpa["type"];
     $nameb = $cmpb["name"];
@@ -911,7 +950,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image");
+                        "clock","blank","image","video");
     
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
@@ -1047,7 +1086,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image");
+                        "clock","blank","image","video");
     
     $oldoptions = readOptions();
     
@@ -1449,7 +1488,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
-        if ($options["kiosk"] !== "1") {
+        if ($options["kiosk"] !== "true" && $options["kiosk"] !== "yes" && $options["kiosk"] !== "1" ) {
             $tc.= "<div class=\"buttons\">";
             $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
             $tc.= hidden("useajax", "showoptions");
