@@ -141,11 +141,20 @@ function setupPopup() {
         processPopup();
     });
     
-    //Press Escape event!
+    // add code to disable when click anywhere but the cell
+    $("div.maintable").click(function(e) {
+        if ( e.target.id !== "trueincell") {
+            disablePopup();
+        }
+            // alert ( e.target.id );
+    });
+    
+    
+    // Press Escape or Return event!
+    // fix long-standing bug
     $(document).keypress(function(e){
         if ( e.keyCode===13  && popupStatus===1){
-            var ineditvalue = $("#trueincell").val();
-            processEdit(ineditvalue);
+            processPopup();
         } else if ( e.keyCode===27 && popupStatus===1 ){
             disablePopup();
         }
