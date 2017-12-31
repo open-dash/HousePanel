@@ -129,7 +129,9 @@ function htmlHeader($skindir="skin-housepanel") {
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
                             "level-dn","level-up", "level-val","mode.themode",
-                            "piston.pistonName","valve","routine");
+                            "piston.pistonName","valve","routine",
+                            "hue-up","hue-dn","hue-val","saturation-up","saturation-dn","saturation-val",
+                            "colorTemperature-up","colorTemperature-dn","colorTemperature-val");
         $tc.= '$(document).ready(function(){';
         foreach ($thingtypes as $thing) {
             $tc.= '  setupPage("' . $thing . '");';
@@ -504,11 +506,14 @@ function fixTrack($tval) {
 function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
     $tc = "";
     
-    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
+    // add a name specific tag to the wrapper class
+    // and include support for hue bulbs - fix a few bugs too
+    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || 
+        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
-        $tc.= "<div class=\"$thingtype $tkey\">";
+        $tc.= "<div class=\"$thingtype" . $subtype . " $tkey\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval" . $subtype . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
@@ -527,7 +532,7 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
         // for music status show a play bar in front of it
         if ($tkey==="musicstatus") {
             // print controls for the player
-            $tc.= "<div class=\"music-controls\">";
+            $tc.= "<div class=\"music-controls" . $subtype . "\">";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";

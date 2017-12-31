@@ -554,6 +554,7 @@ function setupPage(sensortype) {
         var thevalue;
         
         // for switches and locks set the command to toggle
+        // for most things the behavior will be driven by the class value = swattr
         if (thetype==="switch" || thetype==="lock" || 
             thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";

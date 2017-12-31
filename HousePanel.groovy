@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 12/29/2017 - Changed bulb to colorControl capability for Hue light support
+ *              Added support for colorTemperature in switches and lights
  * 12/10/2017 - Added name to each thing query return
  *            - Remove old code block of getHistory code
  * 
@@ -41,7 +43,7 @@ preferences {
         input "mydimmers", "capability.switchLevel", hideWhenEmpty: true, multiple: true, required: false, title: "Dimmers"
         input "mymomentaries", "capability.momentary", hideWhenEmpty: true, multiple: true, required: false, title: "Momentary Buttons"
         input "mylights", "capability.light", hideWhenEmpty: true, multiple: true, required: false, title: "Lights"
-        input "mybulbs", "capability.bulb", hideWhenEmpty: true, multiple: true, required: false, title: "Bulbs"
+        input "mybulbs", "capability.colorControl", hideWhenEmpty: true, multiple: true, required: false, title: "Bulbs"
     }
     section ("Motion and Presence") {
     	input "mysensors", "capability.motionSensor", multiple: true, required: false, title: "Motion"
@@ -285,29 +287,26 @@ def getOther(swid, item=null) {
 }
 
 def getmyMode(swid, item=null) {
-    def resp = [:]
     def curmode = location.getCurrentMode()
     def curmodename = curmode.getName()
-    resp =  [ name: location.getName(),
+    def resp =  [ name: location.getName(),
               themode: curmodename ];
     log.debug "currrent mode = ${curmodename}"
     return resp
 }
 
 def getBlank(swid, item=null) {
-    def resp = [:]
-    resp << [name: "Blank ${swid}", size: "${swid}"]
+    def resp = [name: "Blank ${swid}", size: "${swid}"]
     return resp
 }
 
 def getImage(swid, item=null) {
-    def resp = [:]
-    resp << [name: "Image ${swid}", url: "${swid}"]
+    def resp = [name: "Image ${swid}", url: "${swid}"]
     return resp
 }
 
 def getRoutine(swid, item=null) {
-	def routines = location.helloHome?.getPhrases()
+    def routines = location.helloHome?.getPhrases()
     def routine = item ? item : routines.find{it.id == swid}
     def resp = routine ? [name: routine.label, label: routine.label] : false
     return resp
@@ -472,7 +471,7 @@ def getSwitches() {
 }
 
 def getBulbs() {
-    getThings(mybulbs, "bulb")
+    getThings(mybulbs, "colorControl")
 }
 
 def getLights() {
@@ -884,17 +883,19 @@ def setSensor(swid, cmd, swattr) {
     
 }
 
-// changed these to just return values of entire tile
+// replaced this code to treat bulbs as Hue lights with color controls
 def setBulb(swid, cmd, swattr) {
     def onoff = setOnOff(mybulbs, "bulb", swid,cmd,swattr)
-    def resp = onoff ? [bulb: onoff] : false
+    def resp = setGenericLight(mybulbs, swid, cmd, swattr)
+    
     return resp
 }
 
 // changed these to just return values of entire tile
 def setLight(swid, cmd, swattr) {
-    def onoff = setOnOff(mylights, "light", swid,cmd,swattr)
-    def resp = onoff ? [light: onoff] : false
+    // def onoff = setOnOff(mylights, "light", swid,cmd,swattr)
+    // def resp = onoff ? [light: onoff] : false
+    def resp = setGenericLight(mylights, swid, cmd, swattr)
     return resp
 }
 
@@ -923,54 +924,118 @@ def setMode(swid, cmd, swattr) {
 }
 
 def setDimmer(swid, cmd, swattr) {
+    def resp = setGenericLight(mydimmers, swid, cmd, swattr)
+    return resp
+}
+
+def setGenericLight(mythings, swid, cmd, swattr) {
     def resp = false
 
-    def item  = mydimmers.find {it.id == swid }
-    if (item) {
+    def item  = mythings.find {it.id == swid }
+    def newsw = item.currentValue("level")
+    def hue = false
+    def saturation = false
+    def temperature = false
+    
+    if (item ) {
     
         def newonoff = item.currentValue("switch")
-        def newsw = item.currentValue("level")   
          
-        // log.debug "switchlevel cmd = $cmd swattr = $swattr"
+        log.debug "switchlevel cmd = $cmd swattr = $swattr"
+        // bug fix for grabbing right swattr when long classes involved
+        if ( swattr.endsWith(" on" ) ) {
+            swattr = "on"
+        } else if ( swattr.endsWith(" off" ) ) {
+            swattr = "off"
+        }
+        
         switch(swattr) {
-         
-        case "level-up":
-            newsw = newsw.toInteger()
-            newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
-            item.setLevel(newsw)
-            newonoff = "on"
-            break
               
-        case "level-dn":
-            newsw = newsw.toInteger()
-            def del = (newsw % 5) == 0 ? 5 : newsw % 5
-            newsw = (newsw <= 5) ? 5 : newsw - del
-            item.setLevel(newsw)
-            newonoff = "on"
-            break
-              
-        case "level-val":
-            newonoff = newonoff=="off" ? "on" : "off"
-            newonoff=="on" ? item.on() : item.off()
-            break
-              
-        case "switchlevel switch on":
-            newonoff = "off"
-            item.off()
-            break
-              
-        case "switchlevel switch off":
-            newonoff = "on"
-            item.on()
-            break
-              
-        case "switch":
+        case "toggle":
             if (cmd=="on" || cmd=="off") {
                 newonoff = cmd
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
             newonoff=="on" ? item.on() : item.off()
+            break
+         
+        case "level-up":
+            newsw = newsw.toInteger()
+                newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
+                item.setLevel(newsw)
+                newonoff = "on"
+            break
+              
+        case "level-dn":
+            newsw = newsw.toInteger()
+                def del = (newsw % 5) == 0 ? 5 : newsw % 5
+                newsw = (newsw <= 5) ? 5 : newsw - del
+                item.setLevel(newsw)
+                newonoff = "on"
+            break
+         
+        case "hue-up":
+                hue = item.currentValue("hue").toInteger()
+                hue = (hue >= 95) ? 100 : hue - (hue % 5) + 5
+                item.setHue(hue)
+                newonoff = "on"
+            break
+              
+        case "hue-dn":
+                hue = item.currentValue("hue").toInteger()
+                def del = (hue % 5) == 0 ? 5 : hue % 5
+                hue = (hue <= 5) ? 5 : hue - del
+                item.setHue(hue)
+                newonoff = "on"
+            break
+              
+        case "saturation-up":
+                saturation = item.currentValue("saturation").toInteger()
+                saturation = (saturation >= 95) ? 100 : saturation - (saturation % 5) + 5
+                item.setSaturation(saturation)
+                newonoff = "on"
+            break
+              
+        case "saturation-dn":
+                saturation = item.currentValue("saturation").toInteger()
+                def del = (saturation % 5) == 0 ? 5 : saturation % 5
+                saturation = (saturation <= 5) ? 5 : saturation - del
+                item.setSaturation(saturation)
+                newonoff = "on"
+            break
+              
+        case "colorTemperature-up":
+                temperature = item.currentValue("colorTemperature").toInteger()
+                temperature = (temperature >= 7000) ? 7000 : temperature - (temperature % 50) + 50
+                item.setColorTemperature(temperature)
+                newonoff = "on"
+            break
+              
+        case "colorTemperature-dn":
+                temperature = item.currentValue("colorTemperature").toInteger()
+                def del = (temperature % 50) == 0 ? 50 : temperature % 50
+                temperature = (temperature <= 2300) ? 2300 : temperature - del
+                item.setColorTemperature(temperature)
+                newonoff = "on"
+            break
+              
+        case "level-val":
+        case "hue-val":
+        case "saturation-val":
+        case "colorTemperature-val":
+            newonoff = newonoff=="off" ? "on" : "off"
+            newonoff=="on" ? item.on() : item.off()
+            break
+              
+        case "on":
+            newonoff = "off"
+            item.off()
+            break
+              
+        case "off":
+            newonoff = "on"
+            item.on()
             break
               
         default:
@@ -988,7 +1053,12 @@ def setDimmer(swid, cmd, swattr) {
               
         }
         
-        resp = [switch: newonoff, level: newsw]   
+        resp = [switch: newonoff]
+        if ( newsw ) { resp.put("level", newsw) }
+        if ( hue ) { resp.put("hue", hue) }
+        if ( saturation ) { resp.put("saturation", saturation) }
+        if ( temperature ) { resp.put("colorTemperature", temperature) }
+        
         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
 
@@ -1052,6 +1122,7 @@ def setValve(swid, cmd, swattr) {
     return resp
 }
 
+// fixed bug to get just the last words of the class
 def setThermostat(swid, curtemp, swattr) {
     def resp = false
     def newsw = 72
@@ -1060,88 +1131,130 @@ def setThermostat(swid, curtemp, swattr) {
     def item  = mythermostats.find {it.id == swid }
     if (item) {
           log.debug "setThermostat attr = $swattr for id = $swid curtemp = $curtemp"
+        
           resp = getThermostat(swid, item)
-          switch (swattr) {
-          case "heat-up":
+          // switch (swattr) {
+          // case "heat-up":
+          if ( swattr.endsWith("heat-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
               resp['heat'] = newsw
-              break
+              // break
+          }
           
-          case "cool-up":
+          // case "cool-up":
+          else if ( swattr.endsWith("cool-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
               resp['cool'] = newsw
-              break
+              // break
+          }
 
-          case "heat-dn":
+          // case "heat-dn":
+          else if ( swattr.endsWith("heat-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
               resp['heat'] = newsw
-              break
+              // break
+          }
           
-          case "cool-dn":
+          // case "cool-dn":
+          else if ( swattr.endsWith("heat-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 65) newsw = 60
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
               resp['cool'] = newsw
-              break
+              // break
+          }
           
-          case "thermostat thermomode heat":
-              item.cool()
-              newsw = "cool"
-              resp['thermomode'] = newsw
-              break
-          
-          case "thermostat thermomode cool":
-              item.auto()
-              newsw = "auto"
-              resp['thermomode'] = newsw
-              break
-          
-          case "thermostat thermomode auto":
-              item.off()
-              newsw = "off"
-              resp['thermomode'] = newsw
-              break
-          
-          case "thermostat thermomode off":
+          // case "thermostat thermomode heat":
+          else if ( swattr.endsWith("thermomode emergency heat")) {
               item.heat()
               newsw = "heat"
               resp['thermomode'] = newsw
-              break
+              // break
+          }
           
-          case "thermostat thermofan fanOn":
+          // case "thermostat thermomode heat":
+          else if ( swattr.endsWith("thermomode heat")) {
+              item.cool()
+              newsw = "cool"
+              resp['thermomode'] = newsw
+              // break
+          }
+          
+          // case "thermostat thermomode cool":
+          else if ( swattr.endsWith("thermomode cool")) {
+              item.auto()
+              newsw = "auto"
+              resp['thermomode'] = newsw
+              // break
+          }
+          
+          // case "thermostat thermomode auto":
+          else if ( swattr.endsWith("thermomode auto")) {
+              item.off()
+              newsw = "off"
+              resp['thermomode'] = newsw
+              // break
+          }
+          
+          // case "thermostat thermomode off":
+          else if ( swattr.endsWith("thermomode off")) {
+              item.heat()
+              newsw = "heat"
+              resp['thermomode'] = newsw
+              // break
+          }
+          
+          // case "thermostat thermofan fanOn":
+          else if ( swattr.endsWith("thermofan on")) {
               item.fanAuto()
-              newsw = "fanAuto"
+              newsw = "auto"
               resp['thermofan'] = newsw
-              break
+              // break
+          }
           
-          case "thermostat thermofan fanAuto":
-              item.fanOn()
-              newsw = "fanOn"
+          // case "thermostat thermofan fanAuto":
+          else if ( swattr.endsWith("thermofan auto")) {
+              item.fanCirculate()
+              newsw = "circulate"
               resp['thermofan'] = newsw
-              break
+              // break
+          }
+          
+          // case "thermostat thermofan fanAuto":
+          else if ( swattr.endsWith("thermofan circulate")) {
+              item.fanOn()
+              newsw = "on"
+              resp['thermofan'] = newsw
+              // break
+          }
            
           // define actions for python end points  
-          default:
+          else {
+          // default:
               if ( item.hasCommand(cmd) ) {
                   item.${cmd}()
               }
-              if (cmd=="heat" && swattr.isNumber()) {
+              
+              if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
               }
-              if (cmd=="cool" && swattr.isNumber()) {
+              else if (cmd=="cool" && swattr.isNumber()) {
                   item.setCoolingSetpoint(swattr)
               }
-            break
+              else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
+                  item.thermostatSetpoint(swattr)
+              }
+            // break
           }
         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
       

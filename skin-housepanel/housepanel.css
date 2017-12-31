@@ -347,6 +347,12 @@ div.contact.open, div.contact.closed {
     height: 96px;
 }
 
+/* items that have a pointer */
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
+div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
+    cursor: pointer;
+}
+
 /* the name of the thing - must be after the above heights */
 div.thingname, div.thingname.motion, div.thingname.contact, 
 div.thingname.lock, div.thingname.piston, div.thingname.temperature {
@@ -365,18 +371,19 @@ div.thingname:hover {
     color: #cccccc;
 }
 
-/* items that have a pointer */
-div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
-div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
-    cursor: pointer;
-}
-
 /* style the on and off states of things to not show up */
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
 div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
   background-position: 50% 20%;  font-size: 12px;
   color: rgba(255,255,255,0.01);
+}
+
+/* alter the thermostat on and off to show since we don't use an icon here */
+div.thermostat.thermomode.off, div.thermostat.thermofan.off,
+div.thermostat.thermomode.on, div.thermostat.thermofan.on {
+	font-size: 11pt;
+        color: #ffffff;
 }
 
 /* contact styling - note we changed to generic contact */
@@ -572,13 +579,18 @@ div.thermostat.heat, div.thermostat.cool, div.music.level {
 }
 /* up and down arrows */
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.colorTemperature-dn,
+div.hue-up, div.hue-dn,
+div.saturation-up, div.saturation-dn
+{
     display: inline-block;
     width: 32px; height: 32px;
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
 /*    border-top-left-radius: 25px;
@@ -588,7 +600,8 @@ div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
 /*    border-top-right-radius: 25px;
@@ -604,6 +617,9 @@ div.music {
 }
 div.music.level {
     width: 99%;
+}
+div.music-controls {
+    cursor: pointer;
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
     background-image: url("Media-Player-Buttons.png");
@@ -653,34 +669,24 @@ div.thermostat.temperature, div.temperature.room {
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
 }
-/*
-div.thingname.temperature {
-    border-radius: 0%;
-    border: 0;
-    background-color: #303050;
-    font-size: 11pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-bottom: 5px solid rgba(0,0,0,0.3);
-    width: 120px;
-    height: 30px; line-height: 14px; margin-top: 0;
-    cursor: move;
-}
-*/
+
 
 div.thermostat.thermofan, div.thermostat.thermomode {
     cursor: pointer;
     height: auto;
     padding: 0;
 }
-div.thermostat.thermomode.off, div.thermostat.thermofan.off {
+div.thermostat.thermomode.off, div.thermostat.thermofan.off,
+div.thermostat.thermomode.on, div.thermostat.thermofan.on,
+div.thermostat.thermostate {
 	background-color: #333333;
 	font-size: 11pt;
 	height: auto;
-        margin: 0;
+        margin: 0; padding: 0;
         color: #ffffff;
+}
+div.thermostat.thermomode.on, div.thermostat.thermofan.on {
+    background-color: #3333ff;
 }
 div.thermostat.thermomode.heat {
     background-color: #ff3300;
@@ -688,18 +694,25 @@ div.thermostat.thermomode.heat {
 div.thermostat.thermomode.cool {
     background-color: #3333ff;
 }
-div.thermostat.thermomode.auto, div.thermostat.thermofan.fanAuto {
+div.thermostat.thermomode.auto, div.thermostat.thermofan.auto {
     background-color: #009999;
 }
 div.thermostat.thermostate {
-    background-color: #000000;
     cursor: default;
-    height: auto;
-    padding: 0;
+}
+div.thermostat.thermofan::before {
+    content: "Fan: ";
+}
+div.thermostat.thermomode::before {
+    content: "Mode: ";
+}
+div.thermostat.thermostate::before {
+    content: "State: ";
 }
 
 /* values of the adjustable items */
-div.heat-val, div.cool-val, div.level-val, div.switchlevel-val {
+div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
+div.colorTemperature-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -724,8 +737,15 @@ div.cool-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
-div.switchlevel-val, div.level-val {
+div.switchlevel-val, div.level-val, div.colorTemperature-val {
     background-color: #1bb14b;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
+}
+div.colorTemperature-val, div.hue-val, div.saturation-val {
+    background-color: #ffff99;
+    color: #000000;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
@@ -735,6 +755,9 @@ div.switchlevel-val, div.level-val {
 div.heat-up:hover, div.heat-dn:hover, 
 div.cool-up:hover, div.cool-dn:hover,
 div.switchlevel-up:hover, div.switchlevel-dn:hover,
+div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
+div.hue-up:hover, div.hue-dn:hover,
+div.saturation-up:hover, div.saturation-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
@@ -984,7 +1007,7 @@ div.presence.absent {
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
-div.contact.checkInterval, div.switchlevel.colorTemperature,
+div.contact.checkInterval,
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
@@ -1103,7 +1126,12 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 /* alternatively you could change the height of just a specific switch */
 /* to a fixed height of 160 - if you do that you need the id */
 /* and do something like #t-82 where 82 is the ID of the thing you want */
- div.thing.switch-thing, div.thing.switchlevel-thing {
+/*  div.thing.switch-thing, div.thing.switchlevel-thing {
+    height: 160px;
+}
+*/
+
+#t-87, #t-88, #t-103 {
     height: 160px;
 }
 div.switch.yard.energy {
