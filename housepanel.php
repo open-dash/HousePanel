@@ -19,6 +19,9 @@
  * 
  *
  * Revision History
+ * 1.43       Added colorTemperature, hue, and saturation support
+ *            Fixed bug in thermostat that caused fan and mode to fail
+ *            Squashed more bugs
  * 1.42       Clean up CSS file to show presence and other things correctly
  *            Change blank and image logic to read from Groovy code
  *            Keep session updated for similar things when they change
