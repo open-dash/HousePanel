@@ -19,7 +19,10 @@
  * 
  *
  * Revision History
- * 1.43       Added colorTemperature, hue, and saturation support
+ * 1.44       Tab row hide/show capabilty in kiosk and regular modes
+ *            Added 4 generally customizable tiles to each page for styling
+ *            Fix 1 for bugs in hue lights based on testing thanks to @cwwilson08
+ * 1.43       Added colorTemperature, hue, and saturation support - not fully tested
  *            Fixed bug in thermostat that caused fan and mode to fail
  *            Squashed more bugs
  * 1.42       Clean up CSS file to show presence and other things correctly
@@ -559,7 +562,7 @@ function putElement($i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
 
 // this makes a basic call to get the sensor status and return as a formatted table
 // notice the call of $cnt by reference to keep running count
-function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
+function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions, $kioskmode) {
     $tc = "";
     $roomname = strtolower($roomtitle);
     $tc.= "<div id=\"$roomname" . "-tab\">";
@@ -586,8 +589,18 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions) {
             }
         }
         
+        // include 4 customizable tiles on each page
+        $tc.="<div id=\"custom1-$roomname\" class=\"custom custom1 custom1-$roomname\"></div>";
+        $tc.="<div id=\"custom2-$roomname\" class=\"custom custom2 custom2-$roomname\"></div>";
+        $tc.="<div id=\"custom3-$roomname\" class=\"custom custom3 custom3-$roomname\"></div>";
+        $tc.="<div id=\"custom4-$roomname\" class=\"custom custom4 custom4-$roomname\"></div>";
+        // include a tile to toggle tabs on and off if in kioskmode
+        // but no longer need to display it unless you really want to
+        if ($kioskmode) {
+            $tc.="<div class=\"restoretabs\">Hide Tabs</div>";
+        }
         // add a placeholder dummy to force background if almost empty page
-        if ($thiscnt < 10) {
+        if ($thiscnt < 14) {
             $tc.= '<div class="minheight"> </div>';
         }
        
@@ -1448,7 +1461,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $indexoptions = $options["index"];
         $skindir = $options["skin"];
         
-        $tc.= '<div id="tabs"><ul>';
+        $tc.= '<div id="tabs"><ul id="roomtabs">';
         // go through rooms in order of desired display
         for ($k=0; $k< count($roomoptions); $k++) {
             
@@ -1469,6 +1482,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
         $tc.= '</ul>';
         
         $cnt = 0;
+        $kioskmode = ($options["kiosk"] == "true" || $options["kiosk"] == "yes" || $options["kiosk"] == "1");
+
         // changed this to show rooms in the order listed
         // this is so we just need to rewrite order to make sortable permanent
         // for ($k=0; $k< count($roomoptions); $k++) {
@@ -1483,7 +1498,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
             // if ($room !== FALSE) {
             if ( key_exists($room, $thingoptions)) {
                 $things = $thingoptions[$room];
-                $tc.= getNewPage($cnt, $allthings, $room, $things, $indexoptions);
+                $tc.= getNewPage($cnt, $allthings, $room, $things, $indexoptions, $kioskmode);
             }
         }
         
@@ -1496,8 +1511,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
         
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
-        if ($options["kiosk"] !== "true" && $options["kiosk"] !== "yes" && $options["kiosk"] !== "1" ) {
-            $tc.= "<div class=\"buttons\">";
+        $tc.= "<div class=\"buttons\">";
+        if ( !$kioskmode ) {
             $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
             $tc.= hidden("useajax", "showoptions");
             $tc.= hidden("type", "none");
@@ -1509,8 +1524,10 @@ function processOptions($optarray, $retpage, $allthings=null) {
             $tc.= hidden("type", "none");
             $tc.= hidden("id", 0);
             $tc.= "<input class=\"submitbutton\" value=\"Refresh\" name=\"submitrefresh\" type=\"submit\" />";
-            $tc.= "</form></div>";
+            $tc.= "</form>";
+            $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
         }
+        $tc.='</div>';
    
     } else {
 

@@ -100,6 +100,7 @@ window.addEventListener("load", function(event) {
     // set up option box clicks
     setupFilters();
     
+    setupHideTabs();
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
@@ -183,6 +184,32 @@ function setupPopup() {
 //        alert("clicked on Room names row");
 //    });
        
+}
+
+function setupHideTabs() {
+    // uncomment this block to do auto-hide
+    /* 
+    $("#roomtabs").click(function() {
+        setTimeout(function() {
+            $("#roomtabs").addClass("hidden");
+            $(".restoretabs").html("Show Tabs");
+        }, 3000);
+    });
+    */
+   // restore tabs by click on open panel, clock, or the hide tabs button
+   // first two methods must be used in kiosk mode
+    $(".restoretabs, div.clock, div.panel").click(function(e) {
+        if (e.target == this) {
+            var hidestatus = $(".restoretabs").html();
+            if (hidestatus=="Hide Tabs") {
+                $("#roomtabs").addClass("hidden");
+                $(".restoretabs").html("Show Tabs");
+            } else if (hidestatus=="Show Tabs") {
+                $("#roomtabs").removeClass("hidden");
+                $(".restoretabs").html("Hide Tabs");
+            }
+        }
+    })
 }
 
 var jeditTableCell = function(event) {

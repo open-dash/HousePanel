@@ -32,8 +32,6 @@ ul.ui-tabs-nav {
     color: #000000;
     font-size: 12pt;
     border: none;
-    background-position-y: 9px;
-    background-size: 40px;
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
@@ -43,12 +41,12 @@ ul.ui-tabs-nav {
   background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
 }
 
-.hidden {
+.hidden, ul.ul-tabs-nav.hidden {
     display: none;
 }
 
-.shown {
-    display: inline;
+.shown, ul.ul-tabs-nav.shown {
+    display: inline-block;
 }
 
 div.skinoption, div.kioskoption, div.filteroption, td.optname {
@@ -107,7 +105,7 @@ form.houseauth {
 div.minheight {
     display: inline-block;
     width: 1px;
-    height: 600px;
+    height: 400px;
     color: rgba(0,0,0,0.01);
 }
 
@@ -261,21 +259,38 @@ div.processoptions {
 input {
     background-repeat: no-repeat;
 }
-
 div.buttons, form.buttons {
     display: inline;
 }
-
-input.submitbutton, input.resetbutton, input.authbutton {
+input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs {
+    background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
-    cursor: pointer;    border: none;    padding: 8px 16px;
+    cursor: pointer;    border: none;
     color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.25); 
-    border-right: 4px solid rgba(0, 0, 0, 0.25); 
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
     font-size: 14pt;
 }
-input.submitbutton {
-    background-color: #3a5795;
+/* style restore tabs like a button - notice adjustments for border and vertical centering */
+div.restoretabs {
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+    width: 142px; height: 34px;
+}
+div.restoretabs.hidden {
+    display: none;
+}
+
+/* don't need to display this anymore since use clock and panel click instead */
+/* but the div needs to be in the php file to make the js work */
+/* uncomment this to show the display link */
+div.panel div.restoretabs {
+    font-size: 12pt;
+    color: rgba(0,0,0,0.1);
+    width: auto; height: 20px; margin-top: 1px;
+    border: 0px; text-align: right;
+    background-color: rgba(0,0,0,0.1);
+    position: absolute; right: -1px; bottom: -1px;
 }
 input.resetbutton {
     background-color: #333333;
@@ -285,8 +300,12 @@ input.authbutton {
     margin: 0;
     margin-left: 10px;
 }
-input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
+input.submitbutton:hover, input.resetbutton:hover, 
+input.authbutton:hover, div.restoretabs:hover {
     font-weight: bold;    color: #ffffff;
+    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
+    border-bottom: 0px; 
+    border-right: 0px; */
 }
 div.sitename {
     background: #ffffff;     display: block;    position: relative;
@@ -712,7 +731,7 @@ div.thermostat.thermostate::before {
 
 /* values of the adjustable items */
 div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
-div.colorTemperature-val {
+div.colorTemperature-val, div.hue-val, div.saturation-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -1065,6 +1084,32 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
 }
 
 /* Place all your customization edits below to make updates simple */
+/* uncomment the display inline-block line and customize to create adhoc text or images */
+div.custom {
+    /* display: inline-block; */
+    display: none;
+    margin: 3px;
+    text-align: center;
+    vertical-align: top;
+    border-top: 0px solid #cccccc; 
+    border-right: 0px solid #cccccc;
+    border-bottom: 0px solid #ffffff; 
+    border-left: 0px solid #ffffff;
+    background-color: rgba(0, 51, 204, 0.6);
+    box-shadow: 2px 2px 7px black;
+    color: #eeeeee;
+    cursor: default;
+    width: 120px; 
+    height: 160px;
+}
+
+div.custom3-bedroom {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+div.custom3-bedroom::before {
+    content: "Enjoy a Good Night Sleep";
+}
 
 /* Example custom settings from Ken's home */
 /* you should remove these since they will likely do nothing */
@@ -1131,7 +1176,7 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 }
 */
 
-#t-87, #t-88, #t-103 {
+#t-88, #t-89, #t-103 {
     height: 160px;
 }
 div.switch.yard.energy {

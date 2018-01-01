@@ -957,7 +957,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            newonoff=="on" ? item.on() : item.off()
+            // newonoff=="on" ? item.on() : item.off()
             break
          
         case "level-up":
@@ -1007,15 +1007,17 @@ def setGenericLight(mythings, swid, cmd, swattr) {
               
         case "colorTemperature-up":
                 temperature = item.currentValue("colorTemperature").toInteger()
-                temperature = (temperature >= 7000) ? 7000 : temperature - (temperature % 50) + 50
+                temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100) + 100
                 item.setColorTemperature(temperature)
                 newonoff = "on"
             break
               
         case "colorTemperature-dn":
                 temperature = item.currentValue("colorTemperature").toInteger()
-                def del = (temperature % 50) == 0 ? 50 : temperature % 50
-                temperature = (temperature <= 2300) ? 2300 : temperature - del
+                /* temperature drifts up so we cant use round down method */
+                def del = 100
+                temperature = (temperature <= 2700) ? 2700 : temperature - del
+                temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100)
                 item.setColorTemperature(temperature)
                 newonoff = "on"
             break
@@ -1025,17 +1027,17 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         case "saturation-val":
         case "colorTemperature-val":
             newonoff = newonoff=="off" ? "on" : "off"
-            newonoff=="on" ? item.on() : item.off()
+            // newonoff=="on" ? item.on() : item.off()
             break
               
         case "on":
             newonoff = "off"
-            item.off()
+            // item.off()
             break
               
         case "off":
             newonoff = "on"
-            item.on()
+            // item.on()
             break
               
         default:
@@ -1044,7 +1046,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            newonoff=="on" ? item.on() : item.off()
+            // newonoff=="on" ? item.on() : item.off()
             if ( swattr.isNumber() ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
@@ -1053,6 +1055,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
               
         }
         
+        newonoff=="on" ? item.on() : item.off()
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( hue ) { resp.put("hue", hue) }
