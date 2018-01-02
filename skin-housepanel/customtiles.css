@@ -1,3 +1,6 @@
+div.thing.p_43 {
+    background-color: #F03;
+}
 span.n_12 {
   text-indent: -9999px;
   line-height: 0;
@@ -9,6 +12,10 @@ span.n_12:before {
   display: block;
   line-height: initial;
   visibility: visible;
+}
+
+div.thingname.t_12 {
+    background-color: #F03;	
 }
 
 div.switch.p_12.on {

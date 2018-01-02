@@ -328,6 +328,21 @@ div.editable {
 	height: 36px !important;
 	width: 36px !important;
 }
+
+dialog {  
+    background:#999;
+    border: 1px solid #666;
+    font-family:sans-serif;
+    padding: 0px 0px 0px 1px;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 333px; 
+    height: 230px;
+  	top: 50%;
+  	left: 35%;
+}  
+
 div.tiledialog {
   overflow: hidden;
 }
@@ -336,19 +351,49 @@ div.tiledialog {
 	display: inline-block;
     float: left;
     width: 127px; 
-    height: 196px;
+    height: 230px;
 }
 
 #editicon {
+	margin: 3px;
+	position:absolute;
 	display: inline-block;
 	float: right;
-    width: 220px; 
-    height: 200px;
+    width: 200px; 
+    height: 205px;
 	overflow-x: hidden;
+}
+
+#editcolor {
+	margin: 3px;
+	position:absolute;
+	display: none;
+	visibility: hidden;
+	float: right;
+    width: 200px; 
+    height: 225px;
+	overflow-x: hidden;
+	text-align:center;
+}
+#color {
+	font-size: 14pt;
+	width: 80px;
+	  height: 24px;
+
+  border-radius: 2px;
+  border: 1px solid transparent;
+  border-top: none;
+  border-bottom: 1px solid #DDD;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
+}
+#div_color {
+	display: block;
+	margin: auto;	
 }
 .iconlist {
 	display: inline-block;
 }
+
 .icon {
 	float: left;
 	margin: 2px;
@@ -417,49 +462,15 @@ div.tiledialog {
 	margin: 4px;
 	left: 20%;	
 }
-dialog {  
-    background:#999;
-    border: 1px solid #666;
-    font-family:sans-serif;
-    padding: 0px 0px 0px 1px;
-  	position: absolute;
-  	top: 50%;
-  	left: 50%;
-    width: 370px; 
-    height: 204px;
-  	top: 50%;
-  	left: 35%;
-}  
-.selectIcon {
-    font-size: 8pt;
-	border: 1px solid #ccc;
-    width: 121px;
-    border-radius: 3px;
-    overflow: hidden;
-	margin: 3px;
-    background: #fafafa;
-}
 
-.selectIcon select {
-	font-size: 8pt;
-    padding: 5px 8px;
-    width: 130%;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    background-image: none;
-    -webkit-appearance: none;
-}
-
-.selectIcon select:focus {
-    outline: none;
-}
 #onoff {
 	display: none;
 }
+
 #custom_img_off {
 	display: none;
 }
+
 #custom_img_on {
     display: inline-block;
 }

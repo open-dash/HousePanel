@@ -124,9 +124,12 @@ function htmlHeader($skindir="skin-housepanel") {
     if (!$skindir) {
         $skindir = "skin-housepanel";
     }
+    $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
     $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
+	
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
         $thingtypes = array("switch.on","switch.off","bulb","light",
@@ -389,7 +392,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     
     // special handling for weather tiles
     if ($thingtype==="weather") {
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingname . "<br />" . $thingvalue["city"] . "</div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">" . $thingname . "<br />" . $thingvalue["city"] . "</div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         // $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["city"], "city");
@@ -434,7 +437,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         $vidname = $thingvalue["name"];
         $tkey = "url";
         $vidname = $thingvalue["url"];
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingpr . "</div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
         // wrap the video tag in our standard HP div pattern
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video url\" id=\"a-$i"."-$tkey\">";
         
@@ -467,7 +470,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         } else {
             $thingpr = $thingname;
         }
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
         // for multiple attribute things we provide a separate item for each one
@@ -1135,7 +1138,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
     $tc.= "</tbody></table>";
     $tc.= "</div>";   // vertical scroll
-    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"postCustomStyleSheet()\">Save Customizations</span>";
+    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
     $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"submit\" />";
