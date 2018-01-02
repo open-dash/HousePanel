@@ -1,0 +1,21 @@
+span.n_12 {
+  text-indent: -9999px;
+  line-height: 0;
+  visibility: hidden;
+}
+span.n_12:before {
+  content: "My Lamp";
+  text-indent: 0;
+  display: block;
+  line-height: initial;
+  visibility: visible;
+}
+
+div.switch.p_12.on {
+    background-image: url('icons/lampon.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}
+div.switch.p_12.off {
+    background-image: url('icons/lampoff.png');
+    background-color: rgba(0, 51, 204, 0.3);
+}

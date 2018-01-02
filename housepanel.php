@@ -125,6 +125,7 @@ function htmlHeader($skindir="skin-housepanel") {
         $skindir = "skin-housepanel";
     }
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
+    $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
@@ -752,7 +753,13 @@ function writeOptions($options) {
     $str1 = str_replace(",\"",",\r\n\"",$str);
     $str2 = str_replace(":{\"",":{\r\n\"",$str1);
     fwrite($f, $str2);
-
+    fclose($f);
+}
+// Ajax call to write Custom Css Edits Back to customtiles.css
+function writeCustomCss() {
+    $f = fopen("skin-housepanel/customtiles.css","wb");
+    $str = getCustomStyleSheet();
+    fwrite($f, $str);
     fclose($f);
 }
 
@@ -1007,6 +1014,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name" . "</th>";
    
+    // add columns for custom titles & icons
+    $tc.= "<th class=\"customedit\">" . "Edit" . "</th>";
+    $tc.= "<th class=\"customname\">" . "Display Name" . "</th>";     
     // list the room names in the proper order
     for ($k=0; $k < count($roomoptions); $k++) {
         // search for a room name index for this column
@@ -1049,6 +1059,51 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $tc.= hidden("i_" .  $thingid, $thingindex);
         $tc.= "</td>";
 
+        // For custom tiles: Only show edit button for types that are working
+        $str_type=$thetype;
+        $str_on="";
+        $str_off="";
+        $str_edit="";
+        switch ($thetype) {
+        
+            case "switch":
+            case "switchlevel":
+            case "bulb":
+            case "light":
+                $str_type="switch";
+                $str_on="on";
+                $str_off="off";
+                break;
+                
+            case "contact":
+            case "door":
+            case "valve":
+                $str_on="open";
+                $str_off="closed";
+                break;
+                
+            case "motion":
+                $str_on="active";
+                $str_off="inactive";
+                break;      
+                         
+            case "lock":
+                $str_on="locked";
+                $str_off="unlocked";
+                break;
+                
+            default:
+            	$str_edit="hidden";
+        }       
+
+        $thingname = $thesensor["name"];
+        $iconflag = "editable " . strtolower($thingname);
+
+		$tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
+        $tc.= "<dialog id=\"edit_Tile\">"; 
+        $tc.=     "<h3>You shouldn't see this</h3>"; 
+        $tc.= "</dialog>";
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
         for ($k=0; $k < count($roomoptions); $k++) {
@@ -1080,6 +1135,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
     $tc.= "</tbody></table>";
     $tc.= "</div>";   // vertical scroll
+    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"postCustomStyleSheet()\">Save Customizations</span>";
+    $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"submit\" />";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
@@ -1421,6 +1478,16 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         exit(0);
     }
+    
+//Custom Tiles Added AJAX Code
+if(!empty($_POST['cssdata'])){
+$data = $_POST['cssdata'];
+$file = fopen("skin-housepanel/customtiles.css", 'w');//creates new file
+fwrite($file, $data);
+fclose($file);
+
+}
+    
     
     // process options submit request
     // handle the options and then reload the page from scratch
