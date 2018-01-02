@@ -32,8 +32,6 @@ ul.ui-tabs-nav {
     color: #000000;
     font-size: 12pt;
     border: none;
-    background-position-y: 9px;
-    background-size: 40px;
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
@@ -43,12 +41,12 @@ ul.ui-tabs-nav {
   background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
 }
 
-.hidden {
+.hidden, ul.ul-tabs-nav.hidden {
     display: none;
 }
 
-.shown {
-    display: inline;
+.shown, ul.ul-tabs-nav.shown {
+    display: inline-block;
 }
 
 div.skinoption, div.kioskoption, div.filteroption, td.optname {
@@ -107,7 +105,7 @@ form.houseauth {
 div.minheight {
     display: inline-block;
     width: 1px;
-    height: 600px;
+    height: 400px;
     color: rgba(0,0,0,0.01);
 }
 
@@ -206,7 +204,7 @@ table.roomoptions, table.headoptions {
 table.headoptions {
     height: 40px;
 }
-table.headoptions th.roomname, table.headoptions th.thingname {
+table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
     border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
     background-color: #3a5795;    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
@@ -219,6 +217,15 @@ table.headoptions td, table.roomoptions td {
     border-right: 1px solid #999999;
     border-bottom: 1px solid #999999;
 }
+table.roomoptions td.customedit, table.headoptions th.customedit {
+    text-align: center; 
+    width: 5%;    
+}
+table.roomoptions td.customname, table.headoptions th.customname {
+    text-align: center; 
+    width: 10%;    
+}
+
 table.roomoptions td.thingname, table.headoptions th.thingname {
     text-align: left; 
     width: 20%;    
@@ -261,21 +268,38 @@ div.processoptions {
 input {
     background-repeat: no-repeat;
 }
-
 div.buttons, form.buttons {
     display: inline;
 }
-
-input.submitbutton, input.resetbutton, input.authbutton {
+input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs {
+    background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
-    cursor: pointer;    border: none;    padding: 8px 16px;
+    cursor: pointer;    border: none;
     color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.25); 
-    border-right: 4px solid rgba(0, 0, 0, 0.25); 
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
     font-size: 14pt;
 }
-input.submitbutton {
-    background-color: #3a5795;
+/* style restore tabs like a button - notice adjustments for border and vertical centering */
+div.restoretabs {
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+    width: 142px; height: 34px;
+}
+div.restoretabs.hidden {
+    display: none;
+}
+
+/* don't need to display this anymore since use clock and panel click instead */
+/* but the div needs to be in the php file to make the js work */
+/* uncomment this to show the display link */
+div.panel div.restoretabs {
+    font-size: 12pt;
+    color: rgba(0,0,0,0.1);
+    width: auto; height: 20px; margin-top: 1px;
+    border: 0px; text-align: right;
+    background-color: rgba(0,0,0,0.1);
+    position: absolute; right: -1px; bottom: -1px;
 }
 input.resetbutton {
     background-color: #333333;
@@ -285,13 +309,161 @@ input.authbutton {
     margin: 0;
     margin-left: 10px;
 }
-input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
+input.submitbutton:hover, input.resetbutton:hover, 
+input.authbutton:hover, div.restoretabs:hover {
     font-weight: bold;    color: #ffffff;
+    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
+    border-bottom: 0px; 
+    border-right: 0px; */
 }
 div.sitename {
     background: #ffffff;     display: block;    position: relative;
     left: 400px;    width: 300px;    bottom: 49px;
 }
+
+/* Changes for custom editing tiles in options page */
+/* scale icons for edit mode in Options page */
+div.editable {
+    background-size: auto 36px !important;
+	height: 36px !important;
+	width: 36px !important;
+}
+div.tiledialog {
+  overflow: hidden;
+}
+
+#edittile {
+	display: inline-block;
+    float: left;
+    width: 127px; 
+    height: 196px;
+}
+
+#editicon {
+	display: inline-block;
+	float: right;
+    width: 220px; 
+    height: 200px;
+	overflow-x: hidden;
+}
+.iconlist {
+	display: inline-block;
+}
+.icon {
+	float: left;
+	margin: 2px;
+	max-height: 40px;
+	max-width: auto;
+	-o-object-fit: contain;
+	object-fit: contain;
+}
+.icon:hover{
+	position: relative;
+	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+.btn.color {
+  background: #3498db;
+  background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  padding: 2px 10px 1px 10px;
+  margin: 2px;
+}
+.btn {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 9px;
+  padding: 2px 8px 1px 8px;
+  text-decoration: none;
+  margin: 1px;
+}
+.btn.hidden {
+  visibility: hidden;
+}
+.btn:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+}
+#saveCss {
+	font-size: 14pt;
+	-webkit-border-radius: 32;
+	-moz-border-radius: 32;
+	border-radius: 32px;
+}
+#showCssSaved {
+	margin-left: 6px;
+	font-size: 12pt;
+	visibility: hidden;
+	color: #900;
+}
+#custom_footer {
+	position: relative;
+	margin: 4px;
+	left: 20%;	
+}
+dialog {  
+    background:#999;
+    border: 1px solid #666;
+    font-family:sans-serif;
+    padding: 0px 0px 0px 1px;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 370px; 
+    height: 204px;
+  	top: 50%;
+  	left: 35%;
+}  
+.selectIcon {
+    font-size: 8pt;
+	border: 1px solid #ccc;
+    width: 121px;
+    border-radius: 3px;
+    overflow: hidden;
+	margin: 3px;
+    background: #fafafa;
+}
+
+.selectIcon select {
+	font-size: 8pt;
+    padding: 5px 8px;
+    width: 130%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    background-image: none;
+    -webkit-appearance: none;
+}
+
+.selectIcon select:focus {
+    outline: none;
+}
+#onoff {
+	display: none;
+}
+#custom_img_off {
+	display: none;
+}
+#custom_img_on {
+    display: inline-block;
+}
+/* End Changes for custom editing tiles in options page */
 
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
@@ -347,6 +519,12 @@ div.contact.open, div.contact.closed {
     height: 96px;
 }
 
+/* items that have a pointer */
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
+div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
+    cursor: pointer;
+}
+
 /* the name of the thing - must be after the above heights */
 div.thingname, div.thingname.motion, div.thingname.contact, 
 div.thingname.lock, div.thingname.piston, div.thingname.temperature {
@@ -365,12 +543,6 @@ div.thingname:hover {
     color: #cccccc;
 }
 
-/* items that have a pointer */
-div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
-div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
-    cursor: pointer;
-}
-
 /* style the on and off states of things to not show up */
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
@@ -379,29 +551,36 @@ div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
   color: rgba(255,255,255,0.01);
 }
 
+/* alter the thermostat on and off to show since we don't use an icon here */
+div.thermostat.thermomode.off, div.thermostat.thermofan.off,
+div.thermostat.thermomode.on, div.thermostat.thermofan.on {
+	font-size: 11pt;
+        color: #ffffff;
+}
+
 /* contact styling - note we changed to generic contact */
 div.contact.open {
-    background-image: url('opencontact.png');
+    background-image: url('icons/opencontact.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
 }
 div.contact.closed {
-    background-image: url('closecontact.png');
+    background-image: url('icons/closecontact.png');
     background-color: rgba(27,177,75,0.6);
     background-position-y: 9px;
     background-size: 40px;
 }
 
 /* specific contact types one might find */
-div.door.open {
-    background-image: url('opendoor.png');
+div.door.open, div.contact.door.closed {
+    background-image: url('icons/opendoor.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
 }
-div.door.closed {
-    background-image: url('closedoor.png');
+div.door.closed, div.contact.door.closed {
+    background-image: url('icons/closedoor.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
@@ -414,28 +593,28 @@ div.door.garage.open, div.door.garage.closed {
     cursor: pointer;
 }
 div.contact.window.open {
-    background-image: url('openwindow.png');
+    background-image: url('icons/openwindow.png');
 }
 div.contact.window.closed {
-    background-image: url('closewindow.png');
+    background-image: url('icons/closewindow.png');
 }
 div.door.garage.open {
-    background-image: url('garage-opened.png');
+    background-image: url('icons/garage-opened.png');
     background-size: 80px;
     height: 112px;
 }
 div.door.garage.closed {
-    background-image: url('garage-closed.png');
+    background-image: url('icons/garage-closed.png');
     background-size: 80px;
     height: 112px;
 }
 div.valve.open {
-    background-image: url('sprinkler-on.png');
+    background-image: url('icons/sprinkler-on.png');
     background-color: rgba(27,177,75,0.6);
     height: 112px;
 }
 div.valve.closed {
-    background-image: url('sprinkler-on.png');
+    background-image: url('icons/sprinkler-on.png');
     background-color: rgba(0, 51, 204, 0.6);
     height: 112px;
 }
@@ -444,12 +623,12 @@ div.valve.switch, div.valve.contact {
 }
 /* special handling of garage entry which is a door */
 div.contact.garage.entry.open {
-    background-image: url('opendoor.png');
+    background-image: url('icons/opendoor.png');
     background-size: 40px;
     height: 96px;
 }
 div.contact.garage.entry.closed {
-    background-image: url('closedoor.png');
+    background-image: url('icons/closedoor.png');
     background-size: 40px;
     height: 96px;
 }
@@ -457,11 +636,11 @@ div.contact.garage.entry.closed {
 
 /* motion styling */
 div.motion.inactive {
-    background-image: url('stand.png');
+    background-image: url('icons/stand.png');
     background-color: rgba(0, 51, 204, 0.6);
 }
 div.motion.active {
-    background-image: url('run.png');
+    background-image: url('icons/run.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.motion.battery, div.contact.battery, 
@@ -486,30 +665,30 @@ div.motion.temperature::after {
 
 /* lock styling */
 div.lock.locked {
-    background-image: url('lock.png');
+    background-image: url('icons/lock.png');
     background-color: rgba(102, 51, 0, 1);
 }
 div.lock.unlocked{
-    background-image: url('unlock.png');
+    background-image: url('icons/unlock.png');
     background-color: rgba(102, 51, 0, 0.7);
 }
 
 /* switch styling */
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
-    background-image: url('bulbon.png');
+    background-image: url('icons/bulbon.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
-    background-image: url('bulboff.png');
+    background-image: url('icons/bulboff.png');
 }
 div.switch.plug.on {
-    background-image: url('plugon.png');
+    background-image: url('icons/plugon.png');
     background-color: rgba(204, 51, 0, 0.3);
     height: 112px;
 }
 div.switch.plug.off {
-    background-image: url('plugoff.png');
+    background-image: url('icons/plugoff.png');
     background-color: rgba(0, 51, 204, 0.3);
     height: 112px;
 }
@@ -548,7 +727,7 @@ div.switchlevel.level {
 
 /* momentary styling */
 div.momentary.off, div.momentary.on{
-    background-image: url('3dbutton.png');
+    background-image: url('icons/3dbutton.png');
     background-color: rgba(204, 51, 0, 0.6);
     height: 112px;
 }
@@ -572,13 +751,18 @@ div.thermostat.heat, div.thermostat.cool, div.music.level {
 }
 /* up and down arrows */
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.colorTemperature-dn,
+div.hue-up, div.hue-dn,
+div.saturation-up, div.saturation-dn
+{
     display: inline-block;
     width: 32px; height: 32px;
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
 /*    border-top-left-radius: 25px;
@@ -588,7 +772,8 @@ div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
 /*    border-top-right-radius: 25px;
@@ -604,6 +789,9 @@ div.music {
 }
 div.music.level {
     width: 99%;
+}
+div.music-controls {
+    cursor: pointer;
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
     background-image: url("Media-Player-Buttons.png");
@@ -653,34 +841,24 @@ div.thermostat.temperature, div.temperature.room {
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
 }
-/*
-div.thingname.temperature {
-    border-radius: 0%;
-    border: 0;
-    background-color: #303050;
-    font-size: 11pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-bottom: 5px solid rgba(0,0,0,0.3);
-    width: 120px;
-    height: 30px; line-height: 14px; margin-top: 0;
-    cursor: move;
-}
-*/
+
 
 div.thermostat.thermofan, div.thermostat.thermomode {
     cursor: pointer;
     height: auto;
     padding: 0;
 }
-div.thermostat.thermomode.off, div.thermostat.thermofan.off {
+div.thermostat.thermomode.off, div.thermostat.thermofan.off,
+div.thermostat.thermomode.on, div.thermostat.thermofan.on,
+div.thermostat.thermostate {
 	background-color: #333333;
 	font-size: 11pt;
 	height: auto;
-        margin: 0;
+        margin: 0; padding: 0;
         color: #ffffff;
+}
+div.thermostat.thermomode.on, div.thermostat.thermofan.on {
+    background-color: #3333ff;
 }
 div.thermostat.thermomode.heat {
     background-color: #ff3300;
@@ -688,18 +866,25 @@ div.thermostat.thermomode.heat {
 div.thermostat.thermomode.cool {
     background-color: #3333ff;
 }
-div.thermostat.thermomode.auto, div.thermostat.thermofan.fanAuto {
+div.thermostat.thermomode.auto, div.thermostat.thermofan.auto {
     background-color: #009999;
 }
 div.thermostat.thermostate {
-    background-color: #000000;
     cursor: default;
-    height: auto;
-    padding: 0;
+}
+div.thermostat.thermofan::before {
+    content: "Fan: ";
+}
+div.thermostat.thermomode::before {
+    content: "Mode: ";
+}
+div.thermostat.thermostate::before {
+    content: "State: ";
 }
 
 /* values of the adjustable items */
-div.heat-val, div.cool-val, div.level-val, div.switchlevel-val {
+div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
+div.colorTemperature-val, div.hue-val, div.saturation-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -724,8 +909,15 @@ div.cool-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
-div.switchlevel-val, div.level-val {
+div.switchlevel-val, div.level-val, div.colorTemperature-val {
     background-color: #1bb14b;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
+}
+div.colorTemperature-val, div.hue-val, div.saturation-val {
+    background-color: #ffff99;
+    color: #000000;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
@@ -735,6 +927,9 @@ div.switchlevel-val, div.level-val {
 div.heat-up:hover, div.heat-dn:hover, 
 div.cool-up:hover, div.cool-dn:hover,
 div.switchlevel-up:hover, div.switchlevel-dn:hover,
+div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
+div.hue-up:hover, div.hue-dn:hover,
+div.saturation-up:hover, div.saturation-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
@@ -776,10 +971,10 @@ div.piston.pistonName {
     height: 112px;
     color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
-    background-image: url('piston.png');
+    background-image: url('icons/piston.png');
 }
 div.piston.pistonName.firing {
-    background-image: url('pistonfiring.png');
+    background-image: url('icons/pistonfiring.png');
 }
 /* weather styling */
 div.thing.weather-thing, div.weather {
@@ -955,11 +1150,11 @@ div.image.url {
 
 /* presence styling */
 div.presence.present {
-    background-image: url('boypresent.png');
+    background-image: url('icons/boypresent.png');
     background-color: rgba(255, 255, 255, 0.6);
 }
 div.presence.absent {
-    background-image: url('boyabsent.png');
+    background-image: url('icons/boyabsent.png');
     background-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -984,7 +1179,7 @@ div.presence.absent {
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
-div.contact.checkInterval, div.switchlevel.colorTemperature,
+div.contact.checkInterval,
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
@@ -1042,6 +1237,32 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
 }
 
 /* Place all your customization edits below to make updates simple */
+/* uncomment the display inline-block line and customize to create adhoc text or images */
+div.custom {
+    /* display: inline-block; */
+    display: none;
+    margin: 3px;
+    text-align: center;
+    vertical-align: top;
+    border-top: 0px solid #cccccc; 
+    border-right: 0px solid #cccccc;
+    border-bottom: 0px solid #ffffff; 
+    border-left: 0px solid #ffffff;
+    background-color: rgba(0, 51, 204, 0.6);
+    box-shadow: 2px 2px 7px black;
+    color: #eeeeee;
+    cursor: default;
+    width: 120px; 
+    height: 160px;
+}
+
+div.custom3-bedroom {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+div.custom3-bedroom::before {
+    content: "Enjoy a Good Night Sleep";
+}
 
 /* Example custom settings from Ken's home */
 /* you should remove these since they will likely do nothing */
@@ -1062,10 +1283,10 @@ div.image.url.img4 {
 
 /* girl sillhouette for wife's phone */
 div.presence.jana.present {
-    background-image: url('girlpresent.png');
+    background-image: url('icons/girlpresent.png');
 }
 div.presence.jana.absent {
-    background-image: url('girlabsent.png');
+    background-image: url('icons/girlabsent.png');
 }
 
 /* motion detector in family room that also has temperature */
@@ -1078,11 +1299,11 @@ div.motion.family.room.battery {
 
 /* smart switch on my rock fountain */
 div.switch.rock.on {
-    background-image: url('rockon.png');
+    background-image: url('icons/rockon.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.rock.off {
-    background-image: url('rockoff.png');
+    background-image: url('icons/rockoff.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.screen.on, div.switch.screen.off {
@@ -1103,7 +1324,12 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 /* alternatively you could change the height of just a specific switch */
 /* to a fixed height of 160 - if you do that you need the id */
 /* and do something like #t-82 where 82 is the ID of the thing you want */
- div.thing.switch-thing, div.thing.switchlevel-thing {
+/*  div.thing.switch-thing, div.thing.switchlevel-thing {
+    height: 160px;
+}
+*/
+
+#t-88, #t-89, #t-103 {
     height: 160px;
 }
 div.switch.yard.energy {
@@ -1112,4 +1338,11 @@ div.switch.yard.energy {
 }
 div.switch.yard.power {
     position: relative; top: -48px;
+}
+div.video-thing {
+    width: 369px;
+    height: 240px;
+}
+div.thingname.video {
+    display: none;
 }

@@ -100,6 +100,7 @@ window.addEventListener("load", function(event) {
     // set up option box clicks
     setupFilters();
     
+    setupHideTabs();
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
@@ -141,11 +142,20 @@ function setupPopup() {
         processPopup();
     });
     
-    //Press Escape event!
+    // add code to disable when click anywhere but the cell
+    $("div.maintable").click(function(e) {
+        if ( e.target.id !== "trueincell") {
+            disablePopup();
+        }
+            // alert ( e.target.id );
+    });
+    
+    
+    // Press Escape or Return event!
+    // fix long-standing bug
     $(document).keypress(function(e){
         if ( e.keyCode===13  && popupStatus===1){
-            var ineditvalue = $("#trueincell").val();
-            processEdit(ineditvalue);
+            processPopup();
         } else if ( e.keyCode===27 && popupStatus===1 ){
             disablePopup();
         }
@@ -174,6 +184,32 @@ function setupPopup() {
 //        alert("clicked on Room names row");
 //    });
        
+}
+
+function setupHideTabs() {
+    // uncomment this block to do auto-hide
+    /* 
+    $("#roomtabs").click(function() {
+        setTimeout(function() {
+            $("#roomtabs").addClass("hidden");
+            $(".restoretabs").html("Show Tabs");
+        }, 3000);
+    });
+    */
+   // restore tabs by click on open panel, clock, or the hide tabs button
+   // first two methods must be used in kiosk mode
+    $(".restoretabs, div.clock, div.panel").click(function(e) {
+        if (e.target == this) {
+            var hidestatus = $(".restoretabs").html();
+            if (hidestatus=="Hide Tabs") {
+                $("#roomtabs").addClass("hidden");
+                $(".restoretabs").html("Show Tabs");
+            } else if (hidestatus=="Show Tabs") {
+                $("#roomtabs").removeClass("hidden");
+                $(".restoretabs").html("Hide Tabs");
+            }
+        }
+    })
 }
 
 var jeditTableCell = function(event) {
@@ -545,6 +581,7 @@ function setupPage(sensortype) {
         var thevalue;
         
         // for switches and locks set the command to toggle
+        // for most things the behavior will be driven by the class value = swattr
         if (thetype==="switch" || thetype==="lock" || 
             thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";
@@ -604,4 +641,159 @@ function setupPage(sensortype) {
                             
     });
    
+};
+
+function editTile(str_type, thingname, thingindex, str_on, str_off) {  
+	document.getElementById('showCssSaved').style.visibility = 'hidden';
+    var dialog = document.getElementById('edit_Tile');
+	var dialog_html = "<div id='tiledialog'>";
+	var strIconTarget = "div." + str_type + ".p_" + thingindex + ".";
+	dialog_html += "<div id='edittile'>";
+	
+	
+	dialog_html += "<div id='tile_" + thingindex + "' tile='0' bid='0' type='switch' panel='main' class='thing " + str_type + "-thing p_" + thingindex + " ui-sortable-handle'>";
+	dialog_html += "<div id='custom_title' title='" + str_type + "status' class='thingname " + str_type +"' id='title_" + thingindex + "'>";
+	dialog_html += "<span id='titleEdit' class='n_" + thingindex + "'>" + thingname + "</span></div>";
+	dialog_html += "<div id='custom_img_on' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_on + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_on + "</div>";
+	dialog_html += "<div id='custom_img_off' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_off + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_off + "</div></div>";
+
+	dialog_html += "<div><span id='onoff'>on</span></div>";
+	dialog_html += "<div>";
+	dialog_html += "<span class='btn color' onclick='chooseTitleColor()'>Title Box</span>";
+	dialog_html += "<span class='btn color' onclick='chooseBgColor()'>Background</span>";	
+	dialog_html += "</div>";	
+	dialog_html += "<div>";
+	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
+	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
+	dialog_html += "<span class='btn' onclick='editTileClose()'>Close</span>";
+	dialog_html += "</div>";	
+	dialog_html += "</div>";
+	dialog_html += "<div id='editicon'>";
+	dialog_html += "<div id='iconList'></div>"; //Icon List
+	dialog_html += "</div>";
+	dialog_html += "</div>";
+	getIconList(strIconTarget + "on");
+	dialog.innerHTML = dialog_html;
+	dialog.show();  
+};
+function toggleIcon(strIconTarget) {
+	var strOnOff = document.getElementById('onoff').innerHTML;
+	if (strOnOff === "on"){
+		strOnOff = "off";
+		document.getElementById('toggle').style.background = '#000000';
+		document.getElementById('custom_img_on').style.display = 'none';
+		document.getElementById('custom_img_off').style.display = 'inline-block';
+	}
+	else {
+		strOnOff = "on";
+		document.getElementById('toggle').style.background = '#3498db';
+		document.getElementById('custom_img_on').style.display = 'inline-block';
+		document.getElementById('custom_img_off').style.display = 'none';	
+	}
+	document.getElementById('onoff').innerHTML = strOnOff;
+
+	getIconList(strIconTarget + strOnOff);	
+};
+
+function getIconList(ruleToTarget){
+var select = document.getElementById("selectIcon");
+var rootPath = 'skin-housepanel/icons/';
+var icons = '';
+$.ajax({
+	url : rootPath,
+	success: function (data) {
+		$(data).find("a").attr("href", function (i, val) {
+		if( val.match(/\.(jpe?g|png|gif|jpg|JPG)$/) ) {
+			    var iconImage = rootPath + val; 
+				icons+='<div id="iconlist ' + val + '"><img onclick="iconSelected(\'' + ruleToTarget + '\',\'../' + iconImage + '\')" class="icon" src="' + iconImage + '" alt="' + val + '"></div>'
+				
+				//alert(option)
+			} 
+		}
+		);
+	$('#iconList').html(icons)	
+	}
+
+});
+
+};
+
+function iconSelected(targetRule, imagePath) {
+addCSSRule(targetRule, "background-image: url('" + imagePath + "');");
+};
+
+function editTileClose() {  
+var dialog = document.getElementById('edit_Tile');
+dialog.close();
+};
+
+function postCustomStyleSheet(){
+var sheet = document.getElementById('customtiles').sheet;
+var sheetContents = "";
+	c=sheet.cssRules;
+	for(j=0;j<c.length;j++){
+		sheetContents += c[j].cssText;
+	};
+var regex = /[{;}]/g;
+var subst = "$&\n";
+sheetContents = sheetContents.replace(regex, subst);
+
+var cssdata = new FormData();
+cssdata.append("cssdata", sheetContents);
+var xhr = new XMLHttpRequest();
+xhr.open('post', 'housepanel.php', true );
+xhr.send(cssdata);
+document.getElementById('showCssSaved').style.visibility = 'visible';
+
+};
+
+function addCSSRule(selector, rules){
+    //Searching of the selector matching cssRules
+	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
+	var index = -1;
+    for(var i=sheet.cssRules.length; i--;){
+      var current_style = sheet.cssRules[i];
+      if(current_style.selectorText === selector){
+        //Append the new rules to the current content of the cssRule;
+        rules=current_style.style.cssText + rules;
+        sheet.deleteRule(i);
+        index=i;
+      }
+    }
+    if(sheet.insertRule){
+	  if(index > -1) {
+      	sheet.insertRule(selector + "{" + rules + "}", index);		  
+	  }
+	  else{
+      	sheet.insertRule(selector + "{" + rules + "}");			  
+	  }
+    }
+    else{
+	  if(index > -1) {
+      	sheet.addRule(selector, rules, index);	  
+	  }
+	  else{
+      	sheet.addRule(selector, rules);	  
+	  }
+    }
+};
+
+function resetCSSRules(str_type, thingIndex){
+	//alert("div." + str_type + ".p_" + thingIndex + ".on");
+	removeCSSRule("span.n_" + thingIndex);
+	removeCSSRule("span.n_" + thingIndex + ":before");
+	removeCSSRule("span.n_" + thingIndex + "::before");
+	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".on");
+	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".off");
+	
+};
+
+function removeCSSRule(strMatchSelector){
+	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
+    //Searching of the selector matching cssRules
+    for (var i=sheet.cssRules.length; i--;) {
+        if (sheet.cssRules[i].selectorText === strMatchSelector) {        
+            sheet.deleteRule (i);
+        }
+    }  
 };
