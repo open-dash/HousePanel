@@ -106,7 +106,7 @@ form.houseauth {
 div.minheight {
     display: inline-block;
     width: 1px;
-    height: 600px;
+    height: 200px;
     color: rgba(0,0,0,0.01);
 }
 
@@ -210,41 +210,6 @@ div.processoptions {
     background-color: white;    box-shadow: 0px 1px 10px rgba(0,0,0,.50);
 }
 
-/* buttons */
-input {
-    background-repeat: no-repeat;
-}
-
-div.buttons, form.buttons {
-    display: inline;
-}
-
-input.submitbutton, input.resetbutton, input.authbutton {
-    width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
-    cursor: pointer;    border: none;    padding: 8px 16px;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.25); 
-    border-right: 4px solid rgba(0, 0, 0, 0.25); 
-    font-size: 14pt;
-}
-input.submitbutton {
-    background-color: #3a5795;
-}
-input.resetbutton {
-    background-color: #333333;
-}
-input.authbutton {
-    background-color: #993300;
-    margin: 0;
-    margin-left: 10px;
-}
-input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
-    font-weight: bold;    color: #ffffff;
-}
-div.sitename {
-    background: #ffffff;     display: block;    position: relative;
-    left: 400px;    width: 300px;    bottom: 49px;
-}
 
 /* all panels look like this */
 div.panel {
@@ -341,15 +306,38 @@ div.processoptions {
 input {
     background-repeat: no-repeat;
 }
-input.submitbutton, input.resetbutton, input.authbutton {
+div.buttons, form.buttons {
+    display: inline;
+}
+input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs {
+    background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
-    cursor: pointer;    border: none;    padding: 8px 16px;
+    cursor: pointer;    border: none;
     color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 8px solid rgba(0, 0, 0, 0.25); 
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
     font-size: 14pt;
 }
-input.submitbutton {
-    background-color: #3a5795;
+/* style restore tabs like a button - notice adjustments for border and vertical centering */
+div.restoretabs {
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+    width: 142px; height: 34px;
+}
+div.restoretabs.hidden {
+    display: none;
+}
+
+/* don't need to display this anymore since use clock and panel click instead */
+/* but the div needs to be in the php file to make the js work */
+/* uncomment this to show the display link */
+div.panel div.restoretabs {
+    font-size: 12pt;
+    color: rgba(0,0,0,0.1);
+    width: auto; height: 20px; margin-top: 1px;
+    border: 0px; text-align: right;
+    background-color: rgba(0,0,0,0.1);
+    position: absolute; right: -1px; bottom: -1px;
 }
 input.resetbutton {
     background-color: #333333;
@@ -359,8 +347,12 @@ input.authbutton {
     margin: 0;
     margin-left: 10px;
 }
-input.submitbutton:hover, input.resetbutton:hover, input.authbutton:hover{
+input.submitbutton:hover, input.resetbutton:hover, 
+input.authbutton:hover, div.restoretabs:hover {
     font-weight: bold;    color: #ffffff;
+    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
+    border-bottom: 0px; 
+    border-right: 0px; */
 }
 div.sitename {
     background: #ffffff;     display: block;    position: relative;
@@ -656,23 +648,33 @@ div.thermostat.heat, div.thermostat.cool, div.music.level {
 }
 /* up and down arrows */
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.colorTemperature-dn,
+div.hue-up, div.hue-dn,
+div.saturation-up, div.saturation-dn
+{
     display: inline-block;
     width: 32px; height: 32px;
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn {
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
+/*    border-top-left-radius: 25px;
+    border-bottom-left-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up {
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
+/*    border-top-right-radius: 25px;
+    border-bottom-right-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -762,7 +764,8 @@ div.thermostat.thermostate {
 }
 
 /* values of the adjustable items */
-div.heat-val, div.cool-val, div.level-val, div.switchlevel-val {
+div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
+div.colorTemperature-val, div.hue-val, div.saturation-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -793,11 +796,21 @@ div.switchlevel-val, div.level-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
+div.colorTemperature-val, div.hue-val, div.saturation-val {
+    background-color: #ffff99;
+    color: #000000;
+    box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
+    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
+}
 
 /* hover over the adjustment arrows */
 div.heat-up:hover, div.heat-dn:hover, 
 div.cool-up:hover, div.cool-dn:hover,
 div.switchlevel-up:hover, div.switchlevel-dn:hover,
+div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
+div.hue-up:hover, div.hue-dn:hover,
+div.saturation-up:hover, div.saturation-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
@@ -1038,7 +1051,7 @@ div.image.url {
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
-div.contact.checkInterval, div.switchlevel.colorTemperature,
+div.contact.checkInterval, 
 div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,

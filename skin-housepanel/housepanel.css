@@ -722,7 +722,7 @@ div.switch.power::before, div.switchlevel.power:before {
 div.switchlevel.switch {
     height: 80px;
 }
-div.switchlevel.level {
+div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
     height: 32px;
 }
 
