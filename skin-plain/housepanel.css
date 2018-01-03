@@ -367,6 +367,151 @@ div.sitename {
     left: 400px;    width: 300px;    bottom: 49px;
 }
 
+/* Changes for custom editing tiles in options page */
+/* scale icons for edit mode in Options page */
+div.editable {
+    background-size: auto 36px !important;
+	height: 36px !important;
+	width: 36px !important;
+}
+div.tiledialog {
+  overflow: hidden;
+}
+
+#edittile {
+	display: inline-block;
+    float: left;
+    width: 127px; 
+    height: 196px;
+}
+
+#editicon {
+	display: inline-block;
+	float: right;
+    width: 220px; 
+    height: 200px;
+	overflow-x: hidden;
+}
+.iconlist {
+	display: inline-block;
+}
+.icon {
+	float: left;
+	margin: 2px;
+	max-height: 40px;
+	max-width: auto;
+	-o-object-fit: contain;
+	object-fit: contain;
+}
+.icon:hover{
+	position: relative;
+	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+.btn.color {
+  background: #3498db;
+  background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  padding: 2px 10px 1px 10px;
+  margin: 2px;
+}
+.btn {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 9px;
+  padding: 2px 8px 1px 8px;
+  text-decoration: none;
+  margin: 1px;
+  cursor: pointer;
+}
+.btn.hidden {
+  visibility: hidden;
+}
+.btn:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+}
+#saveCss {
+	font-size: 14pt;
+	-webkit-border-radius: 32;
+	-moz-border-radius: 32;
+	border-radius: 32px;
+}
+#showCssSaved {
+	margin-left: 6px;
+	font-size: 12pt;
+	visibility: hidden;
+	color: #900;
+}
+#custom_footer {
+	position: relative;
+	margin: 4px;
+	left: 20%;	
+}
+dialog {  
+    background:#999;
+    border: 1px solid #666;
+    font-family:sans-serif;
+    padding: 0px 0px 0px 1px;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 370px; 
+    height: 204px;
+  	top: 50%;
+  	left: 35%;
+}  
+.selectIcon {
+    font-size: 8pt;
+	border: 1px solid #ccc;
+    width: 121px;
+    border-radius: 3px;
+    overflow: hidden;
+	margin: 3px;
+    background: #fafafa;
+}
+
+.selectIcon select {
+	font-size: 8pt;
+    padding: 5px 8px;
+    width: 130%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    background-image: none;
+    -webkit-appearance: none;
+}
+
+.selectIcon select:focus {
+    outline: none;
+}
+#onoff {
+	display: none;
+}
+#custom_img_off {
+	display: none;
+}
+#custom_img_on {
+    display: inline-block;
+}
+/* End Changes for custom editing tiles in options page */
+
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
 div.thing {
@@ -694,10 +839,10 @@ div.piston.pistonName {
     height: 112px;
     color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
-    background-image: url('piston.png');
+    background-image: url('icons/piston.png');
 }
 div.piston.pistonName.firing {
-    background-image: url('pistonfiring.png');
+    background-image: url('icons/pistonfiring.png');
 }
 /* weather styling */
 div.thing.weather-thing, div.weather {
