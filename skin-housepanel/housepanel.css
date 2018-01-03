@@ -204,7 +204,7 @@ table.roomoptions, table.headoptions {
 table.headoptions {
     height: 40px;
 }
-table.headoptions th.roomname, table.headoptions th.thingname {
+table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
     border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
     background-color: #3a5795;    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
@@ -217,6 +217,15 @@ table.headoptions td, table.roomoptions td {
     border-right: 1px solid #999999;
     border-bottom: 1px solid #999999;
 }
+table.roomoptions td.customedit, table.headoptions th.customedit {
+    text-align: center; 
+    width: 5%;    
+}
+table.roomoptions td.customname, table.headoptions th.customname {
+    text-align: center; 
+    width: 10%;    
+}
+
 table.roomoptions td.thingname, table.headoptions th.thingname {
     text-align: left; 
     width: 20%;    
@@ -311,6 +320,151 @@ div.sitename {
     background: #ffffff;     display: block;    position: relative;
     left: 400px;    width: 300px;    bottom: 49px;
 }
+
+/* Changes for custom editing tiles in options page */
+/* scale icons for edit mode in Options page */
+div.editable {
+    background-size: auto 36px !important;
+	height: 36px !important;
+	width: 36px !important;
+}
+div.tiledialog {
+  overflow: hidden;
+}
+
+#edittile {
+	display: inline-block;
+    float: left;
+    width: 127px; 
+    height: 196px;
+}
+
+#editicon {
+	display: inline-block;
+	float: right;
+    width: 220px; 
+    height: 200px;
+	overflow-x: hidden;
+}
+.iconlist {
+	display: inline-block;
+}
+.icon {
+	float: left;
+	margin: 2px;
+	max-height: 40px;
+	max-width: auto;
+	-o-object-fit: contain;
+	object-fit: contain;
+}
+.icon:hover{
+	position: relative;
+	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+	-webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+	transition-duration: .2s;
+	-webkit-transition-duration: .2s;
+}
+.btn.color {
+  background: #3498db;
+  background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  padding: 2px 10px 1px 10px;
+  margin: 2px;
+}
+.btn {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 9px;
+  padding: 2px 8px 1px 8px;
+  text-decoration: none;
+  margin: 1px;
+  cursor: pointer;
+}
+.btn.hidden {
+  visibility: hidden;
+}
+.btn:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+}
+#saveCss {
+	font-size: 14pt;
+	-webkit-border-radius: 32;
+	-moz-border-radius: 32;
+	border-radius: 32px;
+}
+#showCssSaved {
+	margin-left: 6px;
+	font-size: 12pt;
+	visibility: hidden;
+	color: #900;
+}
+#custom_footer {
+	position: relative;
+	margin: 4px;
+	left: 20%;	
+}
+dialog {  
+    background:#999;
+    border: 1px solid #666;
+    font-family:sans-serif;
+    padding: 0px 0px 0px 1px;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 370px; 
+    height: 204px;
+  	top: 50%;
+  	left: 35%;
+}  
+.selectIcon {
+    font-size: 8pt;
+	border: 1px solid #ccc;
+    width: 121px;
+    border-radius: 3px;
+    overflow: hidden;
+	margin: 3px;
+    background: #fafafa;
+}
+
+.selectIcon select {
+	font-size: 8pt;
+    padding: 5px 8px;
+    width: 130%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    background-image: none;
+    -webkit-appearance: none;
+}
+
+.selectIcon select:focus {
+    outline: none;
+}
+#onoff {
+	display: none;
+}
+#custom_img_off {
+	display: none;
+}
+#custom_img_on {
+    display: inline-block;
+}
+/* End Changes for custom editing tiles in options page */
 
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
@@ -407,27 +561,27 @@ div.thermostat.thermomode.on, div.thermostat.thermofan.on {
 
 /* contact styling - note we changed to generic contact */
 div.contact.open {
-    background-image: url('opencontact.png');
+    background-image: url('icons/opencontact.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
 }
 div.contact.closed {
-    background-image: url('closecontact.png');
+    background-image: url('icons/closecontact.png');
     background-color: rgba(27,177,75,0.6);
     background-position-y: 9px;
     background-size: 40px;
 }
 
 /* specific contact types one might find */
-div.door.open {
-    background-image: url('opendoor.png');
+div.door.open, div.contact.door.closed {
+    background-image: url('icons/opendoor.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
 }
-div.door.closed {
-    background-image: url('closedoor.png');
+div.door.closed, div.contact.door.closed {
+    background-image: url('icons/closedoor.png');
     background-color: rgba(27,177,75,0.3);
     background-position-y: 9px;
     background-size: 40px;
@@ -440,28 +594,28 @@ div.door.garage.open, div.door.garage.closed {
     cursor: pointer;
 }
 div.contact.window.open {
-    background-image: url('openwindow.png');
+    background-image: url('icons/openwindow.png');
 }
 div.contact.window.closed {
-    background-image: url('closewindow.png');
+    background-image: url('icons/closewindow.png');
 }
 div.door.garage.open {
-    background-image: url('garage-opened.png');
+    background-image: url('icons/garage-opened.png');
     background-size: 80px;
     height: 112px;
 }
 div.door.garage.closed {
-    background-image: url('garage-closed.png');
+    background-image: url('icons/garage-closed.png');
     background-size: 80px;
     height: 112px;
 }
 div.valve.open {
-    background-image: url('sprinkler-on.png');
+    background-image: url('icons/sprinkler-on.png');
     background-color: rgba(27,177,75,0.6);
     height: 112px;
 }
 div.valve.closed {
-    background-image: url('sprinkler-on.png');
+    background-image: url('icons/sprinkler-on.png');
     background-color: rgba(0, 51, 204, 0.6);
     height: 112px;
 }
@@ -470,12 +624,12 @@ div.valve.switch, div.valve.contact {
 }
 /* special handling of garage entry which is a door */
 div.contact.garage.entry.open {
-    background-image: url('opendoor.png');
+    background-image: url('icons/opendoor.png');
     background-size: 40px;
     height: 96px;
 }
 div.contact.garage.entry.closed {
-    background-image: url('closedoor.png');
+    background-image: url('icons/closedoor.png');
     background-size: 40px;
     height: 96px;
 }
@@ -483,11 +637,11 @@ div.contact.garage.entry.closed {
 
 /* motion styling */
 div.motion.inactive {
-    background-image: url('stand.png');
+    background-image: url('icons/stand.png');
     background-color: rgba(0, 51, 204, 0.6);
 }
 div.motion.active {
-    background-image: url('run.png');
+    background-image: url('icons/run.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.motion.battery, div.contact.battery, 
@@ -512,30 +666,30 @@ div.motion.temperature::after {
 
 /* lock styling */
 div.lock.locked {
-    background-image: url('lock.png');
+    background-image: url('icons/lock.png');
     background-color: rgba(102, 51, 0, 1);
 }
 div.lock.unlocked{
-    background-image: url('unlock.png');
+    background-image: url('icons/unlock.png');
     background-color: rgba(102, 51, 0, 0.7);
 }
 
 /* switch styling */
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
-    background-image: url('bulbon.png');
+    background-image: url('icons/bulbon.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
-    background-image: url('bulboff.png');
+    background-image: url('icons/bulboff.png');
 }
 div.switch.plug.on {
-    background-image: url('plugon.png');
+    background-image: url('icons/plugon.png');
     background-color: rgba(204, 51, 0, 0.3);
     height: 112px;
 }
 div.switch.plug.off {
-    background-image: url('plugoff.png');
+    background-image: url('icons/plugoff.png');
     background-color: rgba(0, 51, 204, 0.3);
     height: 112px;
 }
@@ -574,7 +728,7 @@ div.switchlevel.level {
 
 /* momentary styling */
 div.momentary.off, div.momentary.on{
-    background-image: url('3dbutton.png');
+    background-image: url('icons/3dbutton.png');
     background-color: rgba(204, 51, 0, 0.6);
     height: 112px;
 }
@@ -818,10 +972,10 @@ div.piston.pistonName {
     height: 112px;
     color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
-    background-image: url('piston.png');
+    background-image: url('icons/piston.png');
 }
 div.piston.pistonName.firing {
-    background-image: url('pistonfiring.png');
+    background-image: url('icons/pistonfiring.png');
 }
 /* weather styling */
 div.thing.weather-thing, div.weather {
@@ -997,11 +1151,11 @@ div.image.url {
 
 /* presence styling */
 div.presence.present {
-    background-image: url('boypresent.png');
+    background-image: url('icons/boypresent.png');
     background-color: rgba(255, 255, 255, 0.6);
 }
 div.presence.absent {
-    background-image: url('boyabsent.png');
+    background-image: url('icons/boyabsent.png');
     background-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -1130,10 +1284,10 @@ div.image.url.img4 {
 
 /* girl sillhouette for wife's phone */
 div.presence.jana.present {
-    background-image: url('girlpresent.png');
+    background-image: url('icons/girlpresent.png');
 }
 div.presence.jana.absent {
-    background-image: url('girlabsent.png');
+    background-image: url('icons/girlabsent.png');
 }
 
 /* motion detector in family room that also has temperature */
@@ -1146,11 +1300,11 @@ div.motion.family.room.battery {
 
 /* smart switch on my rock fountain */
 div.switch.rock.on {
-    background-image: url('rockon.png');
+    background-image: url('icons/rockon.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.rock.off {
-    background-image: url('rockoff.png');
+    background-image: url('icons/rockoff.png');
     background-color: rgba(0, 51, 204, 0.3);
 }
 div.switch.screen.on, div.switch.screen.off {
@@ -1192,4 +1346,7 @@ div.video-thing {
 }
 div.thingname.video {
     display: none;
+}
+div.panel-kitchen\/family {
+    background-image: url('kitchenroom.jpg');
 }
