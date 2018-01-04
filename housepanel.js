@@ -55,26 +55,36 @@ window.addEventListener("load", function(event) {
 
     // make the actual thing tiles on each panel sortable
     // the change function does a post to make it permanent
-    $("div.panel").sortable({
-        items: "> div.thing",
+    $("div.thing").draggable({
+        grid: [20,20],
+//        items: "> div.thing",
         opacity: 0.5,
-        revert: true,
+        revert: false,
+        containment: "parent",
         delay: 200,
-        update: function(event, ui) {
+        stop: function(event, ui) {
             var things = {};
             var k=0;
-            var roomname = $(ui.item).attr("panel");
-            var roomtitle = $(this).attr("title");
+            var pid = $(event.target).attr("tile");
+            var thingid = $(event.target).attr("id");
+            var thingtype = $(event.target).attr("type");
+            var panel = $(event.target).attr("panel");
+            var ypos = ui.position.top;
+            var xpos = ui.position.left;
+            alert("xpos= "+xpos+" ypos= "+ypos+" pid= "+ pid + " id= "+thingid + " panel= "+panel + " type= "+thingtype);
             // var bid = $(ui.helper).attr("bid");
             // get the new list of things in order
-            $("div.panel-" + roomname + " > div.thing").each(function() {
-                var tilenum = parseInt( $(this).attr("tile") );
-                things[k] = tilenum;
-                k++;
-            });
-            $.post("housepanel.php", 
-                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
-            );
+//            $("div.panel-" + roomname + " > div.thing").each(function() {
+//                var tilenum = parseInt( $(this).attr("tile") );
+//                things[k] = tilenum;
+//                k++;
+//            });
+//            $.post("housepanel.php", 
+//                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+//            );
+//            $.post("housepanel.php", 
+//                   {useajax: "tiledrag", id: "none", type: "dragstop", value: things, attr: [xpos, ypos]}
+//            );
         }
     });
 
