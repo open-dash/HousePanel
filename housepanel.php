@@ -101,13 +101,13 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
     $tc.= '<meta name="msapplication-TileColor" content="#2b5797">';
-    $tc.= '<meta name="msapplication-TileImage" content="mstile-144x144.png">';
+    $tc.= '<meta name="msapplication-TileImage" content="media/mstile-144x144.png">';
     
     // specify icons for browsers and apple
-    $tc.= '<link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16"> ';
-    $tc.= '<link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32"> ';
-    $tc.= '<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96"> ';
-    $tc.= '<link rel="apple-touch-icon" href="apple-touch-icon.png">';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-16x16.png" sizes="16x16"> ';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-32x32.png" sizes="32x32"> ';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-96x96.png" sizes="96x96"> ';
+    $tc.= '<link rel="apple-touch-icon" href="media/apple-touch-icon.png">';
     
     // load jQuery and themes
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
@@ -282,7 +282,7 @@ function getAllThings($endpt, $access_token) {
 //            exit(0);
 //        }
         
-        $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
+        $thingtypes = array("routines","switches", "lights", "dimmers","bulbs","momentaries","contacts",
                             "sensors", "locks", "thermostats", "temperatures", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
                             "modes", "blanks", "images", "pistons", "others");
@@ -411,7 +411,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         if (substr($iconstr,0,3) === "nt_") {
             $iconstr = substr($iconstr,3);
         }
-        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
+        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["weatherIcon"];
         $tc.= "</div>";
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
@@ -419,7 +419,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         if (substr($iconstr,0,3) === "nt_") {
             $iconstr = substr($iconstr,3);
         }
-        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
+        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["forecastIcon"];
         $tc.= "</div>";
         $tc.= putElement($kindex, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
@@ -814,7 +814,7 @@ function refactorOptions($allthings) {
 function getOptions($allthings) {
     
     // same list as in getAllThings plus the manual items
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -999,7 +999,7 @@ function getOptions($allthings) {
 }
 
 function mysortfunc($cmpa, $cmpb) {
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -1022,7 +1022,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -1208,7 +1208,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         echo "</pre>";
         exit(0);
     }
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",

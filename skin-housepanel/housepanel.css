@@ -493,7 +493,7 @@ div.thing:hover{
     -webkit-transition-duration: .2s;
 }
 
-div.thing.switch-thing, div.thing.switchlevel-thing {
+div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.bulb-thing {
     height: auto;
 }
 
@@ -1195,6 +1195,12 @@ div.music.name, div.blank.name, div.image.name, div.presence.name {
     display:none;
 }
 
+/* hide dimmers but not bulbs */
+div.switchlevel.colorTemperature, div.switchlevel.hue, 
+div.switchlevel.saturation, div.switchlevel.color {
+    display: none;
+}
+
 /* simple things for the All panel */
 /* note - the code for an ALL panel is disabled */
 div.panel-all div.thing {
@@ -1279,7 +1285,7 @@ div.image.url.img3 {
     background-image: url("/smartthings/garagecam/garagepic.jpg");
 }
 div.image.url.img4 {
-    background-image: url("../custom/myhouse.jpg");
+    background-image: url("../media/myhouse.jpg");
 }
 
 /* girl sillhouette for wife's phone */
