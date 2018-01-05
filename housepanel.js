@@ -179,7 +179,7 @@ function setupPopup() {
         });
         $(this).bind("click", jeditTableCell);
     });
-    
+$('#showCssSaved').hide();  
 //    $("table.headoptions th.thingname").click(function() {
 //        alert("clicked on Room names row");
 //    });
@@ -644,25 +644,48 @@ function setupPage(sensortype) {
 };
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
-	document.getElementById('showCssSaved').style.visibility = 'hidden';
+	$('#showCssSaved').hide(); //hides "saved" message if visible
+	var strIconTarget = "div." + str_type + ".p_" + thingindex + ".";
     var dialog = document.getElementById('edit_Tile');
 	var dialog_html = "<div id='tiledialog'>";
-	var strIconTarget = "div." + str_type + ".p_" + thingindex + ".";
 	dialog_html += "<div id='edittile'>";
-	
-	
-	dialog_html += "<div id='tile_" + thingindex + "' tile='0' bid='0' type='switch' panel='main' class='thing " + 
-                       str_type + "-thing p_" + thingindex + "'>";
-	dialog_html += "<div id='custom_title' title='" + str_type + "status' class='thingname " + str_type +"' id='title_" + thingindex + "'>";
+	dialog_html += "<div id='tile_" + thingindex + "' tile='0' bid='0' type='switch' panel='main' class='thing " + str_type + "-thing p_" + thingindex + "'>";
+	dialog_html += "<div id='custom_title' title='" + str_type + "status' class='thingname " + str_type + " t_" + thingindex + "' id='title_" + thingindex + "'>";
 	dialog_html += "<span id='titleEdit' class='n_" + thingindex + "'>" + thingname + "</span></div>";
 	dialog_html += "<div id='custom_img_on' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_on + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_on + "</div>";
 	dialog_html += "<div id='custom_img_off' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_off + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_off + "</div></div>";
 
 	dialog_html += "<div><span id='onoff'>on</span></div>";
-	dialog_html += "<div>";
-	dialog_html += "<span class='btn color' onclick='chooseTitleColor()'>Title Box</span>";
-	dialog_html += "<span class='btn color' onclick='chooseBgColor()'>Background</span>";	
-	dialog_html += "</div>";	
+	// Button group for edit dialog
+	dialog_html += "<div class='wrappert'>";
+	dialog_html += "<div class='buttongroup'>";
+	dialog_html += "<input id=\"Tile\" type=\"radio\" value=\"tile\" name=\"optionEdit\" onclick='toggleOptions(\"tile\")' checked/>";
+	dialog_html += "<label for=\"Tile\"> Tile </label>";
+	dialog_html += "<input id=\"Head\" type=\"radio\" value=\"head\" name=\"optionEdit\" onclick='toggleOptions(\"head\")' />";
+	dialog_html += "<label for=\"Head\">Head</label>";
+	dialog_html += "<input id=\"Text\" type=\"radio\" value=\"text\" name=\"optionEdit\" onclick='toggleOptions(\"text\")' />";
+	dialog_html += "<label for=\"Text\">Text</label>";
+	dialog_html += "<div id='options_parent'>";	
+	dialog_html += "<div id='options_tile' class='options_child'>";
+		dialog_html += "<span class='options_input'>W:<input type=\"text\" class=\"options_txt width\" onchange=\"\" id=\"tileWidth\" value=\"120\"/></span>";
+		dialog_html += "<span class='options_input'>H:<input type=\"text\" class=\"options_txt height\" onchange=\"\" id=\"tileHeight\" value=\"160\"/></span>";	
+		dialog_html += "<span class='btn color' onclick='pickColor(\"div.thing.p_" + thingindex + "\")'></span>";
+	dialog_html += "</div>";
+	dialog_html += "<div id='options_head' class='options_child'>";
+		dialog_html += "<span id=\"hideme\" class='options_input'>W:<input type=\"text\" class=\"options_txt width\" onchange=\"\" id=\"headWidth\" value=\"120\"/></span>";
+		dialog_html += "<span class='options_input'>H:<input type=\"text\" class=\"options_txt height\" onchange=\"\" id=\"headHeight\" value=\"45\"/></span>";
+		dialog_html += "<span class='btn color' onclick='pickColor(\"div.thingname.t_" + thingindex + "\")'></span>";		
+
+	dialog_html += "</div>";
+	dialog_html += "<div id='options_text' class='options_child'>";
+	
+		dialog_html += "<span class='options_input'><input type=\"text\" class=\"options_txt name\" onchange=\"\" id=\"tileName\" value=\"My Testing Name\"/></span>";
+		dialog_html += "<span class='btn color' onclick='pickColor(\"span.n_" + thingindex + "\")'></span></div>";
+	
+	dialog_html += "</div>";
+	dialog_html += "</div>";				
+	dialog_html += "</div>";
+
 	dialog_html += "<div>";
 	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
 	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
@@ -670,18 +693,57 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "</div>";	
 	dialog_html += "</div>";
 	dialog_html += "<div id='editicon'>";
-	dialog_html += "<div id='iconList'></div>"; //Icon List
+	dialog_html += "<div id='iconList'></div>";
+	dialog_html += "</div>";
+	dialog_html += "<div id='editcolor'>";	
+	dialog_html += "<div id='colorpicker'></div>";
+	dialog_html += "<div id='div_color'><input type=\"text\" onchange=\"\" id=\"color\" name=\"color\" value=\"#123456\"/></div>";
 	dialog_html += "</div>";
 	dialog_html += "</div>";
+	
 	getIconList(strIconTarget + "on");
 	dialog.innerHTML = dialog_html;
+	toggleOptions('tile');
 	dialog.show();  
 };
+
+function pickColor(cssRuleTarget) {
+	  $(document).ready(function() { 
+	  		$("#color")[0].onchange = null;
+	  		$('#color')[0].setAttribute('onchange', 'relayColor(\'' + cssRuleTarget + '\')');
+	  		//$('#color').attr('onchange',.null).change(function() { relayColor(cssRuleTarget); });
+			$('#colorpicker').farbtastic('#color')		
+	  });
+	  document.getElementById('editcolor').style.display = 'inline-block';
+
+document.getElementById('editicon').style.visibility = 'hidden';
+document.getElementById('editcolor').style.visibility = 'visible';
+};
+
+function relayColor(cssRuleTarget) {
+	var strColor = document.getElementById('color').value;
+	if(cssRuleTarget.indexOf("n_") !== -1) {
+		addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
+	} else {
+		addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
+	}
+}
+function toggleOptions(optionsView) {
+	$("#options_tile").hide();
+	$("#options_head").hide();
+	$("#options_text").hide();
+	$("#options_"+optionsView+"").show();
+	document.getElementById('editicon').style.visibility = 'visible';
+	document.getElementById('editcolor').style.visibility = 'hidden';
+}
+
 function toggleIcon(strIconTarget) {
+if($("#editicon").css("visibility") == "hidden"){
+} else {
 	var strOnOff = document.getElementById('onoff').innerHTML;
 	if (strOnOff === "on"){
 		strOnOff = "off";
-//		document.getElementById('toggle').style.background = '#000000';
+		document.getElementById('toggle').style.background = '#000000';
 //		document.getElementById('custom_img_on').style.display = 'none';
 //		document.getElementById('custom_img_off').style.display = 'inline-block';
 		$('#custom_img_on').hide();
@@ -689,15 +751,17 @@ function toggleIcon(strIconTarget) {
 	}
 	else {
 		strOnOff = "on";
-//		document.getElementById('toggle').style.background = '#3498db';
+		document.getElementById('toggle').style.background = '#3498db';
 //		document.getElementById('custom_img_on').style.display = 'inline-block';
 //		document.getElementById('custom_img_off').style.display = 'none';	
 		$('#custom_img_on').show();
 		$('#custom_img_off').hide();
 	}
 	document.getElementById('onoff').innerHTML = strOnOff;
-
 	getIconList(strIconTarget + strOnOff);	
+}
+	document.getElementById('editicon').style.visibility = 'visible';
+	document.getElementById('editcolor').style.visibility = 'hidden';
 };
 
 function getIconList(ruleToTarget){
@@ -723,8 +787,8 @@ $.ajax({
 
 };
 
-function iconSelected(targetRule, imagePath) {
-addCSSRule(targetRule, "background-image: url('" + imagePath + "');");
+function iconSelected(cssRuleTarget, imagePath) {
+addCSSRule(cssRuleTarget, "background-image: url('" + imagePath + "');");
 };
 
 function editTileClose() {  
@@ -732,23 +796,23 @@ var dialog = document.getElementById('edit_Tile');
 dialog.close();
 };
 
-function postCustomStyleSheet(){
+function saveCustomStyleSheet(){
 var sheet = document.getElementById('customtiles').sheet;
-var sheetContents = "";
+var sheetContents = "/*Generated by HousePanel.js*/\n";
 	c=sheet.cssRules;
 	for(j=0;j<c.length;j++){
 		sheetContents += c[j].cssText;
 	};
+
 var regex = /[{;}]/g;
 var subst = "$&\n";
 sheetContents = sheetContents.replace(regex, subst);
-
 var cssdata = new FormData();
 cssdata.append("cssdata", sheetContents);
 var xhr = new XMLHttpRequest();
 xhr.open('post', 'housepanel.php', true );
 xhr.send(cssdata);
-document.getElementById('showCssSaved').style.visibility = 'visible';
+$('#showCssSaved').show();
 
 };
 
