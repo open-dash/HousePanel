@@ -354,7 +354,6 @@ div.tiledialog {
 	margin: 3px;
 	position:absolute;
 	display: none;
-	visibility: hidden;
 	float: right;
 	width: 200px; 
 	height: 225px;
@@ -510,6 +509,7 @@ input[name='optionEdit']:checked+label{
 #showCssSaved {
 	margin-left: 6px;
 	font-size: 12pt;
+	visibility: hidden;
 	color: #900;
 }
 #custom_footer {
@@ -558,11 +558,9 @@ dialog {
 #onoff {
 	display: none;
 }
-
 #custom_img_off {
-	display: none;
+    display: none;
 }
-
 #custom_img_on {
     display: inline-block;
 }
@@ -596,7 +594,7 @@ div.thing:hover{
     -webkit-transition-duration: .2s;
 }
 
-div.thing.switch-thing, div.thing.switchlevel-thing {
+div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.bulb-thing {
     height: auto;
 }
 
@@ -825,7 +823,7 @@ div.switch.power::before, div.switchlevel.power:before {
 div.switchlevel.switch {
     height: 80px;
 }
-div.switchlevel.level {
+div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
     height: 32px;
 }
 
@@ -1298,6 +1296,12 @@ div.music.name, div.blank.name, div.image.name, div.presence.name {
     display:none;
 }
 
+/* hide dimmers but not bulbs */
+div.switchlevel.colorTemperature, div.switchlevel.hue, 
+div.switchlevel.saturation, div.switchlevel.color {
+    display: none;
+}
+
 /* simple things for the All panel */
 /* note - the code for an ALL panel is disabled */
 div.panel-all div.thing {
@@ -1382,7 +1386,7 @@ div.image.url.img3 {
     background-image: url("/smartthings/garagecam/garagepic.jpg");
 }
 div.image.url.img4 {
-    background-image: url("../custom/myhouse.jpg");
+    background-image: url("../media/myhouse.jpg");
 }
 
 /* girl sillhouette for wife's phone */
@@ -1449,4 +1453,7 @@ div.video-thing {
 }
 div.thingname.video {
     display: none;
+}
+div.panel-kitchen\/family {
+    background-image: url('kitchenroom.jpg');
 }

@@ -101,13 +101,13 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
     $tc.= '<meta name="msapplication-TileColor" content="#2b5797">';
-    $tc.= '<meta name="msapplication-TileImage" content="mstile-144x144.png">';
+    $tc.= '<meta name="msapplication-TileImage" content="media/mstile-144x144.png">';
     
     // specify icons for browsers and apple
-    $tc.= '<link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16"> ';
-    $tc.= '<link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32"> ';
-    $tc.= '<link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96"> ';
-    $tc.= '<link rel="apple-touch-icon" href="apple-touch-icon.png">';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-16x16.png" sizes="16x16"> ';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-32x32.png" sizes="32x32"> ';
+    $tc.= '<link rel="icon" type="image/png" href="media/favicon-96x96.png" sizes="96x96"> ';
+    $tc.= '<link rel="apple-touch-icon" href="media/apple-touch-icon.png">';
     
     // load jQuery and themes
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
@@ -127,11 +127,13 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
+    
+    // load the custom tile sheet if it exists
+    // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("$skindir/customtiles.css")) {
-    $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
     }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
-	
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
         $thingtypes = array("switch.on","switch.off","bulb","light",
@@ -282,7 +284,7 @@ function getAllThings($endpt, $access_token) {
 //            exit(0);
 //        }
         
-        $thingtypes = array("routines","switches", "lights", "dimmers","momentaries","contacts",
+        $thingtypes = array("routines","switches", "lights", "dimmers","bulbs","momentaries","contacts",
                             "sensors", "locks", "thermostats", "temperatures", "musics", "valves",
                             "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
                             "modes", "blanks", "images", "pistons", "others");
@@ -355,20 +357,20 @@ function processName($thingname, $thingtype) {
      */
     // get rid of 's and split along white space
     // but only for tiles that are not weather
-        if ( $thingtype!=="weather") {
-            $ignores = array("'s","*","<",">","!","{","}");
-            $lowname = str_replace($ignores, "", strtolower($thingname));
-            $subopts = preg_split("/[\s,;|]+/", $lowname);
-            $subtype = "";
-            $k = 0;
-            foreach ($subopts as $key) {
-                if (strtolower($key) != $thingtype) {
-                    $subtype.= " " . $key;
-                    $k++;
-                }
-                if ($k == 3) break;
+    if ( $thingtype!=="weather") {
+        $ignores = array("'s","*","<",">","!","{","}");
+        $lowname = str_replace($ignores, "", strtolower($thingname));
+        $subopts = preg_split("/[\s,;|]+/", $lowname);
+        $subtype = "";
+        $k = 0;
+        foreach ($subopts as $key) {
+            if (strtolower($key) != $thingtype) {
+                $subtype.= " " . $key;
+                $k++;
             }
+            if ($k == 3) break;
         }
+    }
     // }
     
     return array($thingname, $subtype);
@@ -411,7 +413,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         if (substr($iconstr,0,3) === "nt_") {
             $iconstr = substr($iconstr,3);
         }
-        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
+        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["weatherIcon"];
         $tc.= "</div>";
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
@@ -419,7 +421,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         if (substr($iconstr,0,3) === "nt_") {
             $iconstr = substr($iconstr,3);
         }
-        $tc.= '<img src="' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
+        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
         $tc.= '<br />' . $thingvalue["forecastIcon"];
         $tc.= "</div>";
         $tc.= putElement($kindex, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
@@ -525,9 +527,12 @@ function fixTrack($tval) {
 function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
     $tc = "";
     
-    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
+    // add a name specific tag to the wrapper class
+    // and include support for hue bulbs - fix a few bugs too
+    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || 
+        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
-        $tc.= "<div class=\"$thingtype $tkey" . $subtype . " p_$kindex\">";
+        $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
@@ -772,10 +777,10 @@ function cleanupStr($str) {
 // call to write Custom Css Back to customtiles.css
 function writeCustomCss($skindir, $str = "") {
     $file = fopen("$skindir/customtiles.css","wb");
-    $fixstr = "/* HousePanel Generated Tile Customization File */\r\n";
-    $fixstr.= "/* ******************************************** */\r\n";
-    $fixstr.= "/* ****** DO NOT EDIT THIS FILE DIRECTLY ****** */\r\n";
-    $fixstr.= "/* ******************************************** */\r\n";
+    $fixstr = "/* HousePanel Generated Tile Customization File */\n";
+    $fixstr.= "/* ******************************************** */\n";
+    $fixstr.= "/* ****** DO NOT EDIT THIS FILE DIRECTLY ****** */\n";
+    $fixstr.= "/* ******************************************** */\n";
     fwrite($file, cleanupStr($fixstr));
     if ( $str && strlen($str) ) {
         fwrite($file, cleanupStr($str));
@@ -811,7 +816,7 @@ function refactorOptions($allthings) {
 function getOptions($allthings) {
     
     // same list as in getAllThings plus the manual items
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -996,7 +1001,7 @@ function getOptions($allthings) {
 }
 
 function mysortfunc($cmpa, $cmpb) {
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -1019,7 +1024,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -1144,10 +1149,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
 
-		$tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
         $tc.= "<dialog id=\"edit_Tile\">"; 
-        $tc.=     "<h3>You shouldn't see this</h3>"; 
+        // $tc.=     "<h3>You shouldn't see this</h3>"; 
         $tc.= "</dialog>";
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
@@ -1205,7 +1210,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         echo "</pre>";
         exit(0);
     }
-    $thingtypes = array("routine","switch", "light", "switchlevel","momentary","contact",
+    $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
@@ -1475,6 +1480,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 echo $optpage;
                 echo htmlFooter();
                 break;
+        
             case "refactor":
                 // this user selectable option will renumber the index
                 $allthings = getAllThings($endpt, $access_token);
