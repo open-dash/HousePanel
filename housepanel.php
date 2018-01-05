@@ -124,8 +124,6 @@ function htmlHeader($skindir="skin-housepanel") {
     if (!$skindir) {
         $skindir = "skin-housepanel";
     }
-    $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
-    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
     
     // load the custom tile sheet if it exists
@@ -404,7 +402,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     // special handling for weather tiles
     if ($thingtype==="weather") {
         $weathername = $thingname . "<br />" . $thingvalue["city"];
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $weathername . "</span></div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype\" id=\"s-$i\"><span class=\"n_$kindex\">" . $weathername . "</span></div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         // $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["city"], "city");
@@ -449,7 +447,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         $vidname = $thingvalue["name"];
         $tkey = "url";
         $vidname = $thingvalue["url"];
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\">" . $thingpr . "</div>";
         // wrap the video tag in our standard HP div pattern
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video url\" id=\"a-$i"."-$tkey\">";
         
@@ -482,7 +480,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         } else {
             $thingpr = $thingname;
         }
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
         // for multiple attribute things we provide a separate item for each one
@@ -527,14 +525,11 @@ function fixTrack($tval) {
 function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
     $tc = "";
     
-    // add a name specific tag to the wrapper class
-    // and include support for hue bulbs - fix a few bugs too
-    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || 
-        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
+    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="switchlevel") {
         $tkeyval = $tkey . "-val";
-        $tc.= "<div class=\"$thingtype $tkey p_$kindex\">";
+        $tc.= "<div class=\"$thingtype $tkey" . $subtype . " p_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval" . $subtype . "\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
@@ -1149,10 +1144,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
 
-	$tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
         $tc.= "<dialog id=\"edit_Tile\">"; 
-        $tc.=     "<h3>You shouldn't see this</h3>"; 
+        // $tc.=     "<h3>You shouldn't see this</h3>"; 
         $tc.= "</dialog>";
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
@@ -1185,7 +1180,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
     $tc.= "</tbody></table>";
     $tc.= "</div>";   // vertical scroll
-    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
+    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"postCustomStyleSheet()\">Save Customizations</span>";
     $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"submit\" />";
