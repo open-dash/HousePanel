@@ -321,15 +321,6 @@ div.sitename {
     left: 400px;    width: 300px;    bottom: 49px;
 }
 
-
-
-
-
-
-
-
-
-
 /* Changes for custom editing tiles in options page */
 /* scale icons for edit mode in Options page */
 div.editable {
@@ -338,19 +329,6 @@ div.editable {
 	width: 36px !important;
 }
 
-dialog {  
-    background:#999;
-    border: 1px solid #666;
-    font-family:sans-serif;
-    padding: 0px 0px 0px 1px;
-  	position: absolute;
-  	top: 50%;
-  	left: 50%;
-    width: 333px; 
-    height: 230px;
-  	top: 50%;
-  	left: 35%;
-}  
 
 div.tiledialog {
   overflow: hidden;
@@ -508,6 +486,7 @@ input[name='optionEdit']:checked+label{
   padding: 2px 8px 1px 8px;
   text-decoration: none;
   margin: 1px;
+  cursor: pointer;
 }
 .btn.hidden {
   visibility: hidden;
@@ -538,6 +517,19 @@ input[name='optionEdit']:checked+label{
 	margin: 4px;
 	left: 20%;	
 }
+dialog {  
+    background:#999;
+    border: 1px solid #666;
+    font-family:sans-serif;
+    padding: 0px 0px 0px 1px;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 333px; 
+    height: 230px;
+  	top: 50%;
+  	left: 35%;
+}  
 
 #onoff {
 	display: none;

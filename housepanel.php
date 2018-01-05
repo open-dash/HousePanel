@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.45       Merge in custom tile editing from Nick ngredient-master branch
  * 1.44       Tab row hide/show capabilty in kiosk and regular modes
  *            Added 4 generally customizable tiles to each page for styling
  *            Fix 1 for bugs in hue lights based on testing thanks to @cwwilson08
@@ -86,7 +87,6 @@ ini_set('max_input_vars', 20);
 
 session_start();
 define('APPNAME', 'House Panel');
-// define('TIMEZONE', 'America/Detroit');
 define('DEBUG', false);
 define('DEBUG2', false);
 define('DEBUG3', false);
@@ -127,9 +127,13 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
-    $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
+    
+    // load the custom tile sheet if it exists
+    // note - if it doesn't exist, we will create it and for future page reloads
+    if (file_exists("$skindir/customtiles.css")) {
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
+    }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
-	
         // dynamically create the jquery startup routine to handle all types
         $tc.= '<script type="text/javascript">';
         $thingtypes = array("switch.on","switch.off","bulb","light",
@@ -328,6 +332,10 @@ function processName($thingname, $thingtype) {
     // establish the pattern which is "name <<!tag>> rest of name"
     // which also trims white space from ends and from the tag
     // and if user puts ! in front of tag then it won't be included in the name
+    // *************
+    // this code is disabled because the custom naming is a better approach
+    // *************
+    /*
     $pregpattern = "/^(.*)<<(!{0,1})(.*)>>(.*)$/";
     if ( preg_match($pregpattern, $thingname, $pnames) ) {
         // if ! is first character then don't include subtype
@@ -345,22 +353,25 @@ function processName($thingname, $thingtype) {
             $subtype = " " . trim($subtype);
         } 
     } else {
-        // get rid of 's and split along white space
-        if ( $thingtype!=="weather") {
-            $ignores = array("'s","*","<",">","!","{","}");
-            $lowname = str_replace($ignores, "", strtolower($thingname));
-            $subopts = preg_split("/[\s,;|]+/", $lowname);
-            $subtype = "";
-            $k = 0;
-            foreach ($subopts as $key) {
-                if (strtolower($key) != $thingtype) {
-                    $subtype.= " " . $key;
-                    $k++;
-                }
-                if ($k == 3) break;
+     * 
+     */
+    // get rid of 's and split along white space
+    // but only for tiles that are not weather
+    if ( $thingtype!=="weather") {
+        $ignores = array("'s","*","<",">","!","{","}");
+        $lowname = str_replace($ignores, "", strtolower($thingname));
+        $subopts = preg_split("/[\s,;|]+/", $lowname);
+        $subtype = "";
+        $k = 0;
+        foreach ($subopts as $key) {
+            if (strtolower($key) != $thingtype) {
+                $subtype.= " " . $key;
+                $k++;
             }
+            if ($k == 3) break;
         }
     }
+    // }
     
     return array($thingname, $subtype);
 }
@@ -392,7 +403,8 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     
     // special handling for weather tiles
     if ($thingtype==="weather") {
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">" . $thingname . "<br />" . $thingvalue["city"] . "</div>";
+        $weathername = $thingname . "<br />" . $thingvalue["city"];
+        $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $weathername . "</span></div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         // $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["city"], "city");
@@ -491,8 +503,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
                     $j++;
                 }
             }
-        } 
-        else {
+        } else {
             $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
     }
@@ -542,7 +553,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // for music status show a play bar in front of it
         if ($tkey==="musicstatus") {
             // print controls for the player
-            $tc.= "<div class=\"music-controls p_$kindex\">";
+            $tc.= "<div class=\"music-controls" . $subtype . " p_$kindex\">";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";
@@ -751,19 +762,55 @@ function readOptions() {
 function writeOptions($options) {
     $f = fopen("hmoptions.cfg","wb");
     $str =  json_encode($options);
-
-    // make the file easier to look at
-    $str1 = str_replace(",\"",",\r\n\"",$str);
-    $str2 = str_replace(":{\"",":{\r\n\"",$str1);
-    fwrite($f, $str2);
+    fwrite($f, cleanupStr($str));
     fclose($f);
 }
-// Ajax call to write Custom Css Edits Back to customtiles.css
-function writeCustomCss() {
-    $f = fopen("skin-housepanel/customtiles.css","wb");
-    $str = getCustomStyleSheet();
-    fwrite($f, $str);
-    fclose($f);
+
+// make the string easier to look at
+function cleanupStr($str) {
+    $str1 = str_replace(",\"",",\r\n\"",$str);
+    $str2 = str_replace(":{\"",":{\r\n\"",$str1);
+    // $str3 = str_replace("\n","\r\n",$str2);
+    return $str2;
+}
+
+// call to write Custom Css Back to customtiles.css
+function writeCustomCss($skindir, $str = "") {
+    $file = fopen("$skindir/customtiles.css","wb");
+    $fixstr = "/* HousePanel Generated Tile Customization File */\r\n";
+    $fixstr.= "/* ******************************************** */\r\n";
+    $fixstr.= "/* ****** DO NOT EDIT THIS FILE DIRECTLY ****** */\r\n";
+    $fixstr.= "/* ******************************************** */\r\n";
+    fwrite($file, cleanupStr($fixstr));
+    if ( $str && strlen($str) ) {
+        fwrite($file, cleanupStr($str));
+    }
+    fclose($file);
+}
+
+function refactorOptions($allthings) {
+// new routine that renumbers all the things in your options file from 1
+// it will make the new customtiles.css no longer valid so only use once
+// before you customize things
+// TODO: refactor the customtiles.css file as well by reading and writing it
+    
+    $cnt = 0;
+    $oldoptions = readOptions();
+    $options = $oldoptions;
+
+    foreach ($oldoptions["index"] as $thingid => $idx) {
+        $cnt++;
+        foreach ($oldoptions["things"] as $room => $thinglist) {
+            $keys = array_keys($thinglist, $idx);
+            foreach($keys as $key) {
+                $options["things"][$room][$key] = $cnt;
+            }
+            $options["index"][$thingid] = $cnt;
+        }
+    }
+    $options["kiosk"] = "false";
+    writeOptions($options);
+    
 }
 
 function getOptions($allthings) {
@@ -1102,7 +1149,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
 
-		$tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+	$tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
         $tc.= "<dialog id=\"edit_Tile\">"; 
         $tc.=     "<h3>You shouldn't see this</h3>"; 
@@ -1426,10 +1473,20 @@ function processOptions($optarray, $retpage, $allthings=null) {
             case "showoptions":
                 $allthings = getAllThings($endpt, $access_token);
                 $options= getOptions($allthings);
+                // get the custom directory for the active skin
+                $skindir = $options["skin"];
                 $optpage = getOptionsPage($options, $returnURL, $allthings, $sitename);
                 echo htmlHeader($skindir);
                 echo $optpage;
                 echo htmlFooter();
+                break;
+        
+            case "refactor":
+                // this user selectable option will renumber the index
+                $allthings = getAllThings($endpt, $access_token);
+                refactorOptions($allthings);
+                $location = $returnURL;
+                header("Location: $location");
                 break;
         
             case "refresh":
@@ -1445,6 +1502,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
             // an Ajax option to display all the ID value for use in Python and EventGhost
             case "showid":
                 $allthings = getAllThings($endpt, $access_token);
+                $options = getOptions($allthings);
                 $tc = "";
                 $tc.= "<h3>End Points</h3>";
                 $tc.= "<div><a href=\"$returnURL\">Return to HousePanel for $sitename </a></div><br />";
@@ -1454,7 +1512,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 $tc.= "<div>url = $returnURL </div>";
                 $tc.= "<table class=\"showid\">";
                 $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
-                      "</th><th class=\"thingvalue\">" . "Thing id" . "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
+                      "</th><th class=\"thingvalue\">" . "Thing id" . 
+                      "</th><th class=\"thingvalue\">" . "Style id" .
+                      "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
                 foreach ($allthings as $bid => $thing) {
                     if (is_array($thing["value"])) {
                         $value = "[";
@@ -1465,9 +1525,11 @@ function processOptions($optarray, $retpage, $allthings=null) {
                     } else {
                         $value = $thing["value"];
                     }
+                    $idx = $thing["type"] . "|" . $thing["id"];
                     $tc.= "<tr><td class=\"thingname\">" . $thing["name"] . 
                           "</td><td class=\"thingvalue\">" . $value . 
                           "</td><td class=\"thingvalue\">" . $thing["id"] . 
+                          "</td><td class=\"thingvalue\">" . $options["index"][$idx] . 
                           "</td><td class=\"thingvalue\">" . $thing["type"] . "</td></tr>";
                 }
                 $tc.= "</table>";
@@ -1482,15 +1544,21 @@ function processOptions($optarray, $retpage, $allthings=null) {
         exit(0);
     }
     
-//Custom Tiles Added AJAX Code
-if(!empty($_POST['cssdata'])){
-$data = $_POST['cssdata'];
-$file = fopen("skin-housepanel/customtiles.css", 'w');//creates new file
-fwrite($file, $data);
-fclose($file);
-
-}
+    //Custom Tiles Added AJAX Code
+    // TODO: Integrate this into the existing AJAX and form save ecosystem
+    if(!empty($_POST['cssdata'])){
+        $allthings = getAllThings($endpt, $access_token);
+        $options= getOptions($allthings);
+        $skindir = $options["skin"];
+        if (! $skindir ) {
+            $skindir = "skin-housepanel";
+        }
+        $data = $_POST['cssdata'];
+        writeCustomCss($skindir, $_POST['cssdata']);
     
+        // reload to show new options
+        header("Location: $returnURL");
+    }
     
     // process options submit request
     // handle the options and then reload the page from scratch
@@ -1529,8 +1597,20 @@ fclose($file);
         $thingoptions = $options["things"];
         $roomoptions = $options["rooms"];
         $indexoptions = $options["index"];
+
+        // get the skin directory name or use the default
         $skindir = $options["skin"];
+        if (! $skindir || !file_exists("$skindir/housepanel.css") ) {
+            $skindir = "skin-housepanel";
+        }
         
+        // check if custom tile CSS is present
+        // if it isn't then refactor the index and create one
+        if ( !file_exists("$skindir/customtiles.css")) {
+            refactorOptions($allthings);
+            writeCustomCss($skindir, "");
+        }
+                
         $tc.= '<div id="tabs"><ul id="roomtabs">';
         // go through rooms in order of desired display
         for ($k=0; $k< count($roomoptions); $k++) {

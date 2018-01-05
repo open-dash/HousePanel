@@ -744,20 +744,21 @@ if($("#editicon").css("visibility") == "hidden"){
 	if (strOnOff === "on"){
 		strOnOff = "off";
 		document.getElementById('toggle').style.background = '#000000';
-		document.getElementById('custom_img_on').style.display = 'none';
-		document.getElementById('custom_img_off').style.display = 'inline-block';
+		$('#custom_img_on').hide();
+		$('#custom_img_off').show();
 	}
 	else {
 		strOnOff = "on";
 		document.getElementById('toggle').style.background = '#3498db';
-		document.getElementById('custom_img_on').style.display = 'inline-block';
-		document.getElementById('custom_img_off').style.display = 'none';	
+		$('#custom_img_on').show();
+		$('#custom_img_off').hide();
 	}
 	document.getElementById('onoff').innerHTML = strOnOff;
 	getIconList(strIconTarget + strOnOff);	
 }
-	document.getElementById('editicon').style.visibility = 'visible';
-	document.getElementById('editcolor').style.visibility = 'hidden';
+		$('#editcolor').hide();
+		$('#editicon').show();
+
 };
 
 function getIconList(ruleToTarget){
