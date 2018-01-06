@@ -742,7 +742,7 @@ div.on:hover, div.off:hover, div.unlocked:hover, div.locked:hover {
 }
 
 /* handle the block of controls for adjusting the thermostat and levels */
-div.thermostat.heat, div.thermostat.cool, div.music.level {
+div.thermostat.heat, div.thermostat.cool, div.music.level, div.music.vol {
     color: #ffffee;
     border: 0px solid #ffffff;
     width: 118px; height: auto;
@@ -762,7 +762,7 @@ div.saturation-up, div.saturation-dn
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn, div.music div.vol-dn,
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
@@ -773,7 +773,7 @@ div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up, div.music div.vol-up,
 div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
@@ -788,7 +788,7 @@ div.colorTemperature-up, div.hue-up, div.saturation-up {
 div.music {
     width: 178px;
 }
-div.music.level {
+div.music.level, div.music.vol {
     width: 99%;
 }
 div.music-controls {
@@ -885,7 +885,7 @@ div.thermostat.thermostate::before {
 
 /* values of the adjustable items */
 div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
-div.colorTemperature-val, div.hue-val, div.saturation-val {
+div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -910,7 +910,7 @@ div.cool-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
-div.switchlevel-val, div.level-val, div.colorTemperature-val {
+div.switchlevel-val, div.level-val, div.colorTemperature-val, div.vol-val {
     background-color: #1bb14b;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -931,6 +931,7 @@ div.switchlevel-up:hover, div.switchlevel-dn:hover,
 div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
 div.hue-up:hover, div.hue-dn:hover,
 div.saturation-up:hover, div.saturation-dn:hover,
+div.vol-up:hover, div.vol-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
@@ -957,7 +958,7 @@ div.music.musicstatus, div.music.musicmute {
     font-size: 11pt;
     border-top: 1px solid #ffffff;
 }
-div.music div.level-val {
+div.music div.level-val, div.music div.vol-val {
     width: 60%;
 }
 

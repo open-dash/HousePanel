@@ -469,7 +469,7 @@ function setupTimers() {
 // but we also update similar things that are impacted by this click
 // that way we don't need to wait for the timers to kick in to update
 // the visual items that people will expect to see right away
-function updAll(aid, bid, thetype, pvalue) {
+function updAll(trigger, aid, bid, thetype, pvalue) {
 
     // update trigger tile first
     // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
@@ -498,19 +498,40 @@ function updAll(aid, bid, thetype, pvalue) {
         if (otheraid !== aid) { updateTile(otheraid, pvalue); }
     });
     
-    // if this is a switch go through and set all switchlevels
+    // if this is a switch on/off trigger go through and set all light types
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
     // actually we do both for instant on screen viewing
     // the second call is needed to make screen refreshes work properly
-    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
+//    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
+    if (trigger=="switch.on" || trigger=="switch.off") {
+        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+        });
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "switchlevel");
-            }, 5000);
+            }, 2000);
+        });
+        $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "bulb");
+            }, 1000);
+        });
+        $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+            var rbid = $(this).attr("bid");
+            setTimeout(function() {
+                refreshTile(otheraid, rbid, "light");
+            }, 1000);
         });
     }
     
@@ -530,13 +551,21 @@ function updAll(aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
-    if (thetype==="switchlevel") {
-        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+    if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
+//        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+//            var otheraid = $(this).attr("id").substring(2);
+//            updateTile(otheraid, pvalue);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "switch");
+//            }, 5000);
+//        });
+        $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
             var rbid = $(this).attr("bid");
             setTimeout(function() {
-                refreshTile(otheraid, rbid, "switch");
+                refreshTile(otheraid, rbid, "switchlevel");
             }, 5000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
@@ -561,10 +590,10 @@ function updAll(aid, bid, thetype, pvalue) {
 
 // setup trigger for clicking on the action portion of this thing
 // this used to be done by page but now it is done by sensor type
-function setupPage(sensortype) {
+function setupPage(trigger) {
    
-    // alert("setting up " + sensortype);
-    var actionid = "div." + sensortype;
+    // alert("setting up " + trigger);
+    var actionid = "div." + trigger;
 
     $(actionid).click(function() {
 
@@ -627,12 +656,13 @@ function setupPage(sensortype) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
         } else {
+            // alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             // alert( strObject(presult) );
-                            updAll(aid,bid,thetype,presult);
+                            updAll(trigger,aid,bid,thetype,presult);
                         }
                    }, "json"
             );

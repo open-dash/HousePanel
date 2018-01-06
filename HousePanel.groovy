@@ -642,7 +642,7 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
-    else { swtype = "mode" }
+    else { swtype = "" }
     return swtype
 }
 
@@ -657,7 +657,7 @@ def doAction() {
     def cmdresult = false
     // sendLocationEvent( [name: "housepanel", value: "touch", isStateChange:true, displayed:true, data: [id: swid, type: swtype, attr: swattr, cmd: cmd] ] )
 
-	// get the type if auto is set
+    // get the type if auto is set
     if (swtype=="auto" || swtype=="none" || swtype=="") {
         swtype = autoType(swid)
     }
@@ -886,7 +886,7 @@ def setSensor(swid, cmd, swattr) {
 
 // replaced this code to treat bulbs as Hue lights with color controls
 def setBulb(swid, cmd, swattr) {
-    def onoff = setOnOff(mybulbs, "bulb", swid,cmd,swattr)
+    // def onoff = setOnOff(mybulbs, "bulb", swid,cmd,swattr)
     def resp = setGenericLight(mybulbs, swid, cmd, swattr)
     
     return resp
@@ -1276,6 +1276,7 @@ def setMusic(swid, cmd, swattr) {
         switch(swattr) {
          
         case "level-up":
+        case "vol-up":
               newsw = cmd.toInteger()
               newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
               item.setLevel(newsw)
@@ -1283,6 +1284,7 @@ def setMusic(swid, cmd, swattr) {
               break
               
         case "level-dn":
+        case "vol-dn":
               newsw = cmd.toInteger()
               def del = (newsw % 5) == 0 ? 5 : newsw % 5
               newsw = (newsw <= 5) ? 5 : newsw - del

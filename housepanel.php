@@ -133,14 +133,16 @@ function htmlHeader($skindir="skin-housepanel") {
     }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
+        // note - we dont need bulb, light, or switchlevel because they all have a switch subtype
         $tc.= '<script type="text/javascript">';
-        $thingtypes = array("switch.on","switch.off","bulb","light",
+        $thingtypes = array("switch.on","switch.off",
                             "lock","door","momentary",
                             "heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
                             "level-dn","level-up", "level-val","mode.themode",
+                            "vol-up","vol-dn",
                             "piston.pistonName","valve","routine",
                             "hue-up","hue-dn","hue-val","saturation-up","saturation-dn","saturation-val",
                             "colorTemperature-up","colorTemperature-dn","colorTemperature-val");
@@ -527,7 +529,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
     
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
-    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || 
+    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
         $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
         $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
@@ -568,7 +570,15 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
             $tkeyshow = " ".$tkey;
         }
         // include class for main thing type, the subtype, a sub-key, and a state (extra)
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
+        // make background the color based on value
+        if ($tkey=="color" && preg_match("/^#[abcdefABCDEF\d]{6}/",$tval)) {
+            $colorval = " style=\"background-color:$tval;\"";
+            $extra = "";
+            // $tval = "";
+        } else {
+            $colorval = "";
+        }
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\"$colorval class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
     }
     return $tc;
 }
