@@ -494,12 +494,23 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         // $i and $j are j read from the title and then used to point to the value holding element $bid
         if (is_array($thingvalue)) {
             $j = 0;
+            
+            // check if there is a color key to use as background and print it first
+            $bgcolor= "";
+            if ( array_key_exists("color", $thingvalue) ) {
+                $cval = $thingvalue["color"];
+                if ( preg_match("/^#[abcdefABCDEF\d]{6}/",$cval) ) {
+                    $bgcolor = " style=\"background-color:$cval;\"";
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $cval, "color", $subtype);
+                    $j++;
+                }
+            }
             foreach($thingvalue as $tkey => $tval) {
                 // skip if ST signals it is watching a sensor that is failing
                 // also skip the checkInterval since we never display this
                 if ( strpos($tkey, "DeviceWatch-") === FALSE &&
-                     strpos($tkey, "checkInterval") === FALSE   ) { 
-                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype);
+                     strpos($tkey, "checkInterval") === FALSE && $tkey!=="color" ) { 
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype, $bgcolor);
                     $j++;
                 }
             }
@@ -524,24 +535,30 @@ function fixTrack($tval) {
     return $tval;
 }
 
-function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="") {
+function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="", $bgcolor="") {
     $tc = "";
     
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
-    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
-        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
+    if ( in_array($tkey, array("heat", "cool", "level", "vol", "hue", "saturation", "colorTemperature") )) {
+//    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
+//        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
+        if ( $bgcolor && (in_array($tkey, array("hue","saturation","colorTemperature"))) ) {
+            $colorval = $bgcolor;
+        } else {
+            $colorval = "";
+        }
         $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\" class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || 
+        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || $tkey==="color" ||
                   is_numeric($tval) || $thingtype==$tval ||
                   $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
 
@@ -571,10 +588,8 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         }
         // include class for main thing type, the subtype, a sub-key, and a state (extra)
         // make background the color based on value
-        if ($tkey=="color" && preg_match("/^#[abcdefABCDEF\d]{6}/",$tval)) {
-            $colorval = " style=\"background-color:$tval;\"";
-            $extra = "";
-            // $tval = "";
+        if ( $bgcolor && $tkey=="color" ) {
+            $colorval = $bgcolor;
         } else {
             $colorval = "";
         }

@@ -6,6 +6,19 @@ body {
   background-color: #ffffff;
   color: #000000;
 }
+div.maintable {
+    width: 1140px;
+/*    transform: scale(0.84);
+    -ms-transform: scale(0.84);
+    -moz-transform: scale(0.84);
+    -o-transform: scale(0.84);
+    -webkit-transform: scale(0.84);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;*/
+}
 h1, h2, h3 {
     color: #000000;
     font-size: 24pt;
@@ -16,8 +29,8 @@ h1, h2, h3 {
 border-radius: 4px;
 width:100%;
 margin: 0px 0 0 0;
-border-right: 5px solid #666666;
-border-bottom: 5px solid #666666;
+/*border-right: 5px solid #666666;
+border-bottom: 5px solid #666666;*/
 
 }
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor{
@@ -35,6 +48,9 @@ ul.ui-tabs-nav {
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
+}
+.ui-tabs {
+    padding: 0;
 }
 
 .debug, .error {
@@ -87,9 +103,12 @@ form.houseauth {
 
 /* how the tab page shows up - this affects everything shown */
 .ui-tabs .ui-tabs-panel {
-    padding-top: 0px;    padding-bottom: 5px;
-    padding-left: 0px;    padding-right: 1px;
+    padding-top: 0px;    padding-bottom: 0px;
+    padding-left: 0px;    padding-right: 4px;
     text-align: left;
+}
+.ui-corner-all, .ui-corner-bottom, .ui-corner-right, .ui-corner-br {
+    border-bottom-right-radius: 0px;
 }
 
 #options-tab {
@@ -719,7 +738,7 @@ div.switch.power::before, div.switchlevel.power:before {
 
 /* switchlevel / dimmer styling - make room for the dimmer controls */
 /* if you have a dimmer with power and energy controls - see custom below */
-div.switchlevel.switch {
+div.switchlevel.switch, div.bulb.switch {
     height: 80px;
 }
 div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
@@ -1035,9 +1054,9 @@ div.weather.sunriseset {
     margin-top: 10px;
 }
 div.weather.sunriseset, div.weather.humidity,
-div.weather.wind, div.weather.percentPrecip, div.weather.alerts{
+div.weather.wind, div.weather.percentPrecip, div.weather.alert{
     background-color: #333333;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
 div.weather.sunriseDate, div.weather.sunsetDate,
@@ -1176,6 +1195,17 @@ div.presence.absent {
 }
 .modalshow {
     display: block;
+}
+
+div.bulb.color {
+/*    position: relative;
+    top: -140px;*/
+    background-image: url("../media/colorwheel.png");
+    background-size: 32px 32px;
+    height: 32px;
+    width: 32px;
+    font-size: 1px;
+    color: rgba(128,128,128,0.01);
 }
 
 /* do not display these items */
