@@ -376,7 +376,7 @@ function processName($thingname, $thingtype) {
     return array($thingname, $subtype);
 }
 
-function makeThing($i, $kindex, $thesensor, $panelname) {
+function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
 // rewritten to use thing numbers as primary keys
     
     // $bname = "type-$bid";
@@ -391,7 +391,9 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
     //             so one must now use the id to get the value of "i" to find elements
-    $tc= "<div id=\"t-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" panel=\"$panelname\" class=\"thing $thingtype" . "-thing p_$kindex" . "\">";
+    $tc=  "<div id=\"t-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
+    $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing p_$kindex\" "; 
+    $tc.= "style=\"position: relative; left: $posleft" . "px" . "; top: $postop" . "px" . ";\"" . ">";
 
     // add a hidden field for passing thing type to js
     // $tc.= hidden("type-$i", $thingtype, "type-$i");
@@ -610,7 +612,29 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions, $kios
         foreach ($things as $kindex) {
             
             // get the index into the main things list
-            $thingid = array_search($kindex, $indexoptions);
+            $thingid = false;
+            $postop = 0;
+            $posleft = 0;
+            
+            foreach($indexoptions as $idx => $arr) {
+                if ( is_array($arr) ) {
+                    if ( $kindex == $arr[0] ) {
+                        $thingid = $idx;
+                        $postop = $arr[1];
+                        $posleft = $arr[2];
+                        break;
+                    } 
+                } else {
+                    if ( $kindex == $arr ) {
+                        $thingid = $idx;
+                        $postop = 0;
+                        $posleft = 0;
+                        break;
+                    }
+//                    $thingid = array_search($kindex, $indexoptions);
+                }
+                
+            }
             
             // if our thing is still in the master list, show it
             // otherwise remove it from the options and flag cookie setting
@@ -620,7 +644,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $things, $indexoptions, $kios
                 // keep running count of things to use in javascript logic
                 $cnt++;
                 $thiscnt++;
-                $tc.= makeThing($cnt, $kindex, $thesensor, $roomname);
+                $tc.= makeThing($cnt, $kindex, $thesensor, $roomname, $postop, $posleft);
             }
         }
         
@@ -703,8 +727,6 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
 }
 
 function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $retpage) {
-
-    
     $updated = false;
     $options = readOptions();
     if ( !key_exists("skin", $options ) ) {
@@ -716,7 +738,6 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
     // function is being triggered by a drag completion event
     // it is here just in case something weird happened
     if (!$options) {
-//        $allthings = getAllThings($endpt, $access_token);
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
         } else {
@@ -757,10 +778,6 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
     if ($updated!==false) {
         writeOptions($options);
     }
-   
-    // $pgresult["optpage"] = getOptionsPage($options, $retpage, $allthings, $sitename);
-    
-    // return successful update or not
     return json_encode($pgresult);
 }
 
@@ -777,6 +794,25 @@ function readOptions() {
         fclose($f);
     }
     return $options;
+}
+
+function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL) {
+    $updated = false;
+    $options = readOptions();
+    
+    $pgresult = array();
+    $pgresult["type"] = $swtype;
+    $idx = $swtype . "|" . $swid;
+    $options["index"][$idx] = array(intval($swval,10), intval($swattr["top"],10), intval($swattr["left"],10));
+    
+    // write out the new options file
+    writeOptions($options);
+    
+    // reload the page to lock in new position
+    // actually, we don't need to do this because next reload will include it
+//    $location = $returnURL;
+//    header("Location: $location");
+    
 }
 
 function writeOptions($options) {
@@ -812,6 +848,7 @@ function refactorOptions($allthings) {
 // new routine that renumbers all the things in your options file from 1
 // it will make the new customtiles.css no longer valid so only use once
 // before you customize things
+// // NOTE: this also resets all the custom tile positions to relative zero
 // TODO: refactor the customtiles.css file as well by reading and writing it
     
     $cnt = 0;
@@ -825,8 +862,8 @@ function refactorOptions($allthings) {
             foreach($keys as $key) {
                 $options["things"][$room][$key] = $cnt;
             }
-            $options["index"][$thingid] = $cnt;
         }
+        $options["index"][$thingid] = array($cnt,0,0);
     }
     $options["kiosk"] = "false";
     writeOptions($options);
@@ -897,8 +934,15 @@ function getOptions($allthings) {
         }
 
         // find the largest index number for a sensor in our index
+        // and convert old index values into arrays for absolute positioning
         $cnt = count($options["index"]) - 1;
-        foreach ($options["index"] as $thingid => $idx) {
+        foreach ($options["index"] as $thingid => $idxarray) {
+            if ( is_array($idxarray) ) {
+                $idx = $idxarray[0];
+            } else {
+                $idx = $idxarray;
+                $idxarray = array($idx, 0, 0);
+            }
             $cnt = ($idx > $cnt) ? $idx : $cnt;
         }
         $cnt++;
@@ -906,7 +950,7 @@ function getOptions($allthings) {
         // update the index with latest sensor information
         foreach ($allthings as $thingid =>$thesensor) {
             if ( !key_exists($thingid, $options["index"]) ) {
-                $options["index"][$thingid] = $cnt;
+                $options["index"][$thingid] = array($cnt,0,0);
                 
                 // put the newly added sensor in a default room
                 $thename= $thesensor["name"];
@@ -976,7 +1020,7 @@ function getOptions($allthings) {
         $k = 0;
         foreach ($allthings as $thingid =>$thesensor) {
             $thename= $thesensor["name"];
-            $options["index"][$thingid] = $k;
+            $options["index"][$thingid] = array($k,0,0);
             foreach($defaultrooms as $room => $regexp) {
                 $regstr = "/(".$regexp.")/i";
                 if ( preg_match($regstr, $thename) ) {
@@ -1125,7 +1169,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
               " <span class=\"typeopt\">(" . $thesensor["type"] . ")</span>";
 
         // add the hidden field with index of all things
-        $thingindex = $indexoptions[$thingid];
+        $thingindex = $indexoptions[$thingid][0];
         $tc.= hidden("i_" .  $thingid, $thingindex);
         $tc.= "</td>";
 
@@ -1301,7 +1345,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // keys starting with i_ are thing type|id pairs with order as value
         } else if ( substr($key,0,2)=="i_") {
             $thingid = substr($key,2);
-            $options["index"][$thingid] = intval($val);
+            $options["index"][$thingid][0] = intval($val);
         }
     }
         
@@ -1490,6 +1534,15 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
         
+            // implement free form drag drap capability
+            case "dragdrop":
+                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
+                echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
+                break;
+        
             case "showoptions":
                 $allthings = getAllThings($endpt, $access_token);
                 $options= getOptions($allthings);
@@ -1549,7 +1602,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                     $tc.= "<tr><td class=\"thingname\">" . $thing["name"] . 
                           "</td><td class=\"thingvalue\">" . $value . 
                           "</td><td class=\"thingvalue\">" . $thing["id"] . 
-                          "</td><td class=\"thingvalue\">" . $options["index"][$idx] . 
+                          "</td><td class=\"thingvalue\">" . $options["index"][$idx][0] . 
                           "</td><td class=\"thingvalue\">" . $thing["type"] . "</td></tr>";
                 }
                 $tc.= "</table>";
