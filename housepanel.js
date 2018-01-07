@@ -480,10 +480,10 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
         // alert( strObject(pvalue));
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
-        }, 2000);
+        }, 3000);
     }
     
-    // for doors wait half a minute and refresh
+    // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
         // alert( strObject(pvalue));
         setTimeout(function() {
@@ -507,31 +507,31 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     if (trigger=="switch.on" || trigger=="switch.off") {
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "switchlevel");
-            }, 2000);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "bulb");
-            }, 1000);
+            if (otheraid !== aid) {
+                updateTile(otheraid, pvalue);
+                var rbid = $(this).attr("bid");
+                setTimeout(function() {
+                    refreshTile(otheraid, rbid, "bulb");
+                }, 10000);
+            }
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "light");
-            }, 1000);
+            if (otheraid !== aid) {
+                updateTile(otheraid, pvalue);
+                var rbid = $(this).attr("bid");
+                setTimeout(function() {
+                    refreshTile(otheraid, rbid, "light");
+                }, 10000);
+            }
         });
     }
     
@@ -551,22 +551,22 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
-    if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
-//        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
-//            var otheraid = $(this).attr("id").substring(2);
-//            updateTile(otheraid, pvalue);
-//            var rbid = $(this).attr("bid");
-//            setTimeout(function() {
-//                refreshTile(otheraid, rbid, "switch");
-//            }, 5000);
-//        });
+    // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
+    if (trigger==="level-up" || trigger==="level-dn" || 
+        trigger==="hue-up" || trigger==="hue-dn" ||
+        trigger==="saturation-up" || trigger==="saturation-dn" ||
+        trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
+        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+        });
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "switchlevel");
-            }, 5000);
+            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -574,7 +574,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "bulb");
-            }, 5000);
+            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -582,7 +582,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "light");
-            }, 5000);
+            }, 10000);
         });
     }
     

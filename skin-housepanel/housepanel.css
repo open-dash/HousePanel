@@ -3,11 +3,11 @@
     font-size: 11pt; padding: 0px; margin: 0px;
 }
 body {
-  background-color: #ffffff;
-  color: #000000;
+    background-color: #ffffff;
+    color: #000000;
+    width: 1140px;
 }
 div.maintable {
-    width: 1140px;
 /*    transform: scale(0.84);
     -ms-transform: scale(0.84);
     -moz-transform: scale(0.84);

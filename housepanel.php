@@ -488,10 +488,7 @@ function makeThing($i, $kindex, $thesensor, $panelname) {
         // for multiple attribute things we provide a separate item for each one
         // the first class tag is the type and a second class tag is for the state - either on/off or open/closed
         // ID is used to send over the groovy thing id number passed in as $bid
-        // and title is used for searching and reordering of the tiles
         // for multiple row ID's the prefix is a$j-$bid where $j is the jth row
-        // otherwise the ID is a-$bid
-        // $i and $j are j read from the title and then used to point to the value holding element $bid
         if (is_array($thingvalue)) {
             $j = 0;
             
@@ -550,9 +547,9 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
             $colorval = "";
         }
         $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Down\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level = $tval\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"Level Up\" class=\"$tkey-up\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-dn\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
