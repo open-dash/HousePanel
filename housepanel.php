@@ -1154,6 +1154,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // now print our options matrix
     $rowcnt = 0;
+    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
         
@@ -1169,7 +1170,12 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
               " <span class=\"typeopt\">(" . $thesensor["type"] . ")</span>";
 
         // add the hidden field with index of all things
-        $thingindex = $indexoptions[$thingid][0];
+        $arr = $indexoptions[$thingid];
+        if ( is_array($arr) ) {
+            $thingindex = $arr[0];
+        } else {
+            $thingindex = $arr;
+        }
         $tc.= hidden("i_" .  $thingid, $thingindex);
         $tc.= "</td>";
 
@@ -1215,9 +1221,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
         $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
-        $tc.= "<dialog id=\"edit_Tile\">"; 
-        // $tc.=     "<h3>You shouldn't see this</h3>"; 
-        $tc.= "</dialog>";
+//        $tc.= "<dialog id=\"edit_Tile\">"; 
+//        // $tc.=     "<h3>You shouldn't see this</h3>";
+//        $tc.= "</dialog>";
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
         for ($k=0; $k < count($roomoptions); $k++) {
@@ -1346,6 +1352,14 @@ function processOptions($optarray, $retpage, $allthings=null) {
         } else if ( substr($key,0,2)=="i_") {
             $thingid = substr($key,2);
             $options["index"][$thingid][0] = intval($val);
+            if (   $oldoptions && array_key_exists($thingid, $oldoptions["index"]) && 
+                   is_array($oldoptions["index"][$thingid]) ) {
+                $options["index"][$thingid][1] = $oldoptions["index"][$thingid][1];
+                $options["index"][$thingid][2] = $oldoptions["index"][$thingid][2];
+            } else {
+                $options["index"][$thingid][1] = 0;
+                $options["index"][$thingid][2] = 0;
+            }
         }
     }
         
