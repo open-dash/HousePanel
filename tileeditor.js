@@ -1,3 +1,59 @@
+function initDialogBinds() {
+
+	$("#tileWidth").bind('input', function () {
+		var rule = "width: " + $("#tileWidth").val() + "px;";
+		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
+		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+		
+		var imageId = "tileImage_" + $("#toggle_status").html();		
+		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
+		arrClass = $("#" + imageId).attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+	
+		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
+		arrClass = $("#tileHead").attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+	});
+
+	$("#tileHeight").bind('input', function () {
+
+		var rule = "height: " + $("#tileHeight").val() + "px;";
+		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
+		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+		
+		var imageId = "tileImage_" + $("#toggle_status").html();
+		rule = "height: " + ($("#tileHeight").val() - $("#headHeight").val() - 20) + "px;";
+		arrClass = $("#" + imageId).attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+		
+	});
+	
+	$("#headHeight").bind('input', function () {
+		var rule = "height: " + $("#headHeight").val() + "px;";
+		var arrClass = $("#tileHead").attr('class').split(/ +/);
+		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+		
+		var imageId = "tileImage_" + $("#toggle_status").html();
+		rule = "height: " + ($("#tileHeight").val() - $("#headHeight").val() - 20) + "px;";
+		arrClass = $("#" + imageId).attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+	});
+	
+	$("#iconSrc").bind('change', function () {
+			$('.cat').hide();
+			$('.cat.' + $(this).val()).show();
+	});
+	
+} //End InitDialogBinds()
+
+
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
 	$('#showCssSaved').hide(); //hides "saved" message if visible
 
@@ -15,7 +71,7 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	//TOP LEFT
 	dialog_html += "<div id='iconChoices'>";
 	dialog_html += "<select name=\"iconSrc\" id=\"iconSrc\" class=\"iconSrc\">";
-	dialog_html += "<option value=\"Local\" selected>Local Storage</option>";
+	//dialog_html += "<option value=\"Local\" selected>Local Storage</option>";
 	dialog_html += "</select>";
 
 	dialog_html += "<input type=\"checkbox\" onchange=\"invertImage()\" id=\"invertIcon\">";
@@ -35,11 +91,11 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<div class='wrapToggles'>";
 	//toggleSections
 	dialog_html += "<div class='toggleSections'>";
-	dialog_html += "<input id=\"Tile\" type=\"radio\" value=\"tile\" name=\"toggled\" onclick='section_Toggle(\"tile\")' checked/>";
+	dialog_html += "<input id=\"Tile\" type=\"radio\" value=\"tile\" name=\"sectionToggle\" onclick='section_Toggle(\"tile\")' checked/>";
 	dialog_html += "<label for=\"Tile\"> Tile </label>";
-	dialog_html += "<input id=\"Head\" type=\"radio\" value=\"head\" name=\"toggled\" onclick='section_Toggle(\"head\")' />";
+	dialog_html += "<input id=\"Head\" type=\"radio\" value=\"head\" name=\"sectionToggle\" onclick='section_Toggle(\"head\")' />";
 	dialog_html += "<label for=\"Head\">Head</label>";
-	dialog_html += "<input id=\"Text\" type=\"radio\" value=\"text\" name=\"toggled\" onclick='section_Toggle(\"text\")' />";
+	dialog_html += "<input id=\"Text\" type=\"radio\" value=\"text\" name=\"sectionToggle\" onclick='section_Toggle(\"text\")' />";
 	dialog_html += "<label for=\"Text\">Text</label>";
 	dialog_html += "</div>";	
 	//End: toggleSections
@@ -50,20 +106,20 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<div id='section_tile' class='editSection_child'>";
 	dialog_html += "<span class='editSection_input'>W:<input type=\"number\" step=\"10\" min=\"50\" max=\"800\" class=\"editSection_txt width\" onchange=\"\" id=\"tileWidth\" value=\"120\"/></span>";
 	dialog_html += "<span class='editSection_input'>H:<input type=\"number\" step=\"10\" min=\"50\" max=\"800\" class=\"editSection_txt height\" onchange=\"\" id=\"tileHeight\" value=\"160\"/></span>";	
-	dialog_html += "<span class='btn color' onclick='pickColor(\"" + thingindex + "\", \"tile\")'></span>";
+	dialog_html += "<span class='btn_color' onclick='pickColor(\"" + thingindex + "\", \"tile\")'></span>";
 	dialog_html += "</div>";
 	//End: section_tile
 	//section_head
 	dialog_html += "<div id='section_head' class='editSection_child'>";
 	dialog_html += "<span id=\"hideme\" class='editSection_input'>W:<input type=\"number\" step=\"5\" min=\"20\" max=\"100\" class=\"editSection_txt width\" onchange=\"\" id=\"headWidth\" value=\"120\"/></span>";
 	dialog_html += "<span class='editSection_input'>H:<input type=\"number\" step=\"5\" min=\"10\" max=\"100\" class=\"editSection_txt height\" onchange=\"\" id=\"headHeight\" value=\"45\"/></span>";
-	dialog_html += "<span class='btn color' onclick='pickColor(\"" + thingindex + "\", \"head\")'></span>"; 
+	dialog_html += "<span class='btn_color' onclick='pickColor(\"" + thingindex + "\", \"head\")'></span>"; 
 	dialog_html += "</div>";
 	//End: section_head
 	//section_text
 	dialog_html += "<div id='section_text' class='editSection_child'>";	
 	dialog_html += "<span class='editSection_input'><input type=\"text\" class=\"editSection_txt name\" onchange=\"\" id=\"tileName\" value=\"Font Here\"/></span>";
-	dialog_html += "<span class='btn color' onclick='pickColor(\"" + thingindex + "\", \"text\")'></span>";
+	dialog_html += "<span class='btn_color' onclick='pickColor(\"" + thingindex + "\", \"text\")'></span>";
 	dialog_html += "</div>";
 	//End: section_text
 	dialog_html += "</div>";
@@ -118,6 +174,11 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	$('#toggle_status').hide();	
 	fillDialogInputs();
 	initDialogBinds();
+	
+	$(document).ready(function() {		
+		$("#iconSrc").trigger('change');
+	});
+
 };
 
 function fillDialogInputs(){
@@ -209,23 +270,17 @@ if($("#editicon").css("visibility") == "hidden"){
 		$('#tileImage_off').hide();
 	}
 	$("#toggle_status").html(strOnOff);
-	getIconList(strIconTarget + strOnOff);	
+	//getIconList(strIconTarget + strOnOff);	//YODA
 }
 	$('#editicon').show();
 	$('#iconChoices').show();
 	$('#editcolor').hide();
 };
 
-function getIconList(ruleToTarget){
-
-	if($(ruleToTarget).css('background-image') === 'none'){
-		$("#noIcon").attr('checked', true);		
-	} else {
-		$("#noIcon").attr('checked', false);			
-	};
-	
+function getIconList(ruleToTarget) {
 	var iconDoc = 'iconlist.txt';
 	var icons = '';
+	var arrCat = ['Local-Storage'];
 	   $.ajax({
 	    url:iconDoc,
 		type:'GET',
@@ -233,17 +288,31 @@ function getIconList(ruleToTarget){
 			var arrIcons = data.toString().replace(/[\t\n]+/g,'').split(',');
 			  $.each(arrIcons, function(index, val) {
 				var iconCategory = val.substr(0, val.indexOf('|'));
+				iconCategory = $.trim(iconCategory).replace(/\s/g, '-');	
+					arrCat.push(iconCategory);					
 				var iconPath = val.substr(1 + val.indexOf('|'));
-				icons+='<div class="iconlist' + iconCategory + '"><img onclick="iconSelected(\'' + ruleToTarget + '\',\'' + iconPath + '\')" class="icon" src="' + iconPath + '"></div>\n'
+				icons+='<div class="cat ' + iconCategory + '"><img onclick="iconSelected(\'' + ruleToTarget + '\',\'' + iconPath + '\')" class="icon" src="' + iconPath + '"></div>\n'
+				}); //end each Icon
+		
+		arrCat = makeUnique(arrCat);
+		$.each(arrCat, function(index, iconCat) {
+			$('#iconSrc').append($('<option></option>').val(iconCat).text(iconCat));
+		}); 
+		$('#iconList').html(icons);
 
-
-		});
-	$('#iconList').html(icons)	
-	}
+	} //end function()
 		
 	}); //end ajax
-
+	
 };
+
+function makeUnique(list) {
+    var result = [];
+    $.each(list, function(i, e) {
+        if ($.inArray(e, result) == -1) result.push(e);
+    });
+    return result;
+}
 
 function removeIcon(cssRuleTarget) {
 	var strOnOff = $("#toggle_status").html();
@@ -385,53 +454,3 @@ function invertImage(){
 	  }
 	}	
 };
-
-function initDialogBinds() {
-
-	$("#tileWidth").bind('input', function () {
-		var rule = "width: " + $("#tileWidth").val() + "px;";
-		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
-		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-		
-		var imageId = "tileImage_" + $("#toggle_status").html();		
-		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
-		arrClass = $("#" + imageId).attr('class').split(/ +/);
-		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-	
-		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
-		arrClass = $("#tileHead").attr('class').split(/ +/);
-		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-	});
-
-	$("#tileHeight").bind('input', function () {
-
-		var rule = "height: " + $("#tileHeight").val() + "px;";
-		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
-		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-		
-		var imageId = "tileImage_" + $("#toggle_status").html();
-		rule = "height: " + ($("#tileHeight").val() - $("#headHeight").val() - 20) + "px;";
-		arrClass = $("#" + imageId).attr('class').split(/ +/);
-		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-		
-	});
-	
-	$("#headHeight").bind('input', function () {
-		var rule = "height: " + $("#headHeight").val() + "px;";
-		var arrClass = $("#tileHead").attr('class').split(/ +/);
-		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-		
-		var imageId = "tileImage_" + $("#toggle_status").html();
-		rule = "height: " + ($("#tileHeight").val() - $("#headHeight").val() - 20) + "px;";
-		arrClass = $("#" + imageId).attr('class').split(/ +/);
-		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
-		addCSSRule(cssRuleTarget, rule);
-	});
-	
-}

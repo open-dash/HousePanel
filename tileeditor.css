@@ -18,7 +18,7 @@ dialog {
   	top: 50%;
   	left: 50%;
     width: 215px; 
-    height: 275px;
+    height: 267px;
   	top: 50%;
   	left: 35%;
 } 
@@ -45,11 +45,11 @@ dialog {
 #editicon {
 	margin: 3px;
 	position:absolute;
-	top: 18px;
+	top: 20px;
 	display: inline-block;
 	float: left;
     width: 210px;
-    height: 187px;
+    height: 177px;
 	overflow-x: hidden;
 }
 
@@ -142,7 +142,7 @@ input.editSection_txt.height, input.editSection_txt.width {
 	display: inline-block;
 	justify-content: center;
 	align-items: center;  
-	top: 233px;
+	top: 225px;
 /*	float: left; */
 	height: 40px; 
 }
@@ -169,28 +169,36 @@ input.editSection_txt.height, input.editSection_txt.width {
 }
 
 /* Hide the radio button */
-input[name='toggled']{ 
+input[name='sectionToggle']{ 
   display:none;
 }
 
 /* The checked buttons label style */
-input[name='toggled']:checked+label{
+input[name='sectionToggle']:checked+label{
   background-color: #ed6b06;
 } 
 #hideme {
 	visibility: hidden;
 }
 
-.btn.color {
-  font-size: 12px;
-  height: 32px;
-  width: 32px;
+.btn_color {
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
   background: #3498db;
+  vertical-align: middle;
+  background-image: -webkit-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  background-image: -moz-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  background-image: -ms-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
+  background-image: -o-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  padding: 1px 10px 3px 10px;
-  margin: 6px;
-  border-radius: 0px;
 }
+
+
+
 .btn {
   background: #3498db;
   background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
