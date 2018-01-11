@@ -175,10 +175,6 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	fillDialogInputs();
 	initDialogBinds();
 	
-	$(document).ready(function() {		
-		$("#iconSrc").trigger('change');
-	});
-
 };
 
 function fillDialogInputs(){

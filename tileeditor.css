@@ -22,6 +22,9 @@ dialog {
   	top: 50%;
   	left: 35%;
 } 
+
+
+
 #tileDisplay_buttons {
 	margin-left:2px
 }
@@ -110,6 +113,13 @@ input.editSection_txt.height, input.editSection_txt.width {
 #div_color {
 	display: block;
 	margin: auto;	
+}
+
+div.cat.Local-Storage {
+	display: inline-block;
+}
+div.cat {
+	display: none;
 }
 
 .iconlist {
