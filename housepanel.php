@@ -110,6 +110,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="apple-touch-icon" href="media/apple-touch-icon.png">';
     
     // load jQuery and themes
+	
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
@@ -118,15 +119,19 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<script src="ac_quicktime.js"></script>';
 
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
-    // $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
-    
+    $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
+    	
     // load custom .css and the main script file
     if (!$skindir) {
         $skindir = "skin-housepanel";
     }
-    $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
-    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
+	
+	//load cutomization helpers
+	$tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
+	$tc.= "<script type=\"text/javascript\" src=\"tileeditor.js\"></script>";
+    $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css\"/>";	
     
     // load the custom tile sheet if it exists
     // note - if it doesn't exist, we will create it and for future page reloads
@@ -151,6 +156,10 @@ function htmlHeader($skindir="skin-housepanel") {
             $tc.= '  setupPage("' . $thing . '");';
         }
         $tc.= "});";
+
+		
+		
+		
     $tc.= '</script>';
 
     // begin creating the main page
