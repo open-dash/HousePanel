@@ -25,6 +25,12 @@ h1, h2, h3 {
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
 }
 
+div {
+	background-size: contain;
+	-webkit-background-size: contain;
+	-moz-background-size: contain;
+	-o-background-size: contain;
+}
 .ui-widget.ui-widget-content{
 border-radius: 4px;
 width:100%;
@@ -143,27 +149,35 @@ div.panel {
 
 div.panel-family, div.panel-familyroom {
     background-image: url('family.jpg');
+
 }
 div.panel-kitchen, div.panel-dinette {
     background-image: url('kitchenroom.jpg');
+
 }
 div.panel-formal, div.panel-living, div.panel-livingroom {
     background-image: url('formal.jpg');
+
 }
 div.panel-outside, div.panel-garage {
     background-image: url('outside.jpg');
+
 }
 div.panel-office, div.panel-library {
     background-image: url('office.jpg');
+
 }
 div.panel-bedroom, div.panel-bedrooms {
     background-image: url('bedroom.jpg');
+
 }
 div.panel-music, div.panel-theater, div.panel-entertainment {
     background-image: url('music.jpg');
+
 }
 div.panel-thermostats, div.panel-thermostat {
     background-image: url('thermostat.jpg');
+
 }
 
 /* style the panel with all things listed */
@@ -567,7 +581,7 @@ div.thingname:hover {
 /* set size to show text to avoid funky resizing, but use transparent color */
 div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
 div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
-  background-position: 50% 20%;  font-size: 12px;
+  background-position: center center;  font-size: 12px;
   color: rgba(255,255,255,0.01);
 }
 
@@ -582,28 +596,31 @@ div.thermostat.thermomode.on, div.thermostat.thermofan.on {
 div.contact.open {
     background-image: url('icons/opencontact.png');
     background-color: rgba(27,177,75,0.3);
-    background-position-y: 9px;
-    background-size: 40px;
+    
+
 }
 div.contact.closed {
     background-image: url('icons/closecontact.png');
     background-color: rgba(27,177,75,0.6);
-    background-position-y: 9px;
-    background-size: 40px;
+    
+    
+
 }
 
 /* specific contact types one might find */
 div.door.open, div.contact.door.closed {
     background-image: url('icons/opendoor.png');
     background-color: rgba(27,177,75,0.3);
-    background-position-y: 9px;
-    background-size: 40px;
+    
+    
+
 }
 div.door.closed, div.contact.door.closed {
     background-image: url('icons/closedoor.png');
     background-color: rgba(27,177,75,0.3);
-    background-position-y: 9px;
-    background-size: 40px;
+    
+    
+
     cursor: pointer;
 }
 div.garage.door.contact {
@@ -657,11 +674,11 @@ div.contact.garage.entry.closed {
 /* motion styling */
 div.motion.inactive {
     background-image: url('icons/stand.png');
-    background-color: rgba(0, 51, 204, 0.6);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.motion.active {
     background-image: url('icons/run.png');
-    background-color: rgba(0, 51, 204, 0.3);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.motion.battery, div.contact.battery, 
 div.lock.battery {
@@ -697,7 +714,7 @@ div.lock.unlocked{
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
     background-image: url('icons/bulbon.png');
-    background-color: rgba(0, 51, 204, 0.3);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('icons/bulboff.png');
@@ -709,7 +726,7 @@ div.switch.plug.on {
 }
 div.switch.plug.off {
     background-image: url('icons/plugoff.png');
-    background-color: rgba(0, 51, 204, 0.3);
+    background-color: rgba(0, 51, 204, 0);
     height: 112px;
 }
 /* enable this if you want to show levels for switches and bulbs */
@@ -785,6 +802,7 @@ div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn, div.music div.vol-dn
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
+	background-size: auto;
 /*    border-top-left-radius: 25px;
     border-bottom-left-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -796,6 +814,7 @@ div.heat-up, div.cool-up, div.level-up, div.switchlevel-up, div.music div.vol-up
 div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
+	background-size: auto;
 /*    border-top-right-radius: 25px;
     border-bottom-right-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -1166,7 +1185,8 @@ div.image.url {
     background-color: #000000;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: cover;
+    
+
 }
 
 /* presence styling */
@@ -1338,11 +1358,11 @@ div.motion.family.room.battery {
 /* smart switch on my rock fountain */
 div.switch.rock.on {
     background-image: url('icons/rockon.png');
-    background-color: rgba(0, 51, 204, 0.3);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.switch.rock.off {
     background-image: url('icons/rockoff.png');
-    background-color: rgba(0, 51, 204, 0.3);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.switch.screen.on, div.switch.screen.off {
     height: 80px;
