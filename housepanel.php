@@ -1275,18 +1275,21 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $tc.= "<td>";
                 
                 $ischecked = false;
-                foreach( $things as $idx => $arr ) {
+                foreach( $things as $arr ) {
                     if ( is_array($arr) ) {
-                        $ischecked = $thingindex==$arr[0];
+                        $idx = $arr[0];
                         $postop = $arr[1];
                         $posleft = $arr[2];
                     } else {
-                        $ischecked = $thingindex==$arr;
+                        $idx = $arr;
+                    }
+                    if ( $idx == $thingindex ) {
+                        $ischecked = true;
+                        break;
+                    } else {
+                        $ischecked = false;
                         $postop = 0;
                         $posleft = 0;
-                    }
-                    if ( $ischecked ) {
-                        break;
                     }
                 }
                 
@@ -1295,8 +1298,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 } else {
                     $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" >";
                 }
-                $tc.= "<span class=\"dragtop\">" . $postop . "</span>";
-                $tc.= "<span class=\"dragleft\">" . $posleft . "</span>";
+                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
                 $tc.= "</td>";
             }
         }
@@ -1319,6 +1321,20 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // $tc.= "</div>";
 
     return $tc;
+}
+
+// returns true if the index is in the room things list passed
+function inroom($idx, $things) {
+    $found = false;
+    $idxint = intval($idx);
+    foreach ($things as $arr) {
+        $thingindex = is_array($arr) ? $arr[0] : intval($arr);
+        if ( $idxint == $thingindex ) {
+            $found = true;
+            break;
+        }
+    }
+    return $found;
 }
 
 // this processes a _POST return from the options page
@@ -1381,6 +1397,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
             // this will preserve user drag and drop positions
             // but if a tile is removed then all tiles after it will be
             // shown shifted as a result
+            $lasttop = 0;
+            $lastleft = 0;
             if ($oldoptions) {
                 $oldthings = $oldoptions["things"][$roomname];
                 foreach ($oldthings as $arr) {
@@ -1395,6 +1413,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
                     }
                     if ( array_search($tilenum, $val)!== FALSE ) {
                         $options["things"][$roomname][] = array($tilenum,$postop,$posleft);
+                        $lasttop = $postop;
+                        $lastleft = $posleft;
                     }
                 }
             }
@@ -1404,11 +1424,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
             foreach ($val as $tilestr) {
 //                if ( array_search($tilenum, $newthings)=== FALSE ) {
                 $tilenum = intval($tilestr,10);
-                foreach ($newthings as $arr) {
-                    if ( $tilenum == $arr[0] ) {
-                        $options["things"][$roomname][] = array($tilenum,0,0);
-                        break;
-                    }
+                if ( ! inroom($tilenum, $newthings) ) {
+                        $options["things"][$roomname][] = array($tilenum,$lasttop,$lastleft);
                 }
             }
         // keys starting with o_ are room names with order as value
