@@ -1387,3 +1387,7 @@ div.thingname.video {
 div.panel-kitchen\/family {
     background-image: url('kitchenroom.jpg');
 }
+/* this makes a fixed music size but long names will get cut off */
+div.music.track {
+    height: 48px;
+}

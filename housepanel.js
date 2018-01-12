@@ -61,17 +61,20 @@ window.addEventListener("load", function(event) {
         delay: 50,
         stop: function(event, ui) {
             var dragthing = {};
-            var thingid = $(event.target).attr("id");
+            dragthing["id"] = $(event.target).attr("id");
             var bid = $(event.target).attr("bid");
             var thingtype = $(event.target).attr("type");
-            var pid = $(event.target).attr("tile");
-//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+thingid+" type= "+thingtype+" drag= "+strObject(dragthing));
+            dragthing["tile"] = $(event.target).attr("tile");
+            dragthing["panel"] = $(event.target).attr("panel");
+           
+//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
 //            $.post("housepanel.php", 
 //                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
 //            );
             // now post back to housepanel to save the position
+            // also send the dragthing object to get panel name and tile pid index
             $.post("housepanel.php", 
-                   {useajax: "dragdrop", id: bid, type: thingtype, value: pid, attr: ui.position}
+                   {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
         }
     });
@@ -217,7 +220,7 @@ var jeditTableCell = function(event) {
 
     // if another popup is active, process it
     if (popupStatus === 1) {
-        // $(that).html().substring(0,8) === "<input id") { return true; }
+        // $(that).html().substring(0,9) === "<input id") { return true; }
         processPopup();
         // return true;
     }
@@ -594,9 +597,12 @@ function setupPage(trigger) {
     var actionid = "div." + trigger;
 
     $(actionid).click(function() {
-
-        // updated this to use "tileid" to avoid confusion with main tile
+        
         var aid = $(this).attr("aid");
+        
+        // avoid doing click if the target was the title bar
+        if ( $(this).attr("id").substring(0,2) == "s-" ) return;
+
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
         var tile = '#t-'+aid;
