@@ -601,7 +601,7 @@ function setupPage(trigger) {
         var aid = $(this).attr("aid");
         
         // avoid doing click if the target was the title bar
-        if ( $(this).attr("id").substring(0,2) == "s-" ) return;
+        if ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) return;
 
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
