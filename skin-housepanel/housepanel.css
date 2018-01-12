@@ -3,8 +3,21 @@
     font-size: 11pt; padding: 0px; margin: 0px;
 }
 body {
-  background-color: #ffffff;
-  color: #000000;
+    background-color: #ffffff;
+    color: #000000;
+    width: 1140px;
+}
+div.maintable {
+/*    transform: scale(0.84);
+    -ms-transform: scale(0.84);
+    -moz-transform: scale(0.84);
+    -o-transform: scale(0.84);
+    -webkit-transform: scale(0.84);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;*/
 }
 h1, h2, h3 {
     color: #000000;
@@ -22,8 +35,8 @@ div {
 border-radius: 4px;
 width:100%;
 margin: 0px 0 0 0;
-border-right: 5px solid #666666;
-border-bottom: 5px solid #666666;
+/*border-right: 5px solid #666666;
+border-bottom: 5px solid #666666;*/
 
 }
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor{
@@ -41,6 +54,9 @@ ul.ui-tabs-nav {
 }
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
     cursor: pointer;
+}
+.ui-tabs {
+    padding: 0;
 }
 
 .debug, .error {
@@ -93,9 +109,12 @@ form.houseauth {
 
 /* how the tab page shows up - this affects everything shown */
 .ui-tabs .ui-tabs-panel {
-    padding-top: 0px;    padding-bottom: 5px;
-    padding-left: 0px;    padding-right: 1px;
+    padding-top: 0px;    padding-bottom: 0px;
+    padding-left: 0px;    padding-right: 4px;
     text-align: left;
+}
+.ui-corner-all, .ui-corner-bottom, .ui-corner-right, .ui-corner-br {
+    border-bottom-right-radius: 0px;
 }
 
 #options-tab {
@@ -589,7 +608,7 @@ div.switch.power::before, div.switchlevel.power:before {
 
 /* switchlevel / dimmer styling - make room for the dimmer controls */
 /* if you have a dimmer with power and energy controls - see custom below */
-div.switchlevel.switch {
+div.switchlevel.switch, div.bulb.switch {
     height: 80px;
 }
 div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
@@ -612,7 +631,7 @@ div.on:hover, div.off:hover, div.unlocked:hover, div.locked:hover {
 }
 
 /* handle the block of controls for adjusting the thermostat and levels */
-div.thermostat.heat, div.thermostat.cool, div.music.level {
+div.thermostat.heat, div.thermostat.cool, div.music.level, div.music.vol {
     color: #ffffee;
     border: 0px solid #ffffff;
     width: 118px; height: auto;
@@ -632,7 +651,7 @@ div.saturation-up, div.saturation-dn
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn, div.music div.vol-dn,
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("sprites.gif");
     background-position: -32px 0px;
@@ -644,7 +663,7 @@ div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up, div.music div.vol-up,
 div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("sprites.gif");
     background-position: -272px -2px;
@@ -660,7 +679,7 @@ div.colorTemperature-up, div.hue-up, div.saturation-up {
 div.music {
     width: 178px;
 }
-div.music.level {
+div.music.level, div.music.vol {
     width: 99%;
 }
 div.music-controls {
@@ -757,7 +776,7 @@ div.thermostat.thermostate::before {
 
 /* values of the adjustable items */
 div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
-div.colorTemperature-val, div.hue-val, div.saturation-val {
+div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -782,7 +801,7 @@ div.cool-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
-div.switchlevel-val, div.level-val, div.colorTemperature-val {
+div.switchlevel-val, div.level-val, div.colorTemperature-val, div.vol-val {
     background-color: #1bb14b;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -803,6 +822,7 @@ div.switchlevel-up:hover, div.switchlevel-dn:hover,
 div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
 div.hue-up:hover, div.hue-dn:hover,
 div.saturation-up:hover, div.saturation-dn:hover,
+div.vol-up:hover, div.vol-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
@@ -829,7 +849,7 @@ div.music.musicstatus, div.music.musicmute {
     font-size: 11pt;
     border-top: 1px solid #ffffff;
 }
-div.music div.level-val {
+div.music div.level-val, div.music div.vol-val {
     width: 60%;
 }
 
@@ -906,7 +926,7 @@ div.weather.sunriseset {
     margin-top: 10px;
 }
 div.weather.sunriseset, div.weather.humidity,
-div.weather.wind, div.weather.percentPrecip, div.weather.alerts{
+div.weather.wind, div.weather.percentPrecip, div.weather.alert{
     background-color: #333333;
     margin-bottom: 4px;
 }
@@ -1048,6 +1068,17 @@ div.presence.absent {
 }
 .modalshow {
     display: block;
+}
+
+div.bulb.color {
+/*    position: relative;
+    top: -140px;*/
+    background-image: url("../media/colorwheel.png");
+    background-size: 32px 32px;
+    height: 32px;
+    width: 32px;
+    font-size: 1px;
+    color: rgba(128,128,128,0.01);
 }
 
 /* do not display these items */
@@ -1228,4 +1259,8 @@ div.thingname.video {
 }
 div.panel-kitchen\/family {
     background-image: url('kitchenroom.jpg');
+}
+/* this makes a fixed music size but long names will get cut off */
+div.music.track {
+    height: 48px;
 }

@@ -55,25 +55,26 @@ window.addEventListener("load", function(event) {
 
     // make the actual thing tiles on each panel sortable
     // the change function does a post to make it permanent
-    $("div.panel").sortable({
-        items: "> div.thing",
-        opacity: 0.5,
-        revert: true,
-        delay: 200,
-        update: function(event, ui) {
-            var things = {};
-            var k=0;
-            var roomname = $(ui.item).attr("panel");
-            var roomtitle = $(this).attr("title");
-            // var bid = $(ui.helper).attr("bid");
-            // get the new list of things in order
-            $("div.panel-" + roomname + " > div.thing").each(function() {
-                var tilenum = parseInt( $(this).attr("tile") );
-                things[k] = tilenum;
-                k++;
-            });
+    $("div.thing").draggable({
+        revert: false,
+        containment: "parent",
+        delay: 50,
+        stop: function(event, ui) {
+            var dragthing = {};
+            dragthing["id"] = $(event.target).attr("id");
+            var bid = $(event.target).attr("bid");
+            var thingtype = $(event.target).attr("type");
+            dragthing["tile"] = $(event.target).attr("tile");
+            dragthing["panel"] = $(event.target).attr("panel");
+           
+//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
+//            $.post("housepanel.php", 
+//                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+//            );
+            // now post back to housepanel to save the position
+            // also send the dragthing object to get panel name and tile pid index
             $.post("housepanel.php", 
-                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+                   {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
         }
     });
@@ -221,7 +222,7 @@ var jeditTableCell = function(event) {
 
     // if another popup is active, process it
     if (popupStatus === 1) {
-        // $(that).html().substring(0,8) === "<input id") { return true; }
+        // $(that).html().substring(0,9) === "<input id") { return true; }
         processPopup();
         // return true;
     }
@@ -471,7 +472,7 @@ function setupTimers() {
 // but we also update similar things that are impacted by this click
 // that way we don't need to wait for the timers to kick in to update
 // the visual items that people will expect to see right away
-function updAll(aid, bid, thetype, pvalue) {
+function updAll(trigger, aid, bid, thetype, pvalue) {
 
     // update trigger tile first
     // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
@@ -482,10 +483,10 @@ function updAll(aid, bid, thetype, pvalue) {
         // alert( strObject(pvalue));
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
-        }, 2000);
+        }, 3000);
     }
     
-    // for doors wait half a minute and refresh
+    // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
         // alert( strObject(pvalue));
         setTimeout(function() {
@@ -500,19 +501,40 @@ function updAll(aid, bid, thetype, pvalue) {
         if (otheraid !== aid) { updateTile(otheraid, pvalue); }
     });
     
-    // if this is a switch go through and set all switchlevels
+    // if this is a switch on/off trigger go through and set all light types
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
     // actually we do both for instant on screen viewing
     // the second call is needed to make screen refreshes work properly
-    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
+//    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
+    if (trigger=="switch.on" || trigger=="switch.off") {
+        $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
+        });
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "switchlevel");
-            }, 5000);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
+        });
+        $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            if (otheraid !== aid) {
+                updateTile(otheraid, pvalue);
+                var rbid = $(this).attr("bid");
+                setTimeout(function() {
+                    refreshTile(otheraid, rbid, "bulb");
+                }, 10000);
+            }
+        });
+        $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            if (otheraid !== aid) {
+                updateTile(otheraid, pvalue);
+                var rbid = $(this).attr("bid");
+                setTimeout(function() {
+                    refreshTile(otheraid, rbid, "light");
+                }, 10000);
+            }
         });
     }
     
@@ -532,14 +554,22 @@ function updAll(aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
-    if (thetype==="switchlevel") {
+    // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
+    if (trigger==="level-up" || trigger==="level-dn" || 
+        trigger==="hue-up" || trigger==="hue-dn" ||
+        trigger==="saturation-up" || trigger==="saturation-dn" ||
+        trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            updateTile(otheraid, pvalue);
+        });
+        $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
             var rbid = $(this).attr("bid");
             setTimeout(function() {
-                refreshTile(otheraid, rbid, "switch");
-            }, 5000);
+                refreshTile(otheraid, rbid, "switchlevel");
+            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -547,7 +577,7 @@ function updAll(aid, bid, thetype, pvalue) {
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "bulb");
-            }, 5000);
+            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -555,7 +585,7 @@ function updAll(aid, bid, thetype, pvalue) {
             var rbid = $(this).attr("bid");
             setTimeout(function() {
                 refreshTile(otheraid, rbid, "light");
-            }, 5000);
+            }, 10000);
         });
     }
     
@@ -563,15 +593,19 @@ function updAll(aid, bid, thetype, pvalue) {
 
 // setup trigger for clicking on the action portion of this thing
 // this used to be done by page but now it is done by sensor type
-function setupPage(sensortype) {
+function setupPage(trigger) {
    
-    // alert("setting up " + sensortype);
-    var actionid = "div." + sensortype;
+    // alert("setting up " + trigger);
+    var actionid = "div." + trigger;
 
     $(actionid).click(function() {
 
         // updated this to use "tileid" to avoid confusion with main tile
         var aid = $(this).attr("aid");
+        
+        // avoid doing click if the target was the title bar
+        if ( $(this).attr("id").substring(0,2) == "s-" ) return;
+
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
         var tile = '#t-'+aid;
@@ -629,12 +663,13 @@ function setupPage(sensortype) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
         } else {
+            // alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             $.post("housepanel.php", 
                    {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             // alert( strObject(presult) );
-                            updAll(aid,bid,thetype,presult);
+                            updAll(trigger,aid,bid,thetype,presult);
                         }
                    }, "json"
             );
