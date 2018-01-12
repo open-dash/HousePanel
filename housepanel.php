@@ -1160,9 +1160,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
         $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
-        $tc.= "<dialog id=\"edit_Tile\">"; 
-        // $tc.=     "<h3>You shouldn't see this</h3>"; 
-        $tc.= "</dialog>";
+
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
         for ($k=0; $k < count($roomoptions); $k++) {
@@ -1193,6 +1191,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     }
 
     $tc.= "</tbody></table>";
+	$tc.= "<dialog id=\"edit_Tile\">"; 
+	// $tc.=     "<h3>You shouldn't see this</h3>"; 
+	$tc.= "</dialog>";
     $tc.= "</div>";   // vertical scroll
     $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
     $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
@@ -1564,7 +1565,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         $data = $_POST['cssdata'];
         writeCustomCss($skindir, $_POST['cssdata']);
-    
+
         // reload to show new options
         header("Location: $returnURL");
     }

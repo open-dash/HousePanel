@@ -6,11 +6,17 @@ function initDialogBinds() {
 		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
 		
-		var imageId = "tileImage_" + $("#toggle_status").html();		
+		var imageId = "#tileImage_on";		
 		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
-		arrClass = $("#" + imageId).attr('class').split(/ +/);
+		arrClass = $(imageId).attr('class').split(/ +/);
 		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
+		
+		imageId = "#tileImage_off";		
+		arrClass = $(imageId).attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);
+		
 	
 		rule = "width: " + ($("#tileWidth").val() - 2) + "px;";
 		arrClass = $("#tileHead").attr('class').split(/ +/);
@@ -25,11 +31,17 @@ function initDialogBinds() {
 		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
 		
-		var imageId = "tileImage_" + $("#toggle_status").html();
+		var imageId = "#tileImage_on";
 		rule = "height: " + ($("#tileHeight").val() - $("#headHeight").val() - 20) + "px;";
-		arrClass = $("#" + imageId).attr('class').split(/ +/);
+		arrClass = $(imageId).attr('class').split(/ +/);
 		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
+		
+		imageId = "#tileImage_off";
+		arrClass = $(imageId).attr('class').split(/ +/);
+		cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		addCSSRule(cssRuleTarget, rule);	
+		
 		
 	});
 	
@@ -47,8 +59,10 @@ function initDialogBinds() {
 	});
 	
 	$("#iconSrc").bind('change', function () {
-			$('.cat').hide();
-			$('.cat.' + $(this).val()).show();
+		var imageId = "tileImage_" + $("#toggle_status").html();
+		var arrClass = $("#" + imageId).attr('class').split(/ +/);
+		var strIconTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-2] + "." + arrClass[arrClass.length-1];
+		getIcons(strIconTarget, $("#iconSrc").val());	
 	});
 	
 } //End InitDialogBinds()
@@ -56,10 +70,11 @@ function initDialogBinds() {
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
 	$('#showCssSaved').hide(); //hides "saved" message if visible
+	$('#edit_Tile').empty();
 
 	//*DIALOG START*	
 	//Build Dialog
-    var dialog = document.getElementById('edit_Tile');
+	var dialog = document.getElementById('edit_Tile');
 	var dialog_html = "<div id='tileDialog'>";
 	
 	//css selector string root for icons
@@ -85,8 +100,14 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<div id='iconList'></div>";
 	dialog_html += "</div>";
 	
-
 	//BOTTOM LEFT
+	//Upload	
+	dialog_html += "<div class='upload-btn-wrapper'>";
+	dialog_html += "<button class='btn_upload'>Upload a file</button>";
+	dialog_html += "<input type='file' name='myfile' />";
+	dialog_html += "</div>";	
+
+
 	//wrapToggles
 	dialog_html += "<div class='wrapToggles'>";
 	//toggleSections
@@ -139,8 +160,24 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 
 	//RIGHT SIDE - tileDisplay
 	dialog_html += "<div id='tileDisplay'>";
-		
-	//TOP RIGHT - wysISwyg
+	
+	//toggle_status (hidden)
+	dialog_html += "<div><span id='toggle_status'>on</span></div>";
+	//tileDisplay_buttons
+	dialog_html += "<div class='tile_buttons'>";
+	dialog_html += "<div>";
+	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
+	dialog_html += "<span class='btn' onclick='tileCopy(" + thingindex + ")'>&#x2398</span>";
+	dialog_html += "<span class='btn' onclick='tilePaste(" + thingindex + ")'>&#x1f4cb</span>";
+	dialog_html += "<span id='dgclose' class='btn' onclick='tileDialogClose()'>Close</span>";
+	dialog_html += "</div>";
+	dialog_html += "<div>";
+	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
+	dialog_html += "</div>";
+	dialog_html += "</div>";
+	//End: tileDisplay_buttons
+	
+	//wysISwyg
 	dialog_html += "<div id='wysISwyg' tile='0' bid='0' type='switch' panel='main' class='thing " + str_type + "-thing p_" + thingindex + "'>";
 	dialog_html += "<div id='tileHead' title='" + str_type + "status' class='thingname " + str_type + " t_" + thingindex + "' id='title_" + thingindex + "'>";
 	dialog_html += "<span id='tileText' class='n_" + thingindex + "'>" + thingname + "</span></div>";
@@ -148,16 +185,6 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<div id='tileImage_off' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_off + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_off + "</div>";
 	dialog_html += "</div>";
 	//End: wysISwyg
-	
-	//toggle_status (hidden)
-	dialog_html += "<div><span id='toggle_status'>on</span></div>";
-	//tileDisplay_buttons
-	dialog_html += "<div id='tileDisplay_buttons'>";
-	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
-	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
-	dialog_html += "<span class='btn' onclick='tileDialogClose()'>Close</span>";
-	dialog_html += "</div>";
-	//End: tileDisplay_buttons
 	
 	dialog_html += "</div>";
 	//End: tileDisplay
@@ -167,14 +194,16 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 			
 	//Fill Dialog and Initial Display
 	dialog.innerHTML = dialog_html;
-	getIconList(strIconTarget + "on");
+	getIconCategories();
+	getIcons(strIconTarget + 'on', 'Local_Storage');
 	section_Toggle('tile');
 	dialog.show();
 	$('#tileImage_off').hide();
 	$('#toggle_status').hide();	
 	fillDialogInputs();
 	initDialogBinds();
-	
+	$('.cat.Local_Storage').show();
+
 };
 
 function fillDialogInputs(){
@@ -185,7 +214,15 @@ function fillDialogInputs(){
 		$("#headHeight").val($("#tileHead").height());
 	});
 
-}
+};
+
+function tileCopy(thingindex) {
+	alert("Not Yet Implemented - Copied: " + thingindex)
+};
+
+function tilePaste(thingindex) {
+	alert("Not Yet Implemented - Pasted To: " + thingindex)
+};
 
 function pickColor(thingindex, strCaller) {
 	var startColor = '#000000';
@@ -266,40 +303,78 @@ if($("#editicon").css("visibility") == "hidden"){
 		$('#tileImage_off').hide();
 	}
 	$("#toggle_status").html(strOnOff);
-	//getIconList(strIconTarget + strOnOff);	//YODA
+	getIcons(strIconTarget + strOnOff, $("#iconSrc").val());
+
 }
 	$('#editicon').show();
 	$('#iconChoices').show();
 	$('#editcolor').hide();
+	$("#noIcon").attr('checked', false);
 };
 
-function getIconList(ruleToTarget) {
+function getIconCategories() {
 	var iconDoc = 'iconlist.txt';
-	var icons = '';
-	var arrCat = ['Local-Storage'];
-	   $.ajax({
-	    url:iconDoc,
+	var arrCat = ['Local_Storage'];
+	$.ajax({
+	url:iconDoc,
+	type:'GET',
+	success: function (data) {
+		var arrIcons = data.toString().replace(/[\t\n]+/g,'').split(',');
+		  $.each(arrIcons, function(index, val) {
+			var iconCategory = val.substr(0, val.indexOf('|'));
+			iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
+				arrCat.push(iconCategory);					
+			}); //end each Icon
+	arrCat = makeUnique(arrCat);
+	$.each(arrCat, function(index, iconCat) {
+		var catText = iconCat.replace(/_/g, ' ')
+		$('#iconSrc').append($('<option></option>').val(iconCat).text(catText));
+	}); 
+	} //end function()
+	}); //end ajax
+}
+
+function getIcons(strIconTarget, iCategory) {
+	if(iCategory === 'Local_Storage') {
+		var localPath = 'skin-housepanel/icons/';
+		var icons = '';		
+		$.ajax({
+			url : localPath,
+			success: function (data) {
+				$(data).find("a").attr("href", function (i, val) {
+				if( val.match(/\.(jpe?g|png|gif|jpg|JPG)$/)) {
+						var iconImage = localPath + val; 
+						icons+='<div class="cat Local_Storage">'
+						icons+='<img onclick="iconSelected(\'' + strIconTarget + '\',\'../' + iconImage + '\')" '
+						icons+='class="icon" src="' + iconImage + '" alt="' + val + '"></div>'		
+					} 
+				});//end find()
+				$('#iconList').html(icons);
+			}//end function
+		});//end Local Storage ajax	
+	} else {
+		var icons = '';
+		var iconDoc = 'iconlist.txt';
+		var arrCat = ['Local_Storage'];
+		$.ajax({
+		url:iconDoc,
 		type:'GET',
 		success: function (data) {
 			var arrIcons = data.toString().replace(/[\t\n]+/g,'').split(',');
 			  $.each(arrIcons, function(index, val) {
 				var iconCategory = val.substr(0, val.indexOf('|'));
-				iconCategory = $.trim(iconCategory).replace(/\s/g, '-');	
-					arrCat.push(iconCategory);					
-				var iconPath = val.substr(1 + val.indexOf('|'));
-				icons+='<div class="cat ' + iconCategory + '"><img onclick="iconSelected(\'' + ruleToTarget + '\',\'' + iconPath + '\')" class="icon" src="' + iconPath + '"></div>\n'
-				}); //end each Icon
-		
-		arrCat = makeUnique(arrCat);
-		$.each(arrCat, function(index, iconCat) {
-			$('#iconSrc').append($('<option></option>').val(iconCat).text(iconCat));
-		}); 
+				iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
+				if(iconCategory === iCategory) {
+					var iconPath = val.substr(1 + val.indexOf('|'));
+					icons+='<div">'
+					icons+='<img onclick="iconSelected(\'' + strIconTarget + '\',\'' + iconPath + '\')" '
+					icons+='class="icon" src="' + iconPath + '"></div>\n'					
+				}
+				}); //end each Icon			
 		$('#iconList').html(icons);
-
-	} //end function()
-		
-	}); //end ajax
-	
+		} //end function()
+		}); //end ajax
+	}
 };
 
 function makeUnique(list) {
@@ -331,6 +406,8 @@ function iconSelected(cssRuleTarget, imagePath) {
 		addCSSRule(cssRuleTarget, "filter: invert(1);");
 		addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
 	}
+	$("#tileHeight").trigger('input');
+	$("#tileWidth").trigger('input');	
 };
 
 function tileDialogClose() {  
@@ -351,11 +428,10 @@ var sheet = document.getElementById('customtiles').sheet;
 	sheetContents = sheetContents.replace(regex, subst);
 	var cssdata = new FormData();
 	cssdata.append("cssdata", sheetContents);
+	$('#showCssSaved').show();
 	var xhr = new XMLHttpRequest();
 	xhr.open('post', 'housepanel.php', true );
 	xhr.send(cssdata);
-	$('#showCssSaved').show();
-
 };
 
 function addCSSRule(selector, rules, resetFlag){
@@ -415,7 +491,6 @@ function removeCSSRule(strMatchSelector){
 		 
 function invertImage(){
     //Searching of the selector matching cssRules
-
 	var selector = ".icon";
 	var rules = "float: left;\nmargin: 2px;\nmax-height: 40px;\nmax-width: auto;\n-o-object-fit: contain;\nobject-fit: contain;";
 	var sheet = document.getElementById('tileeditor').sheet; // returns an Array-like StyleSheetList
