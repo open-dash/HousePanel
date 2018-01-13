@@ -1607,12 +1607,30 @@ function processOptions($optarray, $retpage, $allthings=null) {
     $swid = "";
     $swval = "";
     $swattr = "";
+    $tileid = "";
     if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
     if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
     if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
     if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
     if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
+
+    // implement ability to use tile number to get the $swid information
+    if ( isset($_GET["tile"]) ) { $tileid = $_GET["tile"]; }
+    if ( isset($_POST["tile"]) ) { $tileid = $_POST["tile"]; }
+    if ( $swid=="" && $tileid ) {
+        $oldoptions = readOptions();
+        $idx = array_search($tileid, $oldoptions["index"]);
+        $k = strpos($idx,"|");
+        $swtype = substr($idx, 0, $k);
+        $swid = substr($idx, $k+1);
+    }
+
+    // set tileid from options if it isn't provided
+    if ( $tileid=="" && $swid && $swtype ) {
+        $idx = $swtype . "|" . $swid;
+        if ( array_key_exists($idx, $options) ) { $tileid = $options[$idx]; }
+    }
     
     if ( $useajax && $endpt && $access_token ) {
         switch ($useajax) {
@@ -1625,6 +1643,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 break;
         
             case "doquery":
+                // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
                 break;
         
@@ -1704,7 +1723,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                     $tc.= "<tr><td class=\"thingname\">" . $thing["name"] . 
                           "</td><td class=\"thingvalue\">" . $value . 
                           "</td><td class=\"thingvalue\">" . $thing["id"] . 
-                          "</td><td class=\"thingvalue\">" . $options["index"][$idx][0] . 
+                          "</td><td class=\"thingvalue\">" . $options["index"][$idx] . 
                           "</td><td class=\"thingvalue\">" . $thing["type"] . "</td></tr>";
                 }
                 $tc.= "</table>";
