@@ -26,7 +26,9 @@ function initDialogBinds() {
 
 	$("#tileHeight").bind('input', function () {
 
-		var rule = "height: " + $("#tileHeight").val() + "px;";
+                // the wrapper must be auto height
+//		var rule = "height: " + $("#tileHeight").val() + "px;";
+		var rule = "height: auto";
 		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
 		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
