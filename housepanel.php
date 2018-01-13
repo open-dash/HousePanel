@@ -1730,8 +1730,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         $data = $_POST['cssdata'];
         writeCustomCss($skindir, $_POST['cssdata']);
+        exit(0);
         // reload to show new options
-        header("Location: $returnURL");
+        // header("Location: $returnURL");
     }
     
     // process options submit request
