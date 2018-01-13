@@ -182,7 +182,7 @@ function setupPopup() {
     });
 
 // Hiding Confirmation of Customization Span Until Needed
-$('#showCssSaved').hide();  
+//$('#showCssSaved').hide();  
 //    $("table.headoptions th.thingname").click(function() {
 //        alert("clicked on Room names row");
 //    });
@@ -599,12 +599,11 @@ function setupPage(trigger) {
     var actionid = "div." + trigger;
 
     $(actionid).click(function() {
-
-        // updated this to use "tileid" to avoid confusion with main tile
+        
         var aid = $(this).attr("aid");
         
         // avoid doing click if the target was the title bar
-        if ( $(this).attr("id").substring(0,2) == "s-" ) return;
+        if ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) return;
 
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");

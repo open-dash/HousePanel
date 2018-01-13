@@ -1,3 +1,11 @@
+/* deprecated
+	div.editable {
+    background-size: auto 36px !important;
+	height: 36px !important;
+	width: 36px !important;
+}
+*/
+
 div.tileDialog {
   overflow: hidden;
 }

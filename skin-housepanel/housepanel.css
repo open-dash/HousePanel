@@ -140,11 +140,8 @@ div.panel {
     border: 0px solid #3333cc;
     padding: 2px;    width: 100%;    margin: auto;
     position:relative;    background-repeat: no-repeat;
-    background-position: left;
-    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-    height: auto;
+    background-position: 0 0;
+    background-size: cover;
 }
 
 div.panel-family, div.panel-familyroom {
@@ -353,7 +350,6 @@ div.sitename {
     background: #ffffff;     display: block;    position: relative;
     left: 400px;    width: 300px;    bottom: 49px;
 }
-
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
 div.thing {
@@ -492,10 +488,12 @@ div.contact.window.closed {
 }
 div.door.garage.open {
     background-image: url('icons/garage-opened.png');
+    background-size: 80px;
     height: 112px;
 }
 div.door.garage.closed {
     background-image: url('icons/garage-closed.png');
+    background-size: 80px;
     height: 112px;
 }
 div.valve.open {
@@ -514,12 +512,12 @@ div.valve.switch, div.valve.contact {
 /* special handling of garage entry which is a door */
 div.contact.garage.entry.open {
     background-image: url('icons/opendoor.png');
-    
-
+    background-size: 40px;
     height: 96px;
 }
 div.contact.garage.entry.closed {
     background-image: url('icons/closedoor.png');
+    background-size: 40px;
     height: 96px;
 }
 
@@ -527,7 +525,7 @@ div.contact.garage.entry.closed {
 /* motion styling */
 div.motion.inactive {
     background-image: url('icons/stand.png');
-    background-color: rgba(0, 51, 204, 0.6);
+    background-color: rgba(0, 51, 204, 0);
 }
 div.motion.active {
     background-image: url('icons/run.png');
@@ -928,7 +926,7 @@ div.weather.sunriseset {
 div.weather.sunriseset, div.weather.humidity,
 div.weather.wind, div.weather.percentPrecip, div.weather.alert{
     background-color: #333333;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
 div.weather.sunriseDate, div.weather.sunsetDate,
@@ -1240,25 +1238,18 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 }
 */
 
-#t-88, #t-89, #t-103 {
-    height: 160px;
-}
-div.switch.yard.energy {
+/*div.switch.yard.energy {
     position: relative; top: -16px;
-/*    position: relative; top: -48px; */
 }
 div.switch.yard.power {
     position: relative; top: -48px;
-}
+}*/
 div.video-thing {
     width: 369px;
     height: 240px;
 }
 div.thingname.video {
     display: none;
-}
-div.panel-kitchen\/family {
-    background-image: url('kitchenroom.jpg');
 }
 /* this makes a fixed music size but long names will get cut off */
 div.music.track {

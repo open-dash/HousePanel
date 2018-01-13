@@ -26,7 +26,9 @@ function initDialogBinds() {
 
 	$("#tileHeight").bind('input', function () {
 
-		var rule = "height: " + $("#tileHeight").val() + "px;";
+                // the wrapper must be auto height
+//		var rule = "height: " + $("#tileHeight").val() + "px;";
+		var rule = "height: auto";
 		var arrClass = $("#wysISwyg").attr('class').split(/ +/);
 		var cssRuleTarget = "div." + arrClass[0] + "." + arrClass[arrClass.length-1];
 		addCSSRule(cssRuleTarget, rule);
@@ -70,6 +72,7 @@ function initDialogBinds() {
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
 	$('#showCssSaved').hide(); //hides "saved" message if visible
+        $("#showCssSaved").css("visibility","hidden");
 	$('#edit_Tile').empty();
 
 	//*DIALOG START*	
@@ -102,7 +105,7 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	
 	//BOTTOM LEFT
 	//Upload	
-	dialog_html += "<div id='uploadWrapper' class='upload-btn-wrapper'>";
+	dialog_html += "<div class='upload-btn-wrapper'>";
 	dialog_html += "<button class='btn_upload'>Upload a file</button>";
 	dialog_html += "<input type='file' name='myfile' />";
 	dialog_html += "</div>";	
@@ -204,7 +207,7 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	initDialogBinds();
 	$('.cat.Local_Storage').show();
 
-}; //End EditTile
+};
 
 function fillDialogInputs(){
 
@@ -250,7 +253,6 @@ function pickColor(thingindex, strCaller) {
 	});
 	$('#editicon').hide();
 	$('#iconChoices').hide();
-	$('#uploadWrapper').hide();	
 	$('#editcolor').show();
 };
 
@@ -283,7 +285,6 @@ function section_Toggle(sectionView) {
 	$("#section_"+sectionView+"").show();
 	$('#editicon').show();
 	$('#iconChoices').show();
-	$('#uploadWrapper').show();	
 	$('#editcolor').hide();
 }
 
@@ -310,7 +311,6 @@ if($("#editicon").css("visibility") == "hidden"){
 }
 	$('#editicon').show();
 	$('#iconChoices').show();
-	$('#uploadWrapper').show();	
 	$('#editcolor').hide();
 	$("#noIcon").attr('checked', false);
 };
@@ -369,7 +369,7 @@ function getIcons(strIconTarget, iCategory) {
 				iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
 				if(iconCategory === iCategory) {
 					var iconPath = val.substr(1 + val.indexOf('|'));
-					icons+='<div>'
+					icons+='<div">'
 					icons+='<img onclick="iconSelected(\'' + strIconTarget + '\',\'' + iconPath + '\')" '
 					icons+='class="icon" src="' + iconPath + '"></div>\n'					
 				}
@@ -432,6 +432,7 @@ var sheet = document.getElementById('customtiles').sheet;
 	var cssdata = new FormData();
 	cssdata.append("cssdata", sheetContents);
 	$('#showCssSaved').show();
+        $("#showCssSaved").css("visibility","visible");
 	var xhr = new XMLHttpRequest();
 	xhr.open('post', 'housepanel.php', true );
 	xhr.send(cssdata);

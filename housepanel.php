@@ -129,9 +129,9 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
 	
 	//load cutomization helpers
-	$tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
+    $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
-	$tc.= "<script type=\"text/javascript\" src=\"tileeditor.js\"></script>";
+    $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js\"></script>";
     $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css\"/>";	
     
     // load the custom tile sheet if it exists
@@ -711,8 +711,6 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
 }
 
 function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $retpage) {
-
-    
     $updated = false;
     $options = readOptions();
     if ( !key_exists("skin", $options ) ) {
@@ -1150,6 +1148,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $kioskoptions = $options["kiosk"];
     $useroptions = $options["useroptions"];
     
+    $tc = "";
+    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
+    
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
@@ -1203,7 +1204,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // now print our options matrix
     $rowcnt = 0;
-    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
+//    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
         
@@ -1286,18 +1287,21 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $tc.= "<td>";
                 
                 $ischecked = false;
-                foreach( $things as $idx => $arr ) {
+                foreach( $things as $arr ) {
                     if ( is_array($arr) ) {
-                        $ischecked = $thingindex==$arr[0];
+                        $idx = $arr[0];
                         $postop = $arr[1];
                         $posleft = $arr[2];
                     } else {
-                        $ischecked = $thingindex==$arr;
+                        $idx = $arr;
+                    }
+                    if ( $idx == $thingindex ) {
+                        $ischecked = true;
+                        break;
+                    } else {
+                        $ischecked = false;
                         $postop = 0;
                         $posleft = 0;
-                    }
-                    if ( $ischecked ) {
-                        break;
                     }
                 }
                 
@@ -1306,8 +1310,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 } else {
                     $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" >";
                 }
-                $tc.= "<span class=\"dragtop\">" . $postop . "</span>";
-                $tc.= "<span class=\"dragleft\">" . $posleft . "</span>";
+                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
                 $tc.= "</td>";
             }
         }
@@ -1330,6 +1333,20 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // $tc.= "</div>";
 
     return $tc;
+}
+
+// returns true if the index is in the room things list passed
+function inroom($idx, $things) {
+    $found = false;
+    $idxint = intval($idx);
+    foreach ($things as $arr) {
+        $thingindex = is_array($arr) ? $arr[0] : intval($arr);
+        if ( $idxint == $thingindex ) {
+            $found = true;
+            break;
+        }
+    }
+    return $found;
 }
 
 // this processes a _POST return from the options page
@@ -1392,6 +1409,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
             // this will preserve user drag and drop positions
             // but if a tile is removed then all tiles after it will be
             // shown shifted as a result
+            $lasttop = 0;
+            $lastleft = 0;
             if ($oldoptions) {
                 $oldthings = $oldoptions["things"][$roomname];
                 foreach ($oldthings as $arr) {
@@ -1406,6 +1425,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
                     }
                     if ( array_search($tilenum, $val)!== FALSE ) {
                         $options["things"][$roomname][] = array($tilenum,$postop,$posleft);
+                        $lasttop = $postop;
+                        $lastleft = $posleft;
                     }
                 }
             }
@@ -1415,11 +1436,8 @@ function processOptions($optarray, $retpage, $allthings=null) {
             foreach ($val as $tilestr) {
 //                if ( array_search($tilenum, $newthings)=== FALSE ) {
                 $tilenum = intval($tilestr,10);
-                foreach ($newthings as $arr) {
-                    if ( $tilenum == $arr[0] ) {
-                        $options["things"][$roomname][] = array($tilenum,0,0);
-                        break;
-                    }
+                if ( ! inroom($tilenum, $newthings) ) {
+                        $options["things"][$roomname][] = array($tilenum,$lasttop,$lastleft);
                 }
             }
         // keys starting with o_ are room names with order as value
@@ -1712,9 +1730,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
         }
         $data = $_POST['cssdata'];
         writeCustomCss($skindir, $_POST['cssdata']);
-
+        exit(0);
         // reload to show new options
-        header("Location: $returnURL");
+        // header("Location: $returnURL");
     }
     
     // process options submit request
