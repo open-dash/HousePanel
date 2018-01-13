@@ -1066,17 +1066,19 @@ div.weather.percentPrecip::before {
 div.weather.humidity::after, div.weather.percentPrecip::after {
     content: "%";
 }
+div.weather.illuminance::after {
+    content: " Lux";
+}
 div.weather.sunriseset {
     margin-top: 10px;
 }
 div.weather.sunriseset, div.weather.humidity,
-div.weather.wind, div.weather.percentPrecip, div.weather.alert{
+div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: #333333;
     margin-bottom: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
-div.weather.sunriseDate, div.weather.sunsetDate,
-div.weather.illuminance {
+div.weather.sunriseDate, div.weather.sunsetDate {
     display: none;
 }
 div.weather.weatherIcon, div.weather.forecastIcon {
