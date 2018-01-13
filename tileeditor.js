@@ -70,6 +70,7 @@ function initDialogBinds() {
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
 	$('#showCssSaved').hide(); //hides "saved" message if visible
+        $("#showCssSaved").css("visibility","hidden");
 	$('#edit_Tile').empty();
 
 	//*DIALOG START*	
@@ -429,6 +430,7 @@ var sheet = document.getElementById('customtiles').sheet;
 	var cssdata = new FormData();
 	cssdata.append("cssdata", sheetContents);
 	$('#showCssSaved').show();
+        $("#showCssSaved").css("visibility","visible");
 	var xhr = new XMLHttpRequest();
 	xhr.open('post', 'housepanel.php', true );
 	xhr.send(cssdata);

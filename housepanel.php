@@ -1148,6 +1148,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $kioskoptions = $options["kiosk"];
     $useroptions = $options["useroptions"];
     
+    $tc = "";
+    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
+    
     $tc.= "<div class='scrollhtable'>";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
@@ -1201,7 +1204,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // now print our options matrix
     $rowcnt = 0;
-    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
+//    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     foreach ($allthings as $thingid => $thesensor) {
         // if this sensor type and id mix is gone, skip this row
         

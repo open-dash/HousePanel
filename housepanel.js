@@ -182,7 +182,7 @@ function setupPopup() {
     });
 
 // Hiding Confirmation of Customization Span Until Needed
-$('#showCssSaved').hide();  
+//$('#showCssSaved').hide();  
 //    $("table.headoptions th.thingname").click(function() {
 //        alert("clicked on Room names row");
 //    });
