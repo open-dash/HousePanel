@@ -339,7 +339,8 @@ function getIconCategories() {
 
 function getIcons(strIconTarget, iCategory) {
 	if(iCategory === 'Local_Storage') {
-		var localPath = 'skin-housepanel/icons/';
+                var skindir = $("#skinid").val();
+		var localPath = skindir + '/icons/';
 		var icons = '';		
 		$.ajax({
 			url : localPath,
