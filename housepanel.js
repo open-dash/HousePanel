@@ -102,10 +102,45 @@ window.addEventListener("load", function(event) {
     setupFilters();
     
     setupHideTabs();
+    
+    setupSaveButton();
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
 });
+    
+function setupSaveButton() {
+    
+    $("#submitoptions").click(function(evt) {
+        var sheet = document.getElementById('customtiles').sheet;
+        var sheetContents = "";
+        c=sheet.cssRules;
+        for(j=0;j<c.length;j++){
+            sheetContents += c[j].cssText;
+        };
+        var regex = /[{;}]/g;
+        var subst = "$&\n";
+        sheetContents = sheetContents.replace(regex, subst);
+        
+        // create form data from our table plus the custom edits
+        var alldata = new FormData(document.getElementById("optionspage"));
+        alldata.append("cssdata", sheetContents);
+        alldata.append("useajax", "saveoptions");
+        
+        var request = new XMLHttpRequest();
+        request.open('POST', 'housepanel.php', false);
+//        $response = $.post("housepanel.php", 
+//                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
+//        );
+        
+        request.send(alldata);
+        console.log(request.response);
+        
+        if (request.response == "success") {
+            $("form.options").submit(); 
+        }
+    });
+}
 
 function setupFilters() {
    // set up option box clicks

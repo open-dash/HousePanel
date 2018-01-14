@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.47       Integrate Nick's color picker and custom dialog
  * 1.46       Free form drag and drop of tiles
  * 1.45       Merge in custom tile editing from Nick ngredient-master branch
  * 1.44       Tab row hide/show capabilty in kiosk and regular modes
@@ -643,9 +644,9 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
             $tc.="<div class=\"restoretabs\">Hide Tabs</div>";
         }
         // add a placeholder dummy to force background if almost empty page
-        // if ($thiscnt <= 18) {
-        $tc.= '<div class="minheight"> </div>';
-        // }
+        if ($thiscnt <= 9) {
+           $tc.= '<div class="minheight"> </div>';
+        }
        
         // end the form and this panel
         $tc.= "</div></form>";
@@ -1152,7 +1153,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     
     $tc.= "<div class='scrollhtable'>";
-    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
+    $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
     $tc.= "<div class=\"kioskoption\">Kiosk Mode: ";
@@ -1319,10 +1320,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
     $tc.= "</tbody></table>";
     $tc.= "</div>";   // vertical scroll
-    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
-    $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
+//    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
+//    $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
     $tc.= "<div class=\"processoptions\">";
-    $tc.= "<input class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"submit\" />";
+    $tc.= "<input id=\"submitoptions\" class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"button\" />";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
@@ -1350,7 +1351,7 @@ function inroom($idx, $things) {
 }
 
 // this processes a _POST return from the options page
-function processOptions($optarray, $retpage, $allthings=null) {
+function processOptions($optarray) {
     if (DEBUG2) {
         // echo "<html><body>";
         echo "<h2>Options returned</h2><pre>";
@@ -1365,6 +1366,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
                         "clock","blank","image","video");
     
     $oldoptions = readOptions();
+    $skindir = $oldoptions["skin"];
     
     // make an empty options array for saving
     $options = array("rooms" => array(), "index" => array(), 
@@ -1384,6 +1386,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
         // set skin
         if ($key=="skin") {
             $options["skin"] = $val;
+            $skindir = $val;
         }
         else if ( $key=="kiosk") {
             $options["kiosk"] = strtolower($val);
@@ -1397,6 +1400,9 @@ function processOptions($optarray, $retpage, $allthings=null) {
 //                }
 //            }
             $options["useroptions"] = $newuseroptions;
+        }
+        else if ( $key=="cssdata") {
+            writeCustomCss($skindir, $val);
         }
         // if the value is an array it must be a room name with
         // the values being either an array of indexes to things
@@ -1455,7 +1461,7 @@ function processOptions($optarray, $retpage, $allthings=null) {
     writeOptions($options);
     
     // reload to show new options
-    header("Location: $retpage");
+    // header("Location: $retpage");
 }
 // *** main routine ***
 
@@ -1731,35 +1737,30 @@ function processOptions($optarray, $retpage, $allthings=null) {
                 echo $tc;
                 echo htmlFooter();
                 break;
+            
+            case "saveoptions":
+                if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
+                    processOptions($_POST);
+                    echo "success";
+                } else {
+                    echo "error: invalid save options request";
+                }
                 
+//                $location = $returnURL;
+//                header("Location: $location");
+                
+                break;
             // default:
             //    echo "Unknown AJAX call useajax = [" . $useajax . "]";
         }
         exit(0);
     }
     
-    //Custom Tiles Added AJAX Code
-    // TODO: Integrate this into the existing AJAX and form save ecosystem
-    if(!empty($_POST['cssdata'])){
-        $allthings = getAllThings($endpt, $access_token);
-        $options= getOptions($allthings);
-        $skindir = $options["skin"];
-        if (! $skindir ) {
-            $skindir = "skin-housepanel";
-        }
-        $data = $_POST['cssdata'];
-        writeCustomCss($skindir, $_POST['cssdata']);
-        exit(0);
-        // reload to show new options
-        // header("Location: $returnURL");
-    }
-    
-    // process options submit request
-    // handle the options and then reload the page from scratch
+    // final save options step involves reloading page via submit action
     // because just about everything could have changed
     if ($endpt && $access_token && isset($_POST["options"])) {
-        // $allthings = getAllThings($endpt, $access_token);
-        processOptions($_POST, $returnURL);
+        $location = $returnURL;
+        header("Location: $location");
         exit(0);
     }
 
