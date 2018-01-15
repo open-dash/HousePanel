@@ -144,13 +144,10 @@ $("#editHeight").bind('input', function () {
 	
 } //End initDialogBinds()
 
-	
-
-
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
 	$('#edit_Tile').empty();
-
+	
 	//*DIALOG START*	
 	//Build Dialog
 	var dialog = document.getElementById('edit_Tile');
@@ -261,7 +258,14 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	$('#tileImage_off').hide();
 	initDialogBinds();
 	section_Toggle('icon');
-	pickColor('icon');	
+	pickColor('icon');
+	
+	//Get Position of calling button and move dialog to it
+	var btn_caller = $( "#btn_" + thingindex );
+	var dgtop = btn_caller.position().top;
+	var dgleft = btn_caller.position().left + 120;
+	$('#edit_Tile').animate({ 'top': dgtop + 'px', 'left': dgleft + 'px'}, 200, function(){
+    });
 
 }; //End EditTile
 

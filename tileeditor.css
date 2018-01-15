@@ -1,3 +1,7 @@
+edit_Tile {
+	position: absolute;
+}
+
 div.tileDialog {
   overflow: hidden;
 }
