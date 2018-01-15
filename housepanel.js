@@ -55,25 +55,26 @@ window.addEventListener("load", function(event) {
 
     // make the actual thing tiles on each panel sortable
     // the change function does a post to make it permanent
-    $("div.panel").sortable({
-        items: "> div.thing",
-        opacity: 0.5,
-        revert: true,
-        delay: 200,
-        update: function(event, ui) {
-            var things = {};
-            var k=0;
-            var roomname = $(ui.item).attr("panel");
-            var roomtitle = $(this).attr("title");
-            // var bid = $(ui.helper).attr("bid");
-            // get the new list of things in order
-            $("div.panel-" + roomname + " > div.thing").each(function() {
-                var tilenum = parseInt( $(this).attr("tile") );
-                things[k] = tilenum;
-                k++;
-            });
+    $("div.thing").draggable({
+        revert: false,
+        containment: "parent",
+        delay: 50,
+        stop: function(event, ui) {
+            var dragthing = {};
+            dragthing["id"] = $(event.target).attr("id");
+            var bid = $(event.target).attr("bid");
+            var thingtype = $(event.target).attr("type");
+            dragthing["tile"] = $(event.target).attr("tile");
+            dragthing["panel"] = $(event.target).attr("panel");
+           
+//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
+//            $.post("housepanel.php", 
+//                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+//            );
+            // now post back to housepanel to save the position
+            // also send the dragthing object to get panel name and tile pid index
             $.post("housepanel.php", 
-                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+                   {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
         }
     });
@@ -101,10 +102,45 @@ window.addEventListener("load", function(event) {
     setupFilters();
     
     setupHideTabs();
+    
+    setupSaveButton();
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
 });
+    
+function setupSaveButton() {
+    
+    $("#submitoptions").click(function(evt) {
+        var sheet = document.getElementById('customtiles').sheet;
+        var sheetContents = "";
+        c=sheet.cssRules;
+        for(j=0;j<c.length;j++){
+            sheetContents += c[j].cssText;
+        };
+        var regex = /[{;}]/g;
+        var subst = "$&\n";
+        sheetContents = sheetContents.replace(regex, subst);
+        
+        // create form data from our table plus the custom edits
+        var alldata = new FormData(document.getElementById("optionspage"));
+        alldata.append("cssdata", sheetContents);
+        alldata.append("useajax", "saveoptions");
+        
+        var request = new XMLHttpRequest();
+        request.open('POST', 'housepanel.php', false);
+//        $response = $.post("housepanel.php", 
+//                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
+//        );
+        
+        request.send(alldata);
+        console.log(request.response);
+        
+        if (request.response == "success") {
+            $("form.options").submit(); 
+        }
+    });
+}
 
 function setupFilters() {
    // set up option box clicks
@@ -179,7 +215,9 @@ function setupPopup() {
         });
         $(this).bind("click", jeditTableCell);
     });
-    
+
+// Hiding Confirmation of Customization Span Until Needed
+//$('#showCssSaved').hide();  
 //    $("table.headoptions th.thingname").click(function() {
 //        alert("clicked on Room names row");
 //    });
@@ -219,7 +257,7 @@ var jeditTableCell = function(event) {
 
     // if another popup is active, process it
     if (popupStatus === 1) {
-        // $(that).html().substring(0,8) === "<input id") { return true; }
+        // $(that).html().substring(0,9) === "<input id") { return true; }
         processPopup();
         // return true;
     }
@@ -596,9 +634,12 @@ function setupPage(trigger) {
     var actionid = "div." + trigger;
 
     $(actionid).click(function() {
-
-        // updated this to use "tileid" to avoid confusion with main tile
+        
         var aid = $(this).attr("aid");
+        
+        // avoid doing click if the target was the title bar
+        if ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) return;
+
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
         var tile = '#t-'+aid;
@@ -671,164 +712,4 @@ function setupPage(trigger) {
                             
     });
    
-};
-
-function editTile(str_type, thingname, thingindex, str_on, str_off) {  
-	document.getElementById('showCssSaved').style.visibility = 'hidden';
-    var dialog = document.getElementById('edit_Tile');
-	var dialog_html = "<div id='tiledialog'>";
-	var strIconTarget = "div." + str_type + ".p_" + thingindex + ".";
-	dialog_html += "<div id='edittile'>";
-	
-	
-	dialog_html += "<div id='tile_" + thingindex + "' tile='0' bid='0' type='switch' panel='main' class='thing " + 
-                       str_type + "-thing p_" + thingindex + "'>";
-	dialog_html += "<div id='custom_title' title='" + str_type + "status' class='thingname " + str_type +"' id='title_" + thingindex + "'>";
-	dialog_html += "<span id='titleEdit' class='n_" + thingindex + "'>" + thingname + "</span></div>";
-	dialog_html += "<div id='custom_img_on' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_on + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_on + "</div>";
-	dialog_html += "<div id='custom_img_off' class='" + str_type + " " + thingname.toLowerCase() + " p_" + thingindex + " " + str_off + "' onclick='toggleIcon(\"" + strIconTarget + "\")'>" + str_off + "</div></div>";
-
-	dialog_html += "<div><span id='onoff'>on</span></div>";
-	dialog_html += "<div>";
-	dialog_html += "<span class='btn color' onclick='chooseTitleColor()'>Title Box</span>";
-	dialog_html += "<span class='btn color' onclick='chooseBgColor()'>Background</span>";	
-	dialog_html += "</div>";	
-	dialog_html += "<div>";
-	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
-	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
-	dialog_html += "<span class='btn' onclick='editTileClose()'>Close</span>";
-	dialog_html += "</div>";	
-	dialog_html += "</div>";
-	dialog_html += "<div id='editicon'>";
-	dialog_html += "<div id='iconList'></div>"; //Icon List
-	dialog_html += "</div>";
-	dialog_html += "</div>";
-	getIconList(strIconTarget + "on");
-	dialog.innerHTML = dialog_html;
-	dialog.show();  
-};
-function toggleIcon(strIconTarget) {
-	var strOnOff = document.getElementById('onoff').innerHTML;
-	if (strOnOff === "on"){
-		strOnOff = "off";
-//		document.getElementById('toggle').style.background = '#000000';
-//		document.getElementById('custom_img_on').style.display = 'none';
-//		document.getElementById('custom_img_off').style.display = 'inline-block';
-		$('#custom_img_on').hide();
-		$('#custom_img_off').show();
-	}
-	else {
-		strOnOff = "on";
-//		document.getElementById('toggle').style.background = '#3498db';
-//		document.getElementById('custom_img_on').style.display = 'inline-block';
-//		document.getElementById('custom_img_off').style.display = 'none';	
-		$('#custom_img_on').show();
-		$('#custom_img_off').hide();
-	}
-	document.getElementById('onoff').innerHTML = strOnOff;
-
-	getIconList(strIconTarget + strOnOff);	
-};
-
-function getIconList(ruleToTarget){
-var select = document.getElementById("selectIcon");
-var rootPath = 'skin-housepanel/icons/';
-var icons = '';
-$.ajax({
-	url : rootPath,
-	success: function (data) {
-		$(data).find("a").attr("href", function (i, val) {
-		if( val.match(/\.(jpe?g|png|gif|jpg|JPG)$/) ) {
-			    var iconImage = rootPath + val; 
-				icons+='<div id="iconlist ' + val + '"><img onclick="iconSelected(\'' + ruleToTarget + '\',\'../' + iconImage + '\')" class="icon" src="' + iconImage + '" alt="' + val + '"></div>'
-				
-				//alert(option)
-			} 
-		}
-		);
-	$('#iconList').html(icons)	
-	}
-
-});
-
-};
-
-function iconSelected(targetRule, imagePath) {
-addCSSRule(targetRule, "background-image: url('" + imagePath + "');");
-};
-
-function editTileClose() {  
-var dialog = document.getElementById('edit_Tile');
-dialog.close();
-};
-
-function postCustomStyleSheet(){
-var sheet = document.getElementById('customtiles').sheet;
-var sheetContents = "";
-	c=sheet.cssRules;
-	for(j=0;j<c.length;j++){
-		sheetContents += c[j].cssText;
-	};
-var regex = /[{;}]/g;
-var subst = "$&\n";
-sheetContents = sheetContents.replace(regex, subst);
-
-var cssdata = new FormData();
-cssdata.append("cssdata", sheetContents);
-var xhr = new XMLHttpRequest();
-xhr.open('post', 'housepanel.php', true );
-xhr.send(cssdata);
-document.getElementById('showCssSaved').style.visibility = 'visible';
-
-};
-
-function addCSSRule(selector, rules){
-    //Searching of the selector matching cssRules
-	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
-	var index = -1;
-    for(var i=sheet.cssRules.length; i--;){
-      var current_style = sheet.cssRules[i];
-      if(current_style.selectorText === selector){
-        //Append the new rules to the current content of the cssRule;
-        rules=current_style.style.cssText + rules;
-        sheet.deleteRule(i);
-        index=i;
-      }
-    }
-    if(sheet.insertRule){
-	  if(index > -1) {
-      	sheet.insertRule(selector + "{" + rules + "}", index);		  
-	  }
-	  else{
-      	sheet.insertRule(selector + "{" + rules + "}");			  
-	  }
-    }
-    else{
-	  if(index > -1) {
-      	sheet.addRule(selector, rules, index);	  
-	  }
-	  else{
-      	sheet.addRule(selector, rules);	  
-	  }
-    }
-};
-
-function resetCSSRules(str_type, thingIndex){
-	//alert("div." + str_type + ".p_" + thingIndex + ".on");
-	removeCSSRule("span.n_" + thingIndex);
-	removeCSSRule("span.n_" + thingIndex + ":before");
-	removeCSSRule("span.n_" + thingIndex + "::before");
-	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".on");
-	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".off");
-	
-};
-
-function removeCSSRule(strMatchSelector){
-	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
-    //Searching of the selector matching cssRules
-    for (var i=sheet.cssRules.length; i--;) {
-        if (sheet.cssRules[i].selectorText === strMatchSelector) {        
-            sheet.deleteRule (i);
-        }
-    }  
 };
