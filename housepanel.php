@@ -1462,6 +1462,20 @@ function processOptions($optarray) {
     // reload to show new options
     // header("Location: $retpage");
 }
+
+function is_ssl() {
+    if ( isset($_SERVER['HTTPS']) ) {
+        if ( 'on' == strtolower($_SERVER['HTTPS']) || ( '1' == $_SERVER['HTTPS'] ) ) {
+            return true;
+        }
+    } elseif ( isset($_SERVER['SERVER_PORT']) && ( '443' == $_SERVER['SERVER_PORT'] ) ) {
+        return true;
+    } elseif ( $_SERVER['REQUEST_SCHEME'] && $_SERVER['REQUEST_SCHEME']=="https" ) {
+        return true;
+    }
+    return false;
+}
+
 // *** main routine ***
 
     // set timezone so dates work where I live instead of where code runs
@@ -1473,7 +1487,12 @@ function processOptions($optarray) {
     
     // get name of this webpage without any get parameters
     $serverName = $_SERVER['SERVER_NAME'];
-    $serverPort = $_SERVER['SERVER_PORT'];
+    
+    if ( isset($_SERVER['SERVER_PORT']) ) {
+        $serverPort = $_SERVER['SERVER_PORT'];
+    } else {
+        $serverPort = '80';
+    }
 
 // fix logic of self discovery
 //    $uri = $_SERVER['REQUEST_URI'];
@@ -1483,10 +1502,11 @@ function processOptions($optarray) {
 //    }
     $uri = $_SERVER['PHP_SELF'];
     
-    if ( $_SERVER['REQUEST_SCHEME'] && $_SERVER['REQUEST_SCHEME']=="http" ) {
-       $url = "http://" . $serverName . ':' . $serverPort;
-    } else {
+//    if ( $_SERVER['REQUEST_SCHEME'] && $_SERVER['REQUEST_SCHEME']=="http" ) {
+    if ( is_ssl() ) {
        $url = "https://" . $serverName . ':' . $serverPort;
+    } else {
+       $url = "http://" . $serverName . ':' . $serverPort;
     }
     $returnURL = $url . $uri;
     
