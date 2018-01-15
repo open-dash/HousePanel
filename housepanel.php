@@ -110,6 +110,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="icon" type="image/png" href="media/favicon-32x32.png" sizes="32x32"> ';
     $tc.= '<link rel="icon" type="image/png" href="media/favicon-96x96.png" sizes="96x96"> ';
     $tc.= '<link rel="apple-touch-icon" href="media/apple-touch-icon.png">';
+    $tc.= '<link rel="shortcut icon" href="media/favicon.ico">';
     
     // load jQuery and themes
 	
@@ -1150,9 +1151,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $useroptions = $options["useroptions"];
     
     $tc = "";
-    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     
-    $tc.= "<div class='scrollhtable'>";
+    $tc.= "<div class='optionstable'>";
     $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
@@ -1320,8 +1320,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 
     $tc.= "</tbody></table>";
     $tc.= "</div>";   // vertical scroll
-//    $tc.= "<div id=\"custom_footer\"><span id=\"saveCss\" class=\"btn\" onclick=\"saveCustomStyleSheet()\">Save Customizations</span>";
-//    $tc.= "<span id=\"showCssSaved\">Customizations Saved</span></div>";
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input id=\"submitoptions\" class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"button\" />";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
@@ -1330,7 +1328,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     if ($sitename) {
         $tc.= authButton($sitename, $retpage);
     }
-    $tc.= "</div>";   // horizontal scroll
+    $tc.= "<dialog id=\"edit_Tile\"></dialog>";
+    $tc.= "</div>";
     // $tc.= "</div>";
 
     return $tc;
@@ -1750,7 +1749,7 @@ function processOptions($optarray) {
 //                header("Location: $location");
                 
                 break;
-            // default:
+          // default:
             //    echo "Unknown AJAX call useajax = [" . $useajax . "]";
         }
         exit(0);

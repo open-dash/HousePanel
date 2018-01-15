@@ -71,8 +71,8 @@ function initDialogBinds() {
 
 
 function editTile(str_type, thingname, thingindex, str_on, str_off) {  
-	$('#showCssSaved').hide(); //hides "saved" message if visible
-        $("#showCssSaved").css("visibility","hidden");
+//	$('#showCssSaved').hide(); //hides "saved" message if visible
+//        $("#showCssSaved").css("visibility","hidden");
 	$('#edit_Tile').empty();
 
 	//*DIALOG START*	
@@ -168,13 +168,13 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<div><span id='toggle_status'>on</span></div>";
 	//tileDisplay_buttons
 	dialog_html += "<div class='tile_buttons'>";
-	dialog_html += "<div>";
+	dialog_html += "<div class='toggle'>";
 	dialog_html += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
 	dialog_html += "<span class='btn' onclick='tileCopy(" + thingindex + ")'>&#x2398</span>";
 	dialog_html += "<span class='btn' onclick='tilePaste(" + thingindex + ")'>&#x1f4cb</span>";
 	dialog_html += "<span id='dgclose' class='btn' onclick='tileDialogClose()'>Close</span>";
 	dialog_html += "</div>";
-	dialog_html += "<div>";
+	dialog_html += "<div class='toggle'>";
 	dialog_html += "<span id='toggle' class='btn' onclick='toggleIcon(\"" + strIconTarget + "\")'>Toggle</span>";
 	dialog_html += "</div>";
 	dialog_html += "</div>";
@@ -417,26 +417,6 @@ function iconSelected(cssRuleTarget, imagePath) {
 function tileDialogClose() {  
     var dialog = document.getElementById('edit_Tile');
 	dialog.close();
-};
-
-function saveCustomStyleSheet(){
-var sheet = document.getElementById('customtiles').sheet;
-	var sheetContents = "";
-		c=sheet.cssRules;
-		for(j=0;j<c.length;j++){
-			sheetContents += c[j].cssText;
-		};
-	
-	var regex = /[{;}]/g;
-	var subst = "$&\n";
-	sheetContents = sheetContents.replace(regex, subst);
-	var cssdata = new FormData();
-	cssdata.append("cssdata", sheetContents);
-	$('#showCssSaved').show();
-        $("#showCssSaved").css("visibility","visible");
-	var xhr = new XMLHttpRequest();
-	xhr.open('post', 'housepanel.php', true );
-	xhr.send(cssdata);
 };
 
 function addCSSRule(selector, rules, resetFlag){

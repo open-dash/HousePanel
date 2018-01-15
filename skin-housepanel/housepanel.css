@@ -87,9 +87,8 @@ div.filteroption {
 }
 table.useroptions {
     margin-left: 8px;
-    background-color: #f5f6de;
-    border-top: solid 1px black;
-    border-bottom: solid 1px black;
+    background-color: #eeeeee;
+    border: solid 1px black;
 }
 td.optname {
     padding-left: 5px;
@@ -224,6 +223,11 @@ div.scrollvtable {
 div.scrollhtable {
     max-height: 100%;    overflow-x: auto;    overflow-y: hidden;
     background-color: #ffffff;
+}
+div.optionstable {
+    background-color: #ffffff;
+    color: #000000;
+    width: 100%;
 }
 table.roomoptions, table.headoptions {
     margin: 0px;    background-color: #ffffff;    color: #000000;

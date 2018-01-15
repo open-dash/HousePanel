@@ -9,33 +9,32 @@
 div.tileDialog {
   overflow: hidden;
 }
-dialog {  
-    background:#999;
+dialog#edit_Tile {
+    background:#cccccc;
     border: 1px solid #666;
     font-family:sans-serif;
     padding: 0px 0px 0px 1px;
-  	position: absolute;
-  	top: 50%;
-  	left: 50%;
-    width: 215px; 
+    position: absolute;
+    width: 400px; 
     height: 267px;
-  	top: 50%;
-  	left: 35%;
+    top: 30%;
+    left: 35%;
 } 
 div.tile_buttons {
 	margin-left:2px;
-	width: 130px;
-	height: 33px;
-	font-size: 9pt;
+	width: auto;
+	height: auto;
+        margin-bottom: 10px;
+	font-size: 10pt;
 }
 #wysISwyg {
 	margin-left:5px
 }
 #tileDisplay {
-	display: inline-block;
-    float: right;
-    width: 1px; 
-    height: 230px;
+    display: inline-block;
+    height: auto;
+    position: relative;
+    left: 230px;
 }
 #iconChoices {
 	margin: 3px;
@@ -66,7 +65,8 @@ div.tile_buttons {
 	text-align:center;
 }
 #editSection {
-	text-align: center;
+	text-align: left;
+        margin-left: 6px;
 }
 .editSection_child {
 	margin-top: 2px;
@@ -74,7 +74,7 @@ div.tile_buttons {
 #iconSrc {
 	margin-right: 4px;
 	width: 118px;
-	font-size: 9pt;
+	font-size: 10pt;
 	border-radius: 2px;
 	border: 1px solid transparent;
 	border-top: none;
@@ -84,7 +84,7 @@ div.tile_buttons {
 	/*font-size: 9pt;*/
 }
 #iconSrc option {
-	font-size: 9pt;
+	font-size: 10pt;
 }
 input.editSection_txt {
 	font-size: 10pt;
@@ -105,7 +105,7 @@ input.editSection_txt.height, input.editSection_txt.width {
 }
 #color {
 	margin-top: 3px;
-	font-size: 12pt;
+	font-size: 10pt;
 	width: 68px;
 	height: 18px;	
 	border-radius: 2px;
@@ -158,7 +158,7 @@ input.editSection_txt.height, input.editSection_txt.width {
 }
 .toggleSections label{
   border: 1px solid #fff;
-  font-size: 11px;
+  font-size: 12px;
   padding: 1px 20px;  
   cursor: pointer;
   color: #fff;
@@ -205,13 +205,13 @@ input[name='sectionToggle']:checked+label{
   background-color: white;
   padding: 2px 5px;
   border-radius: 8px;
-  font-size: 8pt;
+  font-size: 10pt;
   font-weight: bold;
   width: 196px;
 }
 
 .upload-btn-wrapper input[type=file] {
-  font-size: 11pt;
+  font-size: 10pt;
   position: absolute;
   left: 0;
   top: 0;
@@ -233,9 +233,12 @@ input[name='sectionToggle']:checked+label{
   background-image: -o-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
 }
+div.toggle {
+    margin-top: 5px;
+}
 #toggle {
-	width: 120px;
-	  padding: 2px 51px 1px 51px;	
+    width: 120px;
+    padding: 2px 60px 1px 60px;	
 }
 .btn {
   background: #3498db;
@@ -249,7 +252,7 @@ input[name='sectionToggle']:checked+label{
   border-radius: 28px;
   font-family: Arial;
   color: #ffffff;
-  font-size: 7pt;
+  font-size: 10pt;
   padding: 2px 7px 1px 7px;
   text-decoration: none;
   margin: 2px;
@@ -276,23 +279,6 @@ input[name='sectionToggle']:checked+label{
   background-image: -o-linear-gradient(top, #f00000, #903000);
   background-image: linear-gradient(to bottom, #f00000, #903000);
   text-decoration: none;	
-}
-
-#saveCss {
-	font-size: 14pt;
-	-webkit-border-radius: 32;
-	-moz-border-radius: 32;
-	border-radius: 32px;
-}
-#showCssSaved {
-	margin-left: 6px;
-	font-size: 12pt;
-	color: #900;
-}
-#custom_footer {
-	position: relative;
-	margin: 4px;
-	left: 20%;	
 }
 
 .selectIcon {
