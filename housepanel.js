@@ -138,7 +138,7 @@ function setupSliders() {
             );
         }
     });
-    
+
     // set the initial slider values
     $("div.thing >div.level").each( function(){
         var initval = $(this).attr("value");
