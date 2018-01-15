@@ -655,8 +655,14 @@ div.switch.energy {
 div.switchlevel.switch, div.bulb.switch {
     height: 80px;
 }
-div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
+switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation,
+bulb.colorTemperature, bulb.hue, bulb.saturation {
     height: 32px;
+}
+
+/* size of slider bar */
+div.switchlevel.level, div.bulb.level {
+    height: 0.3em;
 }
 
 /* momentary styling */
