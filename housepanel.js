@@ -104,11 +104,48 @@ window.addEventListener("load", function(event) {
     setupHideTabs();
     
     setupSaveButton();
+    
+    setupSliders();
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
 });
+
+function setupSliders() {
+    $("div.thing >div.level").slider({
+        orientation: "horizontal",
+        min: 0,
+        max: 100,
+        step: 5,
+        stop: function( evt, ui) {
+            var thing = $(evt.target);
+            thing.attr("value",ui.value);
+            
+            var aid = thing.attr("aid");
+            var tile = '#t-'+aid;
+            var bid = $(tile).attr("bid");
+            var thetype = $(tile).attr("type");
+            
+            $.post("housepanel.php", 
+                   {useajax: "doaction", id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
+                   function (presult, pstatus) {
+                        if (pstatus==="success" ) {
+                            // alert( strObject(presult) );
+                            updAll("slider",aid,bid,thetype,presult);
+                        }
+                   }, "json"
+            );
+        }
+    });
     
+    // set the initial slider values
+    $("div.thing >div.level").each( function(){
+        var initval = $(this).attr("value");
+        $(this).slider("value", initval);
+    });
+    
+}
+
 function setupSaveButton() {
     
     $("#submitoptions").click(function(evt) {
@@ -357,26 +394,32 @@ function updateTile(aid, presult) {
 
         // only take action if this key is found in this tile
         if ($(targetid) && value) {
-            var oldvalue = $(targetid).html();
+            var oldvalue = $(targetid).text();
             var oldclass = $(targetid).attr("class");
             // alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
 
-            // remove the old class type and replace it if they are both
-            // single word text fields like open/closed/on/off
-            // this avoids putting names of songs into classes
-            // also only do this if the old class was there in the first place
-            if ( oldclass && oldvalue && value &&
-                 $.isNumeric(value)===false && 
-                 $.isNumeric(oldvalue)===false &&
-                 oldclass.indexOf(oldvalue)>=0 ) 
-            {
-                $(targetid).removeClass(oldvalue);
-                $(targetid).addClass(value);
-            }
+            // special handling for sliders
+            if ( key == "level") {
+                var initval = $(this).attr("value");
+                $(targetid).slider("value", value);
+            } else {
+                // remove the old class type and replace it if they are both
+                // single word text fields like open/closed/on/off
+                // this avoids putting names of songs into classes
+                // also only do this if the old class was there in the first place
+                if ( oldclass && oldvalue && value &&
+                     $.isNumeric(value)===false && 
+                     $.isNumeric(oldvalue)===false &&
+                     oldclass.indexOf(oldvalue)>=0 ) 
+                {
+                    $(targetid).removeClass(oldvalue);
+                    $(targetid).addClass(value);
+                }
 
-            // update the content 
-            if (oldvalue && value) {
-                $(targetid).html(value);
+                // update the content 
+                if (oldvalue && value) {
+                    $(targetid).html(value);
+                }
             }
         }
     });
@@ -511,7 +554,9 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
 
     // update trigger tile first
     // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
-    updateTile(aid, pvalue);
+    if ( trigger !== "slider") {
+        updateTile(aid, pvalue);
+    }
     
     // for music tiles, wait few seconds and refresh again to get new info
     if (thetype==="music") {
@@ -590,7 +635,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
     // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
-    if (trigger==="level-up" || trigger==="level-dn" || 
+    if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
         trigger==="hue-up" || trigger==="hue-dn" ||
         trigger==="saturation-up" || trigger==="saturation-dn" ||
         trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
