@@ -78,6 +78,17 @@ function initDialogBinds() {
 		} else {
 			addCSSRule(cssRuleTarget, "", 1);	
 		}
+	});
+	
+	$('#noHead').bind('change', function() {
+		var cssRuleTarget = getCssRuleTarget('head');
+		if($("#noHead").is(':checked')){
+			addCSSRule(cssRuleTarget, "display: none;", 1);
+		} else {
+			addCSSRule(cssRuleTarget, "display: inline-block;", 0);
+			var rule = "width: " + ($("#wysISwyg").width() - 2) + "px;";
+			addCSSRule(getCssRuleTarget('head'), rule);
+		}
 	});	
 	
 	$("input[name='sectionToggle']").bind('change', function() {
@@ -111,35 +122,38 @@ function initDialogBinds() {
 		getIcons();	
 	});
 	
-$("#editWidth").bind('input', function() {
-	var rule = "width: " + $("#editWidth").val() + "px;";
-	addCSSRule(getCssRuleTarget('tile'), rule);
+	$("#editWidth").bind('input', function() {
+		var rule = "width: " + $("#editWidth").val() + "px;";
+		addCSSRule(getCssRuleTarget('tile'), rule);
+		
+		rule = "width: " + ($("#editWidth").val() - 2) + "px;";
+		addCSSRule(getCssRuleTarget('iconOn'), rule);
+		addCSSRule(getCssRuleTarget('iconOff'), rule);
+		addCSSRule(getCssRuleTarget('head'), rule);
+	});
+
+	$("#editHeight").bind('input', function () {
+		var rule = '';
+		var section = $("input[name='sectionToggle']:checked").val();
 	
-	rule = "width: " + ($("#editWidth").val() - 2) + "px;";
-	addCSSRule(getCssRuleTarget('iconOn'), rule);
-	addCSSRule(getCssRuleTarget('iconOff'), rule);
-	addCSSRule(getCssRuleTarget('head'), rule);
-});
-
-$("#editHeight").bind('input', function () {
-	var rule = '';
-	var section = $("input[name='sectionToggle']:checked").val();
-
-	if(section === 'head') {			
-		rule = "height: " + $("#editHeight").val() + "px;";
-		addCSSRule(getCssRuleTarget('head'), rule);				
-		rule = "height: " + ($("#wysISwyg").height() - $("#tileHead").height() - 20) + "px;";
-		addCSSRule(getCssRuleTarget('iconOn'), rule);
-		addCSSRule(getCssRuleTarget('iconOff'), rule);
+		if(section === 'head') {			
+			rule = "height: " + $("#editHeight").val() + "px;";
+			addCSSRule(getCssRuleTarget('head'), rule);				
+			rule = "height: " + ($("#wysISwyg").height() - $("#tileHead").height() - 20) + "px;";
+			addCSSRule(getCssRuleTarget('iconOn'), rule);
+			addCSSRule(getCssRuleTarget('iconOff'), rule);
+					
+		} else {
+			rule = "height: " + ($("#editHeight").val() - 20) + "px;";
+			if($('#tileHead').is(":visible")) {
+				rule = "height: " + ($("#editHeight").val() - $("#tileHead").height() - 20) + "px;";
+			}
+			addCSSRule(getCssRuleTarget('iconOn'), rule);
+			addCSSRule(getCssRuleTarget('iconOff'), rule);
+		}
+			rule = "height: auto";
+			addCSSRule(getCssRuleTarget('tile'), rule);	
 				
-	} else {						
-		rule = "height: " + ($("#editHeight").val() - $("#tileHead").height() - 20) + "px;";
-		addCSSRule(getCssRuleTarget('iconOn'), rule);
-		addCSSRule(getCssRuleTarget('iconOff'), rule);
-	}
-		rule = "height: auto";
-		addCSSRule(getCssRuleTarget('tile'), rule);	
-			
 });	
 	
 } //End initDialogBinds()
@@ -206,6 +220,7 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<span id='heightWrapper' class='editSection_input'>H<input type=\"number\" step=\"10\" min=\"10\" max=\"800\" class=\"editSection_txt height\" id=\"editHeight\" value=\"888\"/></span>";
 	dialog_html += "<span id='colorWrapper' class='editSection_input'><input type='text' class='editSection_txt color' id='editColor' value=\"#ffffff\"/></span>";	
 	dialog_html += "<span id='buttonWrapper' class='btn_color'></span>";
+	dialog_html += "<input type='checkbox' id='noHead'><label id=\"noHead-label\" class=\"iconChecks\" for=\"noHead\">None</label>";
 	dialog_html += "</div>";
 	//End: editSection (Toggle)
 	dialog_html += "</div>";
@@ -347,6 +362,8 @@ function section_Toggle(sectionView) {
 	$("#heightWrapper").hide();
 	$("#colorWrapper").hide();
 	$("#buttonWrapper").hide();
+	$("#noHead").hide();
+	$("#noHead-label").hide();
 	$('#buttonWrapper').removeClass( "btn_color" ).addClass( "btn_color image" );
 	switch (sectionView) {
 		case "tile":
@@ -361,6 +378,8 @@ function section_Toggle(sectionView) {
 			$("#heightWrapper").show();
 			$("#editHeight").val($("#tileHead").height());
 			$("#colorWrapper").show();
+			$("#noHead").show();
+			$("#noHead-label").show();
 			break;			
 		case "text":
 			$("#fontWrapper").show();
@@ -503,14 +522,15 @@ function addCSSRule(selector, rules, resetFlag){
 
 function resetCSSRules(str_type, thingIndex){
 	removeCSSRule("span.n_" + thingIndex);
-	removeCSSRule("span.n_" + thingIndex + ":before");
-	removeCSSRule("span.n_" + thingIndex + "::before");
 	removeCSSRule("div.t_" + thingIndex);
 	removeCSSRule("div.thingname.t_" + thingIndex);
 	removeCSSRule("div.thing.p_" + thingIndex);
 	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".on");
 	removeCSSRule("div." + str_type + ".p_" + thingIndex + ".off");
+	$("#Icon").prop("checked", true);
+	$("#noHead").prop("checked", false);
 	section_Toggle('icon');
+	pickColor('icon');
 };
 
 function removeCSSRule(strMatchSelector){

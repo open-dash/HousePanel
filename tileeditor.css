@@ -243,7 +243,18 @@ input[name='sectionToggle']{
 input[name='sectionToggle']:checked+label{
   background-color: #ed6b06;
 } 
-
+#noHead {
+  display: inline-block;
+  position: absolute;
+  left: 190px;
+  top: 22px;	
+}
+#noHead-label {
+  display: inline-block;
+  position: absolute;
+  left: 183px;
+  top: 33px;	
+}
 .btn_color.image {
     background-image: url('media/pickImage.png');
 }
