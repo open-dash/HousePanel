@@ -53,8 +53,8 @@ window.addEventListener("load", function(event) {
         }
     });
 
-    // make the actual thing tiles on each panel sortable
-    // the change function does a post to make it permanent
+    // make the actual thing tiles on each panel draggable
+    // the stop function does a post to make it permanent
     $("div.thing").draggable({
         revert: false,
         containment: "parent",
@@ -66,11 +66,6 @@ window.addEventListener("load", function(event) {
             var thingtype = $(event.target).attr("type");
             dragthing["tile"] = $(event.target).attr("tile");
             dragthing["panel"] = $(event.target).attr("panel");
-           
-//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
-//            $.post("housepanel.php", 
-//                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
-//            );
             // now post back to housepanel to save the position
             // also send the dragthing object to get panel name and tile pid index
             $.post("housepanel.php", 
@@ -109,6 +104,10 @@ window.addEventListener("load", function(event) {
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
+    
+    $("div.bulb.color").click(function() {
+        alert("Color picker not yet implemented");
+    })
 });
 
 function setupSliders() {
@@ -402,6 +401,8 @@ function updateTile(aid, presult) {
             if ( key == "level") {
                 var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
+//            } else if ( key=="color") {
+                // alert("updating color: "+value);
             } else {
                 // remove the old class type and replace it if they are both
                 // single word text fields like open/closed/on/off
@@ -432,7 +433,7 @@ function refreshTile(aid, bid, thetype) {
         {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
-                // alert( strObject(presult) );
+//                alert( strObject(presult) );
                 updateTile(aid, presult);
             }
         }, "json"

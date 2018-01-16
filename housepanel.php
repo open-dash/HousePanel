@@ -114,16 +114,23 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="shortcut icon" href="media/favicon.ico">';
     
     // load jQuery and themes
-	
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
 
+    // TODO - switch to the jquery mobile framework
+    /*
+    $tc.= '<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />';
+    $tc.= '<script src="http://code.jquery.com/jquery-1.12.4.min.js"></script>';
+    $tc.= '<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>';
+     * 
+     */
+    
     // load quicktime script for video
     $tc.= '<script src="ac_quicktime.js"></script>';
 
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
-    // $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
+    $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
     // load custom .css and the main script file
     if (!$skindir) {
@@ -493,7 +500,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                 $cval = $thingvalue["color"];
                 if ( preg_match("/^#[abcdefABCDEF\d]{6}/",$cval) ) {
                     $bgcolor = " style=\"background-color:$cval;\"";
-                    $tc.= putElement($kindex, $i, $j, $thingtype, $cval, "color", $subtype);
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $cval, "color", $subtype, $bgcolor);
                     $j++;
                 }
             }
