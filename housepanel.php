@@ -139,7 +139,7 @@ function htmlHeader($skindir="skin-housepanel") {
     // load the custom tile sheet if it exists
     // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("$skindir/customtiles.css")) {
-        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css?v=". time() ."\">";
     }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
