@@ -1136,12 +1136,16 @@ div.presence.absent {
 div.bulb.color {
 /*    position: relative;
     top: -140px;*/
-    background-image: url("../media/colorwheel.png");
-    background-size: 32px 32px;
-    height: 32px;
-    width: 32px;
+/*    background-image: url("../media/colorwheel.png");
+    background-size: 32px 32px;*/
+    height: 24px;
+    width: 24px;
     font-size: 1px;
     color: rgba(128,128,128,0.01);
+    position: absolute;
+    top: 50px;
+    right: 1px;
+    border-radius: 50%;
 }
 
 /* do not display these items */
