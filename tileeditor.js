@@ -365,6 +365,7 @@ function pickColor(strCaller) {
 			} else {
 				startColor = rgb2hex($('#tileImage_off').css("background-color"));			
 			}
+			startColor = '#' + changeInverted(startColor.substr(1));
 			break;		
 		case "tile":
 			startColor = rgb2hex($('#wysISwyg').css("background-color"));
