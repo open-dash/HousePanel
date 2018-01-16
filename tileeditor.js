@@ -49,17 +49,15 @@ function toggleTile() {
 		$('#wrapToggles').removeClass( "wrapToggles black" ).addClass( "wrapToggles" );
 		$('#tileImage_on').show();
 		$('#tileImage_off').hide();
-	}
+	};
 	$("#noIcon").attr('checked', false);
-	if ($("input[name='sectionToggle']:checked").val() === 'icon') {		
-		if($('#editicon').is(":visible")) {
-			getIcons();
-		} else {
-			pickColor('icon');			
-		}
-	}
 	
-}
+	if($('#editicon').is(":visible")) {
+		getIcons();
+	} else {
+		pickColor($("input[name='sectionToggle']:checked").val());			
+	}
+};
 
 function initDialogBinds() {
 	
@@ -74,7 +72,7 @@ function initDialogBinds() {
 	$('#noIcon').bind('change', function() {
 		var cssRuleTarget = getCssRuleTarget('icon');
 		if($("#noIcon").is(':checked')){
-			addCSSRule(cssRuleTarget, "background-image: none;", 1);
+			addCSSRule(cssRuleTarget, "background-image: none;", 0);
 		} else {
 			addCSSRule(cssRuleTarget, "", 1);	
 		}
@@ -139,14 +137,14 @@ function initDialogBinds() {
 		if(section === 'head') {			
 			rule = "height: " + $("#editHeight").val() + "px;";
 			addCSSRule(getCssRuleTarget('head'), rule);				
-			rule = "height: " + ($("#wysISwyg").height() - $("#tileHead").height() - 20) + "px;";
+			rule = "height: " + ($("#wysISwyg").height() - $("#tileHead").height() - 17) + "px;";
 			addCSSRule(getCssRuleTarget('iconOn'), rule);
 			addCSSRule(getCssRuleTarget('iconOff'), rule);
 					
 		} else {
-			rule = "height: " + ($("#editHeight").val() - 20) + "px;";
+			rule = "height: " + ($("#editHeight").val() - 17) + "px;";
 			if($('#tileHead').is(":visible")) {
-				rule = "height: " + ($("#editHeight").val() - $("#tileHead").height() - 20) + "px;";
+				rule = "height: " + ($("#editHeight").val() - $("#tileHead").height() - 17) + "px;";
 			}
 			addCSSRule(getCssRuleTarget('iconOn'), rule);
 			addCSSRule(getCssRuleTarget('iconOff'), rule);
@@ -292,6 +290,70 @@ function tilePaste(thingindex) {
 	alert("Not Yet Implemented - Pasted To: " + thingindex)
 };
 
+function invertHex(hexnum){
+  if(hexnum.length != 6) {
+    console.log("Hex color must be six hex numbers in length.");
+    return false;
+  }
+	
+  hexnum = hexnum.toUpperCase();
+  var splitnum = hexnum.split("");
+  var resultnum = "";
+  var simplenum = "FEDCBA9876".split("");
+  var complexnum = new Array();
+  complexnum.A = "5";
+  complexnum.B = "4";
+  complexnum.C = "3";
+  complexnum.D = "2";
+  complexnum.E = "1";
+  complexnum.F = "0";
+	
+  for(i=0; i<6; i++){
+    if(!isNaN(splitnum[i])) {
+      resultnum += simplenum[splitnum[i]]; 
+    } else if(complexnum[splitnum[i]]){
+      resultnum += complexnum[splitnum[i]]; 
+    } else {
+      alert("Hex colors must only include hex numbers 0-9, and A-F");
+      return false;
+    }
+  }
+	
+  return resultnum;
+}
+
+function resetInverted() {
+    //Searching of the selector matching cssRules
+	var selector = getCssRuleTarget('icon');
+	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
+	var index = -1;
+    for(var i=sheet.cssRules.length; i--;){
+      var current_style = sheet.cssRules[i];
+      if(current_style.selectorText === selector){
+		  if(current_style.cssText.indexOf("invert") !== -1) {
+			current_style.style.filter="";	
+		  }	  		
+      }
+    }
+};
+
+function changeInverted(strColor) {
+    //Searching of the selector matching cssRules
+	var selector = getCssRuleTarget('icon');
+	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
+	var index = -1;
+    for(var i=sheet.cssRules.length; i--;){
+      var current_style = sheet.cssRules[i];
+      if(current_style.selectorText === selector){
+		  if(current_style.cssText.indexOf("invert") !== -1) {
+			return invertHex(strColor);
+		  }	  		
+      }
+    }
+	return strColor;
+};
+
+
 function pickColor(strCaller) {
 	var startColor = '';
 	var cssRuleTarget = getCssRuleTarget(strCaller);
@@ -317,17 +379,17 @@ function pickColor(strCaller) {
 	$('#editicon').hide();
 	$('#iconChoices').hide();
 	$('#editcolor').show();		
-	$(document).ready(function() {			
-		$("#editColor")[0].onchange = null;
-		$('#editColor')[0].setAttribute('onchange', 'relayColor(\'' + cssRuleTarget + '\')');
-		$('#colorpicker').farbtastic('#editColor');
-		$('#editColor').val(startColor);	
-		$('#editColor').trigger('keyup');
-	});
+	$("#editColor")[0].onchange = null;
+	$('#editColor')[0].setAttribute('onchange', 'relayColor(\'' + cssRuleTarget + '\')');
+	$('#colorpicker').farbtastic('#editColor');
+	$('#editColor').val(startColor);	
+	$('#editColor').trigger('keyup');
+
 };
 
 function relayColor(cssRuleTarget) {
 	var strColor = $('#editColor').val();
+	strColor = '#' + changeInverted(strColor.substr(1));
 	if(cssRuleTarget.indexOf("n_") !== -1) {
 		addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
 	} else {
@@ -472,14 +534,14 @@ function makeUnique(list) {
 function iconSelected(cssRuleTarget, imagePath) {
 	$("#noIcon").attr('checked', false);
 
-	addCSSRule(cssRuleTarget, "background-image: url('" + imagePath + "');", 1);
-	
+	addCSSRule(cssRuleTarget, "background-image: url('" + imagePath + "');", 0);
+	//example gradient: horizontal darker: background-imageurl,linear-gradient(to right, rgba(0,0,0,.5) 0%,rgba(0,0,0,0) 50%, rgba(0,0,0,.5) 100%);
 	if($("#invertIcon").is(':checked')){
 		addCSSRule(cssRuleTarget, "filter: invert(1);");
 		addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
+	} else {
+		resetInverted();
 	}
-	$("#tileHeight").trigger('input');
-	$("#tileWidth").trigger('input');	
 };
 
 function tileDialogClose() {  
