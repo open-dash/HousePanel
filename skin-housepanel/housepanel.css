@@ -835,11 +835,14 @@ div.music-controls {
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
     background-image: url("Media-Player-Buttons.png");
+    background-size: auto;
     display: inline-block;
     background-repeat: no-repeat;
-    height:38px; width: 32px;
+    height:38px; 
+    width: 32px;
     background-position: -160px -4px;
-    margin-top: 10px;
+    margin-top: 5px;
+    /*position: absolute;*/
 }
 div.music-pause {
     background-position: -64px -4px;
@@ -988,8 +991,8 @@ div.music.track {
     font-family: "Raleway",serif;
     font-size: 11pt;
     font-style: italic;
-    height: auto;
-	padding-top: 5px;
+    height: 48px;
+    padding-top: 2px;
     border-bottom: none;
 }
 div.music.musicstatus, div.music.musicmute {
