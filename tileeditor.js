@@ -388,8 +388,10 @@ function pickColor(strCaller) {
 };
 
 function relayColor(cssRuleTarget) {
-	var strColor = $('#editColor').val();
-	strColor = '#' + changeInverted(strColor.substr(1));
+	var strColor = $('#editColor').val(); //yoda only if icon:
+	if ($("input[name='sectionToggle']:checked").val() === 'icon') {
+		strColor = '#' + changeInverted(strColor.substr(1));		
+	}
 	if(cssRuleTarget.indexOf("n_") !== -1) {
 		addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
 	} else {
