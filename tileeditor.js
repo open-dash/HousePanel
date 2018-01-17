@@ -529,7 +529,7 @@ function getIcons(response) {
 				if( val.match(/\.(jpe?g|png|gif|jpg|JPG)$/)) {
 						var iconImage = localPath + val; 
 						icons+='<div class="cat Local_Storage">'
-						icons+='<img id="' + val + '" onclick="iconSelected(\'' + strIconTarget + '\',\'../' + iconImage + '\')" '
+						icons+='<img onclick="iconSelected(\'' + strIconTarget + '\',\'../' + iconImage + '\')" '
 						icons+='class="icon" src="' + iconImage + '" alt="' + val + '"></div>'		
 					}
 				});//end find()
@@ -560,9 +560,9 @@ function getIcons(response) {
 		}); //end ajax
 	}
 	if(response) {
-		$(function() {
-			iconSelected(strIconTarget, '../' + localPath + response);
-		});				
+		//$(function() {
+			//iconSelected(strIconTarget, '../' + localPath + response);
+		//});				
 	}
 
 };
@@ -588,6 +588,7 @@ function getBgEffect() {
 		case "vlight":
 			return ', linear-gradient(to bottom, rgba(255,255,255,.4) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,.4) 100%)';
 	};	
+	return strEffect;
 }
 
 function iconSelected(cssRuleTarget, imagePath) {
@@ -596,7 +597,7 @@ function iconSelected(cssRuleTarget, imagePath) {
 	var strEffect = getBgEffect();
 
 	addCSSRule(cssRuleTarget, "background-image: url('" + imagePath + "')" + strEffect + ";", 0);
-	//example gradient: horizontal darker: background-imageurl,linear-gradient(to right, rgba(0,0,0,.5) 0%,rgba(0,0,0,0) 50%, rgba(0,0,0,.5) 100%);
+
 	if($("#invertIcon").is(':checked')){
 		addCSSRule(cssRuleTarget, "filter: invert(1);");
 		addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
