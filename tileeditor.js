@@ -78,7 +78,11 @@ function initDialogBinds() {
 		url : 'upload.php?skindir=' + $("#skinid").val(),
 		dataType : 'json',
 		success : function (response) {
-			getIcons(response);
+			if(response.indexOf("Error") !== -1) {
+				alert(response);	
+			} else {
+				getIcons(response);
+			}
 		}
 	});
 	
@@ -226,7 +230,7 @@ function editTile(str_type, thingname, thingindex, str_on, str_off) {
 	dialog_html += "<span id='uploadWrapper' class='upload-btn-wrapper'>";	
 	dialog_html += "<form id='uploadform' target='upiframe' action='upload.php?skindir=" + skindir + "' method='post' enctype='multipart/form-data'>";
 	dialog_html += "<button id='upload' class='btn_upload'>Upload &#8682;</button>";
-	dialog_html += "<input type='file' id='fileInput' name='fileInput' />";
+	dialog_html += "<input type='file' accept='image/*' id='fileInput' name='fileInput' />";
 	dialog_html += "</form>";
 	dialog_html += "<iframe id='upiframe' name='upiframe' width='0px' height='0px' border='0' style='width:0; height:0; border:none;'></iframe>";
 	dialog_html += "</span>";
