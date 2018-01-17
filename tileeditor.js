@@ -560,9 +560,9 @@ function getIcons(response) {
 		}); //end ajax
 	}
 	if(response) {
-		//$(function() {
-			//iconSelected(strIconTarget, '../' + localPath + response);
-		//});				
+		$(function() {
+			iconSelected(strIconTarget, '../' + localPath + response);
+		});				
 	}
 
 };
