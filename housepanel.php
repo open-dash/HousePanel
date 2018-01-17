@@ -117,6 +117,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
+	$tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
 
     // load quicktime script for video
     $tc.= '<script src="ac_quicktime.js"></script>';
