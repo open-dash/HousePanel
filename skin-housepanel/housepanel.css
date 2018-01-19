@@ -1270,7 +1270,6 @@ div.music.track {
 }
 
 div.overlay {
-	font: Tahoma, Geneva, sans-serif;
 	position: absolute;
 	z-index: 10;
 	left: 0px;
@@ -1281,7 +1280,7 @@ div.overlay {
 div.ovCaption {
 	position: relative;
 	left: 1px;
-	font-size: 9px;
+	font-size: 10px;
 	text-align: left;
 	color: #ffffee;
 	visibility: hidden;
