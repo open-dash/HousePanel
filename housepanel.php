@@ -478,6 +478,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
             $thingpr = $thingname;
         }
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
+	
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
         // for multiple attribute things we provide a separate item for each one
@@ -497,15 +498,30 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                     $j++;
                 }
             }
+
+			$vStatus = "";
+			$vLevel = 80;
             foreach($thingvalue as $tkey => $tval) {
                 // skip if ST signals it is watching a sensor that is failing
                 // also skip the checkInterval since we never display this
                 if ( strpos($tkey, "DeviceWatch-") === FALSE &&
                      strpos($tkey, "checkInterval") === FALSE && $tkey!=="color" ) { 
-                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype, $bgcolor);
-                    $j++;
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype, $bgcolor);				
+                    $j++;									
                 }
             }
+			
+				//Add overlay to display
+				$tc.= "<div class=\"overlay v_$kindex\">";
+				$tc.= "<div class=\"ovCaption vc_$kindex\">" . substr($thingvalue["name"],0,20) . "</div>";
+				if($thingvalue["battery"]) {
+					$tc.= "<div class=\"ovBattery " . $thingvalue["battery"] . " vb_$kindex\">";
+					$tc.= "<div style=\"width: " . $thingvalue["battery"] . "%\" class=\"ovbLevel L" . (string)$thingvalue["battery"] . "\"></div></div>";
+					next($thingvalue);	
+				}
+				$tc.= "<div class=\"ovStatus vs_$kindex\">" . next($thingvalue) . "</div>";
+				$tc.= "</div>";
+				
         } else {
             $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
@@ -830,6 +846,7 @@ function writeOptions($options) {
     $str =  json_encode($options);
     fwrite($f, cleanupStr($str));
     fclose($f);
+	chmod($f, 0777);
 }
 
 // make the string easier to look at

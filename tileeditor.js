@@ -101,10 +101,24 @@ function initDialogBinds() {
 		var cssRuleTarget = getCssRuleTarget('head');
 		if($("#noHead").is(':checked')){
 			addCSSRule(cssRuleTarget, "display: none;", 1);
+
+			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
+			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
+						console.log(cssRuleTarget);
+			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
+			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
+						console.log(cssRuleTarget);
 		} else {
 			addCSSRule(cssRuleTarget, "display: inline-block;", 0);
 			var rule = "width: " + ($("#wysISwyg").width() - 2) + "px;";
 			addCSSRule(getCssRuleTarget('head'), rule);
+
+			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
+			addCSSRule(cssRuleTarget, "", 1);
+						console.log(cssRuleTarget);
+			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
+			addCSSRule(cssRuleTarget, "", 1);
+						console.log(cssRuleTarget);		
 		}
 	});	
 	
@@ -484,6 +498,11 @@ function section_Toggle(sectionView) {
 			$("#colorWrapper").show();
 			$("#noHead").show();
 			$("#noHead-label").show();
+				if($('#tileHead').is(":visible")) {
+					$("#noHead").attr('checked', false);
+				} else {
+					$("#noHead").attr('checked', true);					
+				};
 			break;			
 		case "text":
 			$("#fontWrapper").show();
