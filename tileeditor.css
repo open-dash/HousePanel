@@ -100,7 +100,10 @@ div.tile_buttons {
 	width: 107px;
 	margin: 3px;	
 }
-
+#editEffect {
+	width: 107px;
+	margin: 3px;	
+}
 input.editSection_txt {
 	font-size: 10pt;
 	border-radius: 2px;
@@ -119,12 +122,15 @@ input.editSection_txt {
 	left: 115px;
 }
 
-#fontWrapper {
+#fontWrapper, #effectWrapper {
 	left: 3px;	
 }
 
-#widthwrapper, #uploadWrapper {
+#widthwrapper {
 	left: 5px;
+}
+#uploadWrapper {
+	left: 115px;
 }
 input.editSection_txt.height, input.editSection_txt.width {
 	width: 40px;
@@ -133,24 +139,28 @@ input.editSection_txt.color {
 	width: 60px;
 }
 
+#uploadform {
+	height: 0px;
+}
 .upload-btn-wrapper {
 	position: absolute;	
 	font-size: 11px;
 	margin: 1px;
-    width: 174px;
+    width: 64px;
 	display: inline-block;
 	justify-content: center;
 	align-items: center;
 }
 
 .btn_upload {
-  border: 3px double gray;
-  color: gray;
+  border: 3px double #333;
+  color:#333;
   background-color: white;
+  background-image: linear-gradient(to bottom, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,.3) 100%);
   border-radius: 2px;
   padding: 1px;
   font-size: 11px;
-  width: 174px;
+  width: 64px;
 }
 
 .upload-btn-wrapper input[type=file] {
@@ -160,7 +170,7 @@ input.editSection_txt.color {
   opacity: 0;
   position: relative;
   top: -20px;
-  width: 136px;
+  width: 50px;
 }
 
 

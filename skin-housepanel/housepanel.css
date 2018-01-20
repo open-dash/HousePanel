@@ -371,7 +371,7 @@ div.thing {
     color: #eeeeee;
     cursor: default;
     width: 120px; 
-    height: 160px;
+    height: auto;
 }
 div.thing:hover{
     position: relative;
@@ -422,8 +422,8 @@ div.thingname.lock, div.thingname.piston, div.thingname.temperature {
     font-size: 11pt;
     text-align: center;
     color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 8px;
+    padding-bottom: 2px;
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
     cursor: move;
@@ -539,14 +539,17 @@ div.motion.active {
 div.motion.battery, div.contact.battery, 
 div.lock.battery {
     /* background-color: rgba(0, 102, 102, 0.5); */
-    height: 13px; font-size: 9pt; color: #ffffff;
+    height: 0px; font-size: 9pt; color: #ffffff;
+	display: none;
 }
+/*
 div.motion.battery::before, div.contact.battery::before, div.lock.battery:before {
     content: "Battery: ";
 }
 div.motion.battery::after, div.contact.battery::after, div.lock.battery::after {
     content: " %";
 }
+*/
 /*
 div.motion.temperature::before {
     content: "T: ";
@@ -1264,4 +1267,78 @@ div.thingname.video {
 /* this makes a fixed music size but long names will get cut off */
 div.music.track {
     height: 48px;
+}
+
+div.overlay {
+	position: absolute;
+	z-index: 10;
+	left: 0px;
+	top: 2px;
+	width: 100%;
+	height: auto;
+}
+div.ovCaption {
+	position: relative;
+	left: 1px;
+	font-size: 10px;
+	text-align: left;
+	color: #ffffee;
+	visibility: hidden;
+}
+div.ovStatus {
+	position: relative;
+	left: 1px;
+	font-size: 12px;
+	text-transform: capitalize;
+	text-align: left;
+	color: #ffffee;
+	visibility: hidden;
+}
+div.ovBattery {
+  position:relative;
+  float: right;
+  right: -3px;
+  top: -11px;
+  width: 24px;
+  height: 8px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  position: relative;
+  padding: 1px;
+  transform: scale(0.6);
+}
+
+div.ovBattery:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    margin-top: -3px;
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    clip: rect(0, 5px, 5px, 3px);
+    border-radius: 50%;
+}
+
+div.ovbLevel{
+    height: 100%;
+	font-size: 0px;
+    background: #fff;
+    border-radius: 2px/2;
+	width: 2%;
+}
+div.ovbLevel.L30{
+    background: #FC0;
+}
+div.ovbLevel.L20{
+    background: #F60;
+}
+div.ovbLevel.L10{
+    background: #F00;
+}
+div.ovbLevel.L0{
+    background: #F00;
+	width: 2%;
 }
