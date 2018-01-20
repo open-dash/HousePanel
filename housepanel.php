@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.48       Integrate @nitwitgit (Nick) TileEdit V3.2
  * 1.47       Integrate Nick's color picker and custom dialog
  * 1.46       Free form drag and drop of tiles
  * 1.45       Merge in custom tile editing from Nick ngredient-master branch
@@ -510,17 +511,16 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                     $j++;									
                 }
             }
-			
-				//Add overlay wrapper
-				$tc.= "<div class=\"overlay v_$kindex\">";
-				$tc.= "<div class=\"ovCaption vc_$kindex\">" . substr($thingvalue["name"],0,20) . "</div>";
-				if($thingvalue["battery"]) {
-					$tc.= "<div class=\"ovBattery " . $thingvalue["battery"] . " vb_$kindex\">";
-					$tc.= "<div style=\"width: " . $thingvalue["battery"] . "%\" class=\"ovbLevel L" . (string)$thingvalue["battery"] . "\"></div></div>";
-					next($thingvalue);	
-				}
-				$tc.= "<div class=\"ovStatus vs_$kindex\">" . next($thingvalue) . "</div>";
-				$tc.= "</div>";
+//				//Add overlay wrapper
+//				$tc.= "<div class=\"overlay v_$kindex\">";
+//				$tc.= "<div class=\"ovCaption vc_$kindex\">" . substr($thingvalue["name"],0,20) . "</div>";
+//				if($thingvalue["battery"]) {
+//					$tc.= "<div class=\"ovBattery " . $thingvalue["battery"] . " vb_$kindex\">";
+//					$tc.= "<div style=\"width: " . $thingvalue["battery"] . "%\" class=\"ovbLevel L" . (string)$thingvalue["battery"] . "\"></div></div>";
+//					next($thingvalue);	
+//				}
+//				$tc.= "<div class=\"ovStatus vs_$kindex\">" . next($thingvalue) . "</div>";
+//				$tc.= "</div>";
 				
         } else {
             $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
@@ -545,7 +545,6 @@ function fixTrack($tval) {
 
 function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="", $bgcolor="") {
     $tc = "";
-    
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
     if ( in_array($tkey, array("heat", "cool", "level", "vol", "hue", "saturation", "colorTemperature") )) {
@@ -569,10 +568,14 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || $tkey==="color" ||
                   is_numeric($tval) || $thingtype==$tval ||
                   $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
-
+        
         // fix track names for groups, empty, and super long
         if ($tkey==="track") {
             $tval = fixTrack($tval);
+        } else if ( $tkey == "battery") {
+            $powmod = intval($tval);
+            $powmod = (string)($powmod - ($powmod % 10));
+            $tval = "<div style=\"width: " . $tval . "%\" class=\"ovbLevel L" . $powmod . "\"></div>";
         }
         
         // for music status show a play bar in front of it
@@ -601,7 +604,9 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
+        $tc.= "<div class=\"overlay $tkey v_$kindex\">";
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\"$colorval class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
+        $tc.= "</div>";
     }
     return $tc;
 }

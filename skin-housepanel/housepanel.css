@@ -536,13 +536,16 @@ div.motion.active {
     background-image: url('icons/run.png');
     background-color: rgba(0, 51, 204, 0);
 }
+div.battery {
+    display: none;
+}
+
+/*
 div.motion.battery, div.contact.battery, 
 div.lock.battery {
-    /* background-color: rgba(0, 102, 102, 0.5); */
     height: 0px; font-size: 9pt; color: #ffffff;
 	display: none;
 }
-/*
 div.motion.battery::before, div.contact.battery::before, div.lock.battery:before {
     content: "Battery: ";
 }
@@ -1269,14 +1272,17 @@ div.music.track {
     height: 48px;
 }
 
-div.overlay {
+div.overlay.battery, div.overlay.name {
 	position: absolute;
 	z-index: 10;
-	left: 0px;
-	top: 2px;
-	width: 100%;
+        border: none;
+        background: none;
+	/*left: 0px;*/
+	/*top: 2px;*/
+	/*width: 100%;*/
 	height: auto;
 }
+
 div.ovCaption {
 	position: relative;
 	left: 1px;
@@ -1294,26 +1300,28 @@ div.ovStatus {
 	color: #ffffee;
 	visibility: hidden;
 }
-div.ovBattery {
+
+div.battery {
+  display: block;
   position:relative;
   float: right;
-  right: -3px;
-  top: -11px;
+  right: 2px;
+  /*top: -11px;*/
   width: 24px;
   height: 8px;
   border: 1px solid #fff;
   border-radius: 2px;
   position: relative;
   padding: 1px;
-  transform: scale(0.6);
+  transform: scale(0.8);
 }
 
-div.ovBattery:before {
+div.battery:before {
     content: '';
     display: block;
     position: absolute;
     top: 50%;
-    right: -4px;
+    right: 3px;
     margin-top: -3px;
     width: 5px;
     height: 5px;
@@ -1322,7 +1330,7 @@ div.ovBattery:before {
     border-radius: 50%;
 }
 
-div.ovbLevel{
+div.ovbLevel {
     height: 100%;
 	font-size: 0px;
     background: #fff;
@@ -1341,4 +1349,21 @@ div.ovbLevel.L10{
 div.ovbLevel.L0{
     background: #F00;
 	width: 2%;
+}
+
+/* user overlay name for locks instead of title bar */
+div.thingname.lock {
+    display: none;
+}
+div.lock.locked, div.lock.unlocked {
+    height: 156px;
+}
+div.overlay.name div.lock.name {
+  display: block;
+  position:relative;
+  float: left;
+  left: 2px;
+  /*top: -11px;*/
+  width: 24px;
+  font-size: 10pt;
 }
