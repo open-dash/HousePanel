@@ -511,7 +511,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                 }
             }
 			
-				//Add overlay to display
+				//Add overlay wrapper
 				$tc.= "<div class=\"overlay v_$kindex\">";
 				$tc.= "<div class=\"ovCaption vc_$kindex\">" . substr($thingvalue["name"],0,20) . "</div>";
 				if($thingvalue["battery"]) {
