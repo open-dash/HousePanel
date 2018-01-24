@@ -565,7 +565,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || $tkey==="color" ||
+        $extra = ($tkey==="track" || $thingtype=="clock" || $tkey==="color" ||
                   is_numeric($tval) || $thingtype==$tval ||
                   $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
         
@@ -1268,6 +1268,11 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $str_on="on";
                 $str_off="off";
                 break;
+            
+            case "momentary":
+                $str_on="on";
+                $str_off="off";
+                break;
                 
             case "contact":
             case "door":
@@ -1285,15 +1290,25 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $str_on="locked";
                 $str_off="unlocked";
                 break;
+            
+            case "piston":
+                $str_type = "pistonName";
+                $str_on="firing";
+                $str_off="idle";
+                break;
+            
+            case "video":
+                $str_edit="hidden";
+                break;
                 
-            default:
-            	$str_edit="hidden";
+//            default:
+//            	$str_edit="hidden";
         }       
 
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
-
-        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        
+        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
 
         // loop through all the rooms in proper order
@@ -1693,6 +1708,14 @@ function is_ssl() {
             case "doquery":
                 // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
+                break;
+        
+            case "wysiwyg":
+                // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
+                $idx = $swtype . "|" . $swid;
+                $allthings = getAllThings($endpt, $access_token);
+                $thesensor = $allthings[$idx];
+                echo makeThing(0, $tileid, $thesensor, "Options");
                 break;
         
             case "pageorder":

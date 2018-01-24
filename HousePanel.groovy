@@ -328,7 +328,7 @@ def getRoutine(swid, item=null) {
 // but retain original for backward compatibility reasons
 def getPiston(swid, item=null) {
     item = item ? item : webCoRE_list().find {it.id == swid}
-    def resp = [name: item.name, pistonName: item.name]
+    def resp = [name: item.name, pistonName: "idle"]
     return resp
 }
 

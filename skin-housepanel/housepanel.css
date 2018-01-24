@@ -457,7 +457,7 @@ div.contact.open {
 }
 div.contact.closed {
     background-image: url('icons/closecontact.png');
-    background-color: rgba(27,177,75,0.6);
+    background-color: rgba(27,177,75,0.3);
     
     
 
@@ -467,23 +467,17 @@ div.contact.closed {
 div.door.open, div.contact.door.closed {
     background-image: url('icons/opendoor.png');
     background-color: rgba(27,177,75,0.3);
-    
-    
-
+    background-size: 40px;
+    cursor: pointer;
 }
 div.door.closed, div.contact.door.closed {
     background-image: url('icons/closedoor.png');
     background-color: rgba(27,177,75,0.3);
-    
-    
-
+    background-size: 40px;
     cursor: pointer;
 }
 div.garage.door.contact {
     display: none;
-}
-div.door.garage.open, div.door.garage.closed {
-    cursor: pointer;
 }
 div.contact.window.open {
     background-image: url('icons/openwindow.png');
@@ -495,20 +489,22 @@ div.door.garage.open {
     background-image: url('icons/garage-opened.png');
     background-size: 80px;
     height: 112px;
+    cursor: pointer;
 }
 div.door.garage.closed {
     background-image: url('icons/garage-closed.png');
     background-size: 80px;
     height: 112px;
+    cursor: pointer;
 }
 div.valve.open {
     background-image: url('icons/sprinkler-on.png');
-    background-color: rgba(27,177,75,0.6);
+    background-color: rgba(27,177,75,0.3);
     height: 112px;
 }
 div.valve.closed {
-    background-image: url('icons/sprinkler-on.png');
-    background-color: rgba(0, 51, 204, 0.6);
+    background-image: url('icons/sprinkler-off.png');
+    background-color: rgba(0, 51, 204, 0.3);
     height: 112px;
 }
 div.valve.switch, div.valve.contact {
@@ -525,7 +521,6 @@ div.contact.garage.entry.closed {
     background-size: 40px;
     height: 96px;
 }
-
 
 /* motion styling */
 div.motion.inactive {
@@ -576,10 +571,11 @@ div.lock.unlocked{
 
 div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
     background-image: url('icons/bulbon.png');
-    background-color: rgba(0, 51, 204, 0);
+    background-color: rgba(0, 51, 204, 0.1);
 }
 div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
     background-image: url('icons/bulboff.png');
+    background-color: rgba(0, 51, 204, 0.1);
 }
 div.switch.plug.on {
     background-image: url('icons/plugon.png');
@@ -588,7 +584,7 @@ div.switch.plug.on {
 }
 div.switch.plug.off {
     background-image: url('icons/plugoff.png');
-    background-color: rgba(0, 51, 204, 0);
+    background-color: rgba(0, 51, 204, 0.3);
     height: 112px;
 }
 /* enable this if you want to show levels for switches and bulbs */
@@ -599,13 +595,13 @@ div.switch.level {
 div.switch.energy, div.switchlevel.energy {
     height: 14px; font-size: 9pt; 
 /*    position: relative; top: -16px; */
-    background-color: rgba(51,204,0,0.7); 
+    background-color: rgb(51,204,0); 
     color: #ffffff;
 }
 div.switch.power, div.switchlevel.power {
     height: 14px; font-size: 9pt; 
 /*    position: relative; top: -48px; */
-    background-color: rgba(51,204,0,0.7); 
+    background-color: rgb(51,204,0); 
     color: #ffffff;
 }
 div.switch.energy::before, div.switchlevel.energy:before {
@@ -635,9 +631,9 @@ div.momentary.off {
 }
 	
 /* hover over on and off states */
-div.on:hover, div.off:hover, div.unlocked:hover, div.locked:hover {
+/*div.on:hover, div.off:hover, div.unlocked:hover, div.locked:hover {
   background-color: rgba(51, 51, 51, 0.3);
-}
+}*/
 
 /* handle the block of controls for adjusting the thermostat and levels */
 div.thermostat.heat, div.thermostat.cool, div.music.level, div.music.vol {
@@ -722,6 +718,10 @@ div.music-next {
 div.thing.thermostat-thing{
     background-color: rgba(100,100,100,0.4) !important;
     height: auto;
+}
+
+div.overlay.temperature, div.overlay.feelsLike {
+    display: inline-block;
 }
 
 /* individual temperature value inside a thermostat */
@@ -1334,21 +1334,38 @@ div.ovbLevel {
     height: 100%;
 	font-size: 0px;
     background: #fff;
-    border-radius: 2px/2;
+    border-radius:  2px;
 	width: 2%;
+}
+div.ovbLevel.L90{
+    background: #ffffee;
+}
+div.ovbLevel.L80{
+    background: #ffffc6;
+}
+div.ovbLevel.L70{
+    background: #ffff00;
+}
+div.ovbLevel.L60{
+    background: #ffee00;
+}
+div.ovbLevel.L50{
+    background: #ffcc00;
+}
+div.ovbLevel.L40{
+    background: #ff993f;
 }
 div.ovbLevel.L30{
-    background: #FC0;
+    background: #ff663f;
 }
 div.ovbLevel.L20{
-    background: #F60;
+    background: #ff6000;
 }
 div.ovbLevel.L10{
-    background: #F00;
+    background: #ff3f00;
 }
 div.ovbLevel.L0{
-    background: #F00;
-	width: 2%;
+    background: #ff0000;
 }
 
 /* user overlay name for locks instead of title bar */
@@ -1366,4 +1383,7 @@ div.overlay.name div.lock.name {
   /*top: -11px;*/
   width: 24px;
   font-size: 10pt;
+}
+div.overlay {
+    width: auto;
 }

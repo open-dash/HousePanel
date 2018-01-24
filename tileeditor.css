@@ -16,28 +16,38 @@ dialog {
   	position: absolute;
   	top: 50%;
   	left: 50%;
-    width: 214px; 
-    height: 251px;
+    width: 450px; 
+    height: auto;
   	top: 50%;
   	left: 35%;
 } 
 div.tile_buttons {
-	margin-left:2px;
-	width: 130px;
+	width: auto;
 	height: 33px;
 	font-size: 9pt;
+        text-align: center;
+        margin-bottom: 10px;
 }
 #wysISwyg {
-	margin-left:5px
+	margin-left:1px;
+        text-align: center;
 }
 .tileDisplay {
-	display: inline-block;
+    display: inline-block;
     float: right;
-    width: 1px; 
-    height: 230px;
+    width: auto; 
+    height: auto;
+}
+#tileDialog {
+    display: block;
+    width: auto;
+    height: auto;
 }
 #tileEdit {
 	background-color: #666;
+        position: absolute;
+        width: 250px;
+        height: auto;
 }
 #iconChoices {
 	margin: 3px;
@@ -207,8 +217,7 @@ input.editSection_txt.color {
 	display: inline-block;
 	justify-content: center;
 	align-items: center;  
-	top: 203px;
-	right: 2px;
+	top: 220px;
 	height: 46px;
 	width: 211px;
 	  background: #3498db;
@@ -225,14 +234,14 @@ input.editSection_txt.color {
 }
 .toggleSections label{
   border: 1px solid #fff;
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
   width:50px;
   padding: 1px 0px;
   display:inline-block;
   cursor: pointer;
-  color: #fff;
-  background-color: #777;
+  color: #ffffff;
+  background-color: #777777;
   transition: all 0.2s;
 }
 
@@ -288,7 +297,7 @@ input[name='sectionToggle']:checked+label{
 }
 #toggle {
 	width: 120px;
-	padding: 2px 51px 1px 51px;	
+	padding: 2px 68px 1px 51px;	
 }
 
 .btn.black {
@@ -306,7 +315,7 @@ input[name='sectionToggle']:checked+label{
   border-radius: 28px;
   font-family: Arial;
   color: #ffffff;
-  font-size: 7pt;
+  /*font-size: 10pt;*/
   padding: 2px 7px 1px 7px;
   text-decoration: none;
   margin: 2px;

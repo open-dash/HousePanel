@@ -678,7 +678,7 @@ function setupPage(trigger) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         if (thetype==="piston") {
                             $(that).addClass("firing");
-                            $(that).html("Piston Firing...");
+                            $(that).html("firing");
                         }
                         else if ( thevalue && thevalue.hasOwnProperty("indexOf") && thevalue.indexOf("on") >= 0 ) {
                             $(that).removeClass("on");
