@@ -217,7 +217,7 @@ div.scrollvtable {
 @media only screen and (hover: hover) {
     div.scrollvtable {
         overflow-y: scroll;
-        /*max-height: 600px;*/
+        max-height: 500px;
     }
 }
 div.scrollhtable {
@@ -294,8 +294,9 @@ span.typeopt {
     color: #666666;
 }
 div.processoptions {
-    margin-left: 0px; margin-top: 0px;    padding-top: 10px;
-    background-color: white;    box-shadow: 0px 1px 10px rgba(0,0,0,.50);
+    margin-left: 0px; margin-top: 0px;    
+    padding-top: 10px;
+    background-color: white;
 }
 
 /* buttons */
@@ -422,8 +423,8 @@ div.thingname.lock, div.thingname.piston, div.thingname.temperature {
     font-size: 11pt;
     text-align: center;
     color: #ffffff;
-    padding-top: 8px;
-    padding-bottom: 2px;
+    padding-top: 0px;
+    padding-bottom: 0px;
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
     cursor: move;
@@ -476,7 +477,8 @@ div.door.closed, div.contact.door.closed {
     background-size: 40px;
     cursor: pointer;
 }
-div.garage.door.contact {
+/* hide the contact part of garage doors that include an embedded contact sensor */
+div.door-thing div.overlay.contact, div.garage.door.contact {
     display: none;
 }
 div.contact.window.open {
@@ -560,11 +562,18 @@ div.motion.temperature::after {
 /* lock styling */
 div.lock.locked {
     background-image: url('icons/lock.png');
-    background-color: rgba(102, 51, 0, 1);
+    background-color: rgba(153, 0, 51, 1);
+    background-size: 80px;
+    background-position-y: 50px;
 }
 div.lock.unlocked{
     background-image: url('icons/unlock.png');
-    background-color: rgba(102, 51, 0, 0.7);
+    background-color: rgba(0, 102, 51, 1);
+    background-size: 70px;
+    background-position-y: 40px;
+}
+div.thing.lock-thing {
+    background-color: rgba(153, 0, 51, 1);
 }
 
 /* switch styling */
@@ -1417,7 +1426,10 @@ div.thingname.lock {
     display: none;
 }
 div.lock.locked, div.lock.unlocked {
-    height: 156px;
+    height: 148px;
+}
+div.lock-thing div.overlay.name {
+    display: block;
 }
 div.overlay.name div.lock.name {
   display: block;

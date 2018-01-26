@@ -539,12 +539,12 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
 function fixTrack($tval) {
     if ( trim($tval)==="" ) {
         $tval = "None"; 
-    } else if ( strpos($tval, "Grouped with") ) {
-        $tval = substr($tval,0, strpos($tval, "Grouped with"));
-        if (strlen($tval) > 74) { $tval = substr($tval,0,70) . " ..."; } 
-        $tval.= " (*)";
-    } else if ( strlen($tval) > 74) { 
-        $tval = substr($tval,0,70) . " ..."; 
+//    } else if ( strpos($tval, "Grouped with") ) {
+//        $tval = substr($tval,0, strpos($tval, "Grouped with"));
+//        if (strlen($tval) > 124) { $tval = substr($tval,0,120) . " ..."; } 
+//        $tval.= " (*)";
+    } else if ( strlen($tval) > 124) { 
+        $tval = substr($tval,0,120) . " ..."; 
     }
     return $tval;
 }
