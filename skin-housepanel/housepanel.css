@@ -394,7 +394,7 @@ div.contact, div.music, div.thermostat, div.presence, div.piston, div.valve, div
     padding: 0px 0;
     margin: 0;
     cursor: default;
-    width: 118px;
+    width: 120px;
     height: auto;
 }
 
@@ -406,7 +406,7 @@ div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off {
 
 div.lock.locked, div.lock.unlocked, div.motion.active, div.motion.inactive,
 div.contact.open, div.contact.closed {
-    height: 96px;
+    height: 112px;
 }
 
 /* items that have a pointer */
@@ -514,12 +514,12 @@ div.valve.switch, div.valve.contact {
 div.contact.garage.entry.open {
     background-image: url('icons/opendoor.png');
     background-size: 40px;
-    height: 96px;
+    height: 112px;
 }
 div.contact.garage.entry.closed {
     background-image: url('icons/closedoor.png');
     background-size: 40px;
-    height: 96px;
+    height: 112px;
 }
 
 /* motion styling */
@@ -592,15 +592,15 @@ div.switch.plug.off {
 div.switch.level {
     display: none;
 }
-div.switch.energy, div.switchlevel.energy {
+
+/* old style power and energy is commented out */
+/*div.switch.energy, div.switchlevel.energy {
     height: 14px; font-size: 9pt; 
-/*    position: relative; top: -16px; */
     background-color: rgb(51,204,0); 
     color: #ffffff;
 }
 div.switch.power, div.switchlevel.power {
     height: 14px; font-size: 9pt; 
-/*    position: relative; top: -48px; */
     background-color: rgb(51,204,0); 
     color: #ffffff;
 }
@@ -609,6 +609,36 @@ div.switch.energy::before, div.switchlevel.energy:before {
 }
 div.switch.power::before, div.switchlevel.power:before {
     content: "P (W): ";
+}*/
+/* new style uses overlay to put in bottom right corner */
+
+div.overlay.power, div.overlay.energy {
+	position: absolute; top: 32px; left: 0px;
+	z-index: 20;
+        border: none;
+        background: none;
+	height: auto;
+}
+div.switch.power {
+    z-index: 21;
+    display: block;
+    float: left;
+    height: 12px;
+    text-align: left;
+    color: rgba(10,96,10,1);
+    font-weight: bold;
+    font-size: 10pt;
+    margin-left: 5px;
+}
+div.switch.energy {
+    z-index: 21;
+    display: block;
+    float: right;
+    height: 12px;
+    text-align: right;
+    color: rgba(10,96,10,1);
+    font-weight: bold;
+    font-size: 10pt;
 }
 
 /* switchlevel / dimmer styling - make room for the dimmer controls */
@@ -716,7 +746,7 @@ div.music-next {
 
 /* make thermostat height auto */
 div.thing.thermostat-thing{
-    background-color: rgba(100,100,100,0.4) !important;
+    background-color: rgba(100,100,100,0.4);
     height: auto;
 }
 
@@ -826,6 +856,10 @@ div.colorTemperature-val, div.hue-val, div.saturation-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
+div.thermostat.thermomode, div.thermostat.thermofan,
+div.thermostat.thermostate {
+    width: 100%;
+}
 
 /* hover over the adjustment arrows */
 div.heat-up:hover, div.heat-dn:hover, 
@@ -843,7 +877,7 @@ div.level-up:hover, div.level-dn:hover {
 
 /* music styling */
 div.thing.music-thing {
-    background-color: rgba(80,0,50,0.4) !important;
+    background-color: rgba(80,0,50,0.4);
     width: 180px;
     height: auto;
 }
@@ -887,7 +921,7 @@ div.thing.weather-thing, div.weather {
     height: auto;
 }
 div.thing.weather-thing {
-    background-color: rgba(50,50,50,0.4) !important;
+    background-color: rgba(50,50,50,0.4);
     width: 240px;
 }
 div.weather.temperature, div.weather.feelsLike {
@@ -899,7 +933,7 @@ div.weather.temperature, div.weather.feelsLike {
     box-shadow: 5px 4px 15px black;
     cursor: default;
     text-align: center;
-    height: 60px !important;
+    height: 60px;
     width: 60px;
     padding: 4px 3px 0 3px;
     margin-top: 10px;
@@ -1108,9 +1142,17 @@ div.thingname.image, div.thingname.routine,
 div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
 div.switchlevel.name, div.momentary.name, div.routine.name,
 div.lock.name, div.light.name, div.door.name, div.bulb.name, div.mode.name,
-div.valve.name, div.water.name, div.piston.name, div.thermostat.name, 
-div.music.name, div.blank.name, div.image.name, div.presence.name {
+div.valve.name, div.water.name, div.piston.name, div.thermostat.name, div.temperature.name,
+div.music.name, div.blank.name, div.image.name, div.presence.name, div.illuminance.name {
     display:none;
+}
+
+/* for weather illuminance avoid showing T and fix humidity */
+div.illuminance-thing .overlay.temperature {
+    display: none;
+}
+div.illuminance-thing .illuminance.humidity:after {
+    content: "%";
 }
 
 /* hide dimmers but not bulbs */
@@ -1311,7 +1353,6 @@ div.battery {
   height: 8px;
   border: 1px solid #fff;
   border-radius: 2px;
-  position: relative;
   padding: 1px;
   transform: scale(0.8);
 }
@@ -1385,5 +1426,8 @@ div.overlay.name div.lock.name {
   font-size: 10pt;
 }
 div.overlay {
+    width: 100%;
+}
+div.weather-thing div.overlay {
     width: auto;
 }

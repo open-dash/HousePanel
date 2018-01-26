@@ -556,7 +556,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
-        $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
+        $tc.= "<div class=\"overlay $thingtype" . $subtype . " $tkey" . " v_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-dn\"></div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
@@ -581,7 +581,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // for music status show a play bar in front of it
         if ($tkey==="musicstatus") {
             // print controls for the player
-            $tc.= "<div class=\"music-controls" . $subtype . " p_$kindex\">";
+            $tc.= "<div class=\"overlay music-controls" . $subtype . " v_$kindex\">";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";
@@ -1289,6 +1289,15 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
             case "lock":
                 $str_on="locked";
                 $str_off="unlocked";
+                break;
+            
+            case "clock":
+                $str_type = "time";
+                break;
+            
+            case "thermostat":
+            case "temperature":
+                $str_type = "temperature";
                 break;
             
             case "piston":

@@ -19,21 +19,21 @@ function getOnOff(str_type) {
         case "bulb":
         case "light":
         case "momentary":
-            onoff = ["on","off"];
+            onoff = [".on",".off"];
             break;
         case "contact":
         case "door":
         case "valve":
-            onoff = ["open","closed"];
+            onoff = [".open",".closed"];
             break;
         case "motion":
-            onoff = ["active","inactive"];
+            onoff = [".active",".inactive"];
             break;
         case "lock":
-            onoff = ["locked","unlocked"];
+            onoff = [".locked",".unlocked"];
             break;
         case "piston":
-            onoff = ["firing","idle"];
+            onoff = [".firing",".idle"];
             break;
     }
     
@@ -52,19 +52,20 @@ function getCssRuleTarget(strSection, str_type, thingindex) {
         // when writing the active state we get that state from the HTML
 	switch (strSection) {
 		case "iconOn":
-                        var tarval = "#a-0-"+str_type;
                         var onoff = getOnOff(str_type);
-                        target = "div."+str_type+'.p_'+thingindex + "." + onoff[0];
+                        target = "div."+str_type+'.p_'+thingindex + onoff[0];
 			break;
 		case "iconOff":
-                        var tarval = "#a-0-"+str_type;
                         var onoff = getOnOff(str_type);
-                        target = "div."+str_type+'.p_'+thingindex + "." + onoff[1];
+                        target = "div."+str_type+'.p_'+thingindex + onoff[1];
 			break;
 		case "icon":
-                        var tarval = "#a-0-"+str_type;
                         var onoff = $("#a-0-"+str_type).html();
-                        target = "div."+str_type+'.p_'+thingindex + "." + onoff;
+                        target = "div."+str_type+'.p_'+thingindex + onoff;
+			break;
+                // every sub-element is wrapped with this so size width this way
+		case "overlay":
+                        target = "div.overlay"+'.v_'+thingindex;
 			break;
 		case "text":
 			target = "div.thingname.t_"+thingindex;
@@ -228,23 +229,24 @@ function initDialogBinds(str_type, thingindex, str_on, str_off) {
 			addCSSRule(cssRuleTarget, "display: none;", 1);
 
 //			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
-						console.log(cssRuleTarget);
-			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
-			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
-						console.log(cssRuleTarget);
+//			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
+//			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
+//						console.log(cssRuleTarget);
+//			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
+//			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
+//						console.log(cssRuleTarget);
 		} else {
 			addCSSRule(cssRuleTarget, "display: inline-block;", 0);
-			var rule = "width: " + ($("#wysISwyg").width() - 2) + "px;";
+//			var rule = "width: " + ($("#wysISwyg").width() - 2) + "px;";
+			var rule = "width: " + ($("#t-0").width() - 2) + "px;";
 			addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
 
-			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-			addCSSRule(cssRuleTarget, "", 1);
-						console.log(cssRuleTarget);
-			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
-			addCSSRule(cssRuleTarget, "", 1);
-						console.log(cssRuleTarget);		
+//			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
+//			addCSSRule(cssRuleTarget, "", 1);
+//						console.log(cssRuleTarget);
+//			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
+//			addCSSRule(cssRuleTarget, "", 1);
+//						console.log(cssRuleTarget);		
 		}
 	});	
 	
@@ -280,16 +282,19 @@ function initDialogBinds(str_type, thingindex, str_on, str_off) {
 	$("#iconSrc").bind('change', function () {
 		getIcons(null, str_type, thingindex);	
 	});
-	
+
+        // set overall tile width and header and overlay for all subitems
 	$("#editWidth").bind('input', function() {
-		var rule = "width: " + $("#editWidth").val() + "px;";
+                var newsize = parseInt( $("#editWidth").val() );
+		var rule = "width: " + newsize.toString() + "px;";
 		addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
 		
-                var newsize = parseInt( $("#editWidth").val() );
-		rule = "width: " + (newsize - 2) + "px;";
-		addCSSRule(getCssRuleTarget('iconOn', str_type, thingindex), rule);
-		addCSSRule(getCssRuleTarget('iconOff', str_type, thingindex), rule);
+                newsize -= 2;
+		rule = "width: " + newsize.toString() + "px;";
 		addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
+		addCSSRule(getCssRuleTarget('overlay', str_type, thingindex), rule);
+//		addCSSRule(getCssRuleTarget('iconOn', str_type, thingindex), rule);
+//		addCSSRule(getCssRuleTarget('iconOff', str_type, thingindex), rule);
                 
                 if ( newsize > 120 ) {
                     $("#edit_Tile").width(320 + newsize);
@@ -701,7 +706,7 @@ function section_Toggle(sectionView, str_type) {
 	$('#buttonWrapper').removeClass( "btn_color" ).addClass( "btn_color image" );
 	switch (sectionView) {
 		case "tile":
-                    var target = "#a-0-"+str_type;
+                    var target = "div.overlay."+str_type;
 			$("#widthWrapper").show();
 			$("#editWidth").val($(target).width());
 			$("#heightWrapper").show();
