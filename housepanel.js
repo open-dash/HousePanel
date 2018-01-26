@@ -59,9 +59,7 @@ window.addEventListener("load", function(event) {
         revert: false,
         containment: "parent",
         delay: 50,
-        grid: [20, 20],
-        snap: false,
-        snapTolerance: 50,
+        grid: [10, 10],
         stop: function(event, ui) {
             var dragthing = {};
             dragthing["id"] = $(event.target).attr("id");

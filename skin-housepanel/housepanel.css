@@ -1295,6 +1295,27 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
     display:none;
 }
 
+iframe body {
+    margin: 0px;
+}
+div.frame iframe, div.frame-thing {
+    width: 500px;
+    height: 230px;
+    background: none;
+}
+div.frame-thing {
+    width: auto;
+    height: auto;
+    background: none;
+    box-shadow: none;
+}
+div.thingname.frame {
+    width: 480px;
+    margin-left: 10px;
+}
+div.frame-thing div.overlay.status {
+    display: none;
+}
 /* this custom setting moves power and energy up for my yard switches */
 /* note that I have to also change the size of the wrapper tile to fixed */
 /* alternatively you could change the height of just a specific switch */

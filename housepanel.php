@@ -309,7 +309,8 @@ function getAllThings($endpt, $access_token) {
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
         // add 4 generic iFrame tiles
-        $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Frame 1", "value" => array("name"=>"Frame 1", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $forecast = "<iframe width=\"490\" height=\"220\" src=\"forecast.html\" frameborder=\"0\"></iframe>";
+        $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Weather Forecast", "value" => array("name"=>"Weather Forecast", "frame"=>"$forecast","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Frame 2", "value" => array("name"=>"Frame 2", "frame"=>"","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame3"] = array("id" => "frame3", "name" => "Frame 3", "value" => array("name"=>"Frame 3", "frame"=>"","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame4"] = array("id" => "frame4", "name" => "Frame 4", "value" => array("name"=>"Frame 4", "frame"=>"","status"=>"stop"), "type" => "frame");
@@ -361,7 +362,7 @@ function processName($thingname, $thingtype) {
         $subtype = "";
         $k = 0;
         foreach ($subopts as $key) {
-            if (strtolower($key) != $thingtype) {
+            if (strtolower($key) != $thingtype && !is_numeric($key) ) {
                 $subtype.= " " . $key;
                 $k++;
             }
