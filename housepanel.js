@@ -234,9 +234,9 @@ function setupHideTabs() {
         }, 3000);
     });
     */
-   // restore tabs by click on open panel, clock, or the hide tabs button
+   // restore tabs by click on open panel or the hide tabs button
    // first two methods must be used in kiosk mode
-    $(".restoretabs, div.clock, div.panel").click(function(e) {
+    $(".restoretabs, div.panel").click(function(e) {
         if (e.target == this) {
             var hidestatus = $(".restoretabs").html();
             if (hidestatus=="Hide Tabs") {
@@ -430,6 +430,10 @@ function setupTimers() {
         var bid = $(this).attr("bid");
         var thetype = $(this).attr("type");
         var panel = $(this).attr("panel");
+        
+        // fix bug where panel was not proper case
+        // eventually we'll have to use actual item
+        panel = panel.toLowerCase();
         var timerval = 0;
         
         switch (thetype) {

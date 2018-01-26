@@ -1324,6 +1324,9 @@ div.overlay.battery, div.overlay.name {
 	/*width: 100%;*/
 	height: auto;
 }
+div.overlay.name {
+    display: none;
+}
 
 div.ovCaption {
 	position: relative;

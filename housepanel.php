@@ -308,6 +308,12 @@ function getAllThings($endpt, $access_token) {
         // TODO - implement an analog clock
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
+        // add 4 generic iFrame tiles
+        $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Frame 1", "value" => array("name"=>"Frame 1", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Frame 2", "value" => array("name"=>"Frame 2", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame3"] = array("id" => "frame3", "name" => "Frame 3", "value" => array("name"=>"Frame 3", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame4"] = array("id" => "frame4", "name" => "Frame 4", "value" => array("name"=>"Frame 4", "frame"=>"","status"=>"stop"), "type" => "frame");
+        
         // add a video tile
         $allthings["video|vid1"] = array("id" => "vid1", "name" => "Video", "value" => array("name"=>"Sample Video", "url"=>"vid1"), "type" => "video");
         
@@ -657,10 +663,11 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         }
         
         // include 4 customizable tiles on each page
-        $tc.="<div id=\"custom1-$roomname\" class=\"custom custom1 custom1-$roomname\"></div>";
-        $tc.="<div id=\"custom2-$roomname\" class=\"custom custom2 custom2-$roomname\"></div>";
-        $tc.="<div id=\"custom3-$roomname\" class=\"custom custom3 custom3-$roomname\"></div>";
-        $tc.="<div id=\"custom4-$roomname\" class=\"custom custom4 custom4-$roomname\"></div>";
+        // this was stupid... removed and replaced with generic iFrame real tiles
+//        $tc.="<div id=\"custom1-$roomname\" class=\"custom custom1 custom1-$roomname\"></div>";
+//        $tc.="<div id=\"custom2-$roomname\" class=\"custom custom2 custom2-$roomname\"></div>";
+//        $tc.="<div id=\"custom3-$roomname\" class=\"custom custom3 custom3-$roomname\"></div>";
+//        $tc.="<div id=\"custom4-$roomname\" class=\"custom custom4 custom4-$roomname\"></div>";
         // include a tile to toggle tabs on and off if in kioskmode
         // but no longer need to display it unless you really want to
         if ($kioskmode) {
@@ -887,7 +894,7 @@ function refactorOptions($allthings) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     $cnt = 0;
     $oldoptions = readOptions();
     // $options = $oldoptions;
@@ -956,7 +963,7 @@ function getOptions($allthings) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
 
     // generic room setup
     $defaultrooms = array(
@@ -1141,7 +1148,7 @@ function mysortfunc($cmpa, $cmpb) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     $namea = $cmpa["name"];
     $typea = $cmpa["type"];
     $nameb = $cmpb["name"];
@@ -1164,7 +1171,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
@@ -1409,7 +1416,7 @@ function processOptions($optarray) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     
     $oldoptions = readOptions();
     $skindir = $oldoptions["skin"];
