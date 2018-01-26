@@ -52,10 +52,25 @@ window.addEventListener("load", function(event) {
             );
         }
     });
+	
+	$("#opMode").on('click', function() {
+      if ($(this).hasClass('on')) {
+         $(this).removeClass('on');
+		 $(".dragHandle").hide();
+		 $("div.thing").draggable({ disabled: true });
+      } else {
+         $(this).addClass('on');
+		 $("div.thing").draggable({ disabled: false });
+		 $(".dragHandle").show();
+		 $("div.thing").show();
+      }
+    });
 
     // make the actual thing tiles on each panel sortable
     // the change function does a post to make it permanent
     $("div.thing").draggable({
+		disabled: true,
+		handle: ".dragHandle",
         revert: false,
         containment: "parent",
         delay: 50,

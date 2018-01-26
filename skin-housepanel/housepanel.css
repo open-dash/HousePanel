@@ -371,7 +371,7 @@ div.thing {
     color: #eeeeee;
     cursor: default;
     width: 120px; 
-    height: 160px;
+    height: auto;
 }
 div.thing:hover{
     position: relative;
@@ -422,11 +422,11 @@ div.thingname.lock, div.thingname.piston, div.thingname.temperature {
     font-size: 11pt;
     text-align: center;
     color: #ffffff;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 8px;
+    padding-bottom: 2px;
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
-    cursor: move;
+
 }
 div.thingname:hover {
     background-color: #5050a0; 
@@ -539,14 +539,17 @@ div.motion.active {
 div.motion.battery, div.contact.battery, 
 div.lock.battery {
     /* background-color: rgba(0, 102, 102, 0.5); */
-    height: 13px; font-size: 9pt; color: #ffffff;
+    height: 0px; font-size: 9pt; color: #ffffff;
+	display: none;
 }
+/*
 div.motion.battery::before, div.contact.battery::before, div.lock.battery:before {
     content: "Battery: ";
 }
 div.motion.battery::after, div.contact.battery::after, div.lock.battery::after {
     content: " %";
 }
+*/
 /*
 div.motion.temperature::before {
     content: "T: ";
@@ -956,7 +959,6 @@ div.thing.blank-thing {
     box-shadow: none;
     width: auto;
     height: auto;
-    cursor: move;
 }
 div.blank:hover {
     background-color: rgba(255,255,255,0.01);
@@ -985,7 +987,7 @@ div.thing.blank-thing:hover {
 div.thing.clock-thing {
     height: 160px;
     width: 246px;
-    cursor: move;
+
 }
 div.clock.weekday {
     margin-top: 10px;
@@ -1003,7 +1005,7 @@ div.clock.tzone{
 div.thing.mode-thing {
     width: auto;
     height: 160px;
-    cursor: move;
+
 }
 div.mode, div.mode1x1, div.mode1x2 {
     width: 120px;
@@ -1037,7 +1039,7 @@ div.thing.image-thing {
     box-shadow: none;
     width: auto;
     height: auto;
-    cursor: move;
+
 }
 div.image.url {
     width: 246px;
@@ -1141,7 +1143,7 @@ div.panel-all div.thingname {
     padding-bottom: 1px;
     border-bottom: 1px solid rgba(0,0,0,0.3);
     height: 20px;
-    cursor: move;
+
 }
 div.panel-all div.open, div.panel-all div.closed, 
 div.panel-all div.inactive, div.panel-all div.active, 
@@ -1264,4 +1266,152 @@ div.thingname.video {
 /* this makes a fixed music size but long names will get cut off */
 div.music.track {
     height: 48px;
+}
+
+div.overlay {
+	position: absolute;
+	z-index: 10;
+	left: 0px;
+	top: 2px;
+	width: 100%;
+	height: auto;
+}
+div.ovCaption {
+	position: relative;
+	left: 1px;
+	font-size: 10px;
+	text-align: left;
+	color: #ffffee;
+	visibility: hidden;
+}
+div.ovStatus {
+	position: relative;
+	left: 1px;
+	font-size: 12px;
+	text-transform: capitalize;
+	text-align: left;
+	color: #ffffee;
+	visibility: hidden;
+}
+div.ovBattery {
+  position:relative;
+  float: right;
+  right: -3px;
+  top: -11px;
+  width: 24px;
+  height: 8px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  position: relative;
+  padding: 1px;
+  transform: scale(0.6);
+}
+
+div.ovBattery:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    margin-top: -3px;
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    clip: rect(0, 5px, 5px, 3px);
+    border-radius: 50%;
+}
+
+div.ovbLevel{
+    height: 100%;
+	font-size: 0px;
+    background: #fff;
+    border-radius: 2px/2;
+	width: 2%;
+}
+div.ovbLevel.L30{
+    background: #FC0;
+}
+div.ovbLevel.L20{
+    background: #F60;
+}
+div.ovbLevel.L10{
+    background: #F00;
+}
+div.ovbLevel.L0{
+    background: #F00;
+	width: 2%;
+}
+.dragHandle{
+   	display: none;
+    position: absolute;
+	top: 1px;
+    left: 20%;
+    cursor: move;
+    z-index: 20;
+    background-image: linear-gradient(to bottom, #F9F9F9 0px, #000 2px, #F9F9F9 4px, #000 6px, #F9F9F9 8px, #000 10px, #F9F9F9 12px, #000 14px);
+    width: 60%;
+    height: 14px;
+    margin: 0 auto;
+    opacity: 0.5;
+}
+
+
+.toggleOpMode {
+  background-color: #ddddde;
+  border-radius: 24px;  
+  box-shadow: 0 1px 1px 0 rgba(255,255,255,.4), 0 1px 0 0 rgba(0,0,0,0.10) inset;
+  cursor: pointer;
+  width: 62px;
+  height: 32px;
+  overflow: hidden;
+  display: inline-block;
+  transition: all .25s linear;
+  margin: 4px;
+}
+.toggleOpMode .slide {
+  color: #818283;
+  color: rgba(0,0,0,.15);
+  background: #efefef;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 28px;
+  text-align: center;
+  text-decoration: none;
+  height: 28px;
+  width: 28px;
+  position: relative;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.15), 0 1px 1px 0 rgba(255,255,255,.8) inset;
+  transition: all 0.3s cubic-bezier(0.43, 1.3, 0.86, 1);
+}
+.toggleOpMode .slide span{
+    text-shadow: 0 1px 1px rgba(255,255,255,.7), 0 0 1px rgba(0,0,0,.3);       
+}
+.toggleOpMode .slide:before, 
+.toggleOpMode .slide:after {
+  color: #FFF;
+  content: "\1f512";
+  font-size: 18px;
+  font-weight: 400;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.25);
+  -webkit-font-smoothing: antialiased;
+  position: absolute;
+}
+.toggleOpMode .slide:before {
+  right: -24px;
+  color: #2a2b2c;
+  opacity: 0.2;
+}
+.toggleOpMode .slide:after {
+  content: "\1f513";
+  left: -24px;
+  color: #00ba00;
+}
+.toggleOpMode.on {
+  background: #00dc00;
+}
+.toggleOpMode.on .slide {
+  left: 32px;
+  color: #00d100;
 }
