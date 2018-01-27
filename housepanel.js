@@ -405,7 +405,7 @@ function updateTile(aid, presult) {
 
         // only take action if this key is found in this tile
         if ($(targetid) && value) {
-            var oldvalue = $(targetid).text();
+            var oldvalue = $(targetid).html();
             var oldclass = $(targetid).attr("class");
             // alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
 
@@ -420,26 +420,23 @@ function updateTile(aid, presult) {
                 value = "<div style=\"width: " + powmod.toString() + "%\" class=\"ovbLevel L" + powmod.toString() + "\"></div>";
             } else if ( key=="track") {
                 value = fixTrack(value);
-            } else if ( key == "level") {
-                var initval = $(this).attr("value");
+            } else if ( key == "level" && $(targetid).slider ) {
+//                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
 //            } else if ( key=="color") {
                 // alert("updating color: "+value);
-            } else {
-            
-                if ( oldclass && oldvalue && value &&
+            } else if ( oldclass && oldvalue && value &&
                      $.isNumeric(value)===false && 
                      $.isNumeric(oldvalue)===false &&
-                     oldclass.indexOf(oldvalue)>=0 ) 
-                {
+                     oldclass.indexOf(oldvalue)>=0 ) {
                     $(targetid).removeClass(oldvalue);
                     $(targetid).addClass(value);
-                }
+                
+            }
 
-                // update the content 
-                if (oldvalue && value) {
-                    $(targetid).html(value);
-                }
+            // update the content 
+            if (oldvalue && value) {
+                $(targetid).html(value);
             }
         }
     });
