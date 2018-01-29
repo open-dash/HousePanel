@@ -932,6 +932,7 @@ div.thing.weather-thing, div.weather {
 div.thing.weather-thing {
     background-color: rgba(50,50,50,0.4);
     width: 240px;
+    height: 330px;
 }
 div.weather.temperature, div.weather.feelsLike {
     display: inline-block;
