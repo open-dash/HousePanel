@@ -385,7 +385,15 @@ function updateTile(aid, presult) {
             } else if ( key=="track") {
                 value = fixTrack(value);
             }
-            else if ( oldclass && oldvalue && value &&
+            // handle weather icons
+            else if ( key==="weatherIcon" || key==="forecastIcon") {
+                var iconstr = value;
+                if ( iconstr.substring(0,3) === "nt_") {
+                    iconstr = iconstr.substring(3);
+                }
+                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
+                value += "<br />" + iconstr;
+            } else if ( oldclass && oldvalue && value &&
                  $.isNumeric(value)===false && 
                  $.isNumeric(oldvalue)===false &&
                  oldclass.indexOf(oldvalue)>=0 ) 

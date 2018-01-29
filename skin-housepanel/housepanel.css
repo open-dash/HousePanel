@@ -405,7 +405,7 @@ div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off {
     height: 112px;
 }
 
-div.lock.locked, div.lock.unlocked, div.motion.active, div.motion.inactive,
+div.lock.locked, div.lock.unlocked, div.lock.unknown, div.motion.active, div.motion.inactive,
 div.contact.open, div.contact.closed {
     height: 112px;
 }
@@ -436,7 +436,7 @@ div.thingname:hover {
 
 /* style the on and off states of things to not show up */
 /* set size to show text to avoid funky resizing, but use transparent color */
-div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, 
+div.open, div.closed, div.inactive, div.active, div.locked, div.unlocked, div.unknown, 
 div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
   background-position: center center;  font-size: 12px;
   color: rgba(255,255,255,0.01);
@@ -566,7 +566,7 @@ div.lock.locked {
     background-size: 80px;
     background-position-y: 50px;
 }
-div.lock.unlocked{
+div.lock.unlocked, div.lock.unknown {
     background-image: url('icons/unlock.png');
     background-color: rgba(0, 102, 51, 1);
     background-size: 70px;
@@ -1447,7 +1447,7 @@ div.ovbLevel.L0{
 div.thingname.lock {
     display: none;
 }
-div.lock.locked, div.lock.unlocked {
+div.lock.locked, div.lock.unlocked, div.lock.unknown {
     height: 148px;
 }
 div.lock-thing div.overlay.name {

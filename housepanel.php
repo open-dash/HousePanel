@@ -417,7 +417,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
             $iconstr = substr($iconstr,3);
         }
         $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
-        $tc.= '<br />' . $thingvalue["weatherIcon"];
+        $tc.= '<br />' . $iconstr;
         $tc.= "</div>";
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
         $iconstr = $thingvalue["forecastIcon"];
@@ -425,7 +425,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
             $iconstr = substr($iconstr,3);
         }
         $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
-        $tc.= '<br />' . $thingvalue["forecastIcon"];
+        $tc.= '<br />' . $iconstr;
         $tc.= "</div>";
         $tc.= putElement($kindex, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
         $j = 3;
