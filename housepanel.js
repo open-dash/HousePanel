@@ -434,11 +434,11 @@ function updateTile(aid, presult) {
                 
             }
 
-            // update the content 
-            if (oldvalue && value) {
-                $(targetid).html(value);
+                // update the content 
+                if (oldvalue && value) {
+                    $(targetid).html(value);
+                }
             }
-        }
     });
 }
 
