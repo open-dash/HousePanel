@@ -662,11 +662,11 @@ div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchleve
 /* momentary styling */
 div.momentary.off, div.momentary.on{
     background-image: url('icons/3dbutton.png');
-    background-color: rgba(204, 51, 0, 0.6);
+    background-color: rgba(0,51,204,0.6);
     height: 112px;
 }
-div.momentary.off {
-    background-color: rgba(0,51,204,0.6);
+div.momentary.on {
+    background-image: url('icons/3dbuttonpush.png');
 }
 	
 /* hover over on and off states */
