@@ -628,7 +628,7 @@ div.overlay.power, div.overlay.energy {
         background: none;
 	height: auto;
 }
-div.switch.power {
+div.overlay.power div.switch.power {
     z-index: 21;
     display: block;
     float: left;
@@ -639,7 +639,7 @@ div.switch.power {
     font-size: 10pt;
     margin-left: 5px;
 }
-div.switch.energy {
+div.overlay.energy div.switch.energy {
     z-index: 21;
     display: block;
     float: right;
@@ -764,7 +764,9 @@ div.overlay.temperature, div.overlay.feelsLike {
 }
 
 /* individual temperature value inside a thermostat */
-div.thermostat.temperature, div.temperature.room {
+div.thermostat.temperature,
+div.overlay.temperature div.temperature,
+div.weather.temperature, div.weather.feelsLike {
     display: inline-block;
     width: 118px;
     background-color: #006666;
@@ -773,11 +775,10 @@ div.thermostat.temperature, div.temperature.room {
     box-shadow: 5px 4px 15px black;
     cursor: default;
     text-align: center;
-    height: 50px !important;
+    height: 50px;
     width: 50px;
     padding: 4px 3px 0 3px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 10px 12px 10px 12px;
     border-radius: 50%;
     font-size: 20px;
     line-height: 45px;
@@ -933,28 +934,6 @@ div.thing.weather-thing {
     background-color: rgba(50,50,50,0.4);
     width: 240px;
     height: 330px;
-}
-div.weather.temperature, div.weather.feelsLike {
-    display: inline-block;
-    width: 118px;
-    background-color: #006666;
-    color: #ffffee;
-    border: 2px solid white;
-    box-shadow: 5px 4px 15px black;
-    cursor: default;
-    text-align: center;
-    height: 60px;
-    width: 60px;
-    padding: 4px 3px 0 3px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    margin-left: 10px;
-    margin-right: 10px;
-    border-radius: 50%;
-    font-size: 20px;
-    line-height: 55px;
-    -webkit-border-radius: 50%;
-    -moz-border-radius: 50%;
 }
 div.weather.feelsLike::before {
     content: "~";
