@@ -207,6 +207,29 @@ function getResponse($host, $access_token) {
     return $edited;
 }
 
+function getHubitatDevices($path) {
+
+    $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
+    $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
+    $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN; // client_secret=" . urlencode(CLIENT_SECRET) . "&scope=app&client_id=" . urlencode(CLIENT_ID);
+    $response = curl_call($host, $headertype, $nvpreq, "POST");
+    
+    // configure returned array with the "id" as the key and check for proper return
+    // no longer do this - index simply with integers
+    $edited = array();
+    if ($response && is_array($response) && count($response)) {
+        foreach ($response as $k => $content) {
+            $id = "h_" . $content["id"];
+            $thetype = $content["type"];
+            
+            // make a unique index for this thing based on id and type
+            $idx = $thetype . "|" . $id;
+            $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $thetype);
+        }
+    }
+    return $edited;
+}
+
 // function to get authorization code
 // this does a redirect back here with results
 function getAuthCode($returl)
@@ -293,6 +316,17 @@ function getAllThings($endpt, $access_token) {
                             "modes", "blanks", "images", "pistons", "others");
         foreach ($groovytypes as $key) {
             $newitem = getResponse($endpt . "/" . $key, $access_token);
+            if ($newitem && count($newitem)>0) {
+                $allthings = array_merge($allthings, $newitem);
+            }
+        }
+        
+        // get Hubitat devices
+        $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
+                            "sensors", "locks", "thermostats", "temperatures", "valves",
+                            "doors", "illuminances", "smokes", "waters", "presences");
+        foreach ($hubitattypes as $key) {
+            $newitem = getHubitatDevices($key);
             if ($newitem && count($newitem)>0) {
                 $allthings = array_merge($allthings, $newitem);
             }
@@ -563,7 +597,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
-        $tc.= "<div class=\"overlay $thingtype" . $subtype . " $tkey" . " v_$kindex\">";
+        $tc.= "<div class=\"overlay $thingtype $tkey" . " v_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-dn\"></div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
