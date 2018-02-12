@@ -453,15 +453,18 @@ div.thermostat.thermomode.on, div.thermostat.thermofan.on {
 div.contact.open {
     background-image: url('icons/opencontact.png');
     background-color: rgba(27,177,75,0.3);
-    
-
 }
 div.contact.closed {
     background-image: url('icons/closecontact.png');
     background-color: rgba(27,177,75,0.3);
-    
-    
-
+}
+div.contact.mat.open {
+    background-image: url('icons/matempty.png');
+    background-color: rgba(27,177,75,0.3);
+}
+div.contact.mat.closed {
+    background-image: url('icons/matfull.png');
+    background-color: rgba(27,177,75,0.3);
 }
 
 /* specific contact types one might find */
