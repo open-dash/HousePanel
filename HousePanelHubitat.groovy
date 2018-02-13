@@ -167,20 +167,17 @@ def updated() {
 }
 
 def initialize() {
-    sendHubInfo();
+    configureHub();
     log.debug "Installed with settings: ${settings} "
 }
 
-def sendHubInfo() {
-	createAccessToken();
-    log.debug "App id = ${app.id} and token: ${state.accessToken}"
-}
-
-def getWeatherInfo(evt) {
-    def name = evt.getName()
-    def src = evt.getSource()
-    def val = evt.getValue()
-    log.debug "Weather event: from ${src} name = ${name} value = ${val}"
+def configureHub() {
+    if ( ! state.accessToken ) {
+    	createAccessToken(); 
+	    log.debug "Creating new accessToken ... you must save app.id and accessToken in your HousePanel configuration file."
+    }
+    log.debug "app.id = ${app.id} and accessToken = ${state.accessToken}"
+    
 }
 
 def getSwitch(swid, item=null) {
@@ -896,6 +893,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     def hue = false
     def saturation = false
     def temperature = false
+    def skiponoff = false
     
     if (item ) {
     
@@ -924,7 +922,8 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             newsw = newsw.toInteger()
                 newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
                 item.setLevel(newsw)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "level-dn":
@@ -932,14 +931,16 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 def del = (newsw % 5) == 0 ? 5 : newsw % 5
                 newsw = (newsw <= 5) ? 5 : newsw - del
                 item.setLevel(newsw)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
          
         case "hue-up":
                 hue = item.currentValue("hue").toInteger()
                 hue = (hue >= 95) ? 100 : hue - (hue % 5) + 5
                 item.setHue(hue)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "hue-dn":
@@ -947,14 +948,16 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 def del = (hue % 5) == 0 ? 5 : hue % 5
                 hue = (hue <= 5) ? 5 : hue - del
                 item.setHue(hue)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "saturation-up":
                 saturation = item.currentValue("saturation").toInteger()
                 saturation = (saturation >= 95) ? 100 : saturation - (saturation % 5) + 5
                 item.setSaturation(saturation)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "saturation-dn":
@@ -962,14 +965,16 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 def del = (saturation % 5) == 0 ? 5 : saturation % 5
                 saturation = (saturation <= 5) ? 5 : saturation - del
                 item.setSaturation(saturation)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "colorTemperature-up":
                 temperature = item.currentValue("colorTemperature").toInteger()
                 temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100) + 100
                 item.setColorTemperature(temperature)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "colorTemperature-dn":
@@ -979,7 +984,8 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 temperature = (temperature <= 2700) ? 2700 : temperature - del
                 temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100)
                 item.setColorTemperature(temperature)
-                newonoff = "on"
+            	newonoff = "on"
+                skiponoff = true
             break
               
         case "level-val":
@@ -987,17 +993,14 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         case "saturation-val":
         case "colorTemperature-val":
             newonoff = newonoff=="off" ? "on" : "off"
-            // newonoff=="on" ? item.on() : item.off()
             break
               
         case "on":
             newonoff = "off"
-            // item.off()
             break
               
         case "off":
             newonoff = "on"
-            // item.on()
             break
               
         default:
@@ -1006,16 +1009,19 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            // newonoff=="on" ? item.on() : item.off()
+            newonoff=="on" ? item.on() : item.off()
             if ( swattr.isNumber() ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
             }
+            skiponoff = true
             break               
               
         }
         
-        newonoff=="on" ? item.on() : item.off()
+        if ( ! skiponoff ) {
+        	newonoff=="on" ? item.on() : item.off()
+        }
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( hue ) { resp.put("hue", hue) }

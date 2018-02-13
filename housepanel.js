@@ -413,8 +413,13 @@ function updateTile(aid, presult) {
 // this differs from updateTile by calling ST to get the latest data first
 // it then calls the updateTile function to update each subitem in the tile
 function refreshTile(aid, bid, thetype) {
+    var ajaxcall = "doquery";
+    if ( bid.startsWith("h_") ) {
+        ajaxcall = "queryhubitat";
+        bid = bid.substring(2);
+    }
     $.post("housepanel.php", 
-        {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
+        {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
                 // alert( strObject(presult) );
@@ -453,83 +458,94 @@ function setupTimers() {
     // but only for tabs that are being shown
     $('div.thing').each(function() {
         
-        var tile = $(this).attr("tile");
-        var aid = $(this).attr("id").substring(2);
         var bid = $(this).attr("bid");
-        var thetype = $(this).attr("type");
-        var panel = $(this).attr("panel");
+
+        // skip doing this stuff if Hubitat since we directly control status
+        // actually we don't because manual triggers don't always work
+        // instead we just speed it up for hubitat
+//        if ( ! bid.startsWith("h_") ) {
         
-        // fix bug where panel was not proper case
-        // eventually we'll have to use actual item
-        panel = panel.toLowerCase();
-        var timerval = 0;
+            var tile = $(this).attr("tile");
+            var aid = $(this).attr("id").substring(2);
+            var thetype = $(this).attr("type");
+            var panel = $(this).attr("panel");
+
+            // fix bug where panel was not proper case
+            // eventually we'll have to use actual item
+            panel = panel.toLowerCase();
+            var timerval = 0;
+
+            switch (thetype) {
+                case "switch":
+                case "bulb":
+                case "light":
+                case "switchlevel":
+                case "presence":
+                    timerval = 30000;
+                    if ( bid.startsWith("h_") ) { timerval = 5000; }
+                    break;
+
+                case "motion":
+                case "contact":
+                    timerval = 30001;
+                    if ( bid.startsWith("h_") ) { timerval = 5001; }
+                    break;
+
+                case "thermostat":
+                case "temperature":
+                    timerval = 60002;
+                    break;
+
+                case "music":
+                    timerval = 60003;
+                    break;
+
+                case "weather":
+                    timerval = 90004;
+                    break;
+
+                case "mode":
+                case "routine":
+                    timerval = 90005;
+                    break;
+
+                case "lock":
+                case "door":
+                case "valve":
+                    timerval = 60006;
+                    if ( bid.startsWith("h_") ) { timerval = 5002; }
+                    break;
+
+                case "image":
+                    timerval = 60007;
+                    break;
+
+                // update clock every minute
+                case "clock":
+                    timerval = 60000;
+                    break;
+            }
+
+            if ( timerval && aid && bid ) {
+
+                // define the timer callback function to update this tile
+                var apparray = [aid, bid, thetype, panel, timerval];
+                apparray.myMethod = function() {
+
+                    // only call and update things if this panel is visible
+                    // or if it is a clock tile
+                    if ( this[2]=="clock" || $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
+                        var that = this;
+    //                    alert("aid= "+that[0]+" bid= "+that[1]+" type= "+that[2]);
+                        refreshTile(that[0], that[1], that[2]);
+                    }
+                    setTimeout(function() {apparray.myMethod();}, this[4]);
+                };
+
+                // wait before doing first one
+                setTimeout(function() {apparray.myMethod();}, timerval);
+//            }
         
-        switch (thetype) {
-            case "switch":
-            case "bulb":
-            case "light":
-            case "switchlevel":
-            case "presence":
-                timerval = 30000;
-                break;
-                
-            case "motion":
-            case "contact":
-                timerval = 30001;
-                break;
-
-            case "thermostat":
-            case "temperature":
-                timerval = 60002;
-                break;
-
-            case "music":
-                timerval = 60003;
-                break;
-
-            case "weather":
-                timerval = 90004;
-                break;
-
-            case "mode":
-            case "routine":
-                timerval = 90005;
-                break;
-
-            case "lock":
-            case "door":
-            case "valve":
-                timerval = 60006;
-                break;
-
-            case "image":
-                timerval = 60007;
-                break;
-
-            // update clock every minute
-            case "clock":
-                timerval = 60000;
-                break;
-        }
-        
-        if ( timerval && aid && bid ) {
-
-            // define the timer callback function to update this tile
-            var apparray = [aid, bid, thetype, panel, timerval];
-            apparray.myMethod = function() {
-                
-                // only call and update things if this panel is visible
-                // or if it is a clock tile
-                if ( this[2]=="clock" || $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
-                    var that = this;
-//                    alert("aid= "+that[0]+" bid= "+that[1]+" type= "+that[2]);
-                    refreshTile(that[0], that[1], that[2]);
-                }
-                setTimeout(function() {apparray.myMethod();}, this[4]);
-            };
-            
-            // wait before doing first one
-            setTimeout(function() {apparray.myMethod();}, timerval);
         }
     });
 }
@@ -626,6 +642,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
         trigger==="hue-up" || trigger==="hue-dn" ||
         trigger==="saturation-up" || trigger==="saturation-dn" ||
         trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
+//        alert("level trigger: bid= "+bid+" pvalue= "+strObject(pvalue));
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
@@ -676,7 +693,15 @@ function setupPage(trigger) {
         var subid = $(this).attr("subid");
         var tile = '#t-'+aid;
         var bid = $(tile).attr("bid");
+        var bidupd = bid;
         var thetype = $(tile).attr("type");
+        
+        // set the action differently for Hubitat
+        var ajaxcall = "doaction";
+        if ( bid.startsWith("h_") ) {
+            ajaxcall = "dohubitat";
+            bid = bid.substring(2);
+        }
 
         // get target id and contents
         var targetid = '#a-'+aid+'-'+subid;
@@ -704,7 +729,7 @@ function setupPage(trigger) {
                 this[0].html(this[2]);
             };
             $.post("housepanel.php", 
-                {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                 function(presult, pstatus) {
                     // alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
@@ -729,13 +754,13 @@ function setupPage(trigger) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
         } else {
-            // alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
+//            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             $.post("housepanel.php", 
-                   {useajax: "doaction", id: bid, type: thetype, value: thevalue, attr: theclass},
+                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
-                            // alert( strObject(presult) );
-                            updAll(trigger,aid,bid,thetype,presult);
+//                            alert( strObject(presult) );
+                            updAll(trigger,aid,bidupd,thetype,presult);
                         }
                    }, "json"
             );
