@@ -740,6 +740,45 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
     return $tc;
 }
 
+function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
+    
+    // intercept clock things to return updated date and time
+    if ($swtype==="clock") {
+        $weekday = date("l");
+        $dateofmonth = date("M d, Y");
+        $timeofday = date("g:i a");
+        $timezone = date("T");
+        $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    } else if ($swtype ==="image") {
+        $response = array("url" => $swid);
+    } else {
+        $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
+        $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
+        $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN .
+                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+        $response = curl_call($host, $headertype, $nvpreq, "POST");
+    
+        // update session with new status
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+            $idx = $swtype . "|" . $swid;
+            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                $newval = array_merge($allthings[$idx]["value"], $response);
+                $allthings[$idx]["value"] = $newval;
+                $_SESSION["allthings"] = $allthings;
+            }
+        }
+        
+        if (!response) {
+            $response = array("name" => "Unknown", $swtype => $swval);
+        }
+    }
+    
+    return json_encode($response);
+    
+}
+
 function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="none") {
     
     // intercept clock things to return updated date and time
@@ -1762,10 +1801,23 @@ function is_ssl() {
                 if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo doAction($endpt . "/doaction", $access_token, $swid, $swtype, $swval, $swattr);
                 break;
+                
+            case "dohubitat":
+                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
+                echo doHubitat("doaction", $swid, $swtype, $swval, $swattr);
+                break;
         
             case "doquery":
                 // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
+                break;
+        
+            case "queryhubitat":
+                // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
+                echo doHubitat("doquery", $swid, $swtype);
                 break;
         
             case "wysiwyg":
