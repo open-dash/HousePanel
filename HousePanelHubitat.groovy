@@ -40,6 +40,13 @@ definition(
 
 
 preferences {
+    section("Hubitat Configuration") {
+        input (name: "useSmartthings", type: "bool", title: "use ST?", defaultValue: true, required: true)
+        input (name: "useHubitat", type: "bool", title: "use Hubitat?", defaultValue: false, required: true)
+        paragraph "The Local IP is the IP address where your HousePanel application is installed\n" +
+                  "This must be on the same network subnet as the Hubitat HUB if you are using Hubitat"
+        input (name: "localip", type: "text", title: "Local IP", defaultValue: "", required: true, multiple: false )
+    }
     section("Lights and Switches...") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
         input "mydimmers", "capability.switchLevel", hideWhenEmpty: true, multiple: true, required: false, title: "Dimmers"
@@ -176,7 +183,7 @@ def configureHub() {
     	createAccessToken(); 
 	    log.debug "Creating new accessToken ... you must save app.id and accessToken in your HousePanel configuration file."
     }
-    log.debug "app.id = ${app.id} and accessToken = ${state.accessToken}"
+    log.debug "app.id = ${app.id} and accessToken = ${state.accessToken} local IP= ${localip}"
     
 }
 
