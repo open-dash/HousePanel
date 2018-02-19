@@ -181,8 +181,13 @@ def getWeatherInfo(evt) {
     log.debug "Weather event: from ${src} name = ${name} value = ${val}"
 }
 
+// changed switch to only return switch so we can use it with other things
+// to get multiple attributes from a switch, use other
 def getSwitch(swid, item=null) {
     getThing(myswitches, swid, item)
+    item = item? item : myswitches.find {it.id == swid }
+    def resp = item ?   [name: item.displayName, switch: item.currentValue("switch")
+                         ] : false
 }
 
 def getBulb(swid, item=null) {
@@ -199,7 +204,7 @@ def getMomentary(swid, item=null) {
     if ( item && item.hasCapability("Switch") ) {
         def curval = item.currentValue("switch")
         if (curval!="on" && curval!="off") { curval = "off" }
-        resp = [momentary: item.currentValue("switch")]
+        resp = [name: item.displayName, momentary: item.currentValue("switch")]
     }
     return resp
 }
@@ -357,13 +362,16 @@ def getThing(things, swid, item=null) {
     if ( item ) {
         resp.put("name",item.displayName)
     }
-
             item?.capabilities.each {cap ->
                 // def capname = cap.getName()
                 cap.attributes?.each {attr ->
-                    def othername = attr.getName()
-                    def othervalue = item.currentValue(othername)
-                    resp.put(othername,othervalue)
+                    try {
+                        def othername = attr.getName()
+                        def othervalue = item.currentValue(othername)
+                        resp.put(othername,othervalue)
+                    } catch (ex) {
+                        log.warn "Attempt to read attribute for ${swid} failed"
+                    } 
                 }
             }
     return resp
@@ -480,6 +488,13 @@ def getPistons() {
 
 def getSwitches() {
     getThings(myswitches, "switch")
+    def resp = []
+    log.debug "Number of switches = " + myswitches?.size() ?: 0
+    myswitches?.each {
+        def multivalue = getSwitch(it.id, it)
+        resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
+    }
+    return resp
 }
 
 def getBulbs() {
