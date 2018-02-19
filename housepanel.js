@@ -53,26 +53,9 @@ window.addEventListener("load", function(event) {
         }
     });
 
-    // make the actual thing tiles on each panel draggable
-    // the stop function does a post to make it permanent
-    $("div.thing").draggable({
-        revert: false,
-        containment: "parent",
-        delay: 50,
-        stop: function(event, ui) {
-            var dragthing = {};
-            dragthing["id"] = $(event.target).attr("id");
-            var bid = $(event.target).attr("bid");
-            var thingtype = $(event.target).attr("type");
-            dragthing["tile"] = $(event.target).attr("tile");
-            dragthing["panel"] = $(event.target).attr("panel");
-            // now post back to housepanel to save the position
-            // also send the dragthing object to get panel name and tile pid index
-            $.post("housepanel.php", 
-                   {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
-            );
-        }
-    });
+    // make the actual thing tiles on each panel sortable
+    setupDraggable(false);
+//    setupSortable(false);
 
     // disable return key
     $("form.options").keypress(function(e) {
@@ -141,6 +124,73 @@ function setupSliders() {
     $("div.thing >div.level").each( function(){
         var initval = $(this).attr("value");
         $(this).slider("value", initval);
+    });
+    
+}
+    
+function setupSortable(dyno) {
+
+    if (dyno) {
+        $("div.thing").each(function(){
+            $(this).draggable("destroy");
+        });
+    }
+    
+    $("div.panel").sortable({
+        containment: "parent",
+        scroll: false,
+        items: "> div",
+        delay: 50,
+//        grid: [10, 10],
+        stop: function(event, ui) {
+            var tile = $(ui.item).attr("tile");
+            var roomtitle = $(ui.item).attr("panel");
+            var things = [];
+            $("div.thing[panel="+roomtitle+"]").each(function(){
+                things.push($(this).attr("tile"));
+            });
+            
+//            alert("Sorted thing: "+tile+" room: "+roomtitle+" things: "+strObject(things));
+            $.post("housepanel.php", 
+                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+            );
+        }
+    });
+        
+    
+}
+
+function setupDraggable(dyno) {
+    
+    if ( dyno ) {
+        $("div.panel").each(function(){
+            $(this).sortable("destroy");
+        });
+    }
+    
+    $("div.thing").draggable({
+        revert: false,
+        containment: "parent",
+        delay: 50,
+        grid: [10, 10],
+        stop: function(event, ui) {
+            var dragthing = {};
+            dragthing["id"] = $(event.target).attr("id");
+            var bid = $(event.target).attr("bid");
+            var thingtype = $(event.target).attr("type");
+            dragthing["tile"] = $(event.target).attr("tile");
+            dragthing["panel"] = $(event.target).attr("panel");
+           
+//            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
+//            $.post("housepanel.php", 
+//                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+//            );
+            // now post back to housepanel to save the position
+            // also send the dragthing object to get panel name and tile pid index
+            $.post("housepanel.php", 
+                   {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
+            );
+        }
     });
     
 }
@@ -278,9 +328,11 @@ function setupHideTabs() {
             if (hidestatus=="Hide Tabs") {
                 $("#roomtabs").addClass("hidden");
                 $(".restoretabs").html("Show Tabs");
+                setupSortable(true);
             } else if (hidestatus=="Show Tabs") {
                 $("#roomtabs").removeClass("hidden");
                 $(".restoretabs").html("Hide Tabs");
+                setupDraggable(true);
             }
         }
     })

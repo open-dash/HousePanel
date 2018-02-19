@@ -761,7 +761,7 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
 //                $options["things"][$swattr] = $swval;
                 $options["things"][$swattr] = array();
                 foreach( $swval as $val) {
-                    $options["things"][$swattr][] = intval($val, 10);
+                    $options["things"][$swattr][] = array(intval($val, 10),0,0);
                 }
 //              $updated = print_r($swval,true);
                 $updated = true;
