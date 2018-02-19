@@ -1696,7 +1696,6 @@ function is_ssl() {
 
     // initial call or a content load or ajax call
     $tc = "";
-    $first = false;
     $endpt = false;
     $access_token = false;
 
@@ -1713,35 +1712,20 @@ function is_ssl() {
         $access_token = $_REQUEST["hmtoken"];
         $endpt = $_REQUEST["hmendpoint"];
     }
-    if ( $access_token && $endpt ) {
-        if (USER_SITENAME!==FALSE) {
-            $sitename = USER_SITENAME;
-        } else if ( isset($_COOKIE["hmsitename"]) ) {
-            $sitename = $_COOKIE["hmsitename"];
-        } else {
-            $sitename = "SmartHome";
-            // setcookie("hmsitename", $sitename, $expiry, "/", $serverName);
-        }
 
-        if (DEBUG) {       
-            $tc.= "<div class=\"debug\">";
-            $tc.= "access_token = $access_token<br />";
-            $tc.= "endpt = $endpt<br />";
-            $tc.= "sitename = $sitename<br />";
-            if (USER_ACCESS_TOKEN!==FALSE && USER_ENDPT!==FALSE) {
-                $tc.= "cookies skipped - user provided the access_token and endpt values listed above<br />";
-            } else {
-                $tc.= "<br />cookies = <br /><pre>";
-                $tc.= print_r($_COOKIE, true);
-                $tc.= "</pre>";
-            }
-            $tc.= "</div>";
-        }
+    // get the site name
+    if (USER_SITENAME!==FALSE) {
+        $sitename = USER_SITENAME;
+    } else if ( isset($_COOKIE["hmsitename"]) ) {
+        $sitename = $_COOKIE["hmsitename"];
+    } else {
+        $sitename = "SmartHome";
     }
+    
+    $valid = ( ($access_token && $endpt) || ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) );
 
     // cheeck if cookies are set
-    if (!$endpt || !$access_token) {
-        $first = true;
+    if ( ! $valid ) {
         unset($_SESSION["allthings"]);
         $tc .= "<div><h2>" . APPNAME . "</h2>";
         $tc.= authButton("SmartHome", $returnURL);
@@ -1762,15 +1746,15 @@ function is_ssl() {
     $swattr = "";
     $tileid = "";
     if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+    else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
     if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
+    else if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
-    if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
-    if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
-    if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
+    else if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
 
     // implement ability to use tile number to get the $swid information
     if ( isset($_GET["tile"]) ) { $tileid = $_GET["tile"]; }
-    if ( isset($_POST["tile"]) ) { $tileid = $_POST["tile"]; }
+    else if ( isset($_POST["tile"]) ) { $tileid = $_POST["tile"]; }
     if ( $swid=="" && $tileid ) {
         $oldoptions = readOptions();
         $idx = array_search($tileid, $oldoptions["index"]);
@@ -1785,7 +1769,7 @@ function is_ssl() {
         if ( array_key_exists($idx, $options) ) { $tileid = $options[$idx]; }
     }
     
-    if ( $useajax && $endpt && $access_token ) {
+    if ( $useajax && $valid ) {
         switch ($useajax) {
             case "doaction":
                 if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
@@ -1828,6 +1812,18 @@ function is_ssl() {
                 if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
+                
+            case "confighubitat":
+                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
+                echo $swattr . " " . $swval;
+                setcookie("hubitatToken", $swattr, $expiry, "/", $serverName);
+                setcookie("hubitatID", $swval, $expiry, "/", $serverName);
+                exit(0);
+                break;
+                
         
             // implement free form drag drap capability
             case "dragdrop":
@@ -1861,8 +1857,6 @@ function is_ssl() {
                 
                 unset($_SESSION["allthings"]);
                 $allthings = getAllThings($endpt, $access_token);
-    
-                // reload the page
                 $location = $returnURL;
                 header("Location: $location");
                 break;
@@ -1877,6 +1871,9 @@ function is_ssl() {
                 $tc.= "<div>sitename = $sitename </div>";
                 $tc.= "<div>access_token = $access_token </div>";
                 $tc.= "<div>endpt = $endpt </div>";
+                $tc.= "<div>Hubitat Hub IP = " . HUBITAT_HOST . "</div>";
+                $tc.= "<div>Hubitat ID = " . HUBITAT_ID . "</div>";
+                $tc.= "<div>Hubitat Token = " . HUBITAT_ACCESS_TOKEN . "</div>";
                 $tc.= "<div>url = $returnURL </div>";
                 $tc.= "<table class=\"showid\">";
                 $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
@@ -1926,7 +1923,7 @@ function is_ssl() {
     
     // final save options step involves reloading page via submit action
     // because just about everything could have changed
-    if ($endpt && $access_token && isset($_POST["options"])) {
+    if ( $valid && isset($_POST["options"])) {
         $location = $returnURL;
         header("Location: $location");
         exit(0);
@@ -1934,17 +1931,8 @@ function is_ssl() {
 
 // ********************************************************************************************
 
-    // *** check for errors ***
-    if ( isset($_SESSION['curl_error_no']) ) {
-        $tc.= "<br /><div class=\"error\">Errors detected<br />";
-        $tc.= "Error number: " . $_SESSION['curl_error_no'] . "<br />";
-        $tc.= "Found Error msg:    " . $_SESSION['curl_error_msg'] . "</div>";
-        unset($_SESSION['curl_error_no']);
-        unset($_SESSION['curl_error_msg']);
-        $skindir = "skin-housepanel";
-        
     // display the main page
-    } else if ( $access_token && $endpt ) {
+    if ( $valid ) {
     
 //        if ($sitename) {
 //            $tc.= authButton($sitename, $returnURL);
@@ -2041,19 +2029,6 @@ function is_ssl() {
             $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
         }
         $tc.='</div>';
-   
-    } else {
-
-// this should never ever happen...
-        if (!$first) {
-            echo "<br />Invalid request... you are not authorized for this action.";
-            // echo "<br />access_token = $access_token";
-            // echo "<br />endpoint = $endpt";
-            echo "<br /><br />";
-            echo $tc;
-            exit;    
-        }
-    
     }
 
     // display the dynamically created web site
