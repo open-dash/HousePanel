@@ -19,7 +19,8 @@
  * 
  *
  * Revision History
- * 1.47-sliderhue branch to explore slider implementation
+ * 1.49       sliderhue branch to explore slider implementation
+ * 1.48       Integrate @nitwitgit (Nick) TileEdit V3.2
  * 1.47       Integrate Nick's color picker and custom dialog
  * 1.46       Free form drag and drop of tiles
  * 1.45       Merge in custom tile editing from Nick ngredient-master branch
@@ -117,6 +118,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
+	$tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
 
     // TODO - switch to the jquery mobile framework
     /*
@@ -147,7 +149,7 @@ function htmlHeader($skindir="skin-housepanel") {
     // load the custom tile sheet if it exists
     // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("$skindir/customtiles.css")) {
-        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css\">";
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css?v=". time() ."\">";
     }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
@@ -314,6 +316,13 @@ function getAllThings($endpt, $access_token) {
         // TODO - implement an analog clock
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
+        // add 4 generic iFrame tiles
+        $forecast = "<iframe width=\"490\" height=\"220\" src=\"forecast.html\" frameborder=\"0\"></iframe>";
+        $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Weather Forecast", "value" => array("name"=>"Weather Forecast", "frame"=>"$forecast","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Frame 2", "value" => array("name"=>"Frame 2", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame3"] = array("id" => "frame3", "name" => "Frame 3", "value" => array("name"=>"Frame 3", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame4"] = array("id" => "frame4", "name" => "Frame 4", "value" => array("name"=>"Frame 4", "frame"=>"","status"=>"stop"), "type" => "frame");
+        
         // add a video tile
         $allthings["video|vid1"] = array("id" => "vid1", "name" => "Video", "value" => array("name"=>"Sample Video", "url"=>"vid1"), "type" => "video");
         
@@ -361,7 +370,7 @@ function processName($thingname, $thingtype) {
         $subtype = "";
         $k = 0;
         foreach ($subopts as $key) {
-            if (strtolower($key) != $thingtype) {
+            if (strtolower($key) != $thingtype && !is_numeric($key) ) {
                 $subtype.= " " . $key;
                 $k++;
             }
@@ -485,6 +494,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
             $thingpr = $thingname;
         }
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
+	
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
         // for multiple attribute things we provide a separate item for each one
@@ -504,15 +514,29 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                     $j++;
                 }
             }
+
+			$vStatus = "";
+			$vLevel = 80;
             foreach($thingvalue as $tkey => $tval) {
                 // skip if ST signals it is watching a sensor that is failing
                 // also skip the checkInterval since we never display this
                 if ( strpos($tkey, "DeviceWatch-") === FALSE &&
                      strpos($tkey, "checkInterval") === FALSE && $tkey!=="color" ) { 
-                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype, $bgcolor);
-                    $j++;
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $tval, $tkey, $subtype, $bgcolor);				
+                    $j++;									
                 }
             }
+//				//Add overlay wrapper
+//				$tc.= "<div class=\"overlay v_$kindex\">";
+//				$tc.= "<div class=\"ovCaption vc_$kindex\">" . substr($thingvalue["name"],0,20) . "</div>";
+//				if($thingvalue["battery"]) {
+//					$tc.= "<div class=\"ovBattery " . $thingvalue["battery"] . " vb_$kindex\">";
+//					$tc.= "<div style=\"width: " . $thingvalue["battery"] . "%\" class=\"ovbLevel L" . (string)$thingvalue["battery"] . "\"></div></div>";
+//					next($thingvalue);	
+//				}
+//				$tc.= "<div class=\"ovStatus vs_$kindex\">" . next($thingvalue) . "</div>";
+//				$tc.= "</div>";
+				
         } else {
             $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
         }
@@ -524,19 +548,18 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
 function fixTrack($tval) {
     if ( trim($tval)==="" ) {
         $tval = "None"; 
-    } else if ( strpos($tval, "Grouped with") ) {
-        $tval = substr($tval,0, strpos($tval, "Grouped with"));
-        if (strlen($tval) > 74) { $tval = substr($tval,0,70) . " ..."; } 
-        $tval.= " (*)";
-    } else if ( strlen($tval) > 74) { 
-        $tval = substr($tval,0,70) . " ..."; 
+//    } else if ( strpos($tval, "Grouped with") ) {
+//        $tval = substr($tval,0, strpos($tval, "Grouped with"));
+//        if (strlen($tval) > 124) { $tval = substr($tval,0,120) . " ..."; } 
+//        $tval.= " (*)";
+    } else if ( strlen($tval) > 124) { 
+        $tval = substr($tval,0,120) . " ..."; 
     }
     return $tval;
 }
 
 function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype="", $bgcolor="") {
     $tc = "";
-    
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
     if ( in_array($tkey, array("heat", "cool", "vol", "hue", "saturation", "colorTemperature") )) {
@@ -548,7 +571,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
-        $tc.= "<div class=\"$thingtype" . $subtype . " $tkey" . " p_$kindex\">";
+        $tc.= "<div class=\"overlay $thingtype" . $subtype . " $tkey" . " v_$kindex\">";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-dn\"></div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
@@ -557,19 +580,23 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ($tkey==="track" || $thingtype=="clock" || $thingtype=="piston" || $tkey==="color" ||
+        $extra = ($tkey==="track" || $thingtype=="clock" || $tkey==="color" ||
                   is_numeric($tval) || $thingtype==$tval ||
                   $tval=="" || strpos($tval," ") || strpos($tval,"\"") ) ? "" : " " . $tval;    // || str_word_count($tval) > 1
-
+        
         // fix track names for groups, empty, and super long
         if ($tkey==="track") {
             $tval = fixTrack($tval);
+        } else if ( $tkey == "battery") {
+            $powmod = intval($tval);
+            $powmod = (string)($powmod - ($powmod % 10));
+            $tval = "<div style=\"width: " . $tval . "%\" class=\"ovbLevel L" . $powmod . "\"></div>";
         }
         
         // for music status show a play bar in front of it
         if ($tkey==="musicstatus") {
             // print controls for the player
-            $tc.= "<div class=\"music-controls" . $subtype . " p_$kindex\">";
+            $tc.= "<div class=\"overlay music-controls" . $subtype . " v_$kindex\">";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Previous\" class=\"music-previous\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Pause\" class=\"music-pause\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"$tkey\" title=\"Play\" class=\"music-play\"></div>";
@@ -592,11 +619,13 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
+        $tc.= "<div class=\"overlay $tkey v_$kindex\">";
         if ( $tkey == "level" ) {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" value=\"$tval\" title=\"$tkey\" class=\"" . $thingtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . "</div>";
         } else {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\"$colorval class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
         }
+        $tc.= "</div>";
     }
     return $tc;
 }
@@ -647,10 +676,11 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         }
         
         // include 4 customizable tiles on each page
-        $tc.="<div id=\"custom1-$roomname\" class=\"custom custom1 custom1-$roomname\"></div>";
-        $tc.="<div id=\"custom2-$roomname\" class=\"custom custom2 custom2-$roomname\"></div>";
-        $tc.="<div id=\"custom3-$roomname\" class=\"custom custom3 custom3-$roomname\"></div>";
-        $tc.="<div id=\"custom4-$roomname\" class=\"custom custom4 custom4-$roomname\"></div>";
+        // this was stupid... removed and replaced with generic iFrame real tiles
+//        $tc.="<div id=\"custom1-$roomname\" class=\"custom custom1 custom1-$roomname\"></div>";
+//        $tc.="<div id=\"custom2-$roomname\" class=\"custom custom2 custom2-$roomname\"></div>";
+//        $tc.="<div id=\"custom3-$roomname\" class=\"custom custom3 custom3-$roomname\"></div>";
+//        $tc.="<div id=\"custom4-$roomname\" class=\"custom custom4 custom4-$roomname\"></div>";
         // include a tile to toggle tabs on and off if in kioskmode
         // but no longer need to display it unless you really want to
         if ($kioskmode) {
@@ -841,6 +871,7 @@ function writeOptions($options) {
     $str =  json_encode($options);
     fwrite($f, cleanupStr($str));
     fclose($f);
+	chmod($f, 0777);
 }
 
 // make the string easier to look at
@@ -876,7 +907,7 @@ function refactorOptions($allthings) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     $cnt = 0;
     $oldoptions = readOptions();
     // $options = $oldoptions;
@@ -945,7 +976,7 @@ function getOptions($allthings) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
 
     // generic room setup
     $defaultrooms = array(
@@ -1130,7 +1161,7 @@ function mysortfunc($cmpa, $cmpb) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     $namea = $cmpa["name"];
     $typea = $cmpa["type"];
     $nameb = $cmpb["name"];
@@ -1153,7 +1184,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
@@ -1257,6 +1288,11 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $str_on="on";
                 $str_off="off";
                 break;
+            
+            case "momentary":
+                $str_on="on";
+                $str_off="off";
+                break;
                 
             case "contact":
             case "door":
@@ -1274,15 +1310,34 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 $str_on="locked";
                 $str_off="unlocked";
                 break;
+            
+            case "clock":
+                $str_type = "time";
+                break;
+            
+            case "thermostat":
+            case "temperature":
+                $str_type = "temperature";
+                break;
+            
+            case "piston":
+                $str_type = "pistonName";
+                $str_on="firing";
+                $str_off="idle";
+                break;
+            
+            case "video":
+                $str_edit="hidden";
+                break;
                 
-            default:
-            	$str_edit="hidden";
+//            default:
+//            	$str_edit="hidden";
         }       
 
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
-
-        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingname', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        
+        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
 
         // loop through all the rooms in proper order
@@ -1374,7 +1429,7 @@ function processOptions($optarray) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "piston", "other",
-                        "clock","blank","image","video");
+                        "clock","blank","image","frame","video");
     
     $oldoptions = readOptions();
     $skindir = $oldoptions["skin"];
@@ -1682,6 +1737,14 @@ function is_ssl() {
             case "doquery":
                 // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
+                break;
+        
+            case "wysiwyg":
+                // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
+                $idx = $swtype . "|" . $swid;
+                $allthings = getAllThings($endpt, $access_token);
+                $thesensor = $allthings[$idx];
+                echo makeThing(0, $tileid, $thesensor, "Options");
                 break;
         
             case "pageorder":

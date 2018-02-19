@@ -216,8 +216,19 @@ def getContact(swid, item=null) {
     getThing(mycontacts, swid, item)
 }
 
+// change to only return lock status and battery
 def getLock(swid, item=null) {
-    getThing(mylocks, swid, item)
+//    def lock = getThing(mylocks, swid, item)
+    item = item? item : mylocks.find {it.id == swid }
+    def resp = item ? [:] : false
+    if ( item ) {
+        resp.put("name",item.displayName)
+        if ( item.hasCapability("Battery") ) {
+            resp.put("battery", item.currentValue("battery"))
+        }
+        resp.put("lock", item.currentValue("lock"))
+    }
+    return resp
 }
 
 def getMusic(swid, item=null) {
@@ -317,7 +328,7 @@ def getRoutine(swid, item=null) {
 // but retain original for backward compatibility reasons
 def getPiston(swid, item=null) {
     item = item ? item : webCoRE_list().find {it.id == swid}
-    def resp = [name: item.name, pistonName: item.name]
+    def resp = [name: item.name, pistonName: "idle"]
     return resp
 }
 
@@ -504,7 +515,14 @@ def getMomentaries() {
 }
 
 def getLocks() {
-    getThings(mylocks, "lock")
+//    getThings(mylocks, "lock")
+    def resp = []
+    log.debug "Number of locks = " + mylocks?.size() ?: 0
+    mylocks?.each {
+        def multivalue = getLock(it.id, it)
+        resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
+    }
+    return resp
 }
 
 def getMusics() {
@@ -530,6 +548,7 @@ def getThermostats() {
 def getPresences() {
     // getThings(mypresences, "presence")
     def resp = []
+    log.debug "Number of presences = " + mypresences?.size() ?: 0
     mypresences?.each {
         def multivalue = getPresence(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
@@ -552,10 +571,8 @@ def getSmokes() {
     getThings(mysmokes, "smoke")
 }
 def getTemperatures() {
-    getThings(mytemperatures, "temperature")
     def resp = []
-    def n  = mytemperatures ? mytemperatures.size() : 0
-    log.debug "Number of temperatures = ${n}"
+    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
     mytemperatures?.each {
         def val = getTemperature(it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
@@ -565,6 +582,7 @@ def getTemperatures() {
 
 def getWeathers() {
     def resp = []
+    log.debug "Number of weathers = " + myweathers?.size() ?: 0
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]

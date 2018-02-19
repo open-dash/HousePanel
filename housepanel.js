@@ -94,7 +94,7 @@ window.addEventListener("load", function(event) {
 });
 
 function setupSliders() {
-    $("div.thing >div.level").slider({
+    $("div.overlay.level >div.level").slider({
         orientation: "horizontal",
         min: 0,
         max: 100,
@@ -119,10 +119,11 @@ function setupSliders() {
             );
         }
     });
-    
+
     // set the initial slider values
-    $("div.thing >div.level").each( function(){
+    $("div.overlay.level >div.level").each( function(){
         var initval = $(this).attr("value");
+        // alert("setting up slider with value = " + initval);
         $(this).slider("value", initval);
     });
     
@@ -320,9 +321,9 @@ function setupHideTabs() {
         }, 3000);
     });
     */
-   // restore tabs by click on open panel, clock, or the hide tabs button
+   // restore tabs by click on open panel or the hide tabs button
    // first two methods must be used in kiosk mode
-    $(".restoretabs, div.clock, div.panel").click(function(e) {
+    $(".restoretabs, div.panel").click(function(e) {
         if (e.target == this) {
             var hidestatus = $(".restoretabs").html();
             if (hidestatus=="Hide Tabs") {
@@ -434,6 +435,17 @@ function lenObject(o) {
   return cnt;
 }
 
+function fixTrack(tval) {
+    if ( tval.trim() === "" ) {
+        tval = "None"; 
+    } 
+    else if ( tval.length > 124) { 
+        tval = tval.substring(0,120) + " ..."; 
+    }
+    return tval;
+}
+
+
 // update all the subitems of any given specific tile
 // note that some sub-items can update the values of other subitems
 // this is exactly what happens in music tiles when you hit next and prev song
@@ -445,36 +457,41 @@ function updateTile(aid, presult) {
 
         // only take action if this key is found in this tile
         if ($(targetid) && value) {
-            var oldvalue = $(targetid).text();
+            var oldvalue = $(targetid).html();
             var oldclass = $(targetid).attr("class");
             // alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
 
-            // special handling for sliders
-            if ( key == "level") {
-                var initval = $(this).attr("value");
+            // remove the old class type and replace it if they are both
+            // single word text fields like open/closed/on/off
+            // this avoids putting names of songs into classes
+            // also only do this if the old class was there in the first place
+            // also handle special case of battery and music elements
+            if ( key=="battery") {
+                var powmod = parseInt(value);
+                powmod = powmod - (powmod % 10);
+                value = "<div style=\"width: " + powmod.toString() + "%\" class=\"ovbLevel L" + powmod.toString() + "\"></div>";
+            } else if ( key=="track") {
+                value = fixTrack(value);
+            } else if ( key == "level" && $(targetid).slider ) {
+//                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
+                value = false;
 //            } else if ( key=="color") {
                 // alert("updating color: "+value);
-            } else {
-                // remove the old class type and replace it if they are both
-                // single word text fields like open/closed/on/off
-                // this avoids putting names of songs into classes
-                // also only do this if the old class was there in the first place
-                if ( oldclass && oldvalue && value &&
+            } else if ( oldclass && oldvalue && value &&
                      $.isNumeric(value)===false && 
                      $.isNumeric(oldvalue)===false &&
-                     oldclass.indexOf(oldvalue)>=0 ) 
-                {
+                     oldclass.indexOf(oldvalue)>=0 ) {
                     $(targetid).removeClass(oldvalue);
                     $(targetid).addClass(value);
-                }
+                
+            }
 
                 // update the content 
                 if (oldvalue && value) {
                     $(targetid).html(value);
                 }
             }
-        }
     });
 }
 
@@ -526,6 +543,10 @@ function setupTimers() {
         var bid = $(this).attr("bid");
         var thetype = $(this).attr("type");
         var panel = $(this).attr("panel");
+        
+        // fix bug where panel was not proper case
+        // eventually we'll have to use actual item
+        panel = panel.toLowerCase();
         var timerval = 0;
         
         switch (thetype) {
@@ -534,40 +555,40 @@ function setupTimers() {
             case "light":
             case "switchlevel":
             case "presence":
-                timerval = 60000;
+                timerval = 30000;
                 break;
                 
             case "motion":
             case "contact":
-                timerval = 60006;
+                timerval = 30001;
                 break;
 
             case "thermostat":
             case "temperature":
-                timerval = 60005;
+                timerval = 60002;
                 break;
 
             case "music":
-                timerval = 120003;
+                timerval = 60003;
                 break;
 
             case "weather":
-                timerval = 300000;
+                timerval = 90004;
                 break;
 
             case "mode":
             case "routine":
-                timerval = 60002;
+                timerval = 90005;
                 break;
 
             case "lock":
             case "door":
             case "valve":
-                timerval = 60001;
+                timerval = 60006;
                 break;
 
             case "image":
-                timerval = 120000;
+                timerval = 60007;
                 break;
 
             // update clock every minute
@@ -776,7 +797,7 @@ function setupPage(trigger) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         if (thetype==="piston") {
                             $(that).addClass("firing");
-                            $(that).html("Piston Firing...");
+                            $(that).html("firing");
                         }
                         else if ( thevalue && thevalue.hasOwnProperty("indexOf") && thevalue.indexOf("on") >= 0 ) {
                             $(that).removeClass("on");

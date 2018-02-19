@@ -942,6 +942,28 @@ div.thing.weather-thing {
     width: 240px;
     height: 330px;
 }
+div.weather.temperature, div.weather.feelsLike {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 60px;
+    width: 60px;
+    padding: 4px 3px 0 3px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 55px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
 div.weather.feelsLike::before {
     content: "~";
 }
@@ -1455,4 +1477,7 @@ div.overlay {
 }
 div.weather-thing div.overlay {
     width: auto;
+}
+.ui-slider-horizontal {
+    height: 0.3em; 
 }

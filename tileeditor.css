@@ -1,40 +1,53 @@
-/* deprecated
-	div.editable {
-    background-size: auto 36px !important;
-	height: 36px !important;
-	width: 36px !important;
+edit_Tile {
+	position: absolute;
 }
-*/
 
 div.tileDialog {
   overflow: hidden;
 }
-dialog#edit_Tile {
-    background:#cccccc;
+dialog {  
+    background:#666;
     border: 1px solid #666;
+	-webkit-border-radius: 4px;
+  	-moz-border-radius: 4px;
+  	border-radius: 4px;
     font-family:sans-serif;
     padding: 0px 0px 0px 1px;
-    position: absolute;
-    width: 400px; 
-    height: 267px;
-    top: 30%;
-    left: 35%;
+  	position: absolute;
+  	top: 50%;
+  	left: 50%;
+    width: 450px; 
+    height: auto;
+  	top: 50%;
+  	left: 35%;
 } 
 div.tile_buttons {
-	margin-left:2px;
 	width: auto;
-	height: auto;
+	height: 33px;
+	font-size: 9pt;
+        text-align: center;
         margin-bottom: 10px;
-	font-size: 10pt;
 }
 #wysISwyg {
-	margin-left:5px
+	margin-left:1px;
+        text-align: center;
 }
-#tileDisplay {
+.tileDisplay {
     display: inline-block;
+    float: right;
+    width: auto; 
     height: auto;
-    position: relative;
-    left: 230px;
+}
+#tileDialog {
+    display: block;
+    width: auto;
+    height: auto;
+}
+#tileEdit {
+	background-color: #666;
+        position: absolute;
+        width: 250px;
+        height: auto;
 }
 #iconChoices {
 	margin: 3px;
@@ -44,15 +57,19 @@ div.tile_buttons {
     width: 210px; 
     height: 15px;
 }
+#colorpicker {
+	margin-left: 6px;
+}
 #editicon {
-	margin: 3px;
+	margin: 1px 1px 1px 2px;
 	position:absolute;
-	top: 22px;
-	display: inline-block;
+	top: 24px;
+	display: none;
 	float: left;
-    width: 210px;
-    height: 177px;
+    width: 209px;
+    height: 176px;
 	overflow-x: hidden;
+	background-color: #999;
 }
 #editcolor {
 	margin: 3px;
@@ -60,31 +77,42 @@ div.tile_buttons {
 	display: inline-block;
 	float: left;
 	width: 200px; 
-	height: 217px;
+	height: 195px;
 	overflow-x: hidden;
 	text-align:center;
 }
 #editSection {
-	text-align: left;
-        margin-left: 6px;
-}
-.editSection_child {
+	text-align: center;
 	margin-top: 2px;
 }
-#iconSrc {
-	margin-right: 4px;
-	width: 118px;
-	font-size: 10pt;
+.editSection_input {
+	position: absolute;	
+	font-size: 9pt;
+	color: #faebd7;	
+}
+
+.ddlDialog {
+	font-size: 13px;
 	border-radius: 2px;
 	border: 1px solid transparent;
 	border-top: none;
 	border-bottom: 1px solid #DDD;
 	box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
-	margin-right: 9px;
-	/*font-size: 9pt;*/
 }
 #iconSrc option {
-	font-size: 10pt;
+	font-size: 13px;
+}
+#iconSrc {
+	width: 118px;
+	margin-right: 9px;	
+}
+#editFont {
+	width: 107px;
+	margin: 3px;	
+}
+#editEffect {
+	width: 107px;
+	margin: 3px;	
 }
 input.editSection_txt {
 	font-size: 10pt;
@@ -93,37 +121,75 @@ input.editSection_txt {
 	border-top: none;
 	border-bottom: 1px solid #DDD;
 	box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
-	margin-right: 9px;
-	margin-left: 3px;
+	margin: 3px;
 }
-input.editSection_txt.name {
-	width: 152px;
 
+#heightWrapper {
+	left: 60px;	
+}
+
+#colorWrapper {
+	left: 115px;
+}
+
+#fontWrapper, #effectWrapper {
+	left: 3px;	
+}
+
+#widthwrapper {
+	left: 5px;
+}
+#uploadWrapper {
+	left: 115px;
 }
 input.editSection_txt.height, input.editSection_txt.width {
-	width: 53px;
+	width: 40px;
 }
-#color {
-	margin-top: 3px;
-	font-size: 10pt;
-	width: 68px;
-	height: 18px;	
-	border-radius: 2px;
-	border: 1px solid transparent;
-	border-top: none;
-	border-bottom: 1px solid #DDD;
-	box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
+input.editSection_txt.color {
+	width: 60px;
 }
-#div_color {
-	display: block;
-	margin: auto;	
+
+#uploadform {
+	height: 0px;
 }
+.upload-btn-wrapper {
+	position: absolute;	
+	font-size: 11px;
+	margin: 1px;
+    width: 64px;
+	display: inline-block;
+	justify-content: center;
+	align-items: center;
+}
+
+.btn_upload {
+  border: 3px double #333;
+  color:#333;
+  background-color: white;
+  background-image: linear-gradient(to bottom, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,.3) 100%);
+  border-radius: 2px;
+  padding: 1px;
+  font-size: 11px;
+  width: 64px;
+}
+
+.upload-btn-wrapper input[type=file] {
+  font-size: 11px;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  position: relative;
+  top: -20px;
+  width: 50px;
+}
+
+
+
 
 .iconlist {
 	position: relative;
 	display: inline-block;
 }
-
 .icon {
 	float: left;
 	margin: 2px;
@@ -142,27 +208,40 @@ input.editSection_txt.height, input.editSection_txt.width {
 	-webkit-transition-duration: .2s;
 }
 
+.wrapToggles.black {
+	  background: #000000;	
+}
 .wrapToggles{
 	position:absolute;
-	margin-left: 1px;
     width: 100%;
 	display: inline-block;
 	justify-content: center;
 	align-items: center;  
-	top: 225px;
-	height: 40px; 
+	top: 220px;
+	height: 46px;
+	width: 211px;
+	  background: #3498db;
+	  background-image: -webkit-linear-gradient(top, #3498db, #4a677b);
+	  background-image: -moz-linear-gradient(top, #3498db, #4a677b);
+	  background-image: -ms-linear-gradient(top, #3498db, #4a677b);
+	  background-image: -o-linear-gradient(top, #3498db, #4a677b);
+	  background-image: linear-gradient(to bottom, #3498db, #4a677b);
 }
 .toggleSections {
-	width: 200px;
-	margin-left: 9px;
+	width: 220px;
+	margin-left: 3px;
+	margin-top: 1px;
 }
 .toggleSections label{
   border: 1px solid #fff;
   font-size: 12px;
-  padding: 1px 20px;  
+  text-align: center;
+  width:50px;
+  padding: 1px 0px;
+  display:inline-block;
   cursor: pointer;
-  color: #fff;
-  background-color: #777;
+  color: #ffffff;
+  background-color: #777777;
   transition: all 0.2s;
 }
 
@@ -183,62 +262,46 @@ input[name='sectionToggle']{
 input[name='sectionToggle']:checked+label{
   background-color: #ed6b06;
 } 
-#hideme {
-	visibility: hidden;
-}
-
-.upload-btn-wrapper {
-	position:absolute;
-	margin-left: 6px;
-    width: 100%;
-	display: inline-block;
-	justify-content: center;
-	align-items: center;  
-	top: 202px;
-	height: 20px; 
-	overflow: hidden; 
-}
-
-.btn_upload {
-  border: 2px solid gray;
-  color: gray;
-  background-color: white;
-  padding: 2px 5px;
-  border-radius: 8px;
-  font-size: 10pt;
-  font-weight: bold;
-  width: 196px;
-}
-
-.upload-btn-wrapper input[type=file] {
-  font-size: 10pt;
+#noHead {
+  display: inline-block;
   position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
+  left: 190px;
+  top: 22px;	
 }
-
+#noHead-label {
+  display: inline-block;
+  position: absolute;
+  left: 183px;
+  top: 33px;	
+}
+.btn_color.image {
+    background-image: url('media/pickImage.png');
+}
 .btn_color {
   display: inline-block;
-  height: 20px;
-  width: 20px;
+  position: absolute;
+  height: 24px;
+  width: 24px;
+  left: 184px;
+  top: 20px;
   -webkit-border-radius: 50%;
   -moz-border-radius: 50%;
   border-radius: 50%;
   background: #3498db;
-  vertical-align: middle;
   background-image: -webkit-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: -moz-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: -ms-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: -o-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
   background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-}
-div.toggle {
-    margin-top: 5px;
+  vertical-align: middle;
 }
 #toggle {
-    width: 120px;
-    padding: 2px 60px 1px 60px;	
+	width: 120px;
+	padding: 2px 68px 1px 51px;	
+}
+
+.btn.black {
+	  background: #000000;
 }
 .btn {
   background: #3498db;
@@ -252,7 +315,7 @@ div.toggle {
   border-radius: 28px;
   font-family: Arial;
   color: #ffffff;
-  font-size: 10pt;
+  /*font-size: 10pt;*/
   padding: 2px 7px 1px 7px;
   text-decoration: none;
   margin: 2px;
@@ -279,6 +342,23 @@ div.toggle {
   background-image: -o-linear-gradient(top, #f00000, #903000);
   background-image: linear-gradient(to bottom, #f00000, #903000);
   text-decoration: none;	
+}
+
+#saveCss {
+	font-size: 14pt;
+	-webkit-border-radius: 32;
+	-moz-border-radius: 32;
+	border-radius: 32px;
+}
+#showCssSaved {
+	margin-left: 6px;
+	font-size: 12pt;
+	color: #900;
+}
+#custom_footer {
+	position: relative;
+	margin: 4px;
+	left: 20%;	
 }
 
 .selectIcon {
@@ -317,6 +397,7 @@ div.toggle {
 .iconChecks {
 	font-size: 8pt;
 	margin-right: 4px;
+	color: #FFF;
 }
 #invertIcon, #noIcon {
 	vertical-align: middle;
