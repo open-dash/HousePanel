@@ -1481,3 +1481,35 @@ div.weather-thing div.overlay {
 .ui-slider-horizontal {
     height: 0.3em; 
 }
+div.modeoptions {
+    background-color: #3a5795;
+    width: 350px; height: 34px; margin-left: 10px; margin-right: 30px;
+    cursor: default;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
+    font-size: 14pt;
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+}
+input.radioopts {
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 4px;
+    display: inline-block;
+}
+span.radioopts {
+    font-size: 14pt;
+    cursor: pointer;
+    margin-left: 0px;
+    margin-right: 10px;
+    display: inline-block;
+}
+div#opmode {
+    position: absolute;
+    left: 50%; top: 50%;
+    font-size: 18pt;
+    color: #cc3300;
+    background-color: white;
+    border: 3px;
+}

@@ -1965,6 +1965,12 @@ function is_ssl() {
             $tc.= "<input class=\"submitbutton\" value=\"Refresh\" name=\"submitrefresh\" type=\"submit\" />";
             $tc.= "</form>";
             $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
+
+            $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
+              <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Operate\" checked><span class=\"radioopts\">Operate</span>
+              <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Reorder\" ><span class=\"radioopts\">Reorder</span>
+              <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><span class=\"radioopts\">Drag</div>
+            </div><div id=\"opmode\"></div>";
         }
         $tc.='</div>';
    

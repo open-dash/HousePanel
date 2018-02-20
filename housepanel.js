@@ -5,6 +5,7 @@ var popupCell = null;
 var popupSave = "";
 var popupRoom = "";
 var popupVal = 0;
+var priorOpmode = "Operate";
 
 window.addEventListener("load", function(event) {
     $( "#tabs" ).tabs();
@@ -12,50 +13,38 @@ window.addEventListener("load", function(event) {
 //    var cookies = decodeURIComponent(document.cookie);
 //    cookies = cookies.split(';');
 //    alert(strObject(cookies));
-    
-    // make the room tabs sortable
-    // the change function does a post to make it permanent
-    $("ul.ui-tabs-nav").sortable({
-        axis: "x", 
-        items: "> li",
-        cancel: "li.nodrag",
-        opacity: 0.5,
-        containment: "ul.ui-tabs-nav",
-        delay: 200,
-        revert: true,
-        update: function(event, ui) {
-            var pages = {};
-            var k = 0;
-            // get the new list of pages in order
-            $("ul.ui-tabs-nav li.drag").each(function() {
-                var pagename = $(this).text();
-                pages[pagename] = k;
-                k++;
-            });
-            $.post("housepanel.php", 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
-                    function (presult, pstatus) {
-                        // alert("Updated page order with status= "+pstatus+" result= "+
-                        //       strObject(presult));
-                        // set the room numbers using the options
-                        if (pstatus==="success") {
-                            var newrooms = presult["order"];
-                            // alert(strObject(newrooms));
-                            $('table.headoptions th > input[type="hidden"]').each(function() {
-                               var rname = $(this).attr("name").substring(2);
-                               var newval = parseInt(newrooms[rname]);
-                               // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
-                               $(this).attr("value",newval);
-                            });
-                        }
-                    }, "json"
-            );
-        }
-    });
 
+    $("div.modeoptions").on("click","input.radioopts",function(evt){
+        var opmode = $(this).attr("value");
+        if ( opmode !== priorOpmode ) {
+            if ( opmode=="Reorder" ) {
+                cancelDraggable();
+                cancelPagemove();
+                setupSortable();
+                setupPagemove();
+            } else if ( opmode=="DragDrop" ) {
+                cancelSortable();
+                cancelPagemove();
+                setupDraggable();
+                setupPagemove();
+            } else if ( opmode=="Operate" ) {
+                cancelDraggable();
+                cancelSortable();
+                cancelPagemove();
+            }
+            priorOpmode = opmode;
+            $("#opmode").html("Mode set to: " + opmode );
+            $("#opmode").show();
+            $("#opmode").hide("fade",null,2000);
+        }
+         
+        // alert("Mode set to: " + opmode );
+    });
+    
     // make the actual thing tiles on each panel sortable
-    setupDraggable(false);
-//    setupSortable(false);
+    
+    // setupPagemove();
+    // setupDraggable();
 
     // disable return key
     $("form.options").keypress(function(e) {
@@ -128,15 +117,76 @@ function setupSliders() {
     });
     
 }
-    
-function setupSortable(dyno) {
 
-    if (dyno) {
-        $("div.thing").each(function(){
+function cancelDraggable() {
+    $("div.thing").each(function(){
+        if ( $(this).draggable("instance") ) {
             $(this).draggable("destroy");
-        });
-    }
+        }
+    });
+}
+
+function cancelSortable() {
+    $("div.panel").each(function(){
+        if ( $(this).sortable("instance") ) {
+            $(this).sortable("destroy");
+        }
+    });
+}
+
+function cancelPagemove() {
+    $("ul.ui-tabs-nav").each(function(){
+        if ( $(this).sortable("instance") ) {
+            $(this).sortable("destroy");
+        }
+    });
+}
+
+function setupPagemove() {
     
+    // make the room tabs sortable
+    // the change function does a post to make it permanent
+    $("ul.ui-tabs-nav").sortable({
+        axis: "x", 
+        items: "> li",
+        cancel: "li.nodrag",
+        opacity: 0.5,
+        containment: "ul.ui-tabs-nav",
+        delay: 200,
+        revert: true,
+        update: function(event, ui) {
+            var pages = {};
+            var k = 0;
+            // get the new list of pages in order
+            $("ul.ui-tabs-nav li.drag").each(function() {
+                var pagename = $(this).text();
+                pages[pagename] = k;
+                k++;
+            });
+            $.post("housepanel.php", 
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
+                    function (presult, pstatus) {
+                        // alert("Updated page order with status= "+pstatus+" result= "+
+                        //       strObject(presult));
+                        // set the room numbers using the options
+                        if (pstatus==="success") {
+                            var newrooms = presult["order"];
+                            // alert(strObject(newrooms));
+                            $('table.headoptions th > input[type="hidden"]').each(function() {
+                               var rname = $(this).attr("name").substring(2);
+                               var newval = parseInt(newrooms[rname]);
+                               // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
+                               $(this).attr("value",newval);
+                            });
+                        }
+                    }, "json"
+            );
+        }
+    });
+}
+
+function setupSortable() {
+
     $("div.panel").sortable({
         containment: "parent",
         scroll: false,
@@ -161,13 +211,7 @@ function setupSortable(dyno) {
     
 }
 
-function setupDraggable(dyno) {
-    
-    if ( dyno ) {
-        $("div.panel").each(function(){
-            $(this).sortable("destroy");
-        });
-    }
+function setupDraggable() {
     
     $("div.thing").draggable({
         revert: false,
@@ -329,11 +373,11 @@ function setupHideTabs() {
             if (hidestatus=="Hide Tabs") {
                 $("#roomtabs").addClass("hidden");
                 $(".restoretabs").html("Show Tabs");
-                setupSortable(true);
+                // setupSortable(true);
             } else if (hidestatus=="Show Tabs") {
                 $("#roomtabs").removeClass("hidden");
                 $(".restoretabs").html("Hide Tabs");
-                setupDraggable(true);
+                // setupDraggable(true);
             }
         }
     })
