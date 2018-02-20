@@ -373,6 +373,7 @@ div.thing {
     cursor: default;
     width: 120px; 
     height: auto;
+    position: relative;
 }
 div.thing:hover{
     position: relative;
@@ -536,9 +537,6 @@ div.motion.active {
     background-image: url('icons/run.png');
     background-color: rgba(0, 51, 204, 0);
 }
-div.battery {
-    display: none;
-}
 
 /*
 div.motion.battery, div.contact.battery, 
@@ -573,7 +571,7 @@ div.lock.unlocked, div.lock.unknown {
     background-image: url('icons/unlock.png');
     background-color: rgba(0, 102, 51, 1);
     background-size: 70px;
-    background-position-y: 40px;
+    background-position-y: 50px;
 }
 div.thing.lock-thing {
     background-color: rgba(153, 0, 51, 1);
@@ -1387,9 +1385,9 @@ div.ovStatus {
 	visibility: hidden;
 }
 
-div.battery {
+div.overlay.battery div.battery {
   display: block;
-  position:relative;
+  position: absolute;
   float: right;
   right: 2px;
   /*top: -11px;*/
@@ -1401,7 +1399,7 @@ div.battery {
   transform: scale(0.8);
 }
 
-div.battery:before {
+div.overlay div.battery:before {
     content: '';
     display: block;
     position: absolute;
@@ -1458,10 +1456,10 @@ div.thingname.lock {
     display: none;
 }
 div.lock.locked, div.lock.unlocked, div.lock.unknown {
-    height: 148px;
+    height: 146px;
 }
 div.lock-thing div.overlay.name {
-    display: block;
+    display: inline-block;
 }
 div.overlay.name div.lock.name {
   display: block;
@@ -1474,6 +1472,9 @@ div.overlay.name div.lock.name {
 }
 div.overlay {
     width: 100%;
+}
+div.overlay.level {
+    height: 32px;
 }
 div.weather-thing div.overlay {
     width: auto;
