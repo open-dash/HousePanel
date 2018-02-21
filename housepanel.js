@@ -77,9 +77,18 @@ window.addEventListener("load", function(event) {
     // this appears to be painfully slow so disable
     // setupTabclick();
     
-    $("div.bulb.color").click(function() {
-        alert("Color picker not yet implemented");
-    })
+    $("div.bulb.color").minicolors({
+//        format: "rgb",
+        position: "bottom left",
+        defaultValue: $(this).html(),
+        theme: 'default',
+        change: function(hex) {
+            try {
+              console.log( "color: " + hex + " = " + $(this).minicolors("rgbaString") );
+              $(this).html(hex);
+            } catch(e) {}
+        }
+    });
 });
 
 function setupSliders() {
@@ -97,15 +106,29 @@ function setupSliders() {
             var bid = $(tile).attr("bid");
             var thetype = $(tile).attr("type");
             
-            $.post("housepanel.php", 
-                   {useajax: "doaction", id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
-                   function (presult, pstatus) {
-                        if (pstatus==="success" ) {
-                            // alert( strObject(presult) );
-                            updAll("slider",aid,bid,thetype,presult);
-                        }
-                   }, "json"
-            );
+            // handle music volume different than lights
+            if ( thetype != "music") {
+                $.post("housepanel.php", 
+                       {useajax: "doaction", id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                // alert( strObject(presult) );
+                                updAll("slider",aid,bid,thetype,presult);
+                            }
+                       }, "json"
+                );
+            } else {
+                $.post("housepanel.php", 
+                       {useajax: "doaction", id: bid, type: thetype, value: parseInt(ui.value), attr: "level-up"},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                // alert( strObject(presult) );
+                                updateTile(aid, presult);
+                            }
+                       }, "json"
+                );
+                
+            }
         }
     });
 

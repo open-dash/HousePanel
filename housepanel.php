@@ -118,7 +118,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
-	$tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
+    $tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
 
     // TODO - switch to the jquery mobile framework
     /*
@@ -134,6 +134,10 @@ function htmlHeader($skindir="skin-housepanel") {
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
     $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
+    // minicolors library
+    $tc.= "<script src=\"jquery.minicolors.min.js\"></script>";
+    $tc.= "<link rel=\"stylesheet\" href=\"jquery.minicolors.css\">";
+    
     // load custom .css and the main script file
     if (!$skindir) {
         $skindir = "skin-housepanel";
@@ -145,7 +149,7 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"farbtastic.css\"/>";
     $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js\"></script>";
     $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css\"/>";	
-    
+
     // load the custom tile sheet if it exists
     // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("$skindir/customtiles.css")) {

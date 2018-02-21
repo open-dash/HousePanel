@@ -25,12 +25,12 @@ h1, h2, h3 {
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
 }
 
-div {
+/*div {
 	background-size: contain;
 	-webkit-background-size: contain;
 	-moz-background-size: contain;
 	-o-background-size: contain;
-}
+}*/
 .ui-widget.ui-widget-content{
 border-radius: 4px;
 width:100%;
@@ -462,10 +462,12 @@ div.contact.closed {
 div.contact.mat.open {
     background-image: url('icons/matempty.png');
     background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
 }
 div.contact.mat.closed {
     background-image: url('icons/matfull.png');
     background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
 }
 
 /* specific contact types one might find */
@@ -669,6 +671,7 @@ div.momentary.off, div.momentary.on{
     background-image: url('icons/3dbutton.png');
     background-color: rgba(0,51,204,0.6);
     height: 112px;
+    background-size: 90px;
 }
 div.momentary.on {
     background-image: url('icons/3dbuttonpush.png');
@@ -688,6 +691,11 @@ div.thermostat.heat, div.thermostat.cool, div.music.level, div.music.vol {
     cursor: default;
     text-align: center;
 }
+
+div.music.level {
+    height: 4px;
+}
+
 /* up and down arrows */
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
@@ -1142,9 +1150,10 @@ div.bulb.color {
     top: 40px;
     height: 24px;
     width: 24px;
-    border-radius: 50%;
-    font-size: 1px;
-    color: rgba(128,128,128,0.01);
+    /*border-radius: 50%;*/
+    font-size: 12px;
+    color: rgba(128,128,128, 0.01);
+    display: none;
 }
 
 /* do not display these items */
@@ -1513,4 +1522,14 @@ div#opmode {
     color: #cc3300;
     background-color: white;
     border: 3px;
+}
+.minicolors-theme-default .minicolors-swatch {
+  top: 10px;
+  left: 24px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+.minicolors-swatch-color {
+  border-radius: 50%;
 }
