@@ -155,9 +155,9 @@ function setupFilters() {
         var rowcnt = 0;
         var odd = "";
         $('tr[type="'+theval+'"]').each(function() {
-            var theclass = $(this).attr("class");
+//            var theclass = $(this).attr("class");
             if ( ischecked ) {
-                $(this).attr("class", "showrow"+odd);
+                $(this).attr("class", "showrow");
             } else {
                 $(this).attr("class", "hiderow");
            }
@@ -387,12 +387,15 @@ function updateTile(aid, presult) {
             }
             // handle weather icons
             else if ( key==="weatherIcon" || key==="forecastIcon") {
-                var iconstr = value;
-                if ( iconstr.substring(0,3) === "nt_") {
-                    iconstr = iconstr.substring(3);
+                if ( value.substring(0,3) === "nt_") {
+                    value = value.substring(3);
                 }
-                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
-                value += "<br />" + iconstr;
+                if ( oldvalue != value ) {
+                    $(targetid).removeClass(oldvalue);
+                    $(targetid).addClass(value);
+                }
+//                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
+//                value += "<br />" + iconstr;
             } else if ( oldclass && oldvalue && value &&
                  $.isNumeric(value)===false && 
                  $.isNumeric(oldvalue)===false &&
@@ -403,7 +406,7 @@ function updateTile(aid, presult) {
             }
 
             // update the content 
-            if (oldvalue && value) {
+            if (oldvalue && value && oldvalue!=value) {
                 $(targetid).html(value);
             }
         }

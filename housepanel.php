@@ -114,11 +114,10 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="shortcut icon" href="media/favicon.ico">';
     
     // load jQuery and themes
-	
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
-	$tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
+    $tc.= '<script src="http://malsup.github.com/jquery.form.js"></script>';
 
     // load quicktime script for video
     $tc.= '<script src="ac_quicktime.js"></script>';
@@ -167,10 +166,6 @@ function htmlHeader($skindir="skin-housepanel") {
             $tc.= '  setupPage("' . $thing . '");';
         }
         $tc.= "});";
-
-		
-		
-		
     $tc.= '</script>';
 
     // begin creating the main page
@@ -414,25 +409,18 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
         $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $weathername . "</span></div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["feelsLike"], "feelsLike");
-        // $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["city"], "city");
-        $tc.= "<br /><div aid=\"$i\" type=\"$thingtype\"  subid=\"weatherIcon\" title=\"" . $thingvalue["weatherIcon"] . "\" class=\"$thingtype" . " weatherIcon" . "\" id=\"a-$i"."-weatherIcon\">";
-        $iconstr = $thingvalue["weatherIcon"];
-        if (substr($iconstr,0,3) === "nt_") {
-            $iconstr = substr($iconstr,3);
+        $wiconstr = $thingvalue["weatherIcon"];
+        if (substr($wiconstr,0,3) === "nt_") {
+            $wiconstr = substr($wiconstr,3);
         }
-        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["weatherIcon"] . '" width="60" height="60">';
-        $tc.= '<br />' . $iconstr;
-        $tc.= "</div>";
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"forecastIcon\" title=\"" . $thingvalue["forecastIcon"] ."\" class=\"$thingtype" . " forecastIcon" . "\" id=\"a-$i"."-forecastIcon\">";
-        $iconstr = $thingvalue["forecastIcon"];
-        if (substr($iconstr,0,3) === "nt_") {
-            $iconstr = substr($iconstr,3);
+        $ficonstr = $thingvalue["forecastIcon"];
+        if (substr($ficonstr,0,3) === "nt_") {
+            $ficonstr = substr($ficonstr,3);
         }
-        $tc.= '<img src="media/' . $iconstr . '.png" alt="' . $thingvalue["forecastIcon"] . '" width="60" height="60">';
-        $tc.= '<br />' . $iconstr;
-        $tc.= "</div>";
-        $tc.= putElement($kindex, $i, 2, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
-        $j = 3;
+        $tc.= putElement($kindex, $i, 2, $thingtype, $wiconstr, "weatherIcon");
+        $tc.= putElement($kindex, $i, 3, $thingtype, $ficonstr, "forecastIcon");
+        $tc.= putElement($kindex, $i, 4, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
+        $j = 5;
         foreach($thingvalue as $tkey => $tval) {
             if ($tkey!=="temperature" &&
                 $tkey!=="feelsLike" &&
@@ -448,16 +436,14 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
                 $j++;
             }
         }
+        
     // temporary crude video tag hack - must replace the small.mp4 or small.ogv
     // with the video stream from your camera source or a video of your choice
     } else if ( $thingtype === "video") {
-        
-    // add video hack for quicktime support
         $vidname = $thingvalue["name"];
         $tkey = "url";
         $vidname = $thingvalue["url"];
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
-        // wrap the video tag in our standard HP div pattern
         $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video url\" id=\"a-$i"."-$tkey\">";
         
         $tc.= '<video width="369" height="240" autoplay >';

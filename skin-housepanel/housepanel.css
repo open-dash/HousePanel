@@ -144,35 +144,35 @@ div.panel {
 }
 
 div.panel-family, div.panel-familyroom {
-    background-image: url('family.jpg');
+    background-image: url('media/family.jpg');
 
 }
 div.panel-kitchen, div.panel-dinette {
-    background-image: url('kitchenroom.jpg');
+    background-image: url('media/kitchenroom.jpg');
 
 }
 div.panel-formal, div.panel-living, div.panel-livingroom {
-    background-image: url('formal.jpg');
+    background-image: url('media/formal.jpg');
 
 }
 div.panel-outside, div.panel-garage {
-    background-image: url('outside.jpg');
+    background-image: url('media/outside.jpg');
 
 }
 div.panel-office, div.panel-library {
-    background-image: url('office.jpg');
+    background-image: url('media/office.jpg');
 
 }
 div.panel-bedroom, div.panel-bedrooms {
-    background-image: url('bedroom.jpg');
+    background-image: url('media/bedroom.jpg');
 
 }
 div.panel-music, div.panel-theater, div.panel-entertainment {
-    background-image: url('music.jpg');
+    background-image: url('media/music.jpg');
 
 }
 div.panel-thermostats, div.panel-thermostat {
-    background-image: url('thermostat.jpg');
+    background-image: url('media/thermostat.jpg');
 
 }
 
@@ -700,7 +700,7 @@ div.saturation-up, div.saturation-dn
 }
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn, div.music div.vol-dn,
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
-    background-image: url("sprites.gif");
+    background-image: url("media/sprites.gif");
     background-position: -32px 0px;
 	background-size: auto;
 /*    border-top-left-radius: 25px;
@@ -712,7 +712,7 @@ div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
 
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up, div.music div.vol-up,
 div.colorTemperature-up, div.hue-up, div.saturation-up {
-    background-image: url("sprites.gif");
+    background-image: url("media/sprites.gif");
     background-position: -272px -2px;
 	background-size: auto;
 /*    border-top-right-radius: 25px;
@@ -733,7 +733,7 @@ div.music-controls {
     cursor: pointer;
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
-    background-image: url("Media-Player-Buttons.png");
+    background-image: url("media/Media-Player-Buttons.png");
     background-size: auto;
     display: inline-block;
     background-repeat: no-repeat;
@@ -1034,7 +1034,7 @@ div.clock.tzone{
 /* mode and routine styling */
 div.thing.mode-thing {
     width: auto;
-    height: 160px;
+    height: 150px;
     cursor: move;
 }
 div.mode, div.mode1x1, div.mode1x2 {
@@ -1193,34 +1193,6 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
     text-align: center;
     font-size: 9px;
     color: #000000;
-}
-
-/* Place all your customization edits below to make updates simple */
-/* uncomment the display inline-block line and customize to create adhoc text or images */
-div.custom {
-    /* display: inline-block; */
-    display: none;
-    margin: 3px;
-    text-align: center;
-    vertical-align: top;
-    border-top: 0px solid #cccccc; 
-    border-right: 0px solid #cccccc;
-    border-bottom: 0px solid #ffffff; 
-    border-left: 0px solid #ffffff;
-    background-color: rgba(0, 51, 204, 0.6);
-    box-shadow: 2px 2px 7px black;
-    color: #eeeeee;
-    cursor: default;
-    width: 120px; 
-    height: 160px;
-}
-
-div.custom3-bedroom {
-    display: inline-block;
-    background-color: rgba(0, 0, 0, 0.1);
-}
-div.custom3-bedroom::before {
-    content: "Enjoy a Good Night Sleep";
 }
 
 /* Example custom settings from Ken's home */
@@ -1449,4 +1421,56 @@ div.overlay {
 }
 div.weather-thing div.overlay {
     width: auto;
+    display: inline;
 }
+div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
+    background-position-y: 8px;
+    width: 70px;
+    height: 70px;
+    margin-left: 8px; margin-right: 8px;
+    color: rgba(0, 0, 0, 1);
+}
+/* weather icons */
+div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
+    background-image: url("media/clear.png");
+}
+div.overlay.weatherIcon div.mostlysunny, div.overlay.forecastIcon div.mostlysunny {
+    background-image: url("media/partlysunny.png");
+}
+div.overlay.weatherIcon div.partlysunny, div.overlay.forecastIcon div.partlysunny {
+    background-image: url("media/partlysunny.png");
+}
+div.overlay.weatherIcon div.rain, div.overlay.forecastIcon div.rain {
+    background-image: url("media/rain.png");
+}
+div.overlay.weatherIcon div.chancerain, div.overlay.forecastIcon div.chancerain {
+    background-image: url("media/rain.png");
+}
+div.overlay.weatherIcon div.snow, div.overlay.forecastIcon div.snow {
+    background-image: url("media/snow.png");
+}
+div.overlay.weatherIcon div.chancesnow, div.overlay.forecastIcon div.chancesnow {
+    background-image: url("media/snow.png");
+}
+div.overlay.weatherIcon div.tstorms, div.overlay.forecastIcon div.tstorms {
+    background-image: url("media/tstorms.png");
+}
+div.overlay.weatherIcon div.chancetstorms, div.overlay.forecastIcon div.chancetstorms {
+    background-image: url("media/tstorms.png");
+}
+div.overlay.weatherIcon div.cloudy, div.overlay.forecastIcon div.cloudy {
+    background-image: url("media/cloudy.png");
+}
+div.overlay.weatherIcon div.mostlycloudy, div.overlay.forecastIcon div.mostlycloudy {
+    background-image: url("media/mostlycloudy.png");
+}
+div.overlay.weatherIcon div.partlycloudy, div.overlay.forecastIcon div.partlycloudy {
+    background-image: url("media/mostlycloudy.png");
+}
+div.overlay.weatherIcon div.windy, div.overlay.forecastIcon div.windy {
+    background-image: url("media/windy.png");
+}
+div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
+    background-image: url("media/rain.png");
+}
+
