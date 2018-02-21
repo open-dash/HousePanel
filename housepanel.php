@@ -131,6 +131,10 @@ function htmlHeader($skindir="skin-housepanel") {
         $skindir = "skin-housepanel";
     }
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
+    
+    if ( file_exists( $skindir . "/housepanel-theme.js") ) {
+        $tc.= "<script type=\"text/javascript\" src=\"$skindir/housepanel-theme.js\"></script>";
+    }
 	
 	//load cutomization helpers
     $tc.= "<script type=\"text/javascript\" src=\"farbtastic.js\"></script>";
