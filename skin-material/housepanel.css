@@ -797,7 +797,7 @@ div.thermostat.temperature, div.temperature.room {
     -moz-border-radius: 50%;
 }
 
-div.thermostat.temperature:after {
+div.thermostat.temperature:after, div.temperature.motion:after {
     content: "°";
 }
 
@@ -944,7 +944,7 @@ div.thing.weather-thing, div.weather {
 div.thing.weather-thing {
     background-color: rgba(50,50,50,0.4);
     width: 240px;
-    height: 330px;
+    height: auto;
 }
 div.weather.temperature, div.weather.feelsLike {
     display: inline-block;
@@ -1276,14 +1276,6 @@ div.presence.jana.absent {
     background-image: url('icons/things/girlabsent.svg');
 }
 
-/* motion detector in family room that also has temperature */
-div.motion.family.room {
-    height: 80px;
-}
-div.motion.family.room.battery {
-    height: 13px; font-size: 9pt; color: #ffffff;
-}
-
 /* smart switch on my rock fountain */
 div.switch.rock.on {
     background-image: url('icons/things/rockon.png');
@@ -1293,12 +1285,15 @@ div.switch.rock.off {
     background-image: url('icons/things/rockoff.png');
     background-color: #ababab;
 }
-div.switch.screen.on, div.switch.screen.off {
+/*div.switch.screen.on, div.switch.screen.off {
     height: 80px;
 }
 
 div.switchlevel.screen.switch, div.switchlevel.screen.on, div.switchlevel.screen.off {
     height: 80px;
+}*/
+div.overlay.power, div.overlay.energy {
+    display: none;
 }
 
 /* hide the power and energy for my screen switch */
@@ -1356,7 +1351,7 @@ div.music.track {
 }
 
 div.overlay.battery, div.overlay.name {
-	position: absolute;
+	position: relative;
 	z-index: 10;
         border: none;
         background: none;
@@ -1517,6 +1512,15 @@ div.weather-thing div.overlay {
     background: none;
     font-weight: unset;
     color: unset;
+}
+
+/* needed for sliderhue */
+div.overlay.level {
+    height: 32px;
+}
+.ui-slider-handle {
+    border: 1px white;
+    background-color: #46B6AC;
 }
 
 /*Reset tabs a*/
@@ -1744,4 +1748,105 @@ div.switch.power, div.switch.energy {
 
 .mdc-switch-label {
     margin: 0 0.5em;
+}
+div.weather-thing div.overlay {
+    width: auto;
+    display: inline;
+}
+div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
+    background-position-y: 8px;
+    width: 80px;
+    height: 80px;
+    margin-left: 4px; margin-right: 4px;
+    color: rgba(0, 0, 0, 1);
+    font-size: 10pt;
+}
+/* weather icons */
+div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
+    background-image: url("../skin-housepanel/media/clear.png");
+}
+div.overlay.weatherIcon div.mostlysunny, div.overlay.forecastIcon div.mostlysunny {
+    background-image: url("../skin-housepanel/media/partlysunny.png");
+}
+div.overlay.weatherIcon div.partlysunny, div.overlay.forecastIcon div.partlysunny {
+    background-image: url("../skin-housepanel/media/partlysunny.png");
+}
+div.overlay.weatherIcon div.rain, div.overlay.forecastIcon div.rain {
+    background-image: url("../skin-housepanel/media/rain.png");
+}
+div.overlay.weatherIcon div.chancerain, div.overlay.forecastIcon div.chancerain {
+    background-image: url("../skin-housepanel/media/rain.png");
+}
+div.overlay.weatherIcon div.snow, div.overlay.forecastIcon div.snow {
+    background-image: url("../skin-housepanel/media/snow.png");
+}
+div.overlay.weatherIcon div.chancesnow, div.overlay.forecastIcon div.chancesnow {
+    background-image: url("../skin-housepanel/media/snow.png");
+}
+div.overlay.weatherIcon div.tstorms, div.overlay.forecastIcon div.tstorms {
+    background-image: url("../skin-housepanel/media/tstorms.png");
+}
+div.overlay.weatherIcon div.chancetstorms, div.overlay.forecastIcon div.chancetstorms {
+    background-image: url("../skin-housepanel/media/tstorms.png");
+}
+div.overlay.weatherIcon div.cloudy, div.overlay.forecastIcon div.cloudy {
+    background-image: url("../skin-housepanel/media/cloudy.png");
+}
+div.overlay.weatherIcon div.mostlycloudy, div.overlay.forecastIcon div.mostlycloudy {
+    background-image: url("../skin-housepanel/media/mostlycloudy.png");
+}
+div.overlay.weatherIcon div.partlycloudy, div.overlay.forecastIcon div.partlycloudy {
+    background-image: url("../skin-housepanel/media/mostlycloudy.png");
+}
+div.overlay.weatherIcon div.windy, div.overlay.forecastIcon div.windy {
+    background-image: url("../skin-housepanel/media/windy.png");
+}
+div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
+    background-image: url("../skin-housepanel/media/rain.png");
+}
+
+.ui-slider-horizontal {
+    height: 0.3em; 
+}
+div.modeoptions {
+    background-color: #3a5795;
+    width: 350px; height: 34px; margin-left: 10px; margin-right: 30px;
+    cursor: default;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
+    font-size: 14pt;
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+}
+input.radioopts {
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 4px;
+    display: inline-block;
+}
+span.radioopts {
+    font-size: 14pt;
+    cursor: pointer;
+    margin-left: 0px;
+    margin-right: 10px;
+    display: inline-block;
+}
+div#opmode {
+    position: absolute;
+    left: 50%; top: 50%;
+    font-size: 18pt;
+    color: #cc3300;
+    background-color: white;
+    border: 3px;
+}
+.minicolors-theme-default .minicolors-swatch {
+  top: 10px;
+  left: 24px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+.minicolors-swatch-color {
+  border-radius: 50%;
 }
