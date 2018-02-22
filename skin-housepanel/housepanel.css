@@ -25,12 +25,12 @@ h1, h2, h3 {
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
 }
 
-div {
+/*div {
 	background-size: contain;
 	-webkit-background-size: contain;
 	-moz-background-size: contain;
 	-o-background-size: contain;
-}
+}*/
 .ui-widget.ui-widget-content{
 border-radius: 4px;
 width:100%;
@@ -373,6 +373,7 @@ div.thing {
     cursor: default;
     width: 120px; 
     height: auto;
+    position: relative;
 }
 div.thing:hover{
     position: relative;
@@ -461,10 +462,12 @@ div.contact.closed {
 div.contact.mat.open {
     background-image: url('icons/matempty.png');
     background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
 }
 div.contact.mat.closed {
     background-image: url('icons/matfull.png');
     background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
 }
 
 /* specific contact types one might find */
@@ -536,9 +539,6 @@ div.motion.active {
     background-image: url('icons/run.png');
     background-color: rgba(0, 51, 204, 0);
 }
-div.battery {
-    display: none;
-}
 
 /*
 div.motion.battery, div.contact.battery, 
@@ -573,7 +573,7 @@ div.lock.unlocked, div.lock.unknown {
     background-image: url('icons/unlock.png');
     background-color: rgba(0, 102, 51, 1);
     background-size: 70px;
-    background-position-y: 40px;
+    background-position-y: 50px;
 }
 div.thing.lock-thing {
     background-color: rgba(153, 0, 51, 1);
@@ -658,8 +658,12 @@ div.overlay.energy div.switch.energy {
 div.switchlevel.switch, div.bulb.switch {
     height: 80px;
 }
-div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
+div.switchlevel.colorTemperature, div.switchlevel.hue, div.switchlevel.saturation {
     height: 32px;
+}
+
+div.switchlevel.level, div.bulb.level {
+    height: 4px;
 }
 
 /* momentary styling */
@@ -667,6 +671,7 @@ div.momentary.off, div.momentary.on{
     background-image: url('icons/3dbutton.png');
     background-color: rgba(0,51,204,0.6);
     height: 112px;
+    background-size: 90px;
 }
 div.momentary.on {
     background-image: url('icons/3dbuttonpush.png');
@@ -686,6 +691,11 @@ div.thermostat.heat, div.thermostat.cool, div.music.level, div.music.vol {
     cursor: default;
     text-align: center;
 }
+
+div.music.level {
+    height: 4px;
+}
+
 /* up and down arrows */
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
@@ -938,6 +948,28 @@ div.thing.weather-thing {
     width: 240px;
     height: 330px;
 }
+div.weather.temperature, div.weather.feelsLike {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 60px;
+    width: 60px;
+    padding: 4px 3px 0 3px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 55px;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
 div.weather.feelsLike::before {
     content: "~";
 }
@@ -1111,14 +1143,17 @@ div.presence.absent {
 }
 
 div.bulb.color {
-/*    position: relative;
-    top: -140px;*/
-    background-image: url("../media/colorwheel.png");
-    background-size: 32px 32px;
-    height: 32px;
-    width: 32px;
-    font-size: 1px;
-    color: rgba(128,128,128,0.01);
+/*    background-image: url("../media/colorwheel.png");
+    background-size: 32px 32px;*/
+    position: absolute;
+    left: 2px;
+    top: 40px;
+    height: 24px;
+    width: 24px;
+    /*border-radius: 50%;*/
+    font-size: 12px;
+    color: rgba(128,128,128, 0.01);
+    display: none;
 }
 
 /* do not display these items */
@@ -1331,9 +1366,9 @@ div.ovStatus {
 	visibility: hidden;
 }
 
-div.battery {
+div.overlay.battery div.battery {
   display: block;
-  position:relative;
+  position: absolute;
   float: right;
   right: 2px;
   /*top: -11px;*/
@@ -1345,7 +1380,7 @@ div.battery {
   transform: scale(0.8);
 }
 
-div.battery:before {
+div.overlay div.battery:before {
     content: '';
     display: block;
     position: absolute;
@@ -1402,10 +1437,10 @@ div.thingname.lock {
     display: none;
 }
 div.lock.locked, div.lock.unlocked, div.lock.unknown {
-    height: 148px;
+    height: 146px;
 }
 div.lock-thing div.overlay.name {
-    display: block;
+    display: inline-block;
 }
 div.overlay.name div.lock.name {
   display: block;
@@ -1418,6 +1453,9 @@ div.overlay.name div.lock.name {
 }
 div.overlay {
     width: 100%;
+}
+div.overlay.level {
+    height: 32px;
 }
 div.weather-thing div.overlay {
     width: auto;
@@ -1474,3 +1512,48 @@ div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
     background-image: url("media/rain.png");
 }
 
+.ui-slider-horizontal {
+    height: 0.3em; 
+}
+div.modeoptions {
+    background-color: #3a5795;
+    width: 350px; height: 34px; margin-left: 10px; margin-right: 30px;
+    cursor: default;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
+    font-size: 14pt;
+    display: inline-block;
+    padding-top: 12px; padding-right: 4px;
+}
+input.radioopts {
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 4px;
+    display: inline-block;
+}
+span.radioopts {
+    font-size: 14pt;
+    cursor: pointer;
+    margin-left: 0px;
+    margin-right: 10px;
+    display: inline-block;
+}
+div#opmode {
+    position: absolute;
+    left: 50%; top: 50%;
+    font-size: 18pt;
+    color: #cc3300;
+    background-color: white;
+    border: 3px;
+}
+.minicolors-theme-default .minicolors-swatch {
+  top: 10px;
+  left: 24px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+.minicolors-swatch-color {
+  border-radius: 50%;
+}

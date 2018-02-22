@@ -5,6 +5,7 @@ var popupCell = null;
 var popupSave = "";
 var popupRoom = "";
 var popupVal = 0;
+var priorOpmode = "Operate";
 
 window.addEventListener("load", function(event) {
     $( "#tabs" ).tabs();
@@ -12,6 +13,157 @@ window.addEventListener("load", function(event) {
 //    var cookies = decodeURIComponent(document.cookie);
 //    cookies = cookies.split(';');
 //    alert(strObject(cookies));
+
+    $("div.modeoptions").on("click","input.radioopts",function(evt){
+        var opmode = $(this).attr("value");
+        if ( opmode !== priorOpmode ) {
+            if ( opmode=="Reorder" ) {
+                cancelDraggable();
+                cancelPagemove();
+                setupSortable();
+                setupPagemove();
+            } else if ( opmode=="DragDrop" ) {
+                cancelSortable();
+                cancelPagemove();
+                setupDraggable();
+                setupPagemove();
+            } else if ( opmode=="Operate" ) {
+                cancelDraggable();
+                cancelSortable();
+                cancelPagemove();
+            }
+            priorOpmode = opmode;
+            $("#opmode").html("Mode set to: " + opmode );
+            $("#opmode").show();
+            $("#opmode").hide("fade",null,2000);
+        }
+    });
+    
+    // make the actual thing tiles on each panel sortable
+    
+    // setupPagemove();
+    // setupDraggable();
+
+    // disable return key
+    $("form.options").keypress(function(e) {
+        if ( e.keyCode===13  && popupStatus===1){
+            processPopup();
+            return false;
+        }
+        else if (e.keyCode===13) {
+            return false;
+        } else if ( e.keyCode===27 && popupStatus===1 ){
+            disablePopup();
+        }
+    });
+    
+    // set up popup editing
+    setupPopup();
+        
+    // setup time based updater
+    setupTimers();
+    
+    // set up option box clicks
+    setupFilters();
+    
+    setupHideTabs();
+    
+    setupSaveButton();
+    
+    setupSliders();
+    // setup click on a page
+    // this appears to be painfully slow so disable
+    // setupTabclick();
+    
+    $("div.bulb.color").minicolors({
+//        format: "rgb",
+        position: "bottom left",
+        defaultValue: $(this).html(),
+        theme: 'default',
+        change: function(hex) {
+            try {
+              console.log( "color: " + hex + " = " + $(this).minicolors("rgbaString") );
+              $(this).html(hex);
+            } catch(e) {}
+        }
+    });
+});
+
+function setupSliders() {
+    $("div.overlay.level >div.level").slider({
+        orientation: "horizontal",
+        min: 0,
+        max: 100,
+        step: 5,
+        stop: function( evt, ui) {
+            var thing = $(evt.target);
+            thing.attr("value",ui.value);
+            
+            var aid = thing.attr("aid");
+            var tile = '#t-'+aid;
+            var bid = $(tile).attr("bid");
+            var thetype = $(tile).attr("type");
+            
+            // handle music volume different than lights
+            if ( thetype != "music") {
+                $.post("housepanel.php", 
+                       {useajax: "doaction", id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                // alert( strObject(presult) );
+                                updAll("slider",aid,bid,thetype,presult);
+                            }
+                       }, "json"
+                );
+            } else {
+                $.post("housepanel.php", 
+                       {useajax: "doaction", id: bid, type: thetype, value: parseInt(ui.value), attr: "level-up"},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                // alert( strObject(presult) );
+                                updateTile(aid, presult);
+                            }
+                       }, "json"
+                );
+                
+            }
+        }
+    });
+
+    // set the initial slider values
+    $("div.overlay.level >div.level").each( function(){
+        var initval = $(this).attr("value");
+        // alert("setting up slider with value = " + initval);
+        $(this).slider("value", initval);
+    });
+    
+}
+
+function cancelDraggable() {
+    $("div.thing").each(function(){
+        if ( $(this).draggable("instance") ) {
+            $(this).draggable("destroy");
+        }
+    });
+}
+
+function cancelSortable() {
+    $("div.panel").each(function(){
+        if ( $(this).sortable("instance") ) {
+            $(this).sortable("destroy");
+        }
+    });
+}
+
+function cancelPagemove() {
+    $("ul.ui-tabs-nav").each(function(){
+        if ( $(this).sortable("instance") ) {
+            $(this).sortable("destroy");
+        }
+    });
+}
+
+function setupPagemove() {
     
     // make the room tabs sortable
     // the change function does a post to make it permanent
@@ -52,9 +204,36 @@ window.addEventListener("load", function(event) {
             );
         }
     });
+}
 
-    // make the actual thing tiles on each panel sortable
-    // the change function does a post to make it permanent
+function setupSortable() {
+
+    $("div.panel").sortable({
+        containment: "parent",
+        scroll: false,
+        items: "> div",
+        delay: 50,
+//        grid: [10, 10],
+        stop: function(event, ui) {
+            var tile = $(ui.item).attr("tile");
+            var roomtitle = $(ui.item).attr("panel");
+            var things = [];
+            $("div.thing[panel="+roomtitle+"]").each(function(){
+                things.push($(this).attr("tile"));
+            });
+            
+//            alert("Sorted thing: "+tile+" room: "+roomtitle+" things: "+strObject(things));
+            $.post("housepanel.php", 
+                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+            );
+        }
+    });
+        
+    
+}
+
+function setupDraggable() {
+    
     $("div.thing").draggable({
         revert: false,
         containment: "parent",
@@ -79,37 +258,9 @@ window.addEventListener("load", function(event) {
             );
         }
     });
+    
+}
 
-    // disable return key
-    $("form.options").keypress(function(e) {
-        if ( e.keyCode===13  && popupStatus===1){
-            processPopup();
-            return false;
-        }
-        else if (e.keyCode===13) {
-            return false;
-        } else if ( e.keyCode===27 && popupStatus===1 ){
-            disablePopup();
-        }
-    });
-    
-    // set up popup editing
-    setupPopup();
-        
-    // setup time based updater
-    setupTimers();
-    
-    // set up option box clicks
-    setupFilters();
-    
-    setupHideTabs();
-    
-    setupSaveButton();
-    // setup click on a page
-    // this appears to be painfully slow so disable
-    // setupTabclick();
-});
-    
 function setupSaveButton() {
     
     $("#submitoptions").click(function(evt) {
@@ -243,12 +394,14 @@ function setupHideTabs() {
             if (hidestatus=="Hide Tabs") {
                 $("#roomtabs").addClass("hidden");
                 $(".restoretabs").html("Show Tabs");
+                // setupSortable(true);
             } else if (hidestatus=="Show Tabs") {
                 $("#roomtabs").removeClass("hidden");
                 $(".restoretabs").html("Hide Tabs");
+                // setupDraggable(true);
             }
         }
-    })
+    });
 }
 
 var jeditTableCell = function(event) {
@@ -396,20 +549,26 @@ function updateTile(aid, presult) {
                 }
 //                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
 //                value += "<br />" + iconstr;
+            } else if ( key == "level" && $(targetid).slider ) {
+//                var initval = $(this).attr("value");
+                $(targetid).slider("value", value);
+                value = false;
+//            } else if ( key=="color") {
+                // alert("updating color: "+value);
             } else if ( oldclass && oldvalue && value &&
-                 $.isNumeric(value)===false && 
-                 $.isNumeric(oldvalue)===false &&
-                 oldclass.indexOf(oldvalue)>=0 ) 
-            {
-                $(targetid).removeClass(oldvalue);
-                $(targetid).addClass(value);
+                     $.isNumeric(value)===false && 
+                     $.isNumeric(oldvalue)===false &&
+                     oldclass.indexOf(oldvalue)>=0 ) {
+                    $(targetid).removeClass(oldvalue);
+                    $(targetid).addClass(value);
+                
             }
 
-            // update the content 
-            if (oldvalue && value && oldvalue!=value) {
-                $(targetid).html(value);
+                // update the content 
+                if (oldvalue && value) {
+                    $(targetid).html(value);
+                }
             }
-        }
     });
 }
 
@@ -420,7 +579,7 @@ function refreshTile(aid, bid, thetype) {
         {useajax: "doquery", id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
-                // alert( strObject(presult) );
+//                alert( strObject(presult) );
                 updateTile(aid, presult);
             }
         }, "json"
@@ -546,7 +705,9 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
 
     // update trigger tile first
     // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
-    updateTile(aid, pvalue);
+    if ( trigger !== "slider") {
+        updateTile(aid, pvalue);
+    }
     
     // for music tiles, wait few seconds and refresh again to get new info
     if (thetype==="music") {
@@ -625,7 +786,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
     // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
-    if (trigger==="level-up" || trigger==="level-dn" || 
+    if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
         trigger==="hue-up" || trigger==="hue-dn" ||
         trigger==="saturation-up" || trigger==="saturation-dn" ||
         trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
@@ -673,7 +834,9 @@ function setupPage(trigger) {
         var aid = $(this).attr("aid");
         
         // avoid doing click if the target was the title bar
-        if ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) return;
+        // or if not in Operate mode
+        if ( priorOpmode!=="Operate" || 
+             ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) ) return;
 
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
