@@ -884,6 +884,9 @@ div.thermostat.thermostate {
     width: 100%;
 }
 
+div.thing.temperature-thing {
+    height: 150px;
+}
 /* hover over the adjustment arrows */
 div.heat-up:hover, div.heat-dn:hover, 
 div.cool-up:hover, div.cool-dn:hover,
@@ -1463,10 +1466,11 @@ div.weather-thing div.overlay {
 }
 div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
     background-position-y: 8px;
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     margin-left: 8px; margin-right: 8px;
     color: rgba(0, 0, 0, 1);
+    background-size: 80px;
 }
 /* weather icons */
 div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
