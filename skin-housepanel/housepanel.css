@@ -1460,6 +1460,10 @@ div.overlay {
 div.overlay.level {
     height: 32px;
 }
+div.switch-thing div.overlay.level {
+    display: none;
+    height: 0px;
+}
 div.weather-thing div.overlay {
     width: auto;
     display: inline;

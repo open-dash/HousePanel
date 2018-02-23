@@ -102,22 +102,29 @@ function setupSliders() {
             var aid = thing.attr("aid");
             var tile = '#t-'+aid;
             var bid = $(tile).attr("bid");
+            var bidupd = bid;
+            var ajaxcall = "doaction";
+            if ( bid.startsWith("h_") ) {
+                ajaxcall = "dohubitat";
+                bid = bid.substring(2);
+            }
             var thetype = $(tile).attr("type");
             
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post("housepanel.php", 
-                       {useajax: "doaction", id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
-                                updAll("slider",aid,bid,thetype,presult);
+                                updAll("slider",aid,bidupd,thetype,presult);
+//                                updateTile(aid, presult);
                             }
                        }, "json"
                 );
             } else {
                 $.post("housepanel.php", 
-                       {useajax: "doaction", id: bid, type: thetype, value: parseInt(ui.value), attr: "level-up"},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level-up"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
