@@ -308,7 +308,7 @@ def getmyMode(swid, item=null) {
     def curmodename = curmode.getName()
     def resp =  [ name: location.getName(),
               themode: curmodename ];
-    log.debug "currrent mode = ${curmodename}"
+    // log.debug "currrent mode = ${curmodename}"
     return resp
 }
 
@@ -759,7 +759,7 @@ def doAction() {
         
     }
    
-    log.debug "cmd = $cmd type = $swtype id = $swid cmdresult = $cmdresult"
+    log.debug "doaction: cmd = $cmd type = $swtype id = $swid cmdresult = $cmdresult"
     return cmdresult
 
 }
@@ -975,7 +975,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     
         def newonoff = item.currentValue("switch")
          
-        log.debug "switchlevel cmd = $cmd swattr = $swattr"
+        log.debug "generic light cmd = $cmd swattr = $swattr"
         // bug fix for grabbing right swattr when long classes involved
         if ( swattr.endsWith(" on" ) ) {
             swattr = "on"
@@ -1007,6 +1007,13 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 newsw = (newsw <= 5) ? 5 : newsw - del
                 item.setLevel(newsw)
                 newonoff = "on"
+            break
+         
+        case "level":
+            newsw = newsw.toInteger()
+            newsw = (newsw >100) ? 100 : newsw
+            item.setLevel(newsw)
+            newonoff = (newsw == 0) ? "off" : "on"
             break
          
         case "hue-up":
@@ -1072,6 +1079,19 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         case "off":
             newonoff = "on"
             // item.on()
+            break
+            
+        case "color":
+            if (cmd.startsWith("hsl(") && cmd.length()==16) {  // hsl(123,123,123)
+                hue = cmd.substring(4,7).toInteger()
+                saturation = cmd.substring(8,11).toInteger()
+                newsw = cmd.substring(12,15).toInteger()
+//                log.debug "cmd= ${cmd} hue= ${hue} sat= ${saturation} level= ${newsw}"
+                item.setHue(hue)
+                item.setSaturation(saturation)
+                item.setLevel(newsw)
+                newonoff = "on"
+            }
             break
               
         default:
@@ -1321,6 +1341,12 @@ def setMusic(swid, cmd, swattr) {
               newsw = cmd.toInteger()
               def del = (newsw % 5) == 0 ? 5 : newsw % 5
               newsw = (newsw <= 5) ? 5 : newsw - del
+              item.setLevel(newsw)
+              resp['level'] = newsw
+              break
+              
+        case "level":
+              newsw = cmd.toInteger()
               item.setLevel(newsw)
               resp['level'] = newsw
               break

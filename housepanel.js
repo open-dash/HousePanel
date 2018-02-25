@@ -6,40 +6,26 @@ var popupSave = "";
 var popupRoom = "";
 var popupVal = 0;
 var priorOpmode = "Operate";
+var returnURL = "housepanel.php";
 
-window.addEventListener("load", function(event) {
+Number.prototype.pad = function(size) {
+    var s = String(this);
+    while (s.length < (size || 2)) {s = "0" + s;}
+    return s;
+}
+
+// window.addEventListener("load", function(event) {
+$(document).ready( function() {
+
+    // set the global return URL value
+    returnURL = $("input[name='returnURL']").val();
+    $(document).data('returnURL',returnURL);
+    
     $( "#tabs" ).tabs();
     
 //    var cookies = decodeURIComponent(document.cookie);
 //    cookies = cookies.split(';');
 //    alert(strObject(cookies));
-
-    $("div.modeoptions").on("click","input.radioopts",function(evt){
-        var opmode = $(this).attr("value");
-        if ( opmode !== priorOpmode ) {
-            if ( opmode=="Reorder" ) {
-                cancelDraggable();
-                cancelPagemove();
-                setupSortable();
-                setupPagemove();
-            } else if ( opmode=="DragDrop" ) {
-                cancelSortable();
-                cancelPagemove();
-                setupDraggable();
-                setupPagemove();
-            } else if ( opmode=="Operate" ) {
-                cancelDraggable();
-                cancelSortable();
-                cancelPagemove();
-            }
-            priorOpmode = opmode;
-            $("#opmode").html("Mode set to: " + opmode );
-            $("#opmode").show();
-            $("#opmode").hide("fade",null,2000);
-        }
-    });
-    
-    // make the actual thing tiles on each panel sortable
     
     // setupPagemove();
     // setupDraggable();
@@ -68,26 +54,104 @@ window.addEventListener("load", function(event) {
     
     setupHideTabs();
     
+    setupButtons();
+    
     setupSaveButton();
     
     setupSliders();
+    
     // setup click on a page
     // this appears to be painfully slow so disable
     // setupTabclick();
     
-    $("div.bulb.color").minicolors({
-//        format: "rgb",
-        position: "bottom left",
-        defaultValue: $(this).html(),
-        theme: 'default',
-        change: function(hex) {
-            try {
-              console.log( "color: " + hex + " = " + $(this).minicolors("rgbaString") );
-              $(this).html(hex);
-            } catch(e) {}
-        }
-    });
+    setupColors();
 });
+
+function rgb2hsl(r,g,b) {
+     var computedH = 0;
+     var computedS = 0;
+     var computedV = 0;
+
+     //remove spaces from input RGB values, convert to int
+     var r = parseInt( (''+r).replace(/\s/g,''),10 ); 
+     var g = parseInt( (''+g).replace(/\s/g,''),10 ); 
+     var b = parseInt( (''+b).replace(/\s/g,''),10 ); 
+
+    if ( r==null || g==null || b==null ||
+         isNaN(r) || isNaN(g)|| isNaN(b) ) {
+         
+         return [0, 0, 0];
+    }
+    
+    if (r<0 || g<0 || b<0 || r>255 || g>255 || b>255) {
+        return [0, 0, 0];
+    }
+    r=r/255.0; g=g/255.0; b=b/255.0;
+    var minRGB = Math.min(r,Math.min(g,b));
+    var maxRGB = Math.max(r,Math.max(g,b));
+
+    // Black-gray-white
+    if (minRGB==maxRGB) {
+        computedV = minRGB;
+        return [0,0,computedV];
+    }
+
+    // Colors other than black-gray-white:
+    var d = (r==minRGB) ? g-b : ((b==minRGB) ? r-g : b-r);
+    var h = (r==minRGB) ? 3 : ((b==minRGB) ? 1 : 5);
+    computedH = Math.floor(60.0 * (h - d/(maxRGB - minRGB)) / 3.6);
+    computedS = Math.floor((maxRGB - minRGB)/maxRGB * 100.0);
+    computedV = Math.floor(maxRGB * 100.0);
+    return {"hue": computedH, "saturation": computedS, "level": computedV};
+}
+
+function setupColors() {
+    
+   $("div.overlay.color >div.color").each( function() {
+        var that = $(this);
+        $(this).minicolors({
+            position: "bottom left",
+            defaultValue: $(this).html(),
+            theme: 'default',
+            change: function(hex) {
+                try {
+                    // console.log( "color: " + hex + " = " + $(this).minicolors("rgbaString") );
+                    that.html(hex);
+                    var aid = that.attr("aid");
+                    that.css({"background-color": hex});
+                    var huetag = $("#a-"+aid+"-hue");
+                    var sattag = $("#a-"+aid+"-saturation");
+                    if ( huetag ) { huetag.css({"background-color": hex}); }
+                    if ( sattag ) { sattag.css({"background-color": hex}); }
+                } catch(e) {}
+            },
+            hide: function() {
+                var newcolor = $(this).minicolors("rgbObject");
+                var hsl = rgb2hsl( newcolor.r, newcolor.g, newcolor.b );
+                var hslstr = "hsl("+hsl.hue.pad(3)+","+hsl.saturation.pad(3)+","+hsl.level.pad(3)+")";
+                var aid = that.attr("aid");
+                var tile = '#t-'+aid;
+                var bid = $(tile).attr("bid");
+                var bidupd = bid;
+                var thetype = $(tile).attr("type");
+                var ajaxcall = "doaction";
+                if ( bid.startsWith("h_") ) {
+                    ajaxcall = "dohubitat";
+                    bid = bid.substring(2);
+                }
+                // alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
+                $.post("housepanel.php", 
+                       {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color"},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                updAll("color",aid,bidupd,thetype,presult);
+                            }
+                       }, "json"
+                );
+            }
+        });
+    });   
+}
 
 function setupSliders() {
     $("div.overlay.level >div.level").slider({
@@ -124,7 +188,7 @@ function setupSliders() {
                 );
             } else {
                 $.post("housepanel.php", 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level-up"},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
@@ -268,6 +332,58 @@ function setupDraggable() {
     
 }
 
+function dynoForm(ajaxcall, idval, typeval) {
+    idval = idval ? idval : 0;
+    typeval = typeval ? typeval : "none";
+    var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
+    controlForm.appendTo("body");
+    // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
+    // lets now add the hidden fields we need to post our form
+    controlForm.append(
+                  $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
+        ).append(
+                  $('<input>', {'name': 'id', 'value': idval, 'type': 'hidden'})
+        ).append(
+                  $('<input>', {'name': 'type', 'value': typeval, 'type': 'hidden'})
+        );
+    return controlForm;
+}
+
+function setupButtons() {
+
+//    $("#optionsbutton").on("click", null, function(evt) {
+    $("#controlpanel").on("click", "div.formbutton", function() {
+        var buttonid = $(this).attr("id");
+        var newForm = dynoForm(buttonid);
+        newForm.submit();
+    });
+
+    $("div.modeoptions").on("click","input.radioopts",function(evt){
+        var opmode = $(this).attr("value");
+        if ( opmode !== priorOpmode ) {
+            if ( opmode=="Reorder" ) {
+                cancelDraggable();
+                cancelPagemove();
+                setupSortable();
+                setupPagemove();
+            } else if ( opmode=="DragDrop" ) {
+                cancelSortable();
+                cancelPagemove();
+                setupDraggable();
+                setupPagemove();
+            } else if ( opmode=="Operate" ) {
+                cancelDraggable();
+                cancelSortable();
+                cancelPagemove();
+            }
+            priorOpmode = opmode;
+            $("#opmode").html("Mode set to: " + opmode );
+            $("#opmode").show();
+            $("#opmode").hide("fade",null,2000);
+        }
+    });
+}
+
 function setupSaveButton() {
     
     $("#submitoptions").click(function(evt) {
@@ -395,16 +511,16 @@ function setupHideTabs() {
     */
    // restore tabs by click on open panel or the hide tabs button
    // first two methods must be used in kiosk mode
-    $(".restoretabs, div.panel").click(function(e) {
+    $("#restoretabs, div.panel").click(function(e) {
         if (e.target == this) {
-            var hidestatus = $(".restoretabs").html();
+            var hidestatus = $("#restoretabs").html();
             if (hidestatus=="Hide Tabs") {
                 $("#roomtabs").addClass("hidden");
-                $(".restoretabs").html("Show Tabs");
+                $("#restoretabs").html("Show Tabs");
                 // setupSortable(true);
             } else if (hidestatus=="Show Tabs") {
                 $("#roomtabs").removeClass("hidden");
-                $(".restoretabs").html("Hide Tabs");
+                $("#restoretabs").html("Hide Tabs");
                 // setupDraggable(true);
             }
         }

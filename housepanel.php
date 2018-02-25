@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.50       Enable Hubitat devices when on same local network as HP
  * 1.49       sliderhue branch to implement slider and draft color picker
  * 1.48       Integrate @nitwitgit (Nick) TileEdit V3.2
  * 1.47       Integrate Nick's color picker and custom dialog
@@ -595,7 +596,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
 //    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
 //        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
-        if ( $bgcolor && (in_array($tkey, array("hue","saturation","colorTemperature"))) ) {
+        if ( $bgcolor && (in_array($tkey, array("hue","saturation"))) ) {
             $colorval = $bgcolor;
         } else {
             $colorval = "";
@@ -642,17 +643,11 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
             $tkeyshow = " ".$tkey;
         }
         // include class for main thing type, the subtype, a sub-key, and a state (extra)
-        // make background the color based on value
-        if ( $bgcolor && $tkey=="color" ) {
-            $colorval = $bgcolor;
-        } else {
-            $colorval = "";
-        }
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
         if ( $tkey == "level" ) {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" value=\"$tval\" title=\"$tkey\" class=\"" . $thingtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . "</div>";
         } else {
-            $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\"$colorval class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
+            $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
         }
         $tc.= "</div>";
     }
@@ -2019,20 +2014,14 @@ function is_ssl() {
         
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
-        $tc.= "<div class=\"buttons\">";
+        $tc.= "<form>";
+        $tc.= hidden("returnURL", $returnURL);
+        $tc.= "<div id=\"controlpanel\">";
         if ( !$kioskmode ) {
-            $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
-            $tc.= hidden("useajax", "showoptions");
-            $tc.= hidden("type", "none");
-            $tc.= hidden("id", 0);
-            $tc.= "<input class=\"submitbutton\" value=\"Options\" name=\"submitoption\" type=\"submit\" />";
-            $tc.= "</form>";
-            $tc.= "<form class=\"buttons\" action=\"$returnURL\"  method=\"POST\">";
-            $tc.= hidden("useajax", "refresh");
-            $tc.= hidden("type", "none");
-            $tc.= hidden("id", 0);
-            $tc.= "<input class=\"submitbutton\" value=\"Refresh\" name=\"submitrefresh\" type=\"submit\" />";
-            $tc.= "</form>";
+            $tc.='<div id="showoptions" class="formbutton">Options</div>';
+            $tc.='<div id="refresh" class="formbutton">Refresh</div>';
+            $tc.='<div id="refactor" class="formbutton">Refactor</div>';
+            $tc.='<div id="showid" class="formbutton">Show ID\'s</div>';
             $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
 
             $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
@@ -2041,7 +2030,8 @@ function is_ssl() {
               <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><span class=\"radioopts\">Drag</div>
             </div><div id=\"opmode\"></div>";
         }
-        $tc.='</div>';
+        $tc.="</div>";
+        $tc.= "</form>";
     }
 
     // display the dynamically created web site

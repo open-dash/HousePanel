@@ -306,7 +306,7 @@ input {
 div.buttons, form.buttons {
     display: inline;
 }
-input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs {
+input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.formbutton {
     background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;
@@ -316,10 +316,11 @@ input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs {
     font-size: 14pt;
 }
 /* style restore tabs like a button - notice adjustments for border and vertical centering */
-div.restoretabs {
+div.restoretabs, div.formbutton {
     display: inline-block;
-    padding-top: 12px; padding-right: 4px;
-    width: 142px; height: 34px;
+    padding-top: 12px; padding-right: 2px;
+    width: 130px; height: 32px;
+    margin-left: 4px; margin-right: 4px;
 }
 div.restoretabs.hidden {
     display: none;
@@ -345,7 +346,7 @@ input.authbutton {
     margin-left: 10px;
 }
 input.submitbutton:hover, input.resetbutton:hover, 
-input.authbutton:hover, div.restoretabs:hover {
+input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
     font-weight: bold;    color: #ffffff;
     /* border-left: 4px solid rgba(126, 126, 126, 0.8);
     border-bottom: 0px; 
@@ -854,6 +855,14 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
     color: #ffffff;
     border: 0px;
 }
+/* hide hue & sat & level for bulbs because we now have color pickers */
+div.overlay.bulb.hue, div.overlay.bulb.saturation, div.overlay.bulb.colorTemperature {
+    display: none;
+}
+div.overlay.color {
+    position: absolute;
+}
+
 div.heat-val {
     background-color: #cc3300;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -866,18 +875,9 @@ div.cool-val {
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
-div.switchlevel-val, div.level-val, div.colorTemperature-val, div.vol-val {
-    background-color: #1bb14b;
-    box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
-}
 div.colorTemperature-val, div.hue-val, div.saturation-val {
-    background-color: #ffff99;
+    background-color: #ffffff;
     color: #000000;
-    box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);	
 }
 div.thermostat.thermomode, div.thermostat.thermofan,
 div.thermostat.thermostate {
@@ -1149,14 +1149,15 @@ div.bulb.color {
 /*    background-image: url("../media/colorwheel.png");
     background-size: 32px 32px;*/
     position: absolute;
-    left: 2px;
-    top: 40px;
-    height: 24px;
-    width: 24px;
+    left: 8px;
+    top: 44px;
+    height: 32px;
+    width: 32px;
     /*border-radius: 50%;*/
     font-size: 12px;
     color: rgba(128,128,128, 0.01);
     display: none;
+    cursor: pointer;
 }
 
 /* do not display these items */
@@ -1186,9 +1187,13 @@ div.illuminance-thing .illuminance.humidity:after {
 }
 
 /* hide dimmers but not bulbs */
-div.switchlevel.colorTemperature, div.switchlevel.hue, 
+div.switchlevel.hue, 
 div.switchlevel.saturation, div.switchlevel.color {
     display: none;
+}
+
+div.switchlevel.colorTemperature {
+    height: 32px;
 }
 
 /* simple things for the All panel */
@@ -1556,12 +1561,16 @@ div#opmode {
     border: 3px;
 }
 .minicolors-theme-default .minicolors-swatch {
-  top: 10px;
-  left: 24px;
-  width: 18px;
-  height: 18px;
+  top: 2px;
+  left: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  cursor: pointer;
 }
 .minicolors-swatch-color {
   border-radius: 50%;
+}
+.minicolors-position-left .minicolors-panel {
+    left: 60px;
 }
