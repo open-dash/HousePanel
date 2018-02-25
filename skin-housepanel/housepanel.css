@@ -856,7 +856,8 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
     border: 0px;
 }
 /* hide hue & sat & level for bulbs because we now have color pickers */
-div.overlay.bulb.hue, div.overlay.bulb.saturation, div.overlay.bulb.colorTemperature {
+div.overlay.bulb.hue, div.overlay.bulb.saturation, 
+div.bulb-thing div.overlay.colorTemperature {
     display: none;
 }
 div.overlay.color {
@@ -1192,8 +1193,8 @@ div.switchlevel.saturation, div.switchlevel.color {
     display: none;
 }
 
-div.switchlevel.colorTemperature {
-    height: 32px;
+div.switchlevel.colorTemperature, div.bulb.colorTemperature {
+    height: 4px;
 }
 
 /* simple things for the All panel */

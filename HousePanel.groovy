@@ -17,14 +17,15 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
- * 01/04/2017 - Fix bulb bug that returned wrong name in the type
+ * 02/25/2018 - Update to support sliders and color hue picker
+ * 01/04/2018 - Fix bulb bug that returned wrong name in the type
  * 12/29/2017 - Changed bulb to colorControl capability for Hue light support
  *              Added support for colorTemperature in switches and lights
  * 12/10/2017 - Added name to each thing query return
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.0.alpha.rev.2" }
+public static String version() { return "v1.5.beta.rev.1" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -184,7 +185,7 @@ def getWeatherInfo(evt) {
 // changed switch to only return switch so we can use it with other things
 // to get multiple attributes from a switch, use other
 def getSwitch(swid, item=null) {
-    getThing(myswitches, swid, item)
+//    getThing(myswitches, swid, item)
     item = item? item : myswitches.find {it.id == swid }
     def resp = item ?   [name: item.displayName, switch: item.currentValue("switch")
                          ] : false
@@ -255,6 +256,9 @@ def getThermostat(swid, item=null) {
                               thermomode: item.currentValue("thermostatMode"),
                               thermostate: item.currentValue("thermostatOperatingState")
                          ] : false
+    if ( item.hasCapability("relativeHumidityMeasurement") ) {
+        resp.put("humidity", item.currentValue("humidity"))
+    }
     // log.debug "Thermostat response = ${resp}"
     return resp
 }
@@ -487,7 +491,7 @@ def getPistons() {
 }
 
 def getSwitches() {
-    getThings(myswitches, "switch")
+//    getThings(myswitches, "switch")
     def resp = []
     log.debug "Number of switches = " + myswitches?.size() ?: 0
     myswitches?.each {
@@ -865,6 +869,8 @@ def setOnOff(items, itemtype, swid, cmd, swattr) {
     if (item) {
         if (cmd=="on" || cmd=="off") {
             newonoff = cmd
+        } else if ( swattr=="on" || swattr=="off") {
+            newonoff = swattr
         } else {
             newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
         }
@@ -966,17 +972,19 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     def resp = false
 
     def item  = mythings.find {it.id == swid }
-    def newsw = item.currentValue("level")
+    def newsw = false
     def hue = false
     def saturation = false
     def temperature = false
+    def newcolor = false
     
     if (item ) {
     
         def newonoff = item.currentValue("switch")
-         
         log.debug "generic light cmd = $cmd swattr = $swattr"
         // bug fix for grabbing right swattr when long classes involved
+        // note: sometime swattr has the command and other times it has the value
+        //       just depends. This is a legacy issue when classes were the command
         if ( swattr.endsWith(" on" ) ) {
             swattr = "on"
         } else if ( swattr.endsWith(" off" ) ) {
@@ -995,24 +1003,37 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             break
          
         case "level-up":
+            newsw = item.currentValue("level")
             newsw = newsw.toInteger()
-                newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
-                item.setLevel(newsw)
-                newonoff = "on"
+            newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
+            item.setLevel(newsw)
+            def h = item.currentValue("hue").toInteger()
+            def s = item.currentValue("saturation").toInteger()
+            newcolor = hsv2rgb(h, s, newsw)
+            newonoff = "on"
             break
               
         case "level-dn":
+            newsw = item.currentValue("level")
             newsw = newsw.toInteger()
-                def del = (newsw % 5) == 0 ? 5 : newsw % 5
-                newsw = (newsw <= 5) ? 5 : newsw - del
-                item.setLevel(newsw)
-                newonoff = "on"
+            def del = (newsw % 5) == 0 ? 5 : newsw % 5
+            newsw = (newsw <= 5) ? 5 : newsw - del
+            item.setLevel(newsw)
+            def h = item.currentValue("hue").toInteger()
+            def s = item.currentValue("saturation").toInteger()
+            newcolor = hsv2rgb(h, s, newsw)
+            newonoff = "on"
             break
          
         case "level":
-            newsw = newsw.toInteger()
-            newsw = (newsw >100) ? 100 : newsw
-            item.setLevel(newsw)
+            if ( cmd.isNumber() ) {
+                newsw = cmd.toInteger()
+                newsw = (newsw >100) ? 100 : newsw
+                item.setLevel(newsw)
+                def h = item.currentValue("hue").toInteger()
+                def s = item.currentValue("saturation").toInteger()
+                newcolor = hsv2rgb(h, s, newsw)
+            }
             newonoff = (newsw == 0) ? "off" : "on"
             break
          
@@ -1020,6 +1041,9 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 hue = item.currentValue("hue").toInteger()
                 hue = (hue >= 95) ? 100 : hue - (hue % 5) + 5
                 item.setHue(hue)
+                def s = item.currentValue("saturation").toInteger()
+                def v = item.currentValue("level").toInteger()
+                newcolor = hsv2rgb(hue, s, v)
                 newonoff = "on"
             break
               
@@ -1028,6 +1052,9 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 def del = (hue % 5) == 0 ? 5 : hue % 5
                 hue = (hue <= 5) ? 5 : hue - del
                 item.setHue(hue)
+                def s = item.currentValue("saturation").toInteger()
+                def v = item.currentValue("level").toInteger()
+                newcolor = hsv2rgb(hue, s, v)
                 newonoff = "on"
             break
               
@@ -1035,6 +1062,9 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 saturation = item.currentValue("saturation").toInteger()
                 saturation = (saturation >= 95) ? 100 : saturation - (saturation % 5) + 5
                 item.setSaturation(saturation)
+                def h = item.currentValue("hue").toInteger()
+                def v = item.currentValue("level").toInteger()
+                newcolor = hsv2rgb(h, saturation, v)
                 newonoff = "on"
             break
               
@@ -1043,6 +1073,9 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 def del = (saturation % 5) == 0 ? 5 : saturation % 5
                 saturation = (saturation <= 5) ? 5 : saturation - del
                 item.setSaturation(saturation)
+                def h = item.currentValue("hue").toInteger()
+                def v = item.currentValue("level").toInteger()
+                newcolor = hsv2rgb(h, saturation, v)
                 newonoff = "on"
             break
               
@@ -1060,6 +1093,16 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 temperature = (temperature <= 2700) ? 2700 : temperature - del
                 temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100)
                 item.setColorTemperature(temperature)
+                newonoff = "on"
+            break
+              
+        case "colorTemperature":
+                temperature = item.currentValue("colorTemperature").toInteger()
+                /* temperature drifts up so we cant use round down method */
+                if ( cmd.isNumber() ) {
+                    temperature = cmd.toInteger()
+                    item.setColorTemperature(temperature)
+                }
                 newonoff = "on"
             break
               
@@ -1090,6 +1133,8 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 item.setHue(hue)
                 item.setSaturation(saturation)
                 item.setLevel(newsw)
+                newcolor = hsv2rgb(hue, saturation, newsw)
+//                log.debug "New color = $newcolor"
                 newonoff = "on"
             }
             break
@@ -1112,6 +1157,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         newonoff=="on" ? item.on() : item.off()
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
+        if ( newcolor ) { resp.put("color", newcolor) }
         if ( hue ) { resp.put("hue", hue) }
         if ( saturation ) { resp.put("saturation", saturation) }
         if ( temperature ) { resp.put("colorTemperature", temperature) }
@@ -1121,6 +1167,39 @@ def setGenericLight(mythings, swid, cmd, swattr) {
 
     return resp
     
+}
+
+def hsv2rgb(h, s, v) {
+  def r, g, b
+  
+  h /= 100.0
+  s /= 100.0
+  v /= 100.0
+  
+
+  def i = Math.floor(h * 6);
+  def f = h * 6 - i;
+  def p = v * (1 - s)
+  def q = v * (1 - f * s)
+  def t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+  
+    r = Math.floor(r*255).toInteger()
+    g = Math.floor(g*255).toInteger()
+    b = Math.floor(b*255).toInteger()
+
+  def rhex = Integer.toHexString(r);
+  def ghex = Integer.toHexString(g);
+  def bhex = Integer.toHexString(b);
+  return "#"+rhex+ghex+bhex
 }
 
 def setMomentary(swid, cmd, swattr) {

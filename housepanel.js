@@ -67,11 +67,7 @@ $(document).ready( function() {
     setupColors();
 });
 
-function rgb2hsl(r,g,b) {
-     var computedH = 0;
-     var computedS = 0;
-     var computedV = 0;
-
+function rgb2hsv(r, g, b) {
      //remove spaces from input RGB values, convert to int
      var r = parseInt( (''+r).replace(/\s/g,''),10 ); 
      var g = parseInt( (''+g).replace(/\s/g,''),10 ); 
@@ -79,30 +75,36 @@ function rgb2hsl(r,g,b) {
 
     if ( r==null || g==null || b==null ||
          isNaN(r) || isNaN(g)|| isNaN(b) ) {
-         
-         return [0, 0, 0];
+        return {"hue": 0, "saturation": 0, "level": 0};
     }
     
     if (r<0 || g<0 || b<0 || r>255 || g>255 || b>255) {
-        return [0, 0, 0];
+        return {"hue": 0, "saturation": 0, "level": 0};
     }
-    r=r/255.0; g=g/255.0; b=b/255.0;
-    var minRGB = Math.min(r,Math.min(g,b));
-    var maxRGB = Math.max(r,Math.max(g,b));
+    r /= 255, g /= 255, b /= 255;
 
-    // Black-gray-white
-    if (minRGB==maxRGB) {
-        computedV = minRGB;
-        return [0,0,computedV];
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, v = max;
+
+    var d = max - min;
+    s = max == 0 ? 0 : d / max;
+
+    if (max == min) {
+    h = 0; // achromatic
+    } else {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+
+        h /= 6;
     }
+    h = Math.floor(h * 100);
+    s = Math.floor(s * 100);
+    v = Math.floor(v * 100);
 
-    // Colors other than black-gray-white:
-    var d = (r==minRGB) ? g-b : ((b==minRGB) ? r-g : b-r);
-    var h = (r==minRGB) ? 3 : ((b==minRGB) ? 1 : 5);
-    computedH = Math.floor(60.0 * (h - d/(maxRGB - minRGB)) / 3.6);
-    computedS = Math.floor((maxRGB - minRGB)/maxRGB * 100.0);
-    computedV = Math.floor(maxRGB * 100.0);
-    return {"hue": computedH, "saturation": computedS, "level": computedV};
+    return {"hue": h, "saturation": s, "level": v};
 }
 
 function setupColors() {
@@ -127,7 +129,7 @@ function setupColors() {
             },
             hide: function() {
                 var newcolor = $(this).minicolors("rgbObject");
-                var hsl = rgb2hsl( newcolor.r, newcolor.g, newcolor.b );
+                var hsl = rgb2hsv( newcolor.r, newcolor.g, newcolor.b );
                 var hslstr = "hsl("+hsl.hue.pad(3)+","+hsl.saturation.pad(3)+","+hsl.level.pad(3)+")";
                 var aid = that.attr("aid");
                 var tile = '#t-'+aid;
@@ -139,7 +141,7 @@ function setupColors() {
                     ajaxcall = "dohubitat";
                     bid = bid.substring(2);
                 }
-                // alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
+//                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
                 $.post("housepanel.php", 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color"},
                        function (presult, pstatus) {
@@ -177,7 +179,7 @@ function setupSliders() {
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post("housepanel.php", 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: "on", attr: parseInt(ui.value)},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
@@ -203,6 +205,47 @@ function setupSliders() {
 
     // set the initial slider values
     $("div.overlay.level >div.level").each( function(){
+        var initval = $(this).attr("value");
+        // alert("setting up slider with value = " + initval);
+        $(this).slider("value", initval);
+    });
+
+    // now set up all colorTemperature sliders
+    $("div.overlay.colorTemperature >div.colorTemperature").slider({
+        orientation: "horizontal",
+        min: 2000,
+        max: 6000,
+        step: 200,
+        stop: function( evt, ui) {
+            var thing = $(evt.target);
+            thing.attr("value",ui.value);
+            
+            var aid = thing.attr("aid");
+            var tile = '#t-'+aid;
+            var bid = $(tile).attr("bid");
+            var bidupd = bid;
+            var ajaxcall = "doaction";
+            if ( bid.startsWith("h_") ) {
+                ajaxcall = "dohubitat";
+                bid = bid.substring(2);
+            }
+            var thetype = $(tile).attr("type");
+            
+            $.post("housepanel.php", 
+                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature" },
+                   function (presult, pstatus) {
+                        if (pstatus==="success" ) {
+                            // alert( strObject(presult) );
+                            updAll("slider",aid,bidupd,thetype,presult);
+//                                updateTile(aid, presult);
+                        }
+                   }, "json"
+            );
+        }
+    });
+
+    // set the initial slider values
+    $("div.overlay.colorTemperature >div.colorTemperature").each( function(){
         var initval = $(this).attr("value");
         // alert("setting up slider with value = " + initval);
         $(this).slider("value", initval);
@@ -672,12 +715,14 @@ function updateTile(aid, presult) {
                 }
 //                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
 //                value += "<br />" + iconstr;
-            } else if ( key == "level" && $(targetid).slider ) {
+            } else if ( (key == "level" || key == "colorTemperature") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
                 value = false;
-//            } else if ( key=="color") {
-                // alert("updating color: "+value);
+            } else if ( key=="color") {
+//                alert("updating color: "+value);
+                $(targetid).html(value);
+//                setupColors();
             } else if ( oldclass && oldvalue && value &&
                      $.isNumeric(value)===false && 
                      $.isNumeric(oldvalue)===false &&
@@ -976,7 +1021,7 @@ function setupPage(trigger) {
         // avoid doing click if the target was the title bar
         // or if not in Operate mode
         if ( priorOpmode!=="Operate" || 
-             ( $(this).attr("id") && $(this).attr("id").substring(0,2) == "s-" ) ) return;
+             ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
 
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
