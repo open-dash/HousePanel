@@ -222,22 +222,24 @@ function getResponse($host, $access_token) {
 
 function getHubitatDevices($path) {
 
-    $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
-    $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
-    $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN; // client_secret=" . urlencode(CLIENT_SECRET) . "&scope=app&client_id=" . urlencode(CLIENT_ID);
-    $response = curl_call($host, $headertype, $nvpreq, "POST");
-    
-    // configure returned array with the "id" as the key and check for proper return
-    // no longer do this - index simply with integers
     $edited = array();
-    if ($response && is_array($response) && count($response)) {
-        foreach ($response as $k => $content) {
-            $id = "h_" . $content["id"];
-            $thetype = $content["type"];
-            
-            // make a unique index for this thing based on id and type
-            $idx = $thetype . "|" . $id;
-            $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $thetype);
+    if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) {
+        $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
+        $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
+        $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN;
+        $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+        // configure returned array with the "id" as the key and check for proper return
+        // add prefix of h_ to all hubitat device id's
+        if ($response && is_array($response) && count($response)) {
+            foreach ($response as $k => $content) {
+                $id = "h_" . $content["id"];
+                $thetype = $content["type"];
+
+                // make a unique index for this thing based on id and type
+                $idx = $thetype . "|" . $id;
+                $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $thetype);
+            }
         }
     }
     return $edited;
@@ -333,15 +335,18 @@ function getAllThings($endpt, $access_token) {
                 $allthings = array_merge($allthings, $newitem);
             }
         }
-        
-        // get Hubitat devices
-        $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "temperatures", "valves",
-                            "doors", "illuminances", "smokes", "waters", "presences");
-        foreach ($hubitattypes as $key) {
-            $newitem = getHubitatDevices($key);
-            if ($newitem && count($newitem)>0) {
-                $allthings = array_merge($allthings, $newitem);
+ 
+        // only do this if user specific the hubitat info
+        if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN) {
+            // get Hubitat devices
+            $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
+                                "sensors", "locks", "thermostats", "temperatures", "valves",
+                                "doors", "illuminances", "smokes", "waters", "presences");
+            foreach ($hubitattypes as $key) {
+                $newitem = getHubitatDevices($key);
+                if ($newitem && count($newitem)>0) {
+                    $allthings = array_merge($allthings, $newitem);
+                }
             }
         }
 

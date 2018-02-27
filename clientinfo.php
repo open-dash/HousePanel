@@ -24,6 +24,6 @@ define('USER_SITENAME',FALSE);
 // you can get these by viewing the log page on your local Hubitat hub
 // the IP address should be the IP address of your hub
 // this is a temporary hack for speed - these will not always be required
-define('HUBITAT_HOST',"http://192.168.11.21");
-define('HUBITAT_ID',"66");
-define('HUBITAT_ACCESS_TOKEN',"abc123abc1234-1234-1234-1234abcd1234");
+define('HUBITAT_HOST',FALSE);
+define('HUBITAT_ID',FALSE);
+define('HUBITAT_ACCESS_TOKEN',FALSE);
