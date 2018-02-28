@@ -1048,7 +1048,7 @@ function setupPage(trigger) {
         
         // for switches and locks set the command to toggle
         // for most things the behavior will be driven by the class value = swattr
-        if (thetype==="switch" || thetype==="lock" || 
+        if (thetype==="switch" || thetype==="lock" || thetype==="door" ||
             thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";
         } else {
@@ -1099,7 +1099,7 @@ function setupPage(trigger) {
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
-//                            alert( strObject(presult) );
+                            alert( strObject(presult) );
                             updAll(trigger,aid,bidupd,thetype,presult);
                         }
                    }, "json"

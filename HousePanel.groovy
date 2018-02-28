@@ -895,10 +895,13 @@ def setDoor(swid, cmd, swattr) {
             newonoff = cmd
         } else {
             newonoff = (item.currentValue("door")=="closed" ||
-                        item.currentValue("door")=="closing" )  ? "open" : "close"
+                        item.currentValue("door")=="closing" )  ? "open" : "closed"
         }
         newonoff=="open" ? item.open() : item.close()
         resp = [door: newonoff]
+        if ( item.hasAttribute("contact") ) {
+            resp.put("contact", newonoff)
+        }
     }
     return resp
 }
@@ -1377,10 +1380,6 @@ def setThermostat(swid, curtemp, swattr) {
           // define actions for python end points  
           else {
           // default:
-              if ( item.hasCommand(cmd) ) {
-                  item.${cmd}()
-              }
-              
               if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
               }
@@ -1389,7 +1388,10 @@ def setThermostat(swid, curtemp, swattr) {
               }
               else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
                   item.thermostatSetpoint(swattr)
+              } else if ( item.hasCommand(cmd) ) {
+                  item.${cmd}()
               }
+
             // break
           }
         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]

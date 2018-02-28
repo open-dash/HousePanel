@@ -165,7 +165,8 @@ function htmlHeader($skindir="skin-housepanel") {
         // note - we dont need bulb, light, or switchlevel because they all have a switch subtype
         $tc.= '<script type="text/javascript">';
         $clicktypes = array("switch.on","switch.off",
-                            "lock","door","momentary",
+                            "lock.locked","lock.unlocked","door.open","door.closed",
+                            "momentary",
                             "heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
