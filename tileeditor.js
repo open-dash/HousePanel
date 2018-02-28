@@ -53,15 +53,20 @@ function getCssRuleTarget(strSection, str_type, thingindex) {
 	switch (strSection) {
 		case "iconOn":
                         var onoff = getOnOff(str_type);
-                        target = "div."+str_type+'.p_'+thingindex + onoff[0];
+                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[0];
 			break;
 		case "iconOff":
                         var onoff = getOnOff(str_type);
-                        target = "div."+str_type+'.p_'+thingindex + onoff[1];
+                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[1];
 			break;
 		case "icon":
                         var onoff = $("#a-0-"+str_type).html();
-                        target = "div."+str_type+'.p_'+thingindex + onoff;
+                        if ( $.isNumeric(onoff) ) {
+                            onoff = "";
+                        } else {
+                            onoff = "."+onoff;
+                        }
+                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff;
 			break;
                 // every sub-element is wrapped with this so size width this way
 		case "overlay":
@@ -757,8 +762,8 @@ function getIconCategories() {
 }
 
 function getIcons(response, str_type, thingindex) {
-	strIconTarget = getCssRuleTarget('icon', str_type, thingindex);
-	iCategory = $("#iconSrc").val();
+	var strIconTarget = getCssRuleTarget('icon', str_type, thingindex);
+	var iCategory = $("#iconSrc").val();
 	var skindir = $("#skinid").val();
 	var localPath = skindir + '/icons/';	
 	
@@ -834,6 +839,9 @@ function getBgEffect() {
 }
 
 function iconSelected(cssRuleTarget, imagePath, str_type, thingindex) {
+    
+//    alert("Target= "+cssRuleTarget+" Icon= " + imagePath + " type= "+str_type+" index= "+thingindex);
+    
 	$("#noIcon").attr('checked', false);
 	
 	var strEffect = getBgEffect();
