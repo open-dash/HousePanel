@@ -1268,8 +1268,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
-    $tc.= "<div class=\"kioskoption\">Kiosk Mode: ";
-    $tc.= "<input id=\"kioskid\" width=\"240\" type=\"text\" name=\"kiosk\"  value=\"$kioskoptions\"/></div>";
+    $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
+    
+    $kstr = $kioskoptions=="true" ? "checked" : "";
+    $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/></div>";
     $tc.= "<div class=\"filteroption\">Option Filters: </div>";
     $tc.= "<table class=\"useroptions\"><tr>";
     $i= 0;
@@ -1524,7 +1526,12 @@ function processOptions($optarray) {
             $skindir = $val;
         }
         else if ( $key=="kiosk") {
-            $options["kiosk"] = strtolower($val);
+            if ( $val ) {
+                $options["kiosk"] = "true";
+            } else {
+                $options["kiosk"] = "false";
+            }
+//            $options["kiosk"] = strtolower($val);
         }
         else if ( $key=="useroptions" && is_array($val) ) {
             $newuseroptions = $val;
@@ -1981,7 +1988,7 @@ function is_ssl() {
             
             // use the list of things in this room
             if ($room !== FALSE) {
-                $tc.= "<li class=\"drag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
+                $tc.= "<li class=\"tab-$room\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
             }
         }
         

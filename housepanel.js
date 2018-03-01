@@ -14,6 +14,30 @@ Number.prototype.pad = function(size) {
     return s;
 }
 
+function setCookie(cname, cvalue, exdays) {
+    if ( !exdays ) exdays = 30;
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
+
 // window.addEventListener("load", function(event) {
 $(document).ready( function() {
 
@@ -22,6 +46,12 @@ $(document).ready( function() {
     $(document).data('returnURL',returnURL);
     
     $( "#tabs" ).tabs();
+    
+    // get default tab from cookie
+    var defaultTab = getCookie( 'defaultTab' );
+    if ( defaultTab ) {
+        $("#"+defaultTab).click();
+    }
     
 //    var cookies = decodeURIComponent(document.cookie);
 //    cookies = cookies.split(';');
@@ -62,7 +92,7 @@ $(document).ready( function() {
     
     // setup click on a page
     // this appears to be painfully slow so disable
-    // setupTabclick();
+    setupTabclick();
     
     setupColors();
 });
@@ -556,15 +586,13 @@ function setupHideTabs() {
    // first two methods must be used in kiosk mode
     $("#restoretabs, div.panel").click(function(e) {
         if (e.target == this) {
-            var hidestatus = $("#restoretabs").html();
-            if (hidestatus=="Hide Tabs") {
-                $("#roomtabs").addClass("hidden");
-                $("#restoretabs").html("Show Tabs");
-                // setupSortable(true);
-            } else if (hidestatus=="Show Tabs") {
+            var hidestatus = $("#restoretabs");
+            if ( $("#roomtabs").hasClass("hidden") ) {
                 $("#roomtabs").removeClass("hidden");
-                $("#restoretabs").html("Hide Tabs");
-                // setupDraggable(true);
+                if ( hidestatus ) hidestatus.html("Hide Tabs");
+            } else {
+                $("#roomtabs").addClass("hidden");
+                if ( hidestatus ) hidestatus.html("Show Tabs");
             }
         }
     });
@@ -759,26 +787,28 @@ function refreshTile(aid, bid, thetype) {
     );
 }
 
-    // force refresh when we click on a new page tab
+// refresh tiles on this page when switching to it
 function setupTabclick() {
     // $("li.ui-tab > a").click(function() {
     $("a.ui-tabs-anchor").click(function() {
-        var panel = $(this).text().toLowerCase();
-        // alert("panel = "+panel);
-        $("#panel-"+panel+" div.thing").each(function() {
-            var aid = $(this).attr("id").substring(2);
-            var bid = $(this).attr("bid");
-            var thetype = $(this).attr("type");
-            
-            // only do select types for speed
-            if (thetype==="switch" || thetype==="switchlevel" ||
-                thetype==="contact" || thetype==="motion" || 
-                thetype==="clock" || thetype==="lock" || thetype==="mode") {
-                // alert("updating tile aid = "+aid+" type = "+thetype+" on panel="+panel);
-                refreshTile(aid, bid, thetype);
-            }
-            
-        });
+        // save this tab for default next time
+        var defaultTab = $(this).attr("id");
+        if ( defaultTab ) {
+            setCookie( 'defaultTab', defaultTab, 30 );
+        }
+        
+        // disable the refresh feature because it is too slow and not really needed
+//        var panel = $(this).text().toLowerCase();
+//        if ( panel ) {
+//            alert("Updating panel = "+panel);
+//            $("div.panel-"+panel+" div.thing").each(function() {
+//                var aid = $(this).attr("id").substring(2);
+//                var bid = $(this).attr("bid");
+//                var thetype = $(this).attr("type");
+//                refreshTile(aid, bid, thetype);
+//
+//            });
+//        }
     });
 }
 
@@ -1099,7 +1129,7 @@ function setupPage(trigger) {
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
-                            alert( strObject(presult) );
+//                            alert( strObject(presult) );
                             updAll(trigger,aid,bidupd,thetype,presult);
                         }
                    }, "json"

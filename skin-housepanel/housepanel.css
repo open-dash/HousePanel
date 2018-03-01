@@ -71,7 +71,7 @@ ul.ui-tabs-nav {
     display: inline-block;
 }
 
-div.skinoption, div.kioskoption, div.filteroption, td.optname {
+div.skinoption, .kioskoption, div.filteroption, td.optname {
     font-size: 12pt;
     font-weight: bold;
     margin-left: 8px;
@@ -1531,7 +1531,7 @@ div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
 }
 div.modeoptions {
     background-color: #3a5795;
-    width: 350px; height: 34px; margin-left: 10px; margin-right: 30px;
+    width: 350px; height: 34px; margin-left: 60px; margin-right: 0px;
     cursor: default;    border: none;
     color: #eeeeee;    text-align: center;    font-weight: normal;
     border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
