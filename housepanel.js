@@ -38,8 +38,8 @@ function getCookie(cname) {
     return "";
 }
 
-// window.addEventListener("load", function(event) {
-$(document).ready( function() {
+window.addEventListener("load", function(event) {
+//$(document).ready( function() {
 
     // set the global return URL value
     returnURL = $("input[name='returnURL']").val();
