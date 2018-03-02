@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.51       Integrate skin-material from @vervallsweg to v1.0.0 to work with sliders
  * 1.50       Enable Hubitat devices when on same local network as HP
  * 1.49       sliderhue branch to implement slider and draft color picker
  * 1.48       Integrate @nitwitgit (Nick) TileEdit V3.2

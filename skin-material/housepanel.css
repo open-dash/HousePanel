@@ -8,11 +8,14 @@
 body {
     color: #000000;
     /*width: 1140px;*/
-    background-image: url(images/materialWallpaper1.jpg);
+    /*background-image: url(images/materialWallpaper1.jpg);*/
     background-size: cover;
     background-repeat: no-repeat;
     min-height: 100vh;
 }
+/*div.panel {
+    background-image: url(images/materialWallpaper1.jpg);
+}*/
 div.maintable {
 /*    transform: scale(0.84);
     -ms-transform: scale(0.84);
@@ -24,7 +27,7 @@ div.maintable {
     -moz-transform-origin: 0 0;
     -o-transform-origin: 0 0;
     -webkit-transform-origin: 0 0;*/
-    background-color: rgba(0,0,0,0.5);
+    /*background-color: rgba(0,0,0,0.5);*/
     min-height: 100vh;
 }
 h1, h2, h3 {
@@ -39,6 +42,16 @@ div {
 	-moz-background-size: contain;
 	-o-background-size: contain;
 }
+
+/* fix the minicolors panel */
+div.minicolors-panel div {
+	background-size: auto;
+}
+
+:focus {
+    outline: none;
+}
+
 .ui-widget.ui-widget-content{
 /*border-radius: 4px;
 width:100%;
@@ -314,7 +327,7 @@ input {
 div.buttons, form.buttons {
     display: inline;
 }
-input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, .button-default {
+input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.formbutton, .button-default {
     /* background-color: #3a5795; */
     /* width: 150px; */
     /* height: 50px; */
@@ -678,9 +691,9 @@ div.switch.energy {
 div.switchlevel.switch, div.bulb.switch {
     /*height: 80px;*/
 }
-div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
+/*div.switchlevel.level, switchlevel.colorTemperature, switchlevel.hue, switchlevel.saturation {
     height: 32px;
-}
+}*/
 
 /* momentary styling */
 div.momentary.off{
@@ -735,7 +748,7 @@ div.music {
     /*width: 178px;*/
 }
 div.music.level, div.music.vol {
-    width: 100%;
+    /*width: 100%;*/
 }
 div.music-controls {
     cursor: pointer;
@@ -797,7 +810,7 @@ div.thermostat.temperature, div.temperature.room {
     -moz-border-radius: 50%;
 }
 
-div.thermostat.temperature:after, div.temperature.motion:after {
+div.thermostat.temperature:after {
     content: "°";
 }
 
@@ -1139,14 +1152,15 @@ div.presence.absent {
 }
 
 div.bulb.color {
+    display: none;
     /* background-size: 32px 32px;
     font-size: 1px; */
-    background-image: url(icons/sprites/color-picker.svg);
+/*    background-image: url(icons/sprites/color-picker.svg);
     height: 2em;
     width: 2em;
     color: rgba(128,128,128,0.01);
     float: left;
-    margin: 0 0 0 0.5em;
+    margin: 0 0 0 0.5em;*/
 }
 
 /* do not display these items */
@@ -1276,6 +1290,14 @@ div.presence.jana.absent {
     background-image: url('icons/things/girlabsent.svg');
 }
 
+/* motion detector in family room that also has temperature */
+div.motion.family.room {
+    height: 80px;
+}
+div.motion.family.room.battery {
+    height: 13px; font-size: 9pt; color: #ffffff;
+}
+
 /* smart switch on my rock fountain */
 div.switch.rock.on {
     background-image: url('icons/things/rockon.png');
@@ -1285,15 +1307,25 @@ div.switch.rock.off {
     background-image: url('icons/things/rockoff.png');
     background-color: #ababab;
 }
-/*div.switch.screen.on, div.switch.screen.off {
+
+/* doormate apparently  */
+div.contact.mat.open {
+    background-image: url('icons/things/matempty.png');
+    background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
+}
+div.contact.mat.closed {
+    background-image: url('icons/things/matfull.png');
+    background-color: rgba(27,177,75,0.3);
+    background-size: 120px;
+}
+
+div.switch.screen.on, div.switch.screen.off {
     height: 80px;
 }
 
 div.switchlevel.screen.switch, div.switchlevel.screen.on, div.switchlevel.screen.off {
     height: 80px;
-}*/
-div.overlay.power, div.overlay.energy {
-    display: none;
 }
 
 /* hide the power and energy for my screen switch */
@@ -1304,21 +1336,30 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 iframe body {
     margin: 0px;
 }
+
+div.frame.forecast > iframe {
+	width: 500px; height: 230px; background: none;
+}
+
 div.frame iframe, div.frame-thing {
     /*width: 500px;
     height: 230px;
     background: none;*/
+    width: auto !important;
 }
+
 div.frame-thing {
-    /*width: auto;
-    height: auto;
+    width: auto !important;
+    /*height: auto;
     background: none;
     box-shadow: none;*/
 }
+
 div.thingname.frame {
     /*width: 480px;
     margin-left: 10px;*/
 }
+
 div.frame-thing div.overlay.status {
     display: none;
 }
@@ -1351,14 +1392,14 @@ div.music.track {
 }
 
 div.overlay.battery, div.overlay.name {
-	position: relative;
+	/*position: absolute;*/
 	z-index: 10;
-        border: none;
-        background: none;
+    border: none;
+    background: none;
 	/*left: 0px;*/
 	/*top: 2px;*/
 	/*width: 100%;*/
-	height: auto;
+	/*height: auto;*/
 }
 div.overlay.name {
     display: none;
@@ -1384,15 +1425,15 @@ div.ovStatus {
 
 div.battery {
   display: block;
-  position:relative;
+  /*position:relative;*/
   float: right;
-  right: 2px;
+  /*right: 2px;*/
   /*top: -11px;*/
   width: 24px;
   height: 8px;
   border: 1px solid #fff;
   border-radius: 2px;
-  padding: 1px;
+  /*padding: 1px;*/
   transform: scale(0.8);
 }
 
@@ -1514,15 +1555,6 @@ div.weather-thing div.overlay {
     color: unset;
 }
 
-/* needed for sliderhue */
-div.overlay.level {
-    height: 32px;
-}
-.ui-slider-handle {
-    border: 1px white;
-    background-color: #46B6AC;
-}
-
 /*Reset tabs a*/
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor {
     float: left;
@@ -1562,7 +1594,8 @@ div.overlay.level {
 }
 
 /* Styling */
-.overlay.light, .overlay.music, .overlay.music-controls-fixed, .overlay.musicmute, .overlay.bulb, .overlay.thermostat, .overlay.thermofan, .overlay.thermomode, .overlay.thermostate, .overlay.energy, .overlay.power  {
+.overlay.light, .overlay.music, .overlay.music-controls-fixed, .overlay.musicmute, .overlay.bulb, .overlay.thermostat, .overlay.thermofan,
+.overlay.thermomode, .overlay.thermostate, .overlay.energy, .overlay.power, .overlay.level, .overlay.colorTemperature, .overlay.battery  {
     background-color: white;
     color: #757575;
     padding: 0.25em 0 0 0;
@@ -1660,6 +1693,43 @@ div.switch.power, div.switch.energy {
     padding: 0.25em;
 }
 
+.radioopts {
+    margin: 1em;
+}
+
+.overlay.level, .overlay.colorTemperature {
+    padding: 0 1.5em;
+}
+
+.ui-slider {
+    background: #757575;
+    height: 0.3em;
+    margin: 0 1em;
+}
+
+.ui-slider-handle {
+    background: #757575 !important;
+    border-radius: 50% !important;
+    width: 1.5em !important;
+    height: 1.5em !important;
+}
+
+.slider-icon-container {
+    display: inline-block;
+    width: 20%;
+    overflow: hidden;
+}
+
+.slider-icon-container > i {
+    padding-bottom: 0.5em;
+}
+
+.slider-icon-container ~ .mdc-slider {
+    display: inline-block;
+    width: 65%;
+    margin: 0 10% 0 5%;
+}
+
 /*Fix music playback*/
 .music-controls-fixed > .music-previous {
     background-image: url("icons/sprites/grayPrevious.svg");
@@ -1684,7 +1754,7 @@ div.switch.power, div.switch.energy {
 }
 
 .overlay.music-controls-fixed {
-    padding: 0.75em 0 0 0;
+    padding: 0 0 0.75em 0;
 }
 
 .overlay .musicstatus {
@@ -1749,104 +1819,18 @@ div.switch.power, div.switch.energy {
 .mdc-switch-label {
     margin: 0 0.5em;
 }
-div.weather-thing div.overlay {
-    width: auto;
-    display: inline;
-}
-div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
-    background-position-y: 8px;
-    width: 80px;
-    height: 80px;
-    margin-left: 4px; margin-right: 4px;
-    color: rgba(0, 0, 0, 1);
-    font-size: 10pt;
-}
-/* weather icons */
-div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
-    background-image: url("../skin-housepanel/media/clear.png");
-}
-div.overlay.weatherIcon div.mostlysunny, div.overlay.forecastIcon div.mostlysunny {
-    background-image: url("../skin-housepanel/media/partlysunny.png");
-}
-div.overlay.weatherIcon div.partlysunny, div.overlay.forecastIcon div.partlysunny {
-    background-image: url("../skin-housepanel/media/partlysunny.png");
-}
-div.overlay.weatherIcon div.rain, div.overlay.forecastIcon div.rain {
-    background-image: url("../skin-housepanel/media/rain.png");
-}
-div.overlay.weatherIcon div.chancerain, div.overlay.forecastIcon div.chancerain {
-    background-image: url("../skin-housepanel/media/rain.png");
-}
-div.overlay.weatherIcon div.snow, div.overlay.forecastIcon div.snow {
-    background-image: url("../skin-housepanel/media/snow.png");
-}
-div.overlay.weatherIcon div.chancesnow, div.overlay.forecastIcon div.chancesnow {
-    background-image: url("../skin-housepanel/media/snow.png");
-}
-div.overlay.weatherIcon div.tstorms, div.overlay.forecastIcon div.tstorms {
-    background-image: url("../skin-housepanel/media/tstorms.png");
-}
-div.overlay.weatherIcon div.chancetstorms, div.overlay.forecastIcon div.chancetstorms {
-    background-image: url("../skin-housepanel/media/tstorms.png");
-}
-div.overlay.weatherIcon div.cloudy, div.overlay.forecastIcon div.cloudy {
-    background-image: url("../skin-housepanel/media/cloudy.png");
-}
-div.overlay.weatherIcon div.mostlycloudy, div.overlay.forecastIcon div.mostlycloudy {
-    background-image: url("../skin-housepanel/media/mostlycloudy.png");
-}
-div.overlay.weatherIcon div.partlycloudy, div.overlay.forecastIcon div.partlycloudy {
-    background-image: url("../skin-housepanel/media/mostlycloudy.png");
-}
-div.overlay.weatherIcon div.windy, div.overlay.forecastIcon div.windy {
-    background-image: url("../skin-housepanel/media/windy.png");
-}
-div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
-    background-image: url("../skin-housepanel/media/rain.png");
-}
-
-.ui-slider-horizontal {
-    height: 0.3em; 
-}
-div.modeoptions {
-    background-color: #3a5795;
-    width: 350px; height: 34px; margin-left: 10px; margin-right: 30px;
-    cursor: default;    border: none;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
-    border-right: 4px solid rgba(0, 0, 0, 0.8); 
-    font-size: 14pt;
-    display: inline-block;
-    padding-top: 12px; padding-right: 4px;
-}
-input.radioopts {
-    cursor: pointer;
-    margin-left: 10px;
-    margin-right: 4px;
-    display: inline-block;
-}
-span.radioopts {
-    font-size: 14pt;
-    cursor: pointer;
-    margin-left: 0px;
-    margin-right: 10px;
-    display: inline-block;
-}
-div#opmode {
-    position: absolute;
-    left: 50%; top: 50%;
-    font-size: 18pt;
-    color: #cc3300;
-    background-color: white;
-    border: 3px;
-}
 .minicolors-theme-default .minicolors-swatch {
-  top: 10px;
-  left: 24px;
-  width: 18px;
-  height: 18px;
+  top: 20px;
+  left: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  cursor: pointer;
 }
 .minicolors-swatch-color {
   border-radius: 50%;
+}
+.minicolors-position-left .minicolors-panel {
+    left: -60px;
+    top: -20px;
 }
