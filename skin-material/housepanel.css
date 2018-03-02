@@ -950,14 +950,14 @@ div.piston.pistonName.firing {
     background-image: url('icons/things/pistonfiring.svg');
 }
 /* weather styling */
-div.thing.weather-thing, div.weather {
+div.thing.weather-thing {
     text-align: center;
     height: auto;
 }
 div.thing.weather-thing {
     background-color: rgba(50,50,50,0.4);
     width: 240px;
-    height: auto;
+    height: 330px;
 }
 div.weather.temperature, div.weather.feelsLike {
     display: inline-block;
@@ -1336,16 +1336,14 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 iframe body {
     margin: 0px;
 }
-
-div.frame.forecast > iframe {
-	width: 500px; height: 230px; background: none;
-}
-
-div.frame iframe, div.frame-thing {
-    /*width: 500px;
+div.frame-thing {
+    width: 500px;
     height: 230px;
-    background: none;*/
-    width: auto !important;
+}
+div.frame.forecast > iframe {
+    width: 500px;
+    height: 230px;
+    background: none;
 }
 
 div.frame-thing {
@@ -1356,8 +1354,8 @@ div.frame-thing {
 }
 
 div.thingname.frame {
-    /*width: 480px;
-    margin-left: 10px;*/
+    width: 480px;
+    margin-left: 10px;
 }
 
 div.frame-thing div.overlay.status {
