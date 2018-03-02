@@ -1336,16 +1336,14 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 iframe body {
     margin: 0px;
 }
-
-div.frame.forecast > iframe {
-	width: 500px; height: 230px; background: none;
-}
-
-div.frame iframe, div.frame-thing {
-    /*width: 500px;
+div.frame-thing {
+    width: 500px;
     height: 230px;
-    background: none;*/
-    width: auto !important;
+}
+div.frame.forecast > iframe {
+    width: 500px;
+    height: 230px;
+    background: none;
 }
 
 div.frame-thing {
