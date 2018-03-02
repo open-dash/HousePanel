@@ -950,14 +950,14 @@ div.piston.pistonName.firing {
     background-image: url('icons/things/pistonfiring.svg');
 }
 /* weather styling */
-div.thing.weather-thing, div.weather {
+div.thing.weather-thing {
     text-align: center;
     height: auto;
 }
 div.thing.weather-thing {
     background-color: rgba(50,50,50,0.4);
     width: 240px;
-    height: auto;
+    height: 330px;
 }
 div.weather.temperature, div.weather.feelsLike {
     display: inline-block;
@@ -1356,8 +1356,8 @@ div.frame-thing {
 }
 
 div.thingname.frame {
-    /*width: 480px;
-    margin-left: 10px;*/
+    width: 480px;
+    margin-left: 10px;
 }
 
 div.frame-thing div.overlay.status {
