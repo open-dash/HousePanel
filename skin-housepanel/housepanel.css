@@ -374,7 +374,19 @@ div.thing {
     cursor: default;
     width: 120px; 
     height: auto;
-    position: relative;
+    position: static;
+    z-index: 1;
+
+    transform: scale(1.0);
+    -ms-transform: scale(1.0);
+    -moz-transform: scale(1.0);
+    -o-transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;
 }
 div.thing:hover{
     position: relative;
@@ -1560,6 +1572,9 @@ div#opmode {
     color: #cc3300;
     background-color: white;
     border: 3px;
+}
+.minicolors-theme-default.minicolors {
+    z-index: 99;
 }
 .minicolors-theme-default .minicolors-swatch {
   top: 2px;

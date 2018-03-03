@@ -73,8 +73,8 @@ window.addEventListener("load", function(event) {
         }
     });
     
-    // set up popup editing
-    setupPopup();
+    // set up popup editing - disabled because it is broken
+    // setupPopup();
         
     // setup time based updater
     setupTimers();
