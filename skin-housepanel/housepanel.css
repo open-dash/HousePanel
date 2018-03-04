@@ -143,41 +143,36 @@ div.panel {
     background-size: cover;
 }
 
-div.panel-family, div.panel-familyroom {
+div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {
     background-image: url('media/family.jpg');
-
 }
-div.panel-kitchen, div.panel-dinette {
+div.panel-Kitchen, div.panel-kitchen, div.panel-Dinette, div.panel-dinette {
     background-image: url('media/kitchenroom.jpg');
-
 }
-div.panel-formal, div.panel-living, div.panel-livingroom {
+div.panel-Living, div.panel-living, div.panel-Livingroom, div.panel-livingroom {
     background-image: url('media/formal.jpg');
-
 }
-div.panel-outside, div.panel-garage {
+div.panel-Outside, div.panel-outside, div.panel-Garage, div.panel-garage {
     background-image: url('media/outside.jpg');
 
 }
-div.panel-office, div.panel-library {
+div.panel-Office, div.panel-office, div.panel-Library, div.panel-library {
     background-image: url('media/office.jpg');
-
 }
-div.panel-bedroom, div.panel-bedrooms {
+div.panel-Bedroom, div.panel-bedroom, div.panel-Bedrooms, div.panel-bedrooms {
     background-image: url('media/bedroom.jpg');
-
 }
-div.panel-music, div.panel-theater, div.panel-entertainment {
+div.panel-Music, div.panel-music, div.panel-Theater, div.panel-theater, 
+div.panel-Entertainment {
     background-image: url('media/music.jpg');
 
 }
-div.panel-thermostats, div.panel-thermostat {
+div.panel-Thermostats, div.panel-thermostats {
     background-image: url('media/thermostat.jpg');
-
 }
 
 /* style the panel with all things listed */
-div.panel-all {
+div.panel-All, div.panel-None, div.panel-Blank {
     background-image: none;
 }
 
@@ -243,6 +238,9 @@ table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions
     background-color: #3a5795;    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
+}
+table.headoptions th.roomname {
+    cursor: pointer;
 }
 table.headoptions td, table.roomoptions td {
     width: 100px;
@@ -324,6 +322,31 @@ div.restoretabs, div.formbutton {
 }
 div.restoretabs.hidden {
     display: none;
+}
+
+div.modalbox {
+    display: inline-block;
+    margin-left: 5px; margin-top: 5px;
+    padding: 5px;
+    border: 2px solid #3a5795;
+    background-color: rgba(255, 255, 240, 1);
+    color: rgba(0, 0, 0, 1);
+    font-size: 12pt;
+    position: absolute; left: 5%; bottom: 5%; z-index: 999;
+}
+div.modalbuttons {
+    margin-top: 5px;
+}
+
+button.dialogbtn {
+    background-color: #3a5795;
+    display: inline;
+    width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
+    cursor: pointer;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.8); 
+    border-right: 2px solid rgba(0, 0, 0, 0.8); 
+    font-size: 12pt;
 }
 
 /* don't need to display this anymore since use clock and panel click instead */
@@ -1567,11 +1590,12 @@ span.radioopts {
 }
 div#opmode {
     position: absolute;
-    left: 50%; top: 50%;
-    font-size: 18pt;
+    left: 5%; bottom: 5%; width: 600px;
+    font-size: 18pt; text-align: center;
     color: #cc3300;
     background-color: white;
     border: 3px;
+    z-index: 999;
 }
 .minicolors-theme-default.minicolors {
     z-index: 99;

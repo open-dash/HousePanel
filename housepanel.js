@@ -5,6 +5,7 @@ var popupCell = null;
 var popupSave = "";
 var popupRoom = "";
 var popupVal = 0;
+var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 
@@ -50,7 +51,9 @@ window.addEventListener("load", function(event) {
     // get default tab from cookie
     var defaultTab = getCookie( 'defaultTab' );
     if ( defaultTab ) {
-        $("#"+defaultTab).click();
+        try {
+            $("#"+defaultTab).click();
+        } catch (e) {}
     }
     
 //    var cookies = decodeURIComponent(document.cookie);
@@ -81,8 +84,6 @@ window.addEventListener("load", function(event) {
     
     // set up option box clicks
     setupFilters();
-    
-    setupHideTabs();
     
     setupButtons();
     
@@ -135,6 +136,35 @@ function rgb2hsv(r, g, b) {
     v = Math.floor(v * 100);
 
     return {"hue": h, "saturation": s, "level": v};
+}
+
+function convertToModal(modalcontent) {
+    modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
+    modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
+    return modalcontent;
+}
+
+function createModal(modalcontent, modaltag, addok, responsefunction) {
+    var modalid = "modalid";
+    
+    // skip if a modal is already up...
+    if ( modalStatus ) { return; }
+    
+    if ( !modaltag || !$(modaltag) ) { modaltag = "#controlpanel"; }
+    modalcontent = "<div id='" + modalid +"' class='modalbox'>" + modalcontent;
+    if ( addok ) {
+        modalcontent = convertToModal(modalcontent);
+    }
+    modalcontent = modalcontent + "</div>";
+    $(modaltag).after(modalcontent);
+    modalStatus = 1;
+    $("#"+modalid).on("click",".dialogbtn",function() {
+//        var clk = $(this).attr("name");
+//        alert("Clicked " + clk); 
+        responsefunction(this);
+        $("#"+modalid).remove();
+        modalStatus = 0;
+    });
 }
 
 function setupColors() {
@@ -427,8 +457,13 @@ function setupButtons() {
 //    $("#optionsbutton").on("click", null, function(evt) {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
-        var newForm = dynoForm(buttonid);
-        newForm.submit();
+        createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui) {
+            var clk = $(ui).attr("name");
+            if ( clk=="okay" ) {
+                var newForm = dynoForm(buttonid);
+                newForm.submit();
+            }
+        });
     });
 
     $("div.modeoptions").on("click","input.radioopts",function(evt){
@@ -452,8 +487,18 @@ function setupButtons() {
             priorOpmode = opmode;
             $("#opmode").html("Mode set to: " + opmode );
             $("#opmode").show();
-            $("#opmode").hide("fade",null,2000);
+            $("#opmode").hide("fade",null,3000);
         }
+    });
+
+    $("#controlpanel").on("click","div.restoretabs",function(evt){
+        toggleTabs();
+//        createModal("Toggle Tabs. Are you sure?","#controlpanel", true, function(ui) {
+//            var clk = $(ui).attr("name");
+//            if ( clk=="okay" ) {
+//                toggleTabs();
+//            }
+//        });
     });
 }
 
@@ -528,7 +573,7 @@ function setupPopup() {
     
     // add code to disable when click anywhere but the cell
     $("div.maintable").click(function(e) {
-        if ( e.target.id !== "trueincell") {
+        if ( e.target.id !== "trueincell" && popupStatus==1) {
             disablePopup();
         }
             // alert ( e.target.id );
@@ -547,7 +592,7 @@ function setupPopup() {
 
     // disable input in our dynamic form item
     $("#trueincell").keypress(function(e) {
-        if ( e.keyCode===27 ){
+        if ( e.keyCode===27 && popupStatus==1 ){
             disablePopup();
         }
     });
@@ -556,12 +601,43 @@ function setupPopup() {
         processPopup();
     });
     
-    $("table.headoptions th.roomname").each(function() {
-        // bind click events to incell editing
-        $(this).css({
-            "cursor": "pointer"
-        });
-        $(this).bind("click", jeditTableCell);
+//    $("table.headoptions th.roomname").each(function() {
+//        // bind click events to incell editing
+//        $(this).css({
+//            "cursor": "pointer"
+//        });
+//        $(this).on("click", "th.roomname", jeditTableCell);
+//    });
+    $("table.headoptions").on("click", "th.roomname", function() {
+        if ($(this).html().startsWith("<input id")) { return true; }
+
+        // if another popup is active, process it
+        if (popupStatus === 1) {
+            processPopup();
+        }
+
+        var roomval = $(this).children().first().attr("value");
+        var roomname = $(this).text().trim();
+
+        //do a real in-cell edit - save global parameters
+        // cellclicked = that;
+        popupStatus = 1;
+        popupSave = $(this).html();
+        popupCell = this;
+        popupVal = parseInt(roomval);
+        popupRoom = roomname;
+
+        // change the content to an input box
+        var thesize = roomname.length + 2;
+
+        // save anything after the pure text
+        // var savedhidden = $(that).html().substring(thesize);
+
+//         if (thesize < maxlen+1) thesize = maxlen+1;
+        var oldhidden = ""; // '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
+        $(this).html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
+        return false;
+        
     });
 
 // Hiding Confirmation of Customization Span Until Needed
@@ -572,89 +648,34 @@ function setupPopup() {
        
 }
 
-function setupHideTabs() {
-    // uncomment this block to do auto-hide
-    /* 
-    $("#roomtabs").click(function() {
-        setTimeout(function() {
-            $("#roomtabs").addClass("hidden");
-            $(".restoretabs").html("Show Tabs");
-        }, 3000);
-    });
-    */
-   // restore tabs by click on open panel or the hide tabs button
-   // first two methods must be used in kiosk mode
-    $("#restoretabs, div.panel").click(function(e) {
-        if (e.target == this) {
-            var hidestatus = $("#restoretabs");
-            if ( $("#roomtabs").hasClass("hidden") ) {
-                $("#roomtabs").removeClass("hidden");
-                if ( hidestatus ) hidestatus.html("Hide Tabs");
-            } else {
-                $("#roomtabs").addClass("hidden");
-                if ( hidestatus ) hidestatus.html("Show Tabs");
-            }
-        }
-    });
-}
-
-var jeditTableCell = function(event) {
-    // alert(testdata);
-    // skip click invoke if we are already here
-    if ($(this).html().substr(0,9) == "<input id") { return true; }
-
-    // if another popup is active, process it
-    if (popupStatus === 1) {
-        // $(that).html().substring(0,9) === "<input id") { return true; }
-        processPopup();
-        // return true;
+function toggleTabs() {
+    var hidestatus = $("#restoretabs");
+    if ( $("#roomtabs").hasClass("hidden") ) {
+        $("#roomtabs").removeClass("hidden");
+        if ( hidestatus ) hidestatus.html("Hide Tabs");
+    } else {
+        $("#roomtabs").addClass("hidden");
+        if ( hidestatus ) hidestatus.html("Show Tabs");
     }
-    
-    var roomval = $(this).children().first().attr("value");
-    var roomname = $(this).text().trim();
-    
-    //do a real in-cell edit - save global parameters
-    // cellclicked = that;
-    popupStatus = 1;
-    popupSave = $(this).html();
-    popupCell = this;
-    popupVal = parseInt(roomval);
-    popupRoom = roomname;
-    
-    // change the content to an input box
-    var thesize = roomname.length + 2;
-    
-    // save anything after the pure text
-    // var savedhidden = $(that).html().substring(thesize);
-    
-    // if (thesize < maxlen+1) thesize = maxlen+1;
-    var oldhidden = '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
-    $(this).empty().html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
-
-    // set the focus and trigger blur to return things to normal
-    // save the trigger td cell object and update the content of the cell
-    // this removes the input field and replaces it with the edited text
-
-    // now we do a true inline edit so dont load a popup
-    // loadPopup(this, event.pageX, event.pageY);
-    return false;
 }
 
 function processPopup( ) {
     // processEdit( ineditvalue );
     // $(cellclicked).empty().html( ineditvalue );
     // alert("ineditvalue = " + ineditvalue);
+//    alert("processing... popupStatus = " + popupStatus);
 
     if (popupStatus==1) {
         // put the new text on the screen
         var thenewval = $("#trueincell").val();
+//        alert("Changing room name from: " + popupRoom + " to: "+thenewval);
         
         // clean the user provided room name to ensure it doesnt have crap in it
         //TODO
         
         var newhidden = '<input type="hidden" name="o_' + thenewval + '" value="' + popupVal + '" />';
-        $(popupCell).empty().html( thenewval + newhidden );
-        
+        $(popupCell).html( thenewval + newhidden );
+//        
         // replace the room name in the entire options table column
         $('table.roomoptions td > input[name="'+popupRoom+'\[\]"]').each(function() {
             // var tileval = parseInt($(this).attr("value"));
@@ -667,12 +688,15 @@ function processPopup( ) {
 }
 
 function disablePopup(){
+//    alert("disabling... popupStatus = " + popupStatus + " popupSave = " + popupSave);
+    
     //disables popup only if it is enabled
-    if( popupStatus==1){
-        $(popupCell).empty().html(popupSave);
+    if( popupStatus==1 && popupSave){
+        $(popupCell).html(popupSave);
     }
     popupStatus = 0;
 }
+
 function strObject(o) {
   var out = '';
   for (var p in o) {
@@ -798,7 +822,7 @@ function setupTabclick() {
         }
         
         // disable the refresh feature because it is too slow and not really needed
-//        var panel = $(this).text().toLowerCase();
+//        var panel = $(this).text();
 //        if ( panel ) {
 //            alert("Updating panel = "+panel);
 //            $("div.panel-"+panel+" div.thing").each(function() {
@@ -818,21 +842,14 @@ function setupTimers() {
     // but only for tabs that are being shown
     $('div.thing').each(function() {
         
-        var bid = $(this).attr("bid");
-
-        // skip doing this stuff if Hubitat since we directly control status
-        // actually we don't because manual triggers don't always work
-        // instead we just speed it up for hubitat
-//        if ( ! bid.startsWith("h_") ) {
-        
-            var tile = $(this).attr("tile");
+            var bid = $(this).attr("bid");
             var aid = $(this).attr("id").substring(2);
             var thetype = $(this).attr("type");
             var panel = $(this).attr("panel");
 
             // fix bug where panel was not proper case
-            // eventually we'll have to use actual item
-            panel = panel.toLowerCase();
+            // eventually we'll have to use actual item - now is eventually!!
+            // panel = panel.toLowerCase();
             var timerval = 0;
 
             switch (thetype) {
@@ -848,7 +865,7 @@ function setupTimers() {
                 case "motion":
                 case "contact":
                     timerval = 30001;
-                    if ( bid.startsWith("h_") ) { timerval = 5001; }
+                    if ( bid.startsWith("h_") ) { timerval = 5000; }
                     break;
 
                 case "thermostat":
@@ -1055,7 +1072,7 @@ function setupPage(trigger) {
         
         // avoid doing click if the target was the title bar
         // or if not in Operate mode
-        if ( priorOpmode!=="Operate" || 
+        if ( priorOpmode!=="Operate" || modalStatus ||
              ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
 
         var theclass = $(this).attr("class");

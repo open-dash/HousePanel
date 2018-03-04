@@ -665,7 +665,8 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
 // notice the call of $cnt by reference to keep running count
 function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoptions, $kioskmode) {
     $tc = "";
-    $roomname = strtolower($roomtitle);
+    $roomname = $roomtitle;
+//    $roomname = strtolower($roomname);
     $tc.= "<div id=\"$roomname" . "-tab\">";
     if ( $allthings ) {
         $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\"  method=\"POST\">";
@@ -730,7 +731,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         // $tc.= hidden("end",$keyword);
     
     } else {
-        $tc.= "<div class=\"error\">Problem encountered retrieving things of type $roomname.</div>";
+        $tc.= "<div class=\"error\">Unknown problem encountered while retrieving things for room: $roomtitle.</div>";
     }
 
     if (DEBUG3) {
@@ -1450,7 +1451,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 } else {
                     $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" >";
                 }
-                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
+//                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
                 $tc.= "</td>";
             }
         }
@@ -1989,7 +1990,7 @@ function is_ssl() {
             
             // use the list of things in this room
             if ($room !== FALSE) {
-                $tc.= "<li class=\"tab-$room\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
+                $tc.= "<li class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
             }
         }
         
