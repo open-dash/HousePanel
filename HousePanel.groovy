@@ -133,6 +133,9 @@ mappings {
   path("/modes") {
     action: [      POST: "getModes"    ]
   }
+  path("/smh") {
+    action: [      POST: "getSMHStates"    ]
+  }
   path("/pistons") {
     action: [      POST: "getPistons"    ]
   }
@@ -307,6 +310,11 @@ def getmyMode(swid, item=null) {
     return resp
 }
 
+def getSHMState(swid, item=null){
+	def status = location.currentState("alarmSystemStatus")?.value
+	def resp = [name : "Smart Home Monitor", state: status]
+	return resp
+}
 def getBlank(swid, item=null) {
     def resp = [name: "Blank ${swid}", size: "${swid}"]
     return resp
@@ -390,6 +398,7 @@ def getAllThings() {
 
     def resp = []
     resp.addAll(getModes())
+	resp.addAll(getSMHStates())
     resp.addAll(getSwitches())
     resp.addAll(getDimmers())
     resp.addAll(getMomentaries())
@@ -433,7 +442,12 @@ def getModes() {
     resp << [name: "Mode", id: "m2x2", value: val, type: "mode"]
     return resp
 }
-
+def getSHMStates(){
+	def resp = []
+	def status = location.currentState("alarmSystemStatus")?.value
+	resp = [name : "Smart Home Monitor", state: status]
+	return resp
+}
 def getBlanks() {
     log.debug "Getting the blank tiles"
     def resp = []
@@ -723,6 +737,10 @@ def doAction() {
          cmdresult = setMode(swid, cmd, swattr)
          break
          
+      case "smh" :
+         cmdresult = setSHMState(swid, cmd, swattr)
+         break
+		 
       case "valve" :
       	 cmdresult = setValve(swid, cmd, swattr)
          break
@@ -833,6 +851,9 @@ def doQuery() {
     case "mode" :
         cmdresult = getmyMode(swid)
         break
+	case "smh" :
+        cmdresult = getSHMState(swid)
+        break
     case "routine" :
         cmdresult = getRoutine(swid)
         break
@@ -940,6 +961,16 @@ def setMode(swid, cmd, swattr) {
             ];
     
     return resp
+}
+
+def setSHMState(swid, cmd, swattr){
+	def resp = []
+	if (cmd == "away") sendLocationEvent(name: "alarmSystemStatus" , value : "away" )
+    else if (cmd == "stay") sendLocationEvent(name: "alarmSystemStatus" , value : "stay" )
+    else if (cmd == "off") sendLocationEvent(name: "alarmSystemStatus" , value : "off" )
+	
+	resp = [name : "Smart Home Monitor", state: cmd]
+	return resp
 }
 
 def setDimmer(swid, cmd, swattr) {
