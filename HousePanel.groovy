@@ -133,8 +133,8 @@ mappings {
   path("/modes") {
     action: [      POST: "getModes"    ]
   }
-  path("/smh") {
-    action: [      POST: "getSMHStates"    ]
+  path("/shm") {
+    action: [      POST: "getSHMStates"    ]
   }
   path("/pistons") {
     action: [      POST: "getPistons"    ]
@@ -398,7 +398,7 @@ def getAllThings() {
 
     def resp = []
     resp.addAll(getModes())
-	resp.addAll(getSMHStates())
+	resp.addAll(getSHMStates())
     resp.addAll(getSwitches())
     resp.addAll(getDimmers())
     resp.addAll(getMomentaries())
@@ -737,7 +737,7 @@ def doAction() {
          cmdresult = setMode(swid, cmd, swattr)
          break
          
-      case "smh" :
+      case "shm" :
          cmdresult = setSHMState(swid, cmd, swattr)
          break
 		 
@@ -851,7 +851,7 @@ def doQuery() {
     case "mode" :
         cmdresult = getmyMode(swid)
         break
-	case "smh" :
+	case "shm" :
         cmdresult = getSHMState(swid)
         break
     case "routine" :
