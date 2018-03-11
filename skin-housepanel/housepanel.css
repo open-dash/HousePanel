@@ -375,7 +375,7 @@ input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
     border-bottom: 0px; 
     border-right: 0px; */
 }
-div.sitename {
+div.sitebutton {
     background: #ffffff;     display: block;    position: relative;
     left: 400px;    width: 300px;    bottom: 49px;
 }
@@ -1043,7 +1043,8 @@ div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illu
     margin-bottom: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
-div.weather.sunriseDate, div.weather.sunsetDate {
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.ultravioletIndex, div.weather.lastUpdate {
     display: none;
 }
 div.weather.weatherIcon, div.weather.forecastIcon {
@@ -1103,6 +1104,9 @@ div.clock.tzone{
 }
 
 /* mode and routine styling */
+div.thingname.mode {
+    display: none;
+}
 div.thing.mode-thing {
     width: auto;
     height: 150px;
@@ -1124,9 +1128,10 @@ div.mode.themode {
 div.mode.name {
     font-size: 12pt;    margin-top: 30px;
 }
-div.mode.zipcode {
-    display:none;
+div.mode.sitename {
+    margin-top: 45px;
 }
+
 div.routine.label {
     font-size: 18pt;    margin-top: 20px;
 }

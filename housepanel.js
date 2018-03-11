@@ -80,7 +80,7 @@ window.addEventListener("load", function(event) {
     // setupPopup();
         
     // setup time based updater
-    setupTimers();
+    // setupTimers();
     
     // set up option box clicks
     setupFilters();
@@ -96,6 +96,12 @@ window.addEventListener("load", function(event) {
     setupTabclick();
     
     setupColors();
+    
+    // invoke the new timer that updates everything at once
+    allTimerSetup();
+    
+    allHubitatSetup();
+    
 });
 
 function rgb2hsv(r, g, b) {
@@ -202,7 +208,7 @@ function setupColors() {
                     bid = bid.substring(2);
                 }
 //                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -238,7 +244,7 @@ function setupSliders() {
             
             // handle music volume different than lights
             if ( thetype != "music") {
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -249,7 +255,7 @@ function setupSliders() {
                        }, "json"
                 );
             } else {
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -291,7 +297,7 @@ function setupSliders() {
             }
             var thetype = $(tile).attr("type");
             
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature" },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
@@ -358,7 +364,7 @@ function setupPagemove() {
                 pages[pagename] = k;
                 k++;
             });
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                 {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
                     function (presult, pstatus) {
                         // alert("Updated page order with status= "+pstatus+" result= "+
@@ -397,7 +403,7 @@ function setupSortable() {
             });
             
 //            alert("Sorted thing: "+tile+" room: "+roomtitle+" things: "+strObject(things));
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
             );
         }
@@ -422,12 +428,12 @@ function setupDraggable() {
             dragthing["panel"] = $(event.target).attr("panel");
            
 //            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
-//            $.post("housepanel.php", 
+//            $.post(returnURL, 
 //                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
 //            );
             // now post back to housepanel to save the position
             // also send the dragthing object to get panel name and tile pid index
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
         }
@@ -522,7 +528,7 @@ function setupSaveButton() {
         
         var request = new XMLHttpRequest();
         request.open('POST', 'housepanel.php', false);
-//        $response = $.post("housepanel.php", 
+//        $response = $.post(returnURL, 
 //                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
 //        );
         
@@ -800,7 +806,7 @@ function refreshTile(aid, bid, thetype) {
         ajaxcall = "queryhubitat";
         bid = bid.substring(2);
     }
-    $.post("housepanel.php", 
+    $.post(returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
@@ -927,6 +933,92 @@ function setupTimers() {
     });
 }
 
+function allTimerSetup() {
+
+    // define the timer callback function to update all tiles every 60 seconds
+    var timerval = 15000;
+    var updarray = ["all",timerval];
+    updarray.myMethod = function() {
+        var that = this;
+        // alert("About to post update...");
+        $.post(returnURL, 
+            {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
+            function (presult, pstatus) {
+//                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
+                if (pstatus=="success" && presult!==undefined ) {
+//                    console.log("Polling [" + returnURL + "] update: ST returned "+ Object.keys(presult).length+ " items");
+                    
+                    // go through all tiles and update
+                    $('div.thing').each(function() {
+                        var tileid = $(this).attr("tile");
+                        var bid = $(this).attr("bid");
+                        var aid = $(this).attr("id").substring(2);
+                        if ( !bid.startsWith("h_") && tileid in presult ) {
+                            var thevalue = presult[tileid];
+                            // handle both direct values and bundled values
+                            if ( thevalue.hasOwnProperty("value") ) {
+                                thevalue = thevalue.value;
+                            }
+                            // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                            if ( thevalue ) { updateTile(aid,thevalue); }
+                        }
+                        
+                    });
+                }
+            }, "json"
+        );
+
+        // repeat the method above indefinitely
+        setTimeout(function() {updarray.myMethod();}, this[1]);
+    };
+
+    // wait before doing first one
+    setTimeout(function() {updarray.myMethod();}, timerval);
+}
+
+function allHubitatSetup() {
+
+    // define the timer callback function to update all tiles every 60 seconds
+    var timerval = 5000;
+    var hubarray = ["all",timerval];
+    hubarray.myMethod = function() {
+        var that = this;
+        // alert("About to post update...");
+        $.post(returnURL, 
+            {useajax: "queryhubitat", id: that[0], type: that[0], value: "none", attr: "none"},
+            function (presult, pstatus) {
+//                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
+                if (pstatus=="success" && presult!==undefined ) {
+                    // console.log("Polling [" + returnURL + "] update: Hubitat returned "+ Object.keys(presult).length+ " items");
+                    
+                    // go through all tiles and update
+                    $('div.thing').each(function() {
+                        var tileid = $(this).attr("tile");
+                        var bid = $(this).attr("bid");
+                        var aid = $(this).attr("id").substring(2);
+                        if ( bid.startsWith("h_") && tileid in presult ) {
+                            var thevalue = presult[tileid];
+                            // handle both direct values and bundled values
+                            if ( thevalue.hasOwnProperty("value") ) {
+                                thevalue = thevalue.value;
+                            }
+                            // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                            if ( thevalue ) { updateTile(aid,thevalue); }
+                        }
+                        
+                    });
+                }
+            }, "json"
+        );
+
+        // repeat the method above indefinitely
+        setTimeout(function() {hubarray.myMethod();}, this[1]);
+    };
+
+    // wait before doing first one
+    setTimeout(function() {hubarray.myMethod();}, timerval);
+}
+
 function updateMode() {
     $('div.thing.mode-thing').each(function() {
         var otheraid = $(this).attr("id").substring(2);
@@ -980,7 +1072,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // the second call is needed to make screen refreshes work properly
 //    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
     if (trigger=="switch.on" || trigger=="switch.off") {
-        updateMode();
+        // updateMode();
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) { updateTile(otheraid, pvalue); }
@@ -993,20 +1085,20 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) {
                 updateTile(otheraid, pvalue);
-                var rbid = $(this).attr("bid");
-                setTimeout(function() {
-                    refreshTile(otheraid, rbid, "bulb");
-                }, 10000);
+//                var rbid = $(this).attr("bid");
+//                setTimeout(function() {
+//                    refreshTile(otheraid, rbid, "bulb");
+//                }, 10000);
             }
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) {
                 updateTile(otheraid, pvalue);
-                var rbid = $(this).attr("bid");
-                setTimeout(function() {
-                    refreshTile(otheraid, rbid, "light");
-                }, 10000);
+//                var rbid = $(this).attr("bid");
+//                setTimeout(function() {
+//                    refreshTile(otheraid, rbid, "light");
+//                }, 10000);
             }
         });
     }
@@ -1021,6 +1113,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
+    // NOTE: removed the above logic because our updates are now faster and frequent
     // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
     if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
         trigger==="hue-up" || trigger==="hue-dn" ||
@@ -1034,26 +1127,26 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "switchlevel");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "switchlevel");
+//            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "bulb");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "bulb");
+//            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "light");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "light");
+//            }, 10000);
         });
     }
     
@@ -1086,7 +1179,7 @@ function setupPage(trigger) {
         var ajaxcall = "doaction";
         if ( bid.startsWith("h_") ) {
             ajaxcall = "dohubitat";
-            bid = bid.substring(2);
+            // bid = bid.substring(2);
         }
 
         // get target id and contents
@@ -1114,7 +1207,7 @@ function setupPage(trigger) {
                 this[0].attr("class", this[1]);
                 this[0].html(this[2]);
             };
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                 function(presult, pstatus) {
                     // alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
@@ -1142,11 +1235,13 @@ function setupPage(trigger) {
         // within the groovy code if action isn't relevant then nothing happens
         } else {
 //            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
-            $.post("housepanel.php", 
+            console.log("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
+            $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
 //                            alert( strObject(presult) );
+                            console.log( "POST returned: "+ strObject(presult) );
                             updAll(trigger,aid,bidupd,thetype,presult);
                         }
                    }, "json"

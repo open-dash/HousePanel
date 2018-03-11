@@ -222,9 +222,9 @@ function getResponse($host, $access_token) {
     return $edited;
 }
 
-function getHubitatDevices($path) {
+function getHubitatDevices($edited, $path) {
 
-    $edited = array();
+    // $edited = array();
     if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) {
         $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
         $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
@@ -244,6 +244,9 @@ function getHubitatDevices($path) {
             }
         }
     }
+    $idx = "other|h_2116";
+    $val = array("name"=>"test", "test"=>"data");
+    $edited[$idx] = array("id" => $id, "name" => "test", "value" => $val, "type" => "other");
     return $edited;
 }
 
@@ -308,7 +311,7 @@ function authButton($sname, $returl) {
     $tc = "";
     $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
     $tc.= hidden("doauthorize", "1");
-    $tc.= "<div class=\"sitename\">$sname";
+    $tc.= "<div class=\"sitebutton\">$sname";
     $tc .= "<input class=\"authbutton\" value=\"Re-Authorize\" name=\"submit1\" type=\"submit\" />";
     $tc.= "</div></form>";
     return $tc;
@@ -318,38 +321,33 @@ function authButton($sname, $returl) {
 // this should be considerably faster
 function getAllThings($endpt, $access_token) {
     $allthings = array();
-     
     if ( isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
     }
     
     // if a prior call failed then we need to reset the session and reload
-    if (count($allthings) <= 2 && $endpt && $access_token ) {
+    if (count($allthings) <= 6 ) {
         session_unset();
+        $allthings = array();
         
-        $groovytypes = array("routines","switches", "lights", "dimmers","bulbs","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "temperatures", "musics", "valves",
-                            "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
-                            "modes", "blanks", "images", "pistons", "others");
-        foreach ($groovytypes as $key) {
-            $newitem = getResponse($endpt . "/" . $key, $access_token);
-            if ($newitem && count($newitem)>0) {
-                $allthings = array_merge($allthings, $newitem);
-            }
+        if ( $endpt && $access_token ) {
+            $allthings = getResponse($endpt . "/getallthings", $access_token);
         }
- 
+        
         // only do this if user specific the hubitat info
         if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN) {
             // get Hubitat devices
-            $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
-                                "sensors", "locks", "thermostats", "temperatures", "valves",
-                                "doors", "illuminances", "smokes", "waters", "presences");
-            foreach ($hubitattypes as $key) {
-                $newitem = getHubitatDevices($key);
-                if ($newitem && count($newitem)>0) {
-                    $allthings = array_merge($allthings, $newitem);
-                }
-            }
+            $allthings = getHubitatDevices($allthings, "getallthings");
+            
+//            $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
+//                                "sensors", "locks", "thermostats", "temperatures", "valves",
+//                                "doors", "illuminances", "smokes", "waters", "presences");
+//            foreach ($hubitattypes as $key) {
+//                $newitem = getHubitatDevices($key);
+//                if ($newitem && count($newitem)>0) {
+//                    $allthings = array_merge($allthings, $newitem);
+//                }
+//            }
         }
 
         // add a clock tile
@@ -433,6 +431,9 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
     
     // $bname = "type-$bid";
     $bid = $thesensor["id"];
+    if ( is_numeric($bid) ) {
+        $bid = "h_" . $bid;
+    }
     $thingvalue = $thesensor["value"];
     $thingtype = $thesensor["type"];
 
@@ -752,29 +753,38 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
         $timeofday = date("g:i a");
         $timezone = date("T");
         $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    } else if ($swtype ==="image") {
-        $response = array("url" => $swid);
     } else {
-        $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
-        $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
-        $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
-    
-        // update session with new status
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $idx = $swtype . "|" . $swid;
-            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
-                $newval = array_merge($allthings[$idx]["value"], $response);
-                $allthings[$idx]["value"] = $newval;
-                $_SESSION["allthings"] = $allthings;
+            $options= getOptions($allthings);
+            if ( substr($swid,0,2) == "h_" ) { $swid = substr($swid,2); }
+            
+            $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
+            $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
+            $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+            if ( $swtype=="all" ) {
+                $respvals = array();
+                foreach($response as $thing) {
+                    $idx = $thing["type"] . "|h_" . $thing["id"];
+                    $allthings[$idx] = $thing;
+                    $tileid = $options["index"][$idx];
+                    $respvals[$tileid] = $thing["value"];
+                }
+                $response = $respvals;
+            } else {
+                $idx = $swtype . "|h_" . $swid;
+                if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                    $newval = array_merge($allthings[$idx]["value"], $response);
+                    $allthings[$idx]["value"] = $newval;
+                }
             }
-        }
-        
-        if (!response) {
-            $response = array("name" => "Unknown", $swtype => $swval);
+            $_SESSION["allthings"] = $allthings;
+        } else {
+            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -785,40 +795,63 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
 function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="none") {
     
     // intercept clock things to return updated date and time
+    $weekday = date("l");
+    $dateofmonth = date("M d, Y");
+    $timeofday = date("g:i a");
+    $timezone = date("T");
+    $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     if ($swtype==="clock") {
-        $weekday = date("l");
-        $dateofmonth = date("M d, Y");
-        $timeofday = date("g:i a");
-        $timezone = date("T");
-        $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    } else if ($swtype ==="image") {
-        $response = array("url" => $swid);
+        $response = $todaydate;
     } else {
     
-        $headertype = array("Authorization: Bearer " . $access_token);
-
-        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
-
-        // update session with new status
+        // do nothing if we don't have things loaded in a session
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $idx = $swtype . "|" . $swid;
-            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
-                $newval = array_merge($allthings[$idx]["value"], $response);
-                $allthings[$idx]["value"] = $newval;
-                $_SESSION["allthings"] = $allthings;
-                // $response["updated"] = "updated";
+            $options= getOptions($allthings);
+            
+            $headertype = array("Authorization: Bearer " . $access_token);
+            $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
+                      "&scope=app&client_id=" . urlencode(CLIENT_ID) .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+        // update session with new status and pick out all if needed
+            if ( $swtype=="all" ) {
+                $respvals = array();
+                foreach($response as $thing) {
+                    $idx = $thing["type"] . "|" . $thing["id"];
+                    $allthings[$idx] = $thing;
+                    $tileid = $options["index"][$idx];
+                    $respvals[$tileid] = $thing["value"];
+                }
+                $tileid = $options["index"]["clock|clockdigital"];
+                $clockthing = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
+                $respvals[$tileid] = $todaydate;
+                $allthings["clock|clockdigital"] = $clockthing;
+//                $tileid = $options["index"]["image|img1"];
+//                $respvals[$tileid] = array("url" => "img1");
+//                $tileid = $options["index"]["image|img2"];
+//                $respvals[$tileid] = array("url" => "img2");
+//                $tileid = $options["index"]["image|img3"];
+//                $respvals[$tileid] = array("url" => "img3");
+//                $tileid = $options["index"]["image|img4"];
+//                $respvals[$tileid] = array("url" => "img4");
+
+                // for all types return a different type of array
+                // handle in the javascript in allTimerSetup
+                $response = $respvals;
+            } else {
+                $idx = $swtype . "|" . $swid;
+                if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                    $newval = array_merge($allthings[$idx]["value"], $response);
+                    $allthings[$idx]["value"] = $newval;
+                }
             }
-        }
+            $_SESSION["allthings"] = $allthings;
         
-        // this now returns an array of tile settings
-        // which could be a single value pair
-        if (!response) {
-            $response = array("name" => "Unknown", $swtype => $swval);
+        } else {
+            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -1779,9 +1812,20 @@ function is_ssl() {
         $swtype = substr($idx, 0, $k);
         $swid = substr($idx, $k+1);
     }
-
+    
+    // handle special non-groovy based tile types
+    if ( $swtype=="auto") {
+        if ( substr($swid,0,5)=="clock") {
+            $swtype = "clock";
+        } else if ( substr($swid,0,3)=="vid") {
+            $swtype = "video";
+        } else if ( substr($swid,0,5) == "frame" ) {
+            $swtype = "frame";
+        }
+    }
+    
     // set tileid from options if it isn't provided
-    if ( $tileid=="" && $swid && $swtype ) {
+    if ( $tileid=="" && $swid && $swtype!="auto" ) {
         $idx = $swtype . "|" . $swid;
         if ( array_key_exists($idx, $options) ) { $tileid = $options[$idx]; }
     }

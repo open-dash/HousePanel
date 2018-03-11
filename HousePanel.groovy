@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 03/10/2018 - Major speedup by reading all things at once
  * 02/25/2018 - Update to support sliders and color hue picker
  * 01/04/2018 - Fix bulb bug that returned wrong name in the type
  * 12/29/2017 - Changed bulb to colorControl capability for Hue light support
@@ -74,77 +75,9 @@ preferences {
 }
 
 mappings {
-  path("/switches") {
-    action: [      POST: "getSwitches"    ]
-  }
-  path("/bulbs") {
-    action: [      POST: "getBulbs"    ]
-  }
-  path("/lights") {
-    action: [      POST: "getLights"    ]
-  }
-  path("/dimmers") {
-    action: [      POST: "getDimmers"    ]
-  }
-  path("/sensors") {
-    action: [      POST: "getSensors"    ]
-  }
-  path("/contacts") {
-    action: [      POST: "getContacts"    ]
-  }
-  path("/momentaries") {
-    action: [      POST: "getMomentaries"    ]
-  }
-  path("/locks") {
-    action: [      POST: "getLocks"    ]
-  }
-  path("/musics") {
-    action: [        POST: "getMusics"    ]
-  }
-  path("/thermostats") {
-    action: [      POST: "getThermostats"    ]
-  }
-  path("/presences") {
-    action: [      POST: "getPresences"    ]
-  }
-  path("/valves") {
-    action: [      POST: "getValves"    ]
-  }
-  path("/waters") {
-    action: [      POST: "getWaters"    ]
-  }
-  path("/others") {
-    action: [      POST: "getOthers"    ]
-  }
-  path("/weathers") {
-    action: [ POST: "getWeathers" ]
-  }
-  path("/doors") {
-    action: [ POST: "getDoors" ]
-  }
-  path("/illuminances") {
-    action: [ POST: "getIlluminances" ]
-  }
-  path("/smokes") {
-    action: [ POST: "getSmokes" ]
-  }
-  path("/temperatures") {
-    action: [ POST: "getTemperatures" ]
-  }
-  path("/modes") {
-    action: [      POST: "getModes"    ]
-  }
-  path("/pistons") {
-    action: [      POST: "getPistons"    ]
-  }
-  path("/routines") {
-    action: [      POST: "getRoutines"    ]
-  }
-  path("/blanks") {
-    action: [      POST: "getBlanks"    ]
-  }
-  path("/images") {
-    action: [      POST: "getImages"    ]
+  
+  path("/getallthings") {
+     action: [       POST: "getAllThings"     ]
   }
   
   path("/doaction") {
@@ -153,10 +86,6 @@ mappings {
   
   path("/doquery") {
      action: [       POST: "doQuery"     ]
-  }
-  
-  path("/getallthings") {
-     action: [       POST: "getAllThings"     ]
   }
 
 }
@@ -179,7 +108,7 @@ def getWeatherInfo(evt) {
     def name = evt.getName()
     def src = evt.getSource()
     def val = evt.getValue()
-    log.debug "Weather event: from ${src} name = ${name} value = ${val}"
+//    log.debug "Weather event: from ${src} name = ${name} value = ${val}"
 }
 
 // changed switch to only return switch so we can use it with other things
@@ -310,7 +239,8 @@ def getOther(swid, item=null) {
 def getmyMode(swid, item=null) {
     def curmode = location.getCurrentMode()
     def curmodename = curmode.getName()
-    def resp =  [ name: location.getName(),
+    def resp =  [ name: swid,
+              sitename: location.getName(),
               themode: curmodename ];
     // log.debug "currrent mode = ${curmodename}"
     return resp
@@ -382,13 +312,11 @@ def getThing(things, swid, item=null) {
 }
 
 // make a generic thing list getter to streamline the code
-def getThings(things, thingtype) {
-    def resp = []
+def getThings(resp, things, thingtype) {
+//    def resp = []
     def n  = things ? things.size() : 0
-    log.debug "Number of things of type ${thingtype} = ${n}"
+//    log.debug "Number of things of type ${thingtype} = ${n}"
     things?.each {
-        // def val = thingfunc(it.id, it)
-        // def val = ["$thingtype": it.currentValue(thingtype)]
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
     }
@@ -396,47 +324,47 @@ def getThings(things, thingtype) {
 }
 
 // This retrieves and returns all things
-// we use this up front and again to resync with the mobile app
+// used up front or whenever we need to re-read all things
 def getAllThings() {
-    def incpistons = params.incpistons
+//    def incpistons = params.incpistons
+    def incpistons = true
 
     def resp = []
-    resp.addAll(getModes())
-    resp.addAll(getSwitches())
-    resp.addAll(getDimmers())
-    resp.addAll(getMomentaries())
-    resp.addAll(getLights())
-    resp.addAll(getBulbs())
-    resp.addAll(getContacts())
-    resp.addAll(getDoors())
-    resp.addAll(getLocks())
-    resp.addAll(getSensors())
-    resp.addAll(getPresences())
-    resp.addAll(getThermostats())
-    resp.addAll(getTemperatures())
-    resp.addAll(getIlluminances())
-    resp.addAll(getWeathers())
-    resp.addAll(getValves())
-    resp.addAll(getWaters())
-    resp.addAll(getMusics())
-    resp.addAll(getSmokes())
-    resp.addAll(getRoutines())
-    resp.addAll(getOthers())
-    resp.addAll(getBlanks())
-    resp.addAll(getImages())
+    resp = getSwitches(resp)
+    resp = getDimmers(resp)
+    resp = getMomentaries(resp)
+    resp = getLights(resp)
+    resp = getBulbs(resp)
+    resp = getContacts(resp)
+    resp = getDoors(resp)
+    resp = getLocks(resp)
+    resp = getSensors(resp)
+    resp = getPresences(resp)
+    resp = getThermostats(resp)
+    resp = getTemperatures(resp)
+    resp = getIlluminances(resp)
+    resp = getWeathers(resp)
+    resp = getValves(resp)
+    resp = getWaters(resp)
+    resp = getMusics(resp)
+    resp = getSmokes(resp)
+    resp = getModes(resp)
+    resp = getRoutines(resp)
+    resp = getOthers(resp)
+    resp = getBlanks(resp)
+    resp = getImages(resp)
 
     // optionally include pistons based on user option
     if (incpistons) {
-        resp.pulAll(getPistons())
+        resp = getPistons(resp)
     }
-
     return resp
 }
 
 // this returns just a single active mode, not the list of available modes
 // this is done so we can treat this like any other set of tiles
-def getModes() {
-    def resp = []
+def getModes(resp) {
+//    def resp = []
     // log.debug "Getting the mode tile"
     def val = getmyMode(0)
     resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
@@ -446,29 +374,21 @@ def getModes() {
     return resp
 }
 
-def getBlanks() {
-    log.debug "Getting the blank tiles"
-    def resp = []
+def getBlanks(resp) {
+//    log.debug "Getting the blank tiles"
+//    def resp = []
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
     vals.each {
         val = getBlank(it)
         resp << [name: "Blank ${it}", id: "${it}", value: val, type: "blank"]
     }
-//    val = getBlank("b1x1")
-//    resp << [name: "Blank b1x1", id: "blx1", value: val, type: "blank"]
-//    val = getBlank("b1x2")
-//    resp << [name: "Blank b1x2", id: "b1x2", value: val, type: "blank"]
-//    val = getBlank("b2x1")
-//    resp << [name: "Blank b2x1", id: "b2x1", value: val, type: "blank"]
-//    val = getBlank("b2x2")
-//    resp << [name: "Blank b2x2", id: "b2x2", value: val, type: "blank"]
     return resp
 }
 
-def getImages() {
-    def resp = []
-    log.debug "Getting the image tiles"
+def getImages(resp) {
+//    def resp = []
+//    log.debug "Getting the image tiles"
     def vals = ["img1","img2","img3","img4"]
     def val
     vals.each {
@@ -478,22 +398,21 @@ def getImages() {
     return resp
 }
 
-def getPistons() {
-    def resp = []
+def getPistons(resp) {
+//    def resp = []
     def plist = webCoRE_list()
-    log.debug "Number of pistons = " + plist?.size() ?: 0
+//    log.debug "Number of pistons = " + plist?.size() ?: 0
     plist?.each {
         def val = getPiston(it.id, it)
         resp << [name: it.name, id: it.id, value: val, type: "piston"]
-        // log.debug "webCoRE piston retrieved: name = ${it.name} with id = ${it.id} and ${it}"
     }
     return resp
 }
 
-def getSwitches() {
+def getSwitches(resp) {
 //    getThings(myswitches, "switch")
-    def resp = []
-    log.debug "Number of switches = " + myswitches?.size() ?: 0
+//    def resp = []
+//    log.debug "Number of switches = " + myswitches?.size() ?: 0
     myswitches?.each {
         def multivalue = getSwitch(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
@@ -501,29 +420,29 @@ def getSwitches() {
     return resp
 }
 
-def getBulbs() {
-    getThings(mybulbs, "bulb")
+def getBulbs(resp) {
+    getThings(resp, mybulbs, "bulb")
 }
 
-def getLights() {
-    getThings(mylights, "light")
+def getLights(resp) {
+    getThings(resp, mylights, "light")
 }
 
-def getDimmers() {
-    getThings(mydimmers, "switchlevel")
+def getDimmers(resp) {
+    getThings(resp, mydimmers, "switchlevel")
 }
 
-def getSensors() {
-    getThings(mysensors, "motion")
+def getSensors(resp) {
+    getThings(resp, mysensors, "motion")
 }
 
-def getContacts() {
-    getThings(mycontacts, "contact")
+def getContacts(resp) {
+    getThings(resp, mycontacts, "contact")
 }
 
-def getMomentaries() {
-    def resp = []
-    log.debug "Number of momentaries = " + mymomentaries?.size() ?: 0
+def getMomentaries(resp) {
+//    def resp = []
+//    log.debug "Number of momentaries = " + mymomentaries?.size() ?: 0
     mymomentaries?.each {
         if ( it.hasCapability("Switch") ) {
             def val = getMomentary(it.id, it)
@@ -533,10 +452,10 @@ def getMomentaries() {
     return resp
 }
 
-def getLocks() {
+def getLocks(resp) {
 //    getThings(mylocks, "lock")
-    def resp = []
-    log.debug "Number of locks = " + mylocks?.size() ?: 0
+//    def resp = []
+//    log.debug "Number of locks = " + mylocks?.size() ?: 0
     mylocks?.each {
         def multivalue = getLock(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
@@ -544,9 +463,9 @@ def getLocks() {
     return resp
 }
 
-def getMusics() {
-    def resp = []
-    log.debug "Number of music players = " + mymusics?.size() ?: 0
+def getMusics(resp) {
+//    def resp = []
+//    log.debug "Number of music players = " + mymusics?.size() ?: 0
     mymusics?.each {
         def multivalue = getMusic(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
@@ -554,9 +473,9 @@ def getMusics() {
     return resp
 }
 
-def getThermostats() {
-    def resp = []
-    log.debug "Number of thermostats = " + mythermostats?.size() ?: 0
+def getThermostats(resp) {
+//    def resp = []
+//    log.debug "Number of thermostats = " + mythermostats?.size() ?: 0
     mythermostats?.each {
         def multivalue = getThermostat(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
@@ -564,34 +483,34 @@ def getThermostats() {
     return resp
 }
 
-def getPresences() {
-    // getThings(mypresences, "presence")
-    def resp = []
-    log.debug "Number of presences = " + mypresences?.size() ?: 0
+def getPresences(resp) {
+//    getThings(mypresences, "presence")
+//    def resp = []
+//    log.debug "Number of presences = " + mypresences?.size() ?: 0
     mypresences?.each {
         def multivalue = getPresence(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
     }
     return resp
 }
-def getWaters() {
-    getThings(mywaters, "water")
+def getWaters(resp) {
+    getThings(resp, mywaters, "water")
 }
-def getValves() {
-    getThings(myvalves, "valve")
+def getValves(resp) {
+    getThings(resp, myvalves, "valve")
 }
-def getDoors() {
-    getThings(mydoors, "door")
+def getDoors(resp) {
+    getThings(resp, mydoors, "door")
 }
-def getIlluminances() {
-    getThings(myilluminances, "illuminance")
+def getIlluminances(resp) {
+    getThings(resp, myilluminances, "illuminance")
 }
-def getSmokes() {
-    getThings(mysmokes, "smoke")
+def getSmokes(resp) {
+    getThings(resp, mysmokes, "smoke")
 }
-def getTemperatures() {
-    def resp = []
-    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
+def getTemperatures(resp) {
+//    def resp = []
+//    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
     mytemperatures?.each {
         def val = getTemperature(it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
@@ -599,9 +518,9 @@ def getTemperatures() {
     return resp
 }
 
-def getWeathers() {
-    def resp = []
-    log.debug "Number of weathers = " + myweathers?.size() ?: 0
+def getWeathers(resp) {
+//    def resp = []
+//    log.debug "Number of weathers = " + myweathers?.size() ?: 0
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
@@ -610,10 +529,10 @@ def getWeathers() {
 }
 
 // get hellohome routines - thanks to ady264 for the tip
-def getRoutines() {
-    def resp = []
+def getRoutines(resp) {
+//    def resp = []
     def routines = location.helloHome?.getPhrases()
-    log.debug "Number of routines = " + routines?.size() ?: 0
+//    log.debug "Number of routines = " + routines?.size() ?: 0
     routines?.each {
         def multivalue = getRoutine(it.id, it)
         resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
@@ -621,15 +540,17 @@ def getRoutines() {
     return resp
 }
 
-def getOthers() {
-    def resp = []
+def getOthers(resp) {
+//    def resp = []
     def uniquenum = 0
-    log.debug "Number of selected other sensors = ${myothers ? myothers.size() : 0}"
+//    log.debug "Number of selected other sensors = ${myothers ? myothers.size() : 0}"
     myothers?.each {
         
         def thatid = it.id;
         def inlist = ( myswitches?.find {it.id == thatid } ||
              mydimmers?.find {it.id == thatid } ||
+             mybulbs?.find {it.id == thatid } ||
+             mylights?.find {it.id == thatid } ||
              mycontacts?.find {it.id == thatid } ||
              mylocks?.find {it.id == thatid } ||
              mysensors?.find {it.id == thatid} ||
@@ -637,7 +558,6 @@ def getOthers() {
              mymomentaries?.find {it.id == thatid } ||
              mythermostats?.find {it.id == thatid} ||
              myweathers?.find {it.id == thatid} ||
-             myweathers?.find {it.id == thatid } ||
              mydoors?.find {it.id == thatid } ||
              mywaters?.find {it.id == thatid } ||
              myvalves?.find {it.id == thatid } ||
@@ -654,7 +574,7 @@ def getOthers() {
             // log.debug it.displayName + " = " + multivalue
         }
     }
-    log.debug "Number of unique other sensors = " + uniquenum
+//    log.debug "Number of unique other sensors = " + uniquenum
     return resp
 }
 
@@ -679,6 +599,9 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
+    else if ( swid=="m1x1" || swid=="m1x2" || swid=="m2x1" || swid=="m2x2" ) { swtype= "mode" }
+    else if ( webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
+
     else { swtype = "" }
     return swtype
 }
@@ -763,7 +686,7 @@ def doAction() {
         
     }
    
-    log.debug "doaction: cmd = $cmd type = $swtype id = $swid cmdresult = $cmdresult"
+    log.debug "HousePanel doaction: cmd = $cmd type = $swtype id = $swid cmdresult = $cmdresult"
     return cmdresult
 
 }
@@ -780,6 +703,12 @@ def doQuery() {
     }
 
     switch(swtype) {
+
+    // special case to return an array of all things
+    case "all" :
+        cmdresult = getAllThings()
+        break
+
     case "switch" :
       	cmdresult = getSwitch(swid)
         break
@@ -957,9 +886,10 @@ def setMode(swid, cmd, swattr) {
         newsw = allmodes[0].getName()
     }
     
-    log.debug "Mode changed from $themode to $newsw index = $idx "
+//    log.debug "Mode changed from $themode to $newsw index = $idx "
     location.setMode(newsw);
-    resp =  [   name: location.getName(),
+    resp =  [   name: swid, 
+                sitename: location.getName(),
                 themode: newsw
             ];
     
@@ -984,7 +914,7 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     if (item ) {
     
         def newonoff = item.currentValue("switch")
-        log.debug "generic light cmd = $cmd swattr = $swattr"
+//        log.debug "generic light cmd = $cmd swattr = $swattr"
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
@@ -1010,9 +940,11 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             newsw = newsw.toInteger()
             newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
             item.setLevel(newsw)
-            def h = item.currentValue("hue").toInteger()
-            def s = item.currentValue("saturation").toInteger()
-            newcolor = hsv2rgb(h, s, newsw)
+            if ( item.hasAttribute("hue") ) {
+                def h = item.currentValue("hue").toInteger()
+                def s = item.currentValue("saturation").toInteger()
+                newcolor = hsv2rgb(h, s, newsw)
+            }
             newonoff = "on"
             break
               
@@ -1022,9 +954,11 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             def del = (newsw % 5) == 0 ? 5 : newsw % 5
             newsw = (newsw <= 5) ? 5 : newsw - del
             item.setLevel(newsw)
-            def h = item.currentValue("hue").toInteger()
-            def s = item.currentValue("saturation").toInteger()
-            newcolor = hsv2rgb(h, s, newsw)
+            if ( item.hasAttribute("hue") ) {
+                def h = item.currentValue("hue").toInteger()
+                def s = item.currentValue("saturation").toInteger()
+                newcolor = hsv2rgb(h, s, newsw)
+            }
             newonoff = "on"
             break
          
@@ -1033,9 +967,11 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 newsw = cmd.toInteger()
                 newsw = (newsw >100) ? 100 : newsw
                 item.setLevel(newsw)
-                def h = item.currentValue("hue").toInteger()
-                def s = item.currentValue("saturation").toInteger()
-                newcolor = hsv2rgb(h, s, newsw)
+                if ( item.hasAttribute("hue") ) {
+                    def h = item.currentValue("hue").toInteger()
+                    def s = item.currentValue("saturation").toInteger()
+                    newcolor = hsv2rgb(h, s, newsw)
+                }
             }
             newonoff = (newsw == 0) ? "off" : "on"
             break
@@ -1269,7 +1205,7 @@ def setThermostat(swid, curtemp, swattr) {
 
     def item  = mythermostats.find {it.id == swid }
     if (item) {
-          log.debug "setThermostat attr = $swattr for id = $swid curtemp = $curtemp"
+//          log.debug "setThermostat attr = $swattr for id = $swid curtemp = $curtemp"
         
           resp = getThermostat(swid, item)
           // switch (swattr) {
@@ -1405,7 +1341,7 @@ def setMusic(swid, cmd, swattr) {
     def item  = mymusics.find {it.id == swid }
     def newsw
     if (item) {
-        log.debug "music command = $cmd for id = $swid swattr = $swattr"
+//        log.debug "music command = $cmd for id = $swid swattr = $swattr"
         resp = getMusic(swid, item)
         switch(swattr) {
          
