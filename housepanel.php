@@ -244,9 +244,6 @@ function getHubitatDevices($edited, $path) {
             }
         }
     }
-    $idx = "other|h_2116";
-    $val = array("name"=>"test", "test"=>"data");
-    $edited[$idx] = array("id" => $id, "name" => "test", "value" => $val, "type" => "other");
     return $edited;
 }
 
