@@ -1915,6 +1915,8 @@ function is_ssl() {
                 
                 unset($_SESSION["allthings"]);
                 $allthings = getAllThings($endpt, $access_token);
+                $options= getOptions($allthings);
+                writeOptions($options);
                 $location = $returnURL;
                 header("Location: $location");
                 break;
