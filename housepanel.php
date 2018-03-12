@@ -167,7 +167,7 @@ function htmlHeader($skindir="skin-housepanel") {
         $tc.= '<script type="text/javascript">';
         $clicktypes = array("switch.on","switch.off",
                             "lock.locked","lock.unlocked","door.open","door.closed",
-                            "momentary",
+                            "momentary","shm",
                             "heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
@@ -1007,7 +1007,7 @@ function refactorOptions($allthings) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     $cnt = 0;
     $oldoptions = readOptions();
@@ -1076,7 +1076,7 @@ function getOptions($allthings) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
 
     // generic room setup
@@ -1261,7 +1261,7 @@ function mysortfunc($cmpa, $cmpb) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     $namea = $cmpa["name"];
     $typea = $cmpa["type"];
@@ -1284,7 +1284,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     
     $roomoptions = $options["rooms"];
@@ -1531,7 +1531,7 @@ function processOptions($optarray) {
     $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     
     $oldoptions = readOptions();

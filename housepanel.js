@@ -1191,6 +1191,12 @@ function setupPage(trigger) {
         if (thetype==="switch" || thetype==="lock" || thetype==="door" ||
             thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";
+        // handle shm special case
+        } else if ( thetype=="shm") {
+            thevalue = $(targetid).html();
+            if ( thevalue=="off" ) { thevalue = "stay"; }
+            else if ( thevalue=="stay") { thevalue = "away"; }
+            else { thevalue = "off"; }
         } else {
             thevalue = $(targetid).html();
         }

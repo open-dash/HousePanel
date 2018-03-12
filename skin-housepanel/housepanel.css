@@ -1107,7 +1107,7 @@ div.clock.tzone{
 div.thingname.mode {
     display: none;
 }
-div.thing.mode-thing {
+div.thing.mode-thing, div.thing.shm-thing {
     width: auto;
     height: 150px;
     cursor: move;
@@ -1121,9 +1121,26 @@ div.mode2x1, div.mode2x2 {
 div.mode1x2, div.mode2x2 {
     height: 326px;
 }
-div.mode.themode {
+div.mode.themode, div.shm.state {
     font-size: 20pt;    margin-top: 10px;
     cursor: pointer;
+}
+div.shm.state.off, div.shm.state.stay, div.shm.state.away {
+    color: rgba(255, 255, 255, 1);
+}
+div.shm.state {
+    background-size: 80px;
+    background-repeat: no-repeat;
+    height: 90px;
+}
+div.shm.state.stay {
+    background-image: url('icons/security-blue.png');
+}
+div.shm.state.away {
+    background-image: url('icons/security-red.png');
+}
+div.shm.state.off {
+    background-image: url('icons/security-green.png');
 }
 div.mode.name {
     font-size: 12pt;    margin-top: 30px;
