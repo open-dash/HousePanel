@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 03/11/2018 - Added Smart Home Monitor from Chris Hoadley
  * 03/10/2018 - Major speedup by reading all things at once
  * 02/25/2018 - Update to support sliders and color hue picker
  * 01/04/2018 - Fix bulb bug that returned wrong name in the type
@@ -246,6 +247,11 @@ def getmyMode(swid, item=null) {
     return resp
 }
 
+def getSHMState(swid, item=null){
+	def status = location.currentState("alarmSystemStatus")?.value
+	def resp = [name : "Smart Home Monitor", state: status]
+	return resp
+}
 def getBlank(swid, item=null) {
     def resp = [name: "Blank ${swid}", size: "${swid}"]
     return resp
@@ -349,6 +355,7 @@ def getAllThings() {
     resp = getMusics(resp)
     resp = getSmokes(resp)
     resp = getModes(resp)
+    resp = getSHMStates(resp)
     resp = getRoutines(resp)
     resp = getOthers(resp)
     resp = getBlanks(resp)
@@ -372,6 +379,12 @@ def getModes(resp) {
     resp << [name: "Mode", id: "m2x1", value: val, type: "mode"]
     resp << [name: "Mode", id: "m2x2", value: val, type: "mode"]
     return resp
+}
+
+def getSHMStates(resp) {
+	def val = getSHMState(0)
+        resp << [name: "Smart Home Monitor", id: "shm", value: val, type: "shm"]
+	return resp
 }
 
 def getBlanks(resp) {
@@ -665,6 +678,10 @@ def doAction() {
          cmdresult = setMode(swid, cmd, swattr)
          break
          
+      case "shm" :
+         cmdresult = setSHMState(swid, cmd, swattr)
+         break
+		 
       case "valve" :
       	 cmdresult = setValve(swid, cmd, swattr)
          break
@@ -781,6 +798,9 @@ def doQuery() {
     case "mode" :
         cmdresult = getmyMode(swid)
         break
+    case "shm" :
+        cmdresult = getSHMState(swid)
+        break
     case "routine" :
         cmdresult = getRoutine(swid)
         break
@@ -893,6 +913,16 @@ def setMode(swid, cmd, swattr) {
                 themode: newsw
             ];
     
+    return resp
+}
+
+def setSHMState(swid, cmd, swattr){
+    if (cmd == "away") sendLocationEvent(name: "alarmSystemStatus" , value : "away" )
+    else if (cmd == "stay") sendLocationEvent(name: "alarmSystemStatus" , value : "stay" )
+    else if (cmd == "off") sendLocationEvent(name: "alarmSystemStatus" , value : "off" )
+    else { cmd = location.currentState("alarmSystemStatus")?.value }
+
+    def resp = [name : "Smart Home Monitor", state: cmd]
     return resp
 }
 
