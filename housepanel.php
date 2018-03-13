@@ -769,7 +769,7 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
                     $idx = $thing["type"] . "|h_" . $thing["id"];
                     $allthings[$idx] = $thing;
                     $tileid = $options["index"][$idx];
-                    $respvals[$tileid] = $thing["value"];
+                    $respvals[$tileid] = $thing;
                 }
                 $response = $respvals;
             } else {
@@ -820,20 +820,12 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
                     $idx = $thing["type"] . "|" . $thing["id"];
                     $allthings[$idx] = $thing;
                     $tileid = $options["index"][$idx];
-                    $respvals[$tileid] = $thing["value"];
+                    $respvals[$tileid] = $thing;
                 }
                 $tileid = $options["index"]["clock|clockdigital"];
                 $clockthing = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
-                $respvals[$tileid] = $todaydate;
+                $respvals[$tileid] = $clockthing;
                 $allthings["clock|clockdigital"] = $clockthing;
-//                $tileid = $options["index"]["image|img1"];
-//                $respvals[$tileid] = array("url" => "img1");
-//                $tileid = $options["index"]["image|img2"];
-//                $respvals[$tileid] = array("url" => "img2");
-//                $tileid = $options["index"]["image|img3"];
-//                $respvals[$tileid] = array("url" => "img3");
-//                $tileid = $options["index"]["image|img4"];
-//                $respvals[$tileid] = array("url" => "img4");
 
                 // for all types return a different type of array
                 // handle in the javascript in allTimerSetup
