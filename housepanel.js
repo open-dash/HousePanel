@@ -347,7 +347,7 @@ function setupPagemove() {
     
     // make the room tabs sortable
     // the change function does a post to make it permanent
-    $("ul.ui-tabs-nav").sortable({
+    $("#roomtabs").sortable({
         axis: "x", 
         items: "> li",
         cancel: "li.nodrag",
@@ -359,7 +359,8 @@ function setupPagemove() {
             var pages = {};
             var k = 0;
             // get the new list of pages in order
-            $("ul.ui-tabs-nav li.drag").each(function() {
+            // fix nasty bug to correct room tab move
+            $("#roomtabs >li.ui-tab").each(function() {
                 var pagename = $(this).text();
                 pages[pagename] = k;
                 k++;
@@ -367,16 +368,14 @@ function setupPagemove() {
             $.post(returnURL, 
                 {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
                     function (presult, pstatus) {
-                        // alert("Updated page order with status= "+pstatus+" result= "+
-                        //       strObject(presult));
                         // set the room numbers using the options
                         if (pstatus==="success") {
                             var newrooms = presult["order"];
-                            // alert(strObject(newrooms));
-                            $('table.headoptions th > input[type="hidden"]').each(function() {
+                            $('table.headoptions th.roomname > input[type="hidden"]').each(function() {
                                var rname = $(this).attr("name").substring(2);
-                               var newval = parseInt(newrooms[rname]);
-                               // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
+                               var newval = newrooms[rname];
+//                               var rvalue = $(this).attr("value");
+//                               alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
                                $(this).attr("value",newval);
                             });
                         }
@@ -390,10 +389,10 @@ function setupSortable() {
 
     $("div.panel").sortable({
         containment: "parent",
-        scroll: false,
+        scroll: true,
         items: "> div",
         delay: 50,
-//        grid: [10, 10],
+        grid: [1, 1],
         stop: function(event, ui) {
             var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
@@ -418,7 +417,7 @@ function setupDraggable() {
         revert: false,
         containment: "parent",
         delay: 50,
-        grid: [10, 10],
+        // grid: [10, 10],
         stop: function(event, ui) {
             var dragthing = {};
             dragthing["id"] = $(event.target).attr("id");
@@ -463,13 +462,18 @@ function setupButtons() {
 //    $("#optionsbutton").on("click", null, function(evt) {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
-        createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui) {
-            var clk = $(ui).attr("name");
-            if ( clk=="okay" ) {
-                var newForm = dynoForm(buttonid);
-                newForm.submit();
-            }
-        });
+        if ( $(this).hasClass("confirm") ) {
+            createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui) {
+                var clk = $(ui).attr("name");
+                if ( clk=="okay" ) {
+                    var newForm = dynoForm(buttonid);
+                    newForm.submit();
+                }
+            });
+        } else {
+            var newForm = dynoForm(buttonid);
+            newForm.submit();
+        }
     });
 
     $("div.modeoptions").on("click","input.radioopts",function(evt){
@@ -499,13 +503,7 @@ function setupButtons() {
 
     $("#controlpanel").on("click","div.restoretabs",function(evt){
         toggleTabs();
-//        createModal("Toggle Tabs. Are you sure?","#controlpanel", true, function(ui) {
-//            var clk = $(ui).attr("name");
-//            if ( clk=="okay" ) {
-//                toggleTabs();
-//            }
-//        });
-    });
+   });
 }
 
 function setupSaveButton() {
@@ -546,6 +544,10 @@ function setupFilters() {
     $('input[name="useroptions[]"]').click(function() {
         var theval = $(this).val();
         var ischecked = $(this).prop("checked");
+        $("#allid").prop("checked", false);
+        $("#noneid").prop("checked", false);
+        $("#allid").attr("checked", false);
+        $("#noneid").attr("checked", false);
         // var that = this;
         // alert("clicked on val = "+theval+ " ischecked = " + ischecked + " ... about to change screen...");
         
@@ -568,6 +570,29 @@ function setupFilters() {
                 $(this).attr("class", "showrow"+odd);
            }
         });
+    });
+    
+    $("#allid").click(function() {
+        $("#allid").attr("prop", true);
+        $("#allid")
+        $('input[name="useroptions[]"]').each(function() {
+            if ( !$(this).prop("checked") ) {
+                $(this).click()
+            }
+        });
+        $("#noneid").attr("checked", false);
+        $("#noneid").prop("checked", false);
+    });
+    
+    $("#noneid").click(function() {
+        $("#noneid").prop("checked", true);
+        $('input[name="useroptions[]"]').each(function() {
+            if ( $(this).prop("checked") ) {
+                $(this).click()
+            }
+        });
+        $("#allid").attr("checked", false);
+        $("#allid").attr(prop, false);
     });
 }
 

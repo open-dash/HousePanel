@@ -8,11 +8,11 @@ body {
     width: 1140px;
 }
 div.maintable {
-/*    transform: scale(0.84);
-    -ms-transform: scale(0.84);
-    -moz-transform: scale(0.84);
-    -o-transform: scale(0.84);
-    -webkit-transform: scale(0.84);
+/*    transform: scale(0.6);
+    -ms-transform: scale(0.6);
+    -moz-transform: scale(0.6);
+    -o-transform: scale(0.6);
+    -webkit-transform: scale(0.6);
     transform-origin: 0 0;
     -ms-transform-origin: 0 0;
     -moz-transform-origin: 0 0;
@@ -304,7 +304,8 @@ input {
 div.buttons, form.buttons {
     display: inline;
 }
-input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.formbutton {
+input.submitbutton, input.resetbutton, input.authbutton, 
+.smallbutton, div.restoretabs, div.formbutton {
     background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;
@@ -322,6 +323,13 @@ div.restoretabs, div.formbutton {
 }
 div.restoretabs.hidden {
     display: none;
+}
+.smallbutton {
+    padding: 4px;
+    height: 0.8em;
+    width: 60px;
+    display: inline-block;
+    font-size: 11pt;
 }
 
 div.modalbox {
