@@ -368,9 +368,6 @@ div.panel div.restoretabs {
     background-color: rgba(0,0,0,0.1);
     position: absolute; right: -1px; bottom: -1px;
 }
-input.resetbutton {
-    background-color: #333333;
-}
 input.authbutton {
     background-color: #993300;
     margin: 0;
@@ -385,7 +382,13 @@ input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
 }
 div.sitebutton {
     background: #ffffff;     display: block;    position: relative;
-    left: 400px;    width: 300px;    bottom: 49px;
+    left: 600px;    width: 300px;    bottom: 49px;
+}
+
+div.formbutton a {
+    text-decoration: none;
+    font-size: inherit;
+    color: #ffffff;
 }
 
 /* all things look like this */  

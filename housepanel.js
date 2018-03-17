@@ -155,6 +155,7 @@ function createModal(modalcontent, modaltag, addok, responsefunction) {
     
     // skip if a modal is already up...
     if ( modalStatus ) { return; }
+    var modaldata = modalcontent;
     
     if ( !modaltag || !$(modaltag) ) { modaltag = "#controlpanel"; }
     modalcontent = "<div id='" + modalid +"' class='modalbox'>" + modalcontent;
@@ -167,7 +168,9 @@ function createModal(modalcontent, modaltag, addok, responsefunction) {
     $("#"+modalid).on("click",".dialogbtn",function() {
 //        var clk = $(this).attr("name");
 //        alert("Clicked " + clk); 
-        responsefunction(this);
+        if ( responsefunction ) {
+            responsefunction(this, modaldata);
+        }
         $("#"+modalid).remove();
         modalStatus = 0;
     });
@@ -440,13 +443,18 @@ function setupDraggable() {
     
 }
 
-function dynoForm(ajaxcall, idval, typeval) {
+function dynoForm(ajaxcall, content, idval, typeval) {
     idval = idval ? idval : 0;
     typeval = typeval ? typeval : "none";
+    content = content ? content : "";
+    
     var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
     controlForm.appendTo("body");
     // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
     // lets now add the hidden fields we need to post our form
+    if ( content ) {
+        controlForm.append( content );
+    }
     controlForm.append(
                   $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
         ).append(
@@ -463,7 +471,7 @@ function setupButtons() {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
         if ( $(this).hasClass("confirm") ) {
-            createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui) {
+            createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk=="okay" ) {
                     var newForm = dynoForm(buttonid);
@@ -503,7 +511,41 @@ function setupButtons() {
 
     $("#controlpanel").on("click","div.restoretabs",function(evt){
         toggleTabs();
-   });
+    });
+
+    $("div.panel").on("click",function(evt){
+        if ( priorOpmode === "Operate" && evt.target == this ) { toggleTabs(); }
+    });
+}
+
+// work in progress - this will eventually be a room editor
+function pageEdit() {
+
+    var tc = "";
+    var goodrooms = false;
+    
+    $("#roomtabs > li").each(function() {
+        var roomname = $(this).text();
+        var roomid = $(this).children("a").first().attr("id");
+        if ( roomid.startsWith("ui-id-") ) {
+            goodrooms = true;
+            roomid = roomid.substring(6);
+            tc = tc + "<label for='ed-" + roomid+"'>Room Name:</label><input id='ed-"+roomid+"' value='"+roomname+"'/><br />";
+        }
+    });
+    
+    if ( goodrooms ) {
+        createModal(tc,"#roomtabs", true, function(ui, content) {
+            var clk = $(ui).attr("name");
+            if ( clk=="okay" ) {
+                var newForm = dynoForm("pageedit",content);
+                // alert(newForm.html());
+                // newForm.submit();
+            }
+        });
+    }
+    
+    
 }
 
 function setupSaveButton() {
@@ -1003,7 +1045,7 @@ function allTimerSetup() {
 
 function allHubitatSetup() {
 
-    // define the timer callback function to update all tiles every 60 seconds
+    // define the timer callback function to update all Hubitat tiles every 5 seconds
     var timerval = 5000;
     var hubarray = ["all",timerval];
     hubarray.myMethod = function() {
@@ -1020,8 +1062,9 @@ function allHubitatSetup() {
                     $('div.thing').each(function() {
                         var tileid = $(this).attr("tile");
                         var bid = $(this).attr("bid");
-                        var aid = $(this).attr("id").substring(2);
-                        if ( bid.startsWith("h_") && tileid in presult ) {
+                        var aid = $(this).attr("id");
+                        if ( aid && aid.length > 2 && bid.startsWith("h_") && tileid in presult ) {
+                            aid = aid.substring(2);
                             var thevalue = presult[tileid];
                             // handle both direct values and bundled values
                             if ( thevalue.hasOwnProperty("value") ) {

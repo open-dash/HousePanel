@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.52       Bugfix for disappearing rooms, add Cancel in options, SmartHomeMonitor add
  * 1.51       Integrate skin-material from @vervallsweg to v1.0.0 to work with sliders
  * 1.50       Enable Hubitat devices when on same local network as HP
  * 1.49       sliderhue branch to implement slider and draft color picker
@@ -1278,7 +1279,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
-    
+    sort($thingtypes);
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
@@ -1296,7 +1297,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     $kstr = $kioskoptions=="true" ? "checked" : "";
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/></div>";
-    $tc.= "<div class=\"filteroption\">Option Filters: </div>";
+    $tc.= "<div class=\"filteroption\">Option Filters: ";
+    $tc.= "<div id=\"allid\" class=\"smallbutton\">All</div>";
+    $tc.= "<div id=\"noneid\" class=\"smallbutton\">None</div>";
+    $tc.= "</div>";
     $tc.= "<table class=\"useroptions\"><tr>";
     $i= 0;
     foreach ($thingtypes as $opt) {
@@ -1484,6 +1488,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "</div>";   // vertical scroll
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input id=\"submitoptions\" class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"button\" />";
+    $tc.= "<div class=\"formbutton\"><a href=\"$retpage\">Cancel</a></div>";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
@@ -1534,15 +1539,20 @@ function processOptions($optarray) {
                      "things" => array(), "skin" => "skin-housepanel",
                      "kiosk" => "false", "useroptions" => $thingtypes);
     $roomoptions = $options["rooms"];
-    foreach(array_keys($roomoptions) as $room) {
-        $options["things"][$room] = array();
+    $blanktile = $oldoptions["index"]["blank|b1x1"];
+    
+    // fix long-standing bug by putting a blank in each room
+    // to force the form to return each room defined in options file
+    foreach(array_keys($oldoptions["rooms"]) as $room) {
+        $options["things"][$room] = array($blanktile,0,0);
     }
 
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
-        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh") { continue; }
+        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh" ||
+            $key=="allid" || $key=="noneid" ) { continue; }
         
         // set skin
         if ($key=="skin") {
@@ -1611,6 +1621,11 @@ function processOptions($optarray) {
                 if ( ! inroom($tilenum, $newthings) ) {
                         $options["things"][$roomname][] = array($tilenum,$lasttop,$lastleft);
                 }
+            }
+            
+            // put a blank in a room if it is empty
+            if ( count($options["things"][$roomname]) == 0  ) {
+                $options["things"][$roomname][] = array($blanktile,0,0);
             }
         // keys starting with o_ are room names with order as value
         } else if ( substr($key,0,2)=="o_") {
@@ -1930,7 +1945,7 @@ function is_ssl() {
                 $tc.= "<table class=\"showid\">";
                 $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
                       "</th><th class=\"thingvalue\">" . "Thing id" . 
-                      "</th><th class=\"thingvalue\">" . "Style id" .
+                      "</th><th class=\"thingvalue\">" . "Tile id" .
                       "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
                 foreach ($allthings as $bid => $thing) {
                     if (is_array($thing["value"])) {
@@ -2069,9 +2084,9 @@ function is_ssl() {
         $tc.= "<div id=\"controlpanel\">";
         if ( !$kioskmode ) {
             $tc.='<div id="showoptions" class="formbutton">Options</div>';
-            $tc.='<div id="refresh" class="formbutton">Refresh</div>';
-            $tc.='<div id="refactor" class="formbutton">Refactor</div>';
-            $tc.='<div id="showid" class="formbutton">Show ID\'s</div>';
+            $tc.='<div id="refresh" class="formbutton confirm">Refresh</div>';
+            $tc.='<div id="refactor" class="formbutton confirm">Refactor</div>';
+            $tc.='<div id="showid" class="formbutton confirm">Show ID\'s</div>';
             $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
 
             $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
