@@ -684,11 +684,11 @@ function setupSaveButton() {
 //        );
         
         request.send(alldata);
-        console.log(request.response);
+        // console.log(request.response);
         
-//        if (request.response == "success") {
+        // if (request.response == "success") {
             $("form.options").submit(); 
-//        }
+        // }
     });
 }
 
