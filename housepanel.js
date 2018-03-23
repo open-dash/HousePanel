@@ -106,8 +106,8 @@ window.addEventListener("load", function(event) {
     // but you can always run a refresh to update the panel manually
     // or you can run it every once in a blue moon too
 //    allTimerSetup(300000);
-    allTimerSetup(60000);
-    allHubitatSetup();
+//    allTimerSetup(15000);
+//    allHubitatSetup();
 
     cancelDraggable();
     cancelSortable();
@@ -167,6 +167,14 @@ function createModal(modalcontent, modaltag, addok, responsefunction) {
     // skip if a modal is already up...
     if ( modalStatus ) { return; }
     var modaldata = modalcontent;
+    var modalhook;
+
+    if ( modaltag && modaltag.hasOwnProperty("on") ) {
+        modalhook = modaltag;
+    } else {
+        if ( !modaltag ) { modaltag = "#controlpanel"; }
+        modalhook = $(modaltag)
+    }
     
     var modalhook;
 
@@ -447,73 +455,50 @@ function setupDraggable() {
     
     // the active things on a panel
     thingDraggable( $("div.panel div.thing") );
-        
+    
     // show the catalog
     $("#catalog").show();
     
     // enable dropping things from the catalog into panel
-    // and movement of existing things around on the panel itself
-    // use this instead of stop method to deal with cancelling drops
     $("div.panel").droppable({
-        accept: "div.thing",
+        accept: "#catalog div.thing",
         tolerance: "fit",
         drop: function(event, ui) {
             var thing = ui.draggable;
             var bid = $(thing).attr("bid");
             var thingtype = $(thing).attr("type");
             var thingname = $(thing).find(".thingname").text();
+                       
+            // get panel of active page - have to do this the hard way
+            // because the thing in the catalog doesn't have a panel attr
+            $("li.ui-tabs-tab").each(function() {
+                if ( $(this).hasClass("ui-tabs-active") ) {
+                    var panel = $(this).text();
+                    createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
+                        var clk = $(ui).attr("name");
+                        if ( clk=="okay" ) {
+                            // add it to the system
+                            // the ajax call must return a valid "div" block for the dragged new thing
 
-            // handle new tile creation
-            if ( thing.hasClass("catalog-thing") ) {
-                // get panel of active page - have to do this the hard way
-                // because the thing in the catalog doesn't have a panel attr
-                $("li.ui-tabs-tab").each(function() {
-                    if ( $(this).hasClass("ui-tabs-active") ) {
-                        var panel = $(this).text();
-                        var lastthing = $("div.panel-"+panel+" div.thing").last();
-                        createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?",lastthing, true, function(ui, content) {
-                            var clk = $(ui).attr("name");
-                            if ( clk=="okay" ) {
-                                // add it to the system
-                                // the ajax call must return a valid "div" block for the dragged new thing
+                            // get the last thing in the current room
+                            var lastthing = $("div.panel-"+panel+" div.thing").last();
+                            var cnt = $("div.thing").last().attr("id");
+                            cnt = cnt.substring(2);
+                            alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
 
-                                // get the last thing in the current room
-                                // var lastthing = $("div.panel-"+panel+" div.thing").last();
-                                var cnt = $("div.panel div.thing").last().attr("id");
-                                cnt = parseInt(cnt.substring(2),10) + 1;
-                                // alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
-
-                                $.post(returnURL, 
-                                    {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
-                                    function (presult, pstatus) {
-                                        if (pstatus==="success") {
-                                            console.log( "Added " + thingname + " to room " + panel + " thing= "+ presult );
-                                            lastthing.after(presult);
-                                            thingDraggable( lastthing.next() );
-                                        }
+                            $.post(returnURL, 
+                                {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
+                                function (presult, pstatus) {
+                                    if (pstatus==="success") {
+                                        console.log( "Added drag thing: "+ presult );
+                                        lastthing.after(presult);
                                     }
-                                );
-                            }
-                        });
-                    } 
-                });
-            // otherwise this is an existing thing we are moving
-            } else {
-                var dragthing = {};
-                dragthing["id"] = $(thing).attr("id");
-                dragthing["tile"] = $(thing).attr("tile");
-                dragthing["panel"] = $(thing).attr("panel");
-
-                // now post back to housepanel to save the position
-                // also send the dragthing object to get panel name and tile pid index
-                if ( ! $("#catalog").hasClass("ui-droppable-hover") ) {
-                    console.log( "Moved " + thingname + " to {"+ ui.position.top + "," + ui.position.left + ")");
-                    $.post(returnURL, 
-                           {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
-                    );
-                }
-                
-            }
+                                }
+                            );
+                        }
+                    });
+                } 
+            });
         }
     });
 
@@ -540,31 +525,21 @@ function setupDraggable() {
             var tile = $(thing).attr("tile");
             var tilename = $("#s-"+aid).text();
     
-            createModal("Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?",thing, true, function(ui, content) {
+            createModal("Remove room: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk=="okay" ) {
                     // remove it from the system
-                    // alert("Removing thing = " + tilename);
                     $.post(returnURL, 
                         {useajax: "dragdelete", id: bid, type: thingtype, value: panel, attr: tile},
                         function (presult, pstatus) {
-                            console.log("ajax call: status = " + pstatus + " result = "+presult);
-                            if (pstatus==="success" && presult==="success") {
-                                console.log( "Removed tile: "+ $(thing).html() );
+                            if (pstatus==="success" && presult=="success") {
+                                console.log( "Removed tile: "+ $("#"+id).html() );
+
                                 // remove it visually
-                                $(thing).remove();
+                                $("#"+id).remove();
                             }
                         }
                     );
-            
-                // even though we did a successful drop, revert to original place
-                } else {
-                    // $("#"+id).data('draggable').options.revert();
-                    try {
-                        $(thing).css("position","relative").css("left",startPos.left).css("top",startPos.top);
-                    } catch(e) { 
-                        alert("Drag/drop error. Please share this with the author on ST Community Forum: " + e.message); 
-                    }
                 }
             });
         }
@@ -740,11 +715,10 @@ function setupFilters() {
         // handle main screen catalog
         if ( $("#catalog") ) {
             $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
-                // alert( $(this).attr("class"));
-                if ( ischecked && $(this).hasClass("hidden") ) {
-                    $(this).removeClass("hidden");
-                } else if ( ! ischecked && ! $(this).hasClass("hidden") ) {
+                if ( ischecked && ! $(this).hasClass("hidden") ) {
                     $(this).addClass("hidden");
+                } else if ( ! ischecked ) {
+                    $(this).removeClass("hiddden");
                 }
             });
         }
@@ -838,7 +812,6 @@ function setupPopup() {
 //            "cursor": "pointer"
 //        });
 //        $(this).on("click", "th.roomname", jeditTableCell);
-//    });
     $("table.headoptions").on("click", "th.roomname", function() {
         if ($(this).html().startsWith("<input id")) { return true; }
 
