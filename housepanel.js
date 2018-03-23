@@ -5,6 +5,7 @@ var popupCell = null;
 var popupSave = "";
 var popupRoom = "";
 var popupVal = 0;
+var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 
@@ -50,7 +51,9 @@ $(document).ready( function() {
     // get default tab from cookie
     var defaultTab = getCookie( 'defaultTab' );
     if ( defaultTab ) {
-        $("#"+defaultTab).click();
+        try {
+            $("#"+defaultTab).click();
+        } catch (e) {}
     }
     
 //    var cookies = decodeURIComponent(document.cookie);
@@ -73,16 +76,14 @@ $(document).ready( function() {
         }
     });
     
-    // set up popup editing
-    setupPopup();
+    // set up popup editing - disabled because it is broken
+    // setupPopup();
         
     // setup time based updater
-    setupTimers();
+    // setupTimers();
     
     // set up option box clicks
     setupFilters();
-    
-    setupHideTabs();
     
     setupButtons();
     
@@ -95,6 +96,20 @@ $(document).ready( function() {
     setupTabclick();
     
     setupColors();
+    
+    // invoke the new timer that updates everything at once
+    // disable these if you want to minimize cloud web traffic
+    // if you do this manual controls will not be reflected in panel
+    // but you can always run a refresh to update the panel manually
+    // or you can run it every once in a blue moon too
+//    allTimerSetup(300000);
+//    allTimerSetup(15000);
+//    allHubitatSetup();
+
+    cancelDraggable();
+    cancelSortable();
+    cancelPagemove();
+
 });
 
 function rgb2hsv(r, g, b) {
@@ -137,6 +152,45 @@ function rgb2hsv(r, g, b) {
     return {"hue": h, "saturation": s, "level": v};
 }
 
+function convertToModal(modalcontent) {
+    modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
+    modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
+    return modalcontent;
+}
+
+function createModal(modalcontent, modaltag, addok, responsefunction) {
+    var modalid = "modalid";
+    
+    // skip if a modal is already up...
+    if ( modalStatus ) { return; }
+    var modaldata = modalcontent;
+    var modalhook;
+
+    if ( modaltag && modaltag.hasOwnProperty("on") ) {
+        modalhook = modaltag;
+    } else {
+        if ( !modaltag ) { modaltag = "#controlpanel"; }
+        modalhook = $(modaltag)
+    }
+    
+    modalcontent = "<div id='" + modalid +"' class='modalbox'>" + modalcontent;
+    if ( addok ) {
+        modalcontent = convertToModal(modalcontent);
+    }
+    modalcontent = modalcontent + "</div>";
+    modalhook.after(modalcontent);
+    modalStatus = 1;
+    $("#"+modalid).on("click",".dialogbtn",function() {
+//        var clk = $(this).attr("name");
+//        alert("Clicked " + clk); 
+        if ( responsefunction ) {
+            responsefunction(this, modaldata);
+        }
+        $("#"+modalid).remove();
+        modalStatus = 0;
+    });
+}
+
 function setupColors() {
     
    $("div.overlay.color >div.color").each( function() {
@@ -172,7 +226,7 @@ function setupColors() {
                     bid = bid.substring(2);
                 }
 //                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -208,7 +262,7 @@ function setupSliders() {
             
             // handle music volume different than lights
             if ( thetype != "music") {
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -219,7 +273,7 @@ function setupSliders() {
                        }, "json"
                 );
             } else {
-                $.post("housepanel.php", 
+                $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -244,7 +298,7 @@ function setupSliders() {
     $("div.overlay.colorTemperature >div.colorTemperature").slider({
         orientation: "horizontal",
         min: 2000,
-        max: 6000,
+        max: 7400,
         step: 200,
         stop: function( evt, ui) {
             var thing = $(evt.target);
@@ -261,7 +315,7 @@ function setupSliders() {
             }
             var thetype = $(tile).attr("type");
             
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature" },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
@@ -289,6 +343,16 @@ function cancelDraggable() {
             $(this).draggable("destroy");
         }
     });
+    
+    if ( $("div.panel").droppable("instance") ) {
+        $("div.panel").droppable("destroy");
+    }
+
+    if ( $("#catalog").droppable("instance") ) {
+        $("#catalog").droppable("destroy");
+    }
+    
+    $("#catalog").hide();
 }
 
 function cancelSortable() {
@@ -300,51 +364,40 @@ function cancelSortable() {
 }
 
 function cancelPagemove() {
-    $("ul.ui-tabs-nav").each(function(){
-        if ( $(this).sortable("instance") ) {
-            $(this).sortable("destroy");
-        }
-    });
+//    $("ul.ui-tabs-nav").each(function(){
+//        if ( $(this).sortable("instance") ) {
+//            $(this).sortable("destroy");
+//        }
+//    });
+    if ( $("#roomtabs").sortable("instance") ) {
+        $("#roomtabs").sortable("destroy");
+    }
 }
 
 function setupPagemove() {
     
     // make the room tabs sortable
     // the change function does a post to make it permanent
-    $("ul.ui-tabs-nav").sortable({
+    $("#roomtabs").sortable({
         axis: "x", 
         items: "> li",
         cancel: "li.nodrag",
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
         delay: 200,
-        revert: true,
+        revert: false,
         update: function(event, ui) {
             var pages = {};
             var k = 0;
             // get the new list of pages in order
-            $("ul.ui-tabs-nav li.drag").each(function() {
+            // fix nasty bug to correct room tab move
+            $("#roomtabs >li.ui-tab").each(function() {
                 var pagename = $(this).text();
                 pages[pagename] = k;
                 k++;
             });
-            $.post("housepanel.php", 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
-                    function (presult, pstatus) {
-                        // alert("Updated page order with status= "+pstatus+" result= "+
-                        //       strObject(presult));
-                        // set the room numbers using the options
-                        if (pstatus==="success") {
-                            var newrooms = presult["order"];
-                            // alert(strObject(newrooms));
-                            $('table.headoptions th > input[type="hidden"]').each(function() {
-                               var rname = $(this).attr("name").substring(2);
-                               var newval = parseInt(newrooms[rname]);
-                               // alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
-                               $(this).attr("value",newval);
-                            });
-                        }
-                    }, "json"
+            $.post(returnURL, 
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
             );
         }
     });
@@ -354,10 +407,10 @@ function setupSortable() {
 
     $("div.panel").sortable({
         containment: "parent",
-        scroll: false,
+        scroll: true,
         items: "> div",
         delay: 50,
-//        grid: [10, 10],
+        grid: [1, 1],
         stop: function(event, ui) {
             var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
@@ -367,7 +420,7 @@ function setupSortable() {
             });
             
 //            alert("Sorted thing: "+tile+" room: "+roomtitle+" things: "+strObject(things));
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
             );
         }
@@ -378,11 +431,12 @@ function setupSortable() {
 
 function setupDraggable() {
     
-    $("div.thing").draggable({
+    // the active things on a panel
+    $("div.panel div.thing").draggable({
         revert: false,
-        containment: "parent",
+        containment: "#dragregion",
         delay: 50,
-        grid: [10, 10],
+        // grid: [10, 10],
         stop: function(event, ui) {
             var dragthing = {};
             dragthing["id"] = $(event.target).attr("id");
@@ -392,26 +446,120 @@ function setupDraggable() {
             dragthing["panel"] = $(event.target).attr("panel");
            
 //            alert("xpos= "+ui.position.left+" ypos= "+ui.position.top+" id= "+bid+" type= "+thingtype+" drag= "+strObject(dragthing));
-//            $.post("housepanel.php", 
+//            $.post(returnURL, 
 //                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
 //            );
             // now post back to housepanel to save the position
             // also send the dragthing object to get panel name and tile pid index
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                    {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
         }
     });
     
+    // show the catalog
+    $("#catalog").show();
+    
+    // enable dropping things from the catalog into panel
+    $("div.panel").droppable({
+        accept: "#catalog div.thing",
+        tolerance: "fit",
+        drop: function(event, ui) {
+            var thing = ui.draggable;
+            var bid = $(thing).attr("bid");
+            var thingtype = $(thing).attr("type");
+            var thingname = $(thing).find(".thingname").text();
+                       
+            // get panel of active page - have to do this the hard way
+            // because the thing in the catalog doesn't have a panel attr
+            $("li.ui-tabs-tab").each(function() {
+                if ( $(this).hasClass("ui-tabs-active") ) {
+                    var panel = $(this).text();
+                    createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
+                        var clk = $(ui).attr("name");
+                        if ( clk=="okay" ) {
+                            // add it to the system
+                            // the ajax call must return a valid "div" block for the dragged new thing
+
+                            // get the last thing in the current room
+                            var lastthing = $("div.panel-"+panel+" div.thing").last();
+                            var cnt = $("div.thing").last().attr("id");
+                            cnt = cnt.substring(2);
+                            alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
+
+                            $.post(returnURL, 
+                                {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
+                                function (presult, pstatus) {
+                                    if (pstatus==="success") {
+                                        console.log( "Added drag thing: "+ presult );
+                                        lastthing.after(presult);
+                                    }
+                                }
+                            );
+                        }
+                    });
+                } 
+            });
+        }
+    });
+
+    // enable dragging things from catalog
+    $("#catalog div.thing").draggable({
+        revert: false,
+        containment: "#dragregion",
+        delay: 50,
+        helper: "clone"
+    });
+    
+    // enable dropping things from panel into catalog to remove
+    $("#catalog").droppable({
+        accept: "div.panel div.thing",
+        tolerance: "fit",
+        drop: function(event, ui) {
+            var thing = ui.draggable;
+            var bid = $(thing).attr("bid");
+            var thingtype = $(thing).attr("type");
+            // easy to get panel of active things
+            var panel = $(thing).attr("panel");
+            var id = $(thing).attr("id");
+            var aid = id.substring(2);
+            var tile = $(thing).attr("tile");
+            var tilename = $("#s-"+aid).text();
+    
+            createModal("Remove room: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk=="okay" ) {
+                    // remove it from the system
+                    $.post(returnURL, 
+                        {useajax: "dragdelete", id: bid, type: thingtype, value: panel, attr: tile},
+                        function (presult, pstatus) {
+                            if (pstatus==="success" && presult=="success") {
+                                console.log( "Removed tile: "+ $("#"+id).html() );
+
+                                // remove it visually
+                                $("#"+id).remove();
+                            }
+                        }
+                    );
+                }
+            });
+        }
+    });
+    
 }
 
-function dynoForm(ajaxcall, idval, typeval) {
+function dynoForm(ajaxcall, content, idval, typeval) {
     idval = idval ? idval : 0;
     typeval = typeval ? typeval : "none";
+    content = content ? content : "";
+    
     var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
     controlForm.appendTo("body");
     // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
     // lets now add the hidden fields we need to post our form
+    if ( content ) {
+        controlForm.append( content );
+    }
     controlForm.append(
                   $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
         ).append(
@@ -427,34 +575,79 @@ function setupButtons() {
 //    $("#optionsbutton").on("click", null, function(evt) {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
-        var newForm = dynoForm(buttonid);
-        newForm.submit();
+        if ( $(this).hasClass("confirm") ) {
+            createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk=="okay" ) {
+                    var newForm = dynoForm(buttonid);
+                    newForm.submit();
+                }
+            });
+        } else {
+            var newForm = dynoForm(buttonid);
+            newForm.submit();
+        }
     });
 
     $("div.modeoptions").on("click","input.radioopts",function(evt){
         var opmode = $(this).attr("value");
         if ( opmode !== priorOpmode ) {
+            cancelDraggable();
+            cancelSortable();
+            cancelPagemove();
             if ( opmode=="Reorder" ) {
-                cancelDraggable();
-                cancelPagemove();
                 setupSortable();
                 setupPagemove();
             } else if ( opmode=="DragDrop" ) {
-                cancelSortable();
-                cancelPagemove();
                 setupDraggable();
                 setupPagemove();
             } else if ( opmode=="Operate" ) {
-                cancelDraggable();
-                cancelSortable();
                 cancelPagemove();
             }
             priorOpmode = opmode;
             $("#opmode").html("Mode set to: " + opmode );
             $("#opmode").show();
-            $("#opmode").hide("fade",null,2000);
+            $("#opmode").hide("fade",null,3000);
         }
     });
+
+    $("#controlpanel").on("click","div.restoretabs",function(evt){
+        toggleTabs();
+    });
+
+    $("div.panel").on("click",function(evt){
+        if ( priorOpmode === "Operate" && evt.target == this ) { toggleTabs(); }
+    });
+}
+
+// work in progress - this will eventually be a room editor
+function pageEdit() {
+
+    var tc = "";
+    var goodrooms = false;
+    
+    $("#roomtabs > li").each(function() {
+        var roomname = $(this).text();
+        var roomid = $(this).children("a").first().attr("id");
+        if ( roomid.startsWith("ui-id-") ) {
+            goodrooms = true;
+            roomid = roomid.substring(6);
+            tc = tc + "<label for='ed-" + roomid+"'>Room Name:</label><input id='ed-"+roomid+"' value='"+roomname+"'/><br />";
+        }
+    });
+    
+    if ( goodrooms ) {
+        createModal(tc,"#roomtabs", true, function(ui, content) {
+            var clk = $(ui).attr("name");
+            if ( clk=="okay" ) {
+                var newForm = dynoForm("pageedit",content);
+                // alert(newForm.html());
+                // newForm.submit();
+            }
+        });
+    }
+    
+    
 }
 
 function setupSaveButton() {
@@ -477,7 +670,7 @@ function setupSaveButton() {
         
         var request = new XMLHttpRequest();
         request.open('POST', 'housepanel.php', false);
-//        $response = $.post("housepanel.php", 
+//        $response = $.post(returnURL, 
 //                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
 //        );
         
@@ -495,28 +688,65 @@ function setupFilters() {
     $('input[name="useroptions[]"]').click(function() {
         var theval = $(this).val();
         var ischecked = $(this).prop("checked");
-        // var that = this;
-        // alert("clicked on val = "+theval+ " ischecked = " + ischecked + " ... about to change screen...");
+        $("#allid").prop("checked", false);
+        $("#noneid").prop("checked", false);
+        $("#allid").attr("checked", false);
+        $("#noneid").attr("checked", false);
         
         // set the class of all rows to invisible or visible
         var rowcnt = 0;
         var odd = "";
-        $('tr[type="'+theval+'"]').each(function() {
-//            var theclass = $(this).attr("class");
-            if ( ischecked ) {
-                $(this).attr("class", "showrow");
-            } else {
-                $(this).attr("class", "hiderow");
-           }
+        if ( $("#optionspage") ) {
+            $('table.roomoptions tr[type="'+theval+'"]').each(function() {
+                if ( ischecked ) {
+                    $(this).attr("class", "showrow");
+                } else {
+                    $(this).attr("class", "hiderow");
+               }
+            });
+        
+            $('table.roomoptions tr').each(function() {
+                var theclass = $(this).attr("class");
+                if ( theclass != "hiderow" ) {
+                    rowcnt++;
+                    rowcnt % 2 == 0 ? odd = " odd" : odd = "";
+                    $(this).attr("class", "showrow"+odd);
+               }
+            });
+        }
+        
+        // handle main screen catalog
+        if ( $("#catalog") ) {
+            $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
+                if ( ischecked && ! $(this).hasClass("hidden") ) {
+                    $(this).addClass("hidden");
+                } else if ( ! ischecked ) {
+                    $(this).removeClass("hiddden");
+                }
+            });
+        }
+    });
+    
+    $("#allid").click(function() {
+        $("#allid").prop("checked", true);
+        $('input[name="useroptions[]"]').each(function() {
+            if ( !$(this).prop("checked") ) {
+                $(this).click()
+            }
         });
-        $('table.roomoptions tr').each(function() {
-            var theclass = $(this).attr("class");
-            if ( theclass != "hiderow" ) {
-                rowcnt++;
-                rowcnt % 2 == 0 ? odd = " odd" : odd = "";
-                $(this).attr("class", "showrow"+odd);
-           }
+        $("#noneid").attr("checked", false);
+        $("#noneid").prop("checked", false);
+    });
+    
+    $("#noneid").click(function() {
+        $("#noneid").prop("checked", true);
+        $('input[name="useroptions[]"]').each(function() {
+            if ( $(this).prop("checked") ) {
+                $(this).click()
+            }
         });
+        $("#allid").attr("checked", false);
+        $("#allid").prop("checked", false);
     });
 }
 
@@ -528,7 +758,7 @@ function setupPopup() {
     
     // add code to disable when click anywhere but the cell
     $("div.maintable").click(function(e) {
-        if ( e.target.id !== "trueincell") {
+        if ( e.target.id !== "trueincell" && popupStatus==1) {
             disablePopup();
         }
             // alert ( e.target.id );
@@ -547,7 +777,7 @@ function setupPopup() {
 
     // disable input in our dynamic form item
     $("#trueincell").keypress(function(e) {
-        if ( e.keyCode===27 ){
+        if ( e.keyCode===27 && popupStatus==1 ){
             disablePopup();
         }
     });
@@ -556,105 +786,75 @@ function setupPopup() {
         processPopup();
     });
     
-    $("table.headoptions th.roomname").each(function() {
-        // bind click events to incell editing
-        $(this).css({
-            "cursor": "pointer"
-        });
-        $(this).bind("click", jeditTableCell);
-    });
-
-// Hiding Confirmation of Customization Span Until Needed
-//$('#showCssSaved').hide();  
-//    $("table.headoptions th.thingname").click(function() {
-//        alert("clicked on Room names row");
+//    $("table.headoptions th.roomname").each(function() {
+//        // bind click events to incell editing
+//        $(this).css({
+//            "cursor": "pointer"
+//        });
+//        $(this).on("click", "th.roomname", jeditTableCell);
 //    });
+    $("table.headoptions").on("click", "th.roomname", function() {
+        if ($(this).html().startsWith("<input id")) { return true; }
+
+        // if another popup is active, process it
+        if (popupStatus === 1) {
+            processPopup();
+        }
+
+        var roomval = $(this).children().first().attr("value");
+        var roomname = $(this).text().trim();
+
+        //do a real in-cell edit - save global parameters
+        // cellclicked = that;
+        popupStatus = 1;
+        popupSave = $(this).html();
+        popupCell = this;
+        popupVal = parseInt(roomval);
+        popupRoom = roomname;
+
+        // change the content to an input box
+        var thesize = roomname.length + 2;
+
+        // save anything after the pure text
+        // var savedhidden = $(that).html().substring(thesize);
+
+//         if (thesize < maxlen+1) thesize = maxlen+1;
+        var oldhidden = ""; // '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
+        $(this).html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
+        return false;
+        
+    });
        
 }
 
-function setupHideTabs() {
-    // uncomment this block to do auto-hide
-    /* 
-    $("#roomtabs").click(function() {
-        setTimeout(function() {
-            $("#roomtabs").addClass("hidden");
-            $(".restoretabs").html("Show Tabs");
-        }, 3000);
-    });
-    */
-   // restore tabs by click on open panel or the hide tabs button
-   // first two methods must be used in kiosk mode
-    $("#restoretabs, div.panel").click(function(e) {
-        if (e.target == this) {
-            var hidestatus = $("#restoretabs");
-            if ( $("#roomtabs").hasClass("hidden") ) {
-                $("#roomtabs").removeClass("hidden");
-                if ( hidestatus ) hidestatus.html("Hide Tabs");
-            } else {
-                $("#roomtabs").addClass("hidden");
-                if ( hidestatus ) hidestatus.html("Show Tabs");
-            }
-        }
-    });
-}
-
-var jeditTableCell = function(event) {
-    // alert(testdata);
-    // skip click invoke if we are already here
-    if ($(this).html().substr(0,9) == "<input id") { return true; }
-
-    // if another popup is active, process it
-    if (popupStatus === 1) {
-        // $(that).html().substring(0,9) === "<input id") { return true; }
-        processPopup();
-        // return true;
+function toggleTabs() {
+    var hidestatus = $("#restoretabs");
+    if ( $("#roomtabs").hasClass("hidden") ) {
+        $("#roomtabs").removeClass("hidden");
+        if ( hidestatus ) hidestatus.html("Hide Tabs");
+    } else {
+        $("#roomtabs").addClass("hidden");
+        if ( hidestatus ) hidestatus.html("Show Tabs");
     }
-    
-    var roomval = $(this).children().first().attr("value");
-    var roomname = $(this).text().trim();
-    
-    //do a real in-cell edit - save global parameters
-    // cellclicked = that;
-    popupStatus = 1;
-    popupSave = $(this).html();
-    popupCell = this;
-    popupVal = parseInt(roomval);
-    popupRoom = roomname;
-    
-    // change the content to an input box
-    var thesize = roomname.length + 2;
-    
-    // save anything after the pure text
-    // var savedhidden = $(that).html().substring(thesize);
-    
-    // if (thesize < maxlen+1) thesize = maxlen+1;
-    var oldhidden = '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
-    $(this).empty().html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
-
-    // set the focus and trigger blur to return things to normal
-    // save the trigger td cell object and update the content of the cell
-    // this removes the input field and replaces it with the edited text
-
-    // now we do a true inline edit so dont load a popup
-    // loadPopup(this, event.pageX, event.pageY);
-    return false;
 }
 
 function processPopup( ) {
     // processEdit( ineditvalue );
     // $(cellclicked).empty().html( ineditvalue );
     // alert("ineditvalue = " + ineditvalue);
+//    alert("processing... popupStatus = " + popupStatus);
 
     if (popupStatus==1) {
         // put the new text on the screen
         var thenewval = $("#trueincell").val();
+//        alert("Changing room name from: " + popupRoom + " to: "+thenewval);
         
         // clean the user provided room name to ensure it doesnt have crap in it
         //TODO
         
         var newhidden = '<input type="hidden" name="o_' + thenewval + '" value="' + popupVal + '" />';
-        $(popupCell).empty().html( thenewval + newhidden );
-        
+        $(popupCell).html( thenewval + newhidden );
+//        
         // replace the room name in the entire options table column
         $('table.roomoptions td > input[name="'+popupRoom+'\[\]"]').each(function() {
             // var tileval = parseInt($(this).attr("value"));
@@ -667,12 +867,15 @@ function processPopup( ) {
 }
 
 function disablePopup(){
+//    alert("disabling... popupStatus = " + popupStatus + " popupSave = " + popupSave);
+    
     //disables popup only if it is enabled
-    if( popupStatus==1){
-        $(popupCell).empty().html(popupSave);
+    if( popupStatus==1 && popupSave){
+        $(popupCell).html(popupSave);
     }
     popupStatus = 0;
 }
+
 function strObject(o) {
   var out = '';
   for (var p in o) {
@@ -684,14 +887,6 @@ function strObject(o) {
     }
   }
   return out;
-}
-
-function lenObject(o) {
-  var cnt= 0;
-  for (var p in o) {
-      cnt++;
-  }
-  return cnt;
 }
 
 function fixTrack(tval) {
@@ -776,7 +971,7 @@ function refreshTile(aid, bid, thetype) {
         ajaxcall = "queryhubitat";
         bid = bid.substring(2);
     }
-    $.post("housepanel.php", 
+    $.post(returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
@@ -798,7 +993,7 @@ function setupTabclick() {
         }
         
         // disable the refresh feature because it is too slow and not really needed
-//        var panel = $(this).text().toLowerCase();
+//        var panel = $(this).text();
 //        if ( panel ) {
 //            alert("Updating panel = "+panel);
 //            $("div.panel-"+panel+" div.thing").each(function() {
@@ -818,21 +1013,14 @@ function setupTimers() {
     // but only for tabs that are being shown
     $('div.thing').each(function() {
         
-        var bid = $(this).attr("bid");
-
-        // skip doing this stuff if Hubitat since we directly control status
-        // actually we don't because manual triggers don't always work
-        // instead we just speed it up for hubitat
-//        if ( ! bid.startsWith("h_") ) {
-        
-            var tile = $(this).attr("tile");
+            var bid = $(this).attr("bid");
             var aid = $(this).attr("id").substring(2);
             var thetype = $(this).attr("type");
             var panel = $(this).attr("panel");
 
             // fix bug where panel was not proper case
-            // eventually we'll have to use actual item
-            panel = panel.toLowerCase();
+            // eventually we'll have to use actual item - now is eventually!!
+            // panel = panel.toLowerCase();
             var timerval = 0;
 
             switch (thetype) {
@@ -848,7 +1036,7 @@ function setupTimers() {
                 case "motion":
                 case "contact":
                     timerval = 30001;
-                    if ( bid.startsWith("h_") ) { timerval = 5001; }
+                    if ( bid.startsWith("h_") ) { timerval = 5000; }
                     break;
 
                 case "thermostat":
@@ -910,6 +1098,93 @@ function setupTimers() {
     });
 }
 
+function allTimerSetup(timerval) {
+
+    // define the timer callback function to update all tiles every 60 seconds
+    // var timerval = 15000;
+    var updarray = ["all",timerval];
+    updarray.myMethod = function() {
+        var that = this;
+        // alert("About to post update...");
+        $.post(returnURL, 
+            {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
+            function (presult, pstatus) {
+//                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
+                if (pstatus=="success" && presult!==undefined ) {
+//                    console.log("Polling [" + returnURL + "] update: ST returned "+ Object.keys(presult).length+ " items");
+                    
+                    // go through all tiles and update
+                    $('div.thing').each(function() {
+                        var tileid = $(this).attr("tile");
+                        var bid = $(this).attr("bid");
+                        var aid = $(this).attr("id").substring(2);
+                        if ( !bid.startsWith("h_") && tileid in presult ) {
+                            var thevalue = presult[tileid];
+                            // handle both direct values and bundled values
+                            if ( thevalue.hasOwnProperty("value") ) {
+                                thevalue = thevalue.value;
+                            }
+                            // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                            if ( thevalue ) { updateTile(aid,thevalue); }
+                        }
+                        
+                    });
+                }
+            }, "json"
+        );
+
+        // repeat the method above indefinitely
+        setTimeout(function() {updarray.myMethod();}, this[1]);
+    };
+
+    // wait before doing first one
+    setTimeout(function() {updarray.myMethod();}, timerval);
+}
+
+function allHubitatSetup() {
+
+    // define the timer callback function to update all Hubitat tiles every 5 seconds
+    var timerval = 5000;
+    var hubarray = ["all",timerval];
+    hubarray.myMethod = function() {
+        var that = this;
+        // alert("About to post update...");
+        $.post(returnURL, 
+            {useajax: "queryhubitat", id: that[0], type: that[0], value: "none", attr: "none"},
+            function (presult, pstatus) {
+//                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
+                if (pstatus=="success" && presult!==undefined ) {
+                    // console.log("Polling [" + returnURL + "] update: Hubitat returned "+ Object.keys(presult).length+ " items");
+                    
+                    // go through all tiles and update
+                    $('div.thing').each(function() {
+                        var tileid = $(this).attr("tile");
+                        var bid = $(this).attr("bid");
+                        var aid = $(this).attr("id");
+                        if ( aid && aid.length > 2 && bid.startsWith("h_") && tileid in presult ) {
+                            aid = aid.substring(2);
+                            var thevalue = presult[tileid];
+                            // handle both direct values and bundled values
+                            if ( thevalue.hasOwnProperty("value") ) {
+                                thevalue = thevalue.value;
+                            }
+                            // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                            if ( thevalue ) { updateTile(aid,thevalue); }
+                        }
+                        
+                    });
+                }
+            }, "json"
+        );
+
+        // repeat the method above indefinitely
+        setTimeout(function() {hubarray.myMethod();}, this[1]);
+    };
+
+    // wait before doing first one
+    setTimeout(function() {hubarray.myMethod();}, timerval);
+}
+
 function updateMode() {
     $('div.thing.mode-thing').each(function() {
         var otheraid = $(this).attr("id").substring(2);
@@ -963,7 +1238,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // the second call is needed to make screen refreshes work properly
 //    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
     if (trigger=="switch.on" || trigger=="switch.off") {
-        updateMode();
+        // updateMode();
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) { updateTile(otheraid, pvalue); }
@@ -976,20 +1251,20 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) {
                 updateTile(otheraid, pvalue);
-                var rbid = $(this).attr("bid");
-                setTimeout(function() {
-                    refreshTile(otheraid, rbid, "bulb");
-                }, 10000);
+//                var rbid = $(this).attr("bid");
+//                setTimeout(function() {
+//                    refreshTile(otheraid, rbid, "bulb");
+//                }, 10000);
             }
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) {
                 updateTile(otheraid, pvalue);
-                var rbid = $(this).attr("bid");
-                setTimeout(function() {
-                    refreshTile(otheraid, rbid, "light");
-                }, 10000);
+//                var rbid = $(this).attr("bid");
+//                setTimeout(function() {
+//                    refreshTile(otheraid, rbid, "light");
+//                }, 10000);
             }
         });
     }
@@ -1004,6 +1279,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // if this is a switchlevel go through and set all switches
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
+    // NOTE: removed the above logic because our updates are now faster and frequent
     // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
     if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
         trigger==="hue-up" || trigger==="hue-dn" ||
@@ -1017,26 +1293,26 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "switchlevel");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "switchlevel");
+//            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "bulb");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "bulb");
+//            }, 10000);
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             updateTile(otheraid, pvalue);
-            var rbid = $(this).attr("bid");
-            setTimeout(function() {
-                refreshTile(otheraid, rbid, "light");
-            }, 10000);
+//            var rbid = $(this).attr("bid");
+//            setTimeout(function() {
+//                refreshTile(otheraid, rbid, "light");
+//            }, 10000);
         });
     }
     
@@ -1055,7 +1331,7 @@ function setupPage(trigger) {
         
         // avoid doing click if the target was the title bar
         // or if not in Operate mode
-        if ( priorOpmode!=="Operate" || 
+        if ( priorOpmode!=="Operate" || modalStatus ||
              ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
 
         var theclass = $(this).attr("class");
@@ -1069,7 +1345,7 @@ function setupPage(trigger) {
         var ajaxcall = "doaction";
         if ( bid.startsWith("h_") ) {
             ajaxcall = "dohubitat";
-            bid = bid.substring(2);
+            // bid = bid.substring(2);
         }
 
         // get target id and contents
@@ -1081,6 +1357,12 @@ function setupPage(trigger) {
         if (thetype==="switch" || thetype==="lock" || thetype==="door" ||
             thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
             thevalue = "toggle";
+        // handle shm special case
+        } else if ( thetype=="shm") {
+            thevalue = $(targetid).html();
+            if ( thevalue=="off" ) { thevalue = "stay"; }
+            else if ( thevalue=="stay") { thevalue = "away"; }
+            else { thevalue = "off"; }
         } else {
             thevalue = $(targetid).html();
         }
@@ -1097,16 +1379,16 @@ function setupPage(trigger) {
                 this[0].attr("class", this[1]);
                 this[0].html(this[2]);
             };
-            $.post("housepanel.php", 
+            $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                 function(presult, pstatus) {
-                    // alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
+                    // alert("pstatus= "+pstatus+" presult= "+strObject(presult));
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         if (thetype==="piston") {
                             $(that).addClass("firing");
                             $(that).html("firing");
                         }
-                        else if ( thevalue && thevalue.hasOwnProperty("indexOf") && thevalue.indexOf("on") >= 0 ) {
+                        else if ( $(that).hasClass("on") ) {
                             $(that).removeClass("on");
                             $(that).addClass("off");
                             $(that).html("off");
@@ -1125,11 +1407,13 @@ function setupPage(trigger) {
         // within the groovy code if action isn't relevant then nothing happens
         } else {
 //            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
-            $.post("housepanel.php", 
+            console.log("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
+            $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
 //                            alert( strObject(presult) );
+                            console.log( "POST returned: "+ strObject(presult) );
                             updAll(trigger,aid,bidupd,thetype,presult);
                         }
                    }, "json"

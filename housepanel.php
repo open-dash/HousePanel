@@ -19,6 +19,8 @@
  * 
  *
  * Revision History
+ * 1.52       Bugfix for disappearing rooms, add Cancel in options, SmartHomeMonitor add
+ * 1.51       Integrate skin-material from @vervallsweg to v1.0.0 to work with sliders
  * 1.50       Enable Hubitat devices when on same local network as HP
  * 1.49       sliderhue branch to implement slider and draft color picker
  * 1.48       Integrate @nitwitgit (Nick) TileEdit V3.2
@@ -166,7 +168,7 @@ function htmlHeader($skindir="skin-housepanel") {
         $tc.= '<script type="text/javascript">';
         $clicktypes = array("switch.on","switch.off",
                             "lock.locked","lock.unlocked","door.open","door.closed",
-                            "momentary",
+                            "momentary","shm",
                             "heat-dn","heat-up",
                             "cool-dn","cool-up","thermomode","thermofan",
                             "musicmute","musicstatus", 
@@ -221,9 +223,9 @@ function getResponse($host, $access_token) {
     return $edited;
 }
 
-function getHubitatDevices($path) {
+function getHubitatDevices($edited, $path) {
 
-    $edited = array();
+    // $edited = array();
     if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) {
         $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
         $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
@@ -307,7 +309,7 @@ function authButton($sname, $returl) {
     $tc = "";
     $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
     $tc.= hidden("doauthorize", "1");
-    $tc.= "<div class=\"sitename\">$sname";
+    $tc.= "<div class=\"sitebutton\">$sname";
     $tc .= "<input class=\"authbutton\" value=\"Re-Authorize\" name=\"submit1\" type=\"submit\" />";
     $tc.= "</div></form>";
     return $tc;
@@ -317,38 +319,33 @@ function authButton($sname, $returl) {
 // this should be considerably faster
 function getAllThings($endpt, $access_token) {
     $allthings = array();
-     
     if ( isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
     }
     
     // if a prior call failed then we need to reset the session and reload
-    if (count($allthings) <= 2 && $endpt && $access_token ) {
+    if (count($allthings) <= 6 ) {
         session_unset();
+        $allthings = array();
         
-        $groovytypes = array("routines","switches", "lights", "dimmers","bulbs","momentaries","contacts",
-                            "sensors", "locks", "thermostats", "temperatures", "musics", "valves",
-                            "doors", "illuminances", "smokes", "waters", "weathers", "presences", 
-                            "modes", "blanks", "images", "pistons", "others");
-        foreach ($groovytypes as $key) {
-            $newitem = getResponse($endpt . "/" . $key, $access_token);
-            if ($newitem && count($newitem)>0) {
-                $allthings = array_merge($allthings, $newitem);
-            }
+        if ( $endpt && $access_token ) {
+            $allthings = getResponse($endpt . "/getallthings", $access_token);
         }
- 
+        
         // only do this if user specific the hubitat info
         if ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN) {
             // get Hubitat devices
-            $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
-                                "sensors", "locks", "thermostats", "temperatures", "valves",
-                                "doors", "illuminances", "smokes", "waters", "presences");
-            foreach ($hubitattypes as $key) {
-                $newitem = getHubitatDevices($key);
-                if ($newitem && count($newitem)>0) {
-                    $allthings = array_merge($allthings, $newitem);
-                }
-            }
+            $allthings = getHubitatDevices($allthings, "getallthings");
+            
+//            $hubitattypes = array("switches", "lights", "dimmers","bulbs","momentaries","contacts",
+//                                "sensors", "locks", "thermostats", "temperatures", "valves",
+//                                "doors", "illuminances", "smokes", "waters", "presences");
+//            foreach ($hubitattypes as $key) {
+//                $newitem = getHubitatDevices($key);
+//                if ($newitem && count($newitem)>0) {
+//                    $allthings = array_merge($allthings, $newitem);
+//                }
+//            }
         }
 
         // add a clock tile
@@ -432,6 +429,9 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
     
     // $bname = "type-$bid";
     $bid = $thesensor["id"];
+    if ( is_numeric($bid) ) {
+        $bid = "h_" . $bid;
+    }
     $thingvalue = $thesensor["value"];
     $thingtype = $thesensor["type"];
 
@@ -664,7 +664,8 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
 // notice the call of $cnt by reference to keep running count
 function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoptions, $kioskmode) {
     $tc = "";
-    $roomname = strtolower($roomtitle);
+    $roomname = $roomtitle;
+//    $roomname = strtolower($roomname);
     $tc.= "<div id=\"$roomname" . "-tab\">";
     if ( $allthings ) {
         $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\"  method=\"POST\">";
@@ -729,7 +730,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         // $tc.= hidden("end",$keyword);
     
     } else {
-        $tc.= "<div class=\"error\">Problem encountered retrieving things of type $roomname.</div>";
+        $tc.= "<div class=\"error\">Unknown problem encountered while retrieving things for room: $roomtitle.</div>";
     }
 
     if (DEBUG3) {
@@ -738,6 +739,71 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
     
     // end this tab which is a different type of panel
     $tc.="</div>";
+    return $tc;
+}
+
+function getCatalog($allthings) {
+    $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
+                        "motion", "lock", "thermostat", "temperature", "music", "valve",
+                        "door", "illuminance", "smoke", "water",
+                        "weather", "presence", "mode", "shm", "piston", "other",
+                        "clock","blank","image","frame");
+    sort($thingtypes);
+    $options = getOptions($allthings);
+    $useroptions = $options["useroptions"];
+    $tc = "";
+    $tc.= "<div id=\"catalog\">";
+    $tc.= "<div class=\"filteroption\">Option Filters: ";
+    $tc.= "<div id=\"allid\" class=\"smallbutton\">All</div>";
+    $tc.= "<div id=\"noneid\" class=\"smallbutton\">None</div>";
+    $tc.= "</div>";
+    $tc.= "<table class=\"catoptions\"><tr>";
+    $i= 0;
+    foreach ($thingtypes as $opt) {
+        $i++;
+        if ( in_array($opt,$useroptions ) ) {
+            $tc.= "<td><input type=\"checkbox\" name=\"useroptions[]\" value=\"" . $opt . "\" checked=\"1\"></td>";
+        } else {
+            $tc.= "<td><input type=\"checkbox\" name=\"useroptions[]\" value=\"" . $opt . "\"></td>";
+        }
+        $tc.= "<td class=\"optname\">" .  $opt . "</td>";
+        if ( $i % 3 == 0) {
+            $tc.= "</tr><tr>";
+        }
+    }
+    $tc.= "</tr></table>";
+    
+    $tc.= "<br />";
+    $i= 0;
+    foreach($allthings as $thesensor) {
+        $bid = $thesensor["id"];
+        if ( is_numeric($bid) ) {
+            $bid = "h_" . $bid;
+        }
+        // $thingvalue = $thesensor["value"];
+        $thingtype = $thesensor["type"];
+        $thingname = $thesensor["name"];
+
+        if (strlen($thingname) > 32 ) {
+            $thingpr = substr($thingname,0,30) . " ...";
+        } else {
+            $thingpr = $thingname;
+        }
+        
+        if (in_array($thingtype, $useroptions)) {
+            $hide = "";
+        } else {
+            $hide = "hidden ";
+        }
+
+        $tc.= "<div id=\"cat-$i\" bid=\"$bid\" type=\"$thingtype\" ";
+        $tc.= "panel=\"catalog\" class=\"thing " . $hide . "catalog-thing\">"; 
+        $tc.= "<div class=\"thingname\">$thingpr</div>";
+        $tc.= "<div class=\"thingtype\">$thingtype</div>";
+        $tc.="</div>";
+        $i++;
+    }
+    $tc.= "</div>";
     return $tc;
 }
 
@@ -750,29 +816,38 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
         $timeofday = date("g:i a");
         $timezone = date("T");
         $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    } else if ($swtype ==="image") {
-        $response = array("url" => $swid);
     } else {
-        $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
-        $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
-        $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
-    
-        // update session with new status
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $idx = $swtype . "|" . $swid;
-            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
-                $newval = array_merge($allthings[$idx]["value"], $response);
-                $allthings[$idx]["value"] = $newval;
-                $_SESSION["allthings"] = $allthings;
+            $options= getOptions($allthings);
+            if ( substr($swid,0,2) == "h_" ) { $swid = substr($swid,2); }
+            
+            $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
+            $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
+            $nvpreq = "access_token=" . HUBITAT_ACCESS_TOKEN .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+            if ( $swtype=="all" ) {
+                $respvals = array();
+                foreach($response as $thing) {
+                    $idx = $thing["type"] . "|h_" . $thing["id"];
+                    $allthings[$idx] = $thing;
+                    $tileid = $options["index"][$idx];
+                    $respvals[$tileid] = $thing;
+                }
+                $response = $respvals;
+            } else {
+                $idx = $swtype . "|h_" . $swid;
+                if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                    $newval = array_merge($allthings[$idx]["value"], $response);
+                    $allthings[$idx]["value"] = $newval;
+                }
             }
-        }
-        
-        if (!response) {
-            $response = array("name" => "Unknown", $swtype => $swval);
+            $_SESSION["allthings"] = $allthings;
+        } else {
+            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -783,40 +858,55 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
 function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="none") {
     
     // intercept clock things to return updated date and time
+    $weekday = date("l");
+    $dateofmonth = date("M d, Y");
+    $timeofday = date("g:i a");
+    $timezone = date("T");
+    $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     if ($swtype==="clock") {
-        $weekday = date("l");
-        $dateofmonth = date("M d, Y");
-        $timeofday = date("g:i a");
-        $timezone = date("T");
-        $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    } else if ($swtype ==="image") {
-        $response = array("url" => $swid);
+        $response = $todaydate;
     } else {
     
-        $headertype = array("Authorization: Bearer " . $access_token);
-
-        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
-
-        // update session with new status
+        // do nothing if we don't have things loaded in a session
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $idx = $swtype . "|" . $swid;
-            if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
-                $newval = array_merge($allthings[$idx]["value"], $response);
-                $allthings[$idx]["value"] = $newval;
-                $_SESSION["allthings"] = $allthings;
-                // $response["updated"] = "updated";
+            $options= getOptions($allthings);
+            
+            $headertype = array("Authorization: Bearer " . $access_token);
+            $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
+                      "&scope=app&client_id=" . urlencode(CLIENT_ID) .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+        // update session with new status and pick out all if needed
+            if ( $swtype=="all" ) {
+                $respvals = array();
+                foreach($response as $thing) {
+                    $idx = $thing["type"] . "|" . $thing["id"];
+                    $allthings[$idx] = $thing;
+                    $tileid = $options["index"][$idx];
+                    $respvals[$tileid] = $thing;
+                }
+                $tileid = $options["index"]["clock|clockdigital"];
+                $clockthing = array("id" => "clockdigital", "name" => "Digital Clock", "value" => $todaydate, "type" => "clock");
+                $respvals[$tileid] = $clockthing;
+                $allthings["clock|clockdigital"] = $clockthing;
+
+                // for all types return a different type of array
+                // handle in the javascript in allTimerSetup
+                $response = $respvals;
+            } else {
+                $idx = $swtype . "|" . $swid;
+                if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
+                    $newval = array_merge($allthings[$idx]["value"], $response);
+                    $allthings[$idx]["value"] = $newval;
+                }
             }
-        }
+            $_SESSION["allthings"] = $allthings;
         
-        // this now returns an array of tile settings
-        // which could be a single value pair
-        if (!response) {
-            $response = array("name" => "Unknown", $swtype => $swval);
+        } else {
+            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -975,7 +1065,7 @@ function refactorOptions($allthings) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     $cnt = 0;
     $oldoptions = readOptions();
@@ -1044,7 +1134,7 @@ function getOptions($allthings) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
 
     // generic room setup
@@ -1229,7 +1319,7 @@ function mysortfunc($cmpa, $cmpb) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     $namea = $cmpa["name"];
     $typea = $cmpa["type"];
@@ -1252,9 +1342,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
-    
+    sort($thingtypes);
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
@@ -1264,15 +1354,18 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     $tc = "";
     
-    $tc.= "<div class='optionstable'>";
-    $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
+    $tc.= "<div id=\"optionspage\" class=\"optionstable\">";
+    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
     $kstr = $kioskoptions=="true" ? "checked" : "";
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/></div>";
-    $tc.= "<div class=\"filteroption\">Option Filters: </div>";
+    $tc.= "<div class=\"filteroption\">Option Filters: ";
+    $tc.= "<div id=\"allid\" class=\"smallbutton\">All</div>";
+    $tc.= "<div id=\"noneid\" class=\"smallbutton\">None</div>";
+    $tc.= "</div>";
     $tc.= "<table class=\"useroptions\"><tr>";
     $i= 0;
     foreach ($thingtypes as $opt) {
@@ -1449,7 +1542,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
                 } else {
                     $tc.= "<input type=\"checkbox\" name=\"" . $roomname . "[]\" value=\"" . $thingindex . "\" >";
                 }
-                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
+//                $tc.= "<span class=\"dragdrop\">(" . $postop . "," . $posleft . ")</span>";
                 $tc.= "</td>";
             }
         }
@@ -1460,6 +1553,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "</div>";   // vertical scroll
     $tc.= "<div class=\"processoptions\">";
     $tc.= "<input id=\"submitoptions\" class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"button\" />";
+    $tc.= "<div class=\"formbutton\"><a href=\"$retpage\">Cancel</a></div>";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
@@ -1487,6 +1581,66 @@ function inroom($idx, $things) {
     return $found;
 }
 
+function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
+    
+    $idx = $thingtype . "|" . $bid;
+    $options = readOptions();
+    $tilenum = intval($options["index"][$idx], 10);
+    $thesensor = $allthings[$idx];
+    
+    // make sure tile number is big
+    if ( ! is_numeric($cnt) ) {
+        $cnt = substr($cnt,2);
+    }
+    $cnt = intval($cnt);
+    if ( !$cnt || $cnt < 0 ) {
+        $cnt = 1000;
+    }
+    
+    // make a new tile based on the dragged information
+    $thing = makeThing($cnt, $tilenum, $thesensor, $panel);
+    
+    // add it to our system
+    $options["things"][$panel] = array_values($options["things"][$panel]);
+    $options["things"][$panel][] = array($tilenum,0,0);
+    writeOptions($options);
+    
+    return $thing;
+}
+
+function delThing($bid, $thingtype, $panel, $tile) {
+    
+    $idx = $thingtype . "|" . $bid;
+    $options = readOptions();
+    $retcode = "error";
+    
+    if ( $panel && array_key_exists($panel, $options["things"]) &&
+                   array_key_exists($idx, $options["index"]) ) {
+
+        // as a double check the options file tile should match
+        // if it doesn't then something weird triggered drag drop
+        $tilenum = intval($options["index"][$idx], 10);
+        if ( $tile == $tilenum ) {
+
+            // remove tile from this room
+            foreach ( $options["things"][$panel] as $key => $thing) {
+                if ( (is_array($thing) && $thing[0]==$tilenum) ||
+                     (!is_array($thing) && $thing==$tilenum) ) {
+                    unset( $options["things"][$panel][$key] );
+                    $retcode = "success";
+                    break;
+                }
+            }   
+
+            if ( $retcode == "success" ) {
+                $options["things"][$panel] = array_values($options["things"][$panel]);
+                writeOptions($options);
+            }
+        }
+    }
+    return $retcode;
+}
+
 // this processes a _POST return from the options page
 function processOptions($optarray) {
     if (DEBUG2) {
@@ -1499,7 +1653,7 @@ function processOptions($optarray) {
     $thingtypes = array("routine","switch", "light", "switchlevel","bulb","momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "piston", "other",
+                        "weather", "presence", "mode", "shm", "piston", "other",
                         "clock","blank","image","frame","video");
     
     $oldoptions = readOptions();
@@ -1510,15 +1664,20 @@ function processOptions($optarray) {
                      "things" => array(), "skin" => "skin-housepanel",
                      "kiosk" => "false", "useroptions" => $thingtypes);
     $roomoptions = $options["rooms"];
-    foreach(array_keys($roomoptions) as $room) {
-        $options["things"][$room] = array();
+    $blanktile = $oldoptions["index"]["blank|b1x1"];
+    
+    // fix long-standing bug by putting a blank in each room
+    // to force the form to return each room defined in options file
+    foreach(array_keys($oldoptions["rooms"]) as $room) {
+        $options["things"][$room] = array($blanktile,0,0);
     }
 
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
-        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh") { continue; }
+        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh" ||
+            $key=="allid" || $key=="noneid" ) { continue; }
         
         // set skin
         if ($key=="skin") {
@@ -1587,6 +1746,11 @@ function processOptions($optarray) {
                 if ( ! inroom($tilenum, $newthings) ) {
                         $options["things"][$roomname][] = array($tilenum,$lasttop,$lastleft);
                 }
+            }
+            
+            // put a blank in a room if it is empty
+            if ( count($options["things"][$roomname]) == 0  ) {
+                $options["things"][$roomname][] = array($blanktile,0,0);
             }
         // keys starting with o_ are room names with order as value
         } else if ( substr($key,0,2)=="o_") {
@@ -1742,7 +1906,7 @@ function is_ssl() {
     // cheeck if cookies are set
     if ( ! $valid ) {
         unset($_SESSION["allthings"]);
-        $tc .= "<div><h2>" . APPNAME . "</h2>";
+        $tc .= "<br /><h2>" . APPNAME . "</h2><div>";
         $tc.= authButton("SmartHome", $returnURL);
         $tc.= "</div>";
     }
@@ -1777,13 +1941,27 @@ function is_ssl() {
         $swtype = substr($idx, 0, $k);
         $swid = substr($idx, $k+1);
     }
-
+    
+    // handle special non-groovy based tile types
+    if ( $swtype=="auto") {
+        if ( substr($swid,0,5)=="clock") {
+            $swtype = "clock";
+        } else if ( substr($swid,0,3)=="vid") {
+            $swtype = "video";
+        } else if ( substr($swid,0,5) == "frame" ) {
+            $swtype = "frame";
+        }
+    }
+    
     // set tileid from options if it isn't provided
-    if ( $tileid=="" && $swid && $swtype ) {
+    if ( $tileid=="" && $swid && $swtype!="auto" ) {
         $idx = $swtype . "|" . $swid;
         if ( array_key_exists($idx, $options) ) { $tileid = $options[$idx]; }
     }
     
+    // handle all Ajax calls
+    // this block returns control to caller immediately
+    // it can either show a webpage or return a block of data to js file
     if ( $useajax && $valid ) {
         switch ($useajax) {
             case "doaction":
@@ -1838,7 +2016,6 @@ function is_ssl() {
                 setcookie("hubitatID", $swval, $expiry, "/", $serverName);
                 exit(0);
                 break;
-                
         
             // implement free form drag drap capability
             case "dragdrop":
@@ -1849,6 +2026,31 @@ function is_ssl() {
                 echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
         
+            // make new tile from drag / drop
+            case "dragmake":
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
+                if ( $swid && $swtype && $swval && $swattr ) {
+                    $allthings = getAllThings($endpt, $access_token);
+                    $retcode = addThing($swid, $swtype, $swval, $swattr, $allthings);
+                } else {
+                    $retcode = "<div class='error'>error id = $swid type = $swtype val = $swval</div>";
+                }
+                echo $retcode;
+                break;
+            
+            // remove tile from drag / drop
+            case "dragdelete":
+                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
+                if ( $id && $swtype && $swval && swattr ) {
+                    $retcode = delThing($id, $swtype, $swval, $swattr);
+                } else {
+                    $retcode = "error";
+                }
+                echo $retcode;
+                break;
+                
             case "showoptions":
                 $allthings = getAllThings($endpt, $access_token);
                 $options= getOptions($allthings);
@@ -1872,6 +2074,8 @@ function is_ssl() {
                 
                 unset($_SESSION["allthings"]);
                 $allthings = getAllThings($endpt, $access_token);
+                $options= getOptions($allthings);
+                writeOptions($options);
                 $location = $returnURL;
                 header("Location: $location");
                 break;
@@ -1893,7 +2097,7 @@ function is_ssl() {
                 $tc.= "<table class=\"showid\">";
                 $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
                       "</th><th class=\"thingvalue\">" . "Thing id" . 
-                      "</th><th class=\"thingvalue\">" . "Style id" .
+                      "</th><th class=\"thingvalue\">" . "Tile id" .
                       "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
                 foreach ($allthings as $bid => $thing) {
                     if (is_array($thing["value"])) {
@@ -1922,16 +2126,8 @@ function is_ssl() {
                 if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     processOptions($_POST);
                     echo "success";
-                } else {
-                    echo "error: invalid save options request";
                 }
-                
-//                $location = $returnURL;
-//                header("Location: $location");
-                
                 break;
-          // default:
-            //    echo "Unknown AJAX call useajax = [" . $useajax . "]";
         }
         exit(0);
     }
@@ -1949,13 +2145,7 @@ function is_ssl() {
     // display the main page
     if ( $valid ) {
     
-//        if ($sitename) {
-//            $tc.= authButton($sitename, $returnURL);
-//        }
-
         // read all the smartthings from API
-        // force re-read of all physical things
-        // unset($_SESSION["allthings"]);
         $allthings = getAllThings($endpt, $access_token);
         
         // get the options tab and options values
@@ -1976,25 +2166,22 @@ function is_ssl() {
             refactorOptions($allthings);
             writeCustomCss($skindir, "");
         }
-                
+
+        // new wrapper around catalog and things but excluding buttons
+        $tc.= '<div id="dragregion">';
+        
         $tc.= '<div id="tabs"><ul id="roomtabs">';
-        // go through rooms in order of desired display
         for ($k=0; $k< count($roomoptions); $k++) {
             
             // get name of the room in this column
             $room = array_search($k, $roomoptions);
-            // $roomlist = array_keys($roomoptions, $k);
-            // $room = $roomlist[0];
             
             // use the list of things in this room
             if ($room !== FALSE) {
-                $tc.= "<li class=\"tab-$room\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
+                $tc.= "<li class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
             }
         }
         
-        // create a configuration tab
-//        $room = "Options";
-//        $tc.= "<li class=\"nodrag\"><a href=\"#" . strtolower($room) . "-tab\">$room</a></li>";
         $tc.= '</ul>';
         
         $cnt = 0;
@@ -2002,48 +2189,41 @@ function is_ssl() {
 
         // changed this to show rooms in the order listed
         // this is so we just need to rewrite order to make sortable permanent
-        // for ($k=0; $k< count($roomoptions); $k++) {
         foreach ($roomoptions as $room => $kroom) {
-            
-            // get name of the room in this column
-            // $room = array_search($k, $roomoptions);
-            // $roomlist = array_keys($roomoptions, $k);
-            // $room = $roomlist[0];
-
-            // use the list of things in this room
-            // if ($room !== FALSE) {
             if ( key_exists($room, $thingoptions)) {
                 $things = $thingoptions[$room];
                 $tc.= getNewPage($cnt, $allthings, $room, $kroom, $things, $indexoptions, $kioskmode);
             }
         }
         
-        // add the options tab - changed to show as a separate page; see below
-//        $tc.= "<div id=\"options-tab\">";
-//        $tc.= getOptionsPage($options, $returnURL, $allthings, $sitename);
-//        $tc.= "</div>";
         // end of the tabs
+        $tc.= "</div>";
+        
+        // add catalog on right
+        $tc.= getCatalog($allthings);
+        
+        // end drag region enclosing catalog and main things
         $tc.= "</div>";
         
         // create button to show the Options page instead of as a Tab
         // but only do this if we are not in kiosk mode
         $tc.= "<form>";
         $tc.= hidden("returnURL", $returnURL);
-        $tc.= "<div id=\"controlpanel\">";
         if ( !$kioskmode ) {
+            $tc.= "<div id=\"controlpanel\">";
             $tc.='<div id="showoptions" class="formbutton">Options</div>';
-            $tc.='<div id="refresh" class="formbutton">Refresh</div>';
-            $tc.='<div id="refactor" class="formbutton">Refactor</div>';
-            $tc.='<div id="showid" class="formbutton">Show ID\'s</div>';
-            $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
+            $tc.='<div id="refresh" class="formbutton confirm">Refresh</div>';
+            $tc.='<div id="refactor" class="formbutton confirm">Refactor</div>';
+            $tc.='<div id="showid" class="formbutton confirm">Show ID\'s</div>';
+            // $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
 
             $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
               <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Operate\" checked><span class=\"radioopts\">Operate</span>
               <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Reorder\" ><span class=\"radioopts\">Reorder</span>
-              <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><span class=\"radioopts\">Drag</div>
+              <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><span class=\"radioopts\">Edit</div>
             </div><div id=\"opmode\"></div>";
+            $tc.="</div>";
         }
-        $tc.="</div>";
         $tc.= "</form>";
     }
 
@@ -2052,4 +2232,3 @@ function is_ssl() {
     echo $tc;
     echo htmlFooter();
     
-?>
