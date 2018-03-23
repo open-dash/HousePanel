@@ -8,11 +8,11 @@ body {
     width: 1140px;
 }
 div.maintable {
-/*    transform: scale(0.84);
-    -ms-transform: scale(0.84);
-    -moz-transform: scale(0.84);
-    -o-transform: scale(0.84);
-    -webkit-transform: scale(0.84);
+/*    transform: scale(0.6);
+    -ms-transform: scale(0.6);
+    -moz-transform: scale(0.6);
+    -o-transform: scale(0.6);
+    -webkit-transform: scale(0.6);
     transform-origin: 0 0;
     -ms-transform-origin: 0 0;
     -moz-transform-origin: 0 0;
@@ -25,12 +25,29 @@ h1, h2, h3 {
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
 }
 
-/*div {
-	background-size: contain;
-	-webkit-background-size: contain;
-	-moz-background-size: contain;
-	-o-background-size: contain;
-}*/
+div#tabs, div#controlpanel {
+    width: 1012px;
+/*    transform: scale(0.6);
+    -ms-transform: scale(0.6);
+    -moz-transform: scale(0.6);
+    -o-transform: scale(0.6);
+    -webkit-transform: scale(0.6);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;*/
+}
+
+div#catalog {
+    width: 510px;
+    display: inline-block;
+    position: absolute;
+    top: 0px;
+    left: 1014px;
+    border: 2px solid rgb(128, 128, 128);
+}
+
 .ui-widget.ui-widget-content{
 border-radius: 4px;
 width:100%;
@@ -85,10 +102,17 @@ div.skinoption input {
 div.filteroption {
     margin-top: 12px;
 }
-table.useroptions {
+table.useroptions, table.catoptions {
     margin-left: 8px;
     background-color: #eeeeee;
     border: solid 1px black;
+}
+table.catoptions {
+    margin-left: 5px;
+    width: 500px;
+}
+table.catoptions input {
+    margin-left: 15px;
 }
 td.optname {
     padding-left: 5px;
@@ -143,41 +167,36 @@ div.panel {
     background-size: cover;
 }
 
-div.panel-family, div.panel-familyroom {
+div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {
     background-image: url('media/family.jpg');
-
 }
-div.panel-kitchen, div.panel-dinette {
+div.panel-Kitchen, div.panel-kitchen, div.panel-Dinette, div.panel-dinette {
     background-image: url('media/kitchenroom.jpg');
-
 }
-div.panel-formal, div.panel-living, div.panel-livingroom {
+div.panel-Living, div.panel-living, div.panel-Livingroom, div.panel-livingroom {
     background-image: url('media/formal.jpg');
-
 }
-div.panel-outside, div.panel-garage {
+div.panel-Outside, div.panel-outside, div.panel-Garage, div.panel-garage {
     background-image: url('media/outside.jpg');
 
 }
-div.panel-office, div.panel-library {
+div.panel-Office, div.panel-office, div.panel-Library, div.panel-library {
     background-image: url('media/office.jpg');
-
 }
-div.panel-bedroom, div.panel-bedrooms {
+div.panel-Bedroom, div.panel-bedroom, div.panel-Bedrooms, div.panel-bedrooms {
     background-image: url('media/bedroom.jpg');
-
 }
-div.panel-music, div.panel-theater, div.panel-entertainment {
+div.panel-Music, div.panel-music, div.panel-Theater, div.panel-theater, 
+div.panel-Entertainment {
     background-image: url('media/music.jpg');
 
 }
-div.panel-thermostats, div.panel-thermostat {
+div.panel-Thermostats, div.panel-thermostats {
     background-image: url('media/thermostat.jpg');
-
 }
 
 /* style the panel with all things listed */
-div.panel-all {
+div.panel-All, div.panel-None, div.panel-Blank {
     background-image: none;
 }
 
@@ -244,6 +263,9 @@ table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions
     font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
 }
+table.headoptions th.roomname {
+    cursor: pointer;
+}
 table.headoptions td, table.roomoptions td {
     width: 100px;
     color:#000000;
@@ -306,7 +328,8 @@ input {
 div.buttons, form.buttons {
     display: inline;
 }
-input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.formbutton {
+input.submitbutton, input.resetbutton, input.authbutton, 
+.smallbutton, div.restoretabs, div.formbutton {
     background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;
@@ -325,6 +348,38 @@ div.restoretabs, div.formbutton {
 div.restoretabs.hidden {
     display: none;
 }
+.smallbutton {
+    padding: 4px;
+    height: 0.8em;
+    width: 60px;
+    display: inline-block;
+    font-size: 11pt;
+}
+
+div.modalbox {
+    display: inline-block;
+    margin-left: 5px; margin-top: 5px;
+    padding: 5px;
+    border: 2px solid #3a5795;
+    background-color: rgba(255, 255, 240, 1);
+    color: rgba(0, 0, 0, 1);
+    font-size: 12pt;
+    position: absolute; left: 5%; bottom: 5%; z-index: 999;
+}
+div.modalbuttons {
+    margin-top: 5px;
+}
+
+button.dialogbtn {
+    background-color: #3a5795;
+    display: inline;
+    width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
+    cursor: pointer;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.8); 
+    border-right: 2px solid rgba(0, 0, 0, 0.8); 
+    font-size: 12pt;
+}
 
 /* don't need to display this anymore since use clock and panel click instead */
 /* but the div needs to be in the php file to make the js work */
@@ -336,9 +391,6 @@ div.panel div.restoretabs {
     border: 0px; text-align: right;
     background-color: rgba(0,0,0,0.1);
     position: absolute; right: -1px; bottom: -1px;
-}
-input.resetbutton {
-    background-color: #333333;
 }
 input.authbutton {
     background-color: #993300;
@@ -352,9 +404,15 @@ input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
     border-bottom: 0px; 
     border-right: 0px; */
 }
-div.sitename {
+div.sitebutton {
     background: #ffffff;     display: block;    position: relative;
-    left: 400px;    width: 300px;    bottom: 49px;
+    left: 600px;    width: 300px;    bottom: 49px;
+}
+
+div.formbutton a {
+    text-decoration: none;
+    font-size: inherit;
+    color: #ffffff;
 }
 
 /* all things look like this */  
@@ -374,7 +432,19 @@ div.thing {
     cursor: default;
     width: 120px; 
     height: auto;
-    position: relative;
+    position: static;
+    z-index: 1;
+
+    transform: scale(1.0);
+    -ms-transform: scale(1.0);
+    -moz-transform: scale(1.0);
+    -o-transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;
 }
 div.thing:hover{
     position: relative;
@@ -1008,7 +1078,8 @@ div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illu
     margin-bottom: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
-div.weather.sunriseDate, div.weather.sunsetDate {
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.ultravioletIndex, div.weather.lastUpdate {
     display: none;
 }
 div.weather.weatherIcon, div.weather.forecastIcon {
@@ -1068,7 +1139,10 @@ div.clock.tzone{
 }
 
 /* mode and routine styling */
-div.thing.mode-thing {
+div.thingname.mode {
+    display: none;
+}
+div.thing.mode-thing, div.thing.shm-thing {
     width: auto;
     height: 150px;
     cursor: move;
@@ -1082,16 +1156,34 @@ div.mode2x1, div.mode2x2 {
 div.mode1x2, div.mode2x2 {
     height: 326px;
 }
-div.mode.themode {
+div.mode.themode, div.shm.state {
     font-size: 20pt;    margin-top: 10px;
     cursor: pointer;
+}
+div.shm.state.off, div.shm.state.stay, div.shm.state.away {
+    color: rgba(255, 255, 255, 1);
+}
+div.shm.state {
+    background-size: 80px;
+    background-repeat: no-repeat;
+    height: 90px;
+}
+div.shm.state.stay {
+    background-image: url('icons/security-blue.png');
+}
+div.shm.state.away {
+    background-image: url('icons/security-red.png');
+}
+div.shm.state.off {
+    background-image: url('icons/security-green.png');
 }
 div.mode.name {
     font-size: 12pt;    margin-top: 30px;
 }
-div.mode.zipcode {
-    display:none;
+div.mode.sitename {
+    margin-top: 45px;
 }
+
 div.routine.label {
     font-size: 18pt;    margin-top: 20px;
 }
@@ -1555,11 +1647,15 @@ span.radioopts {
 }
 div#opmode {
     position: absolute;
-    left: 50%; top: 50%;
-    font-size: 18pt;
+    left: 5%; bottom: 5%; width: 600px;
+    font-size: 18pt; text-align: center;
     color: #cc3300;
     background-color: white;
     border: 3px;
+    z-index: 999;
+}
+.minicolors-theme-default.minicolors {
+    z-index: 99;
 }
 .minicolors-theme-default .minicolors-swatch {
   top: 2px;
