@@ -98,10 +98,18 @@ window.addEventListener("load", function(event) {
     setupColors();
     
     // invoke the new timer that updates everything at once
-    allTimerSetup();
-    
-    allHubitatSetup();
-    
+    // disable these if you want to minimize cloud web traffic
+    // if you do this manual controls will not be reflected in panel
+    // but you can always run a refresh to update the panel manually
+    // or you can run it every once in a blue moon too
+//    allTimerSetup(300000);
+//    allTimerSetup(15000);
+//    allHubitatSetup();
+
+    cancelDraggable();
+    cancelSortable();
+    cancelPagemove();
+
 });
 
 function rgb2hsv(r, g, b) {
@@ -156,14 +164,21 @@ function createModal(modalcontent, modaltag, addok, responsefunction) {
     // skip if a modal is already up...
     if ( modalStatus ) { return; }
     var modaldata = modalcontent;
+    var modalhook;
+
+    if ( modaltag && modaltag.hasOwnProperty("on") ) {
+        modalhook = modaltag;
+    } else {
+        if ( !modaltag ) { modaltag = "#controlpanel"; }
+        modalhook = $(modaltag)
+    }
     
-    if ( !modaltag || !$(modaltag) ) { modaltag = "#controlpanel"; }
     modalcontent = "<div id='" + modalid +"' class='modalbox'>" + modalcontent;
     if ( addok ) {
         modalcontent = convertToModal(modalcontent);
     }
     modalcontent = modalcontent + "</div>";
-    $(modaltag).after(modalcontent);
+    modalhook.after(modalcontent);
     modalStatus = 1;
     $("#"+modalid).on("click",".dialogbtn",function() {
 //        var clk = $(this).attr("name");
@@ -283,7 +298,7 @@ function setupSliders() {
     $("div.overlay.colorTemperature >div.colorTemperature").slider({
         orientation: "horizontal",
         min: 2000,
-        max: 6000,
+        max: 7400,
         step: 200,
         stop: function( evt, ui) {
             var thing = $(evt.target);
@@ -328,6 +343,16 @@ function cancelDraggable() {
             $(this).draggable("destroy");
         }
     });
+    
+    if ( $("div.panel").droppable("instance") ) {
+        $("div.panel").droppable("destroy");
+    }
+
+    if ( $("#catalog").droppable("instance") ) {
+        $("#catalog").droppable("destroy");
+    }
+    
+    $("#catalog").hide();
 }
 
 function cancelSortable() {
@@ -339,11 +364,14 @@ function cancelSortable() {
 }
 
 function cancelPagemove() {
-    $("ul.ui-tabs-nav").each(function(){
-        if ( $(this).sortable("instance") ) {
-            $(this).sortable("destroy");
-        }
-    });
+//    $("ul.ui-tabs-nav").each(function(){
+//        if ( $(this).sortable("instance") ) {
+//            $(this).sortable("destroy");
+//        }
+//    });
+    if ( $("#roomtabs").sortable("instance") ) {
+        $("#roomtabs").sortable("destroy");
+    }
 }
 
 function setupPagemove() {
@@ -357,7 +385,7 @@ function setupPagemove() {
         opacity: 0.5,
         containment: "ul.ui-tabs-nav",
         delay: 200,
-        revert: true,
+        revert: false,
         update: function(event, ui) {
             var pages = {};
             var k = 0;
@@ -369,20 +397,7 @@ function setupPagemove() {
                 k++;
             });
             $.post(returnURL, 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"},
-                    function (presult, pstatus) {
-                        // set the room numbers using the options
-                        if (pstatus==="success") {
-                            var newrooms = presult["order"];
-                            $('table.headoptions th.roomname > input[type="hidden"]').each(function() {
-                               var rname = $(this).attr("name").substring(2);
-                               var newval = newrooms[rname];
-//                               var rvalue = $(this).attr("value");
-//                               alert("room = "+rname+" oldval= "+rvalue+" newval= "+newval);
-                               $(this).attr("value",newval);
-                            });
-                        }
-                    }, "json"
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
             );
         }
     });
@@ -416,9 +431,10 @@ function setupSortable() {
 
 function setupDraggable() {
     
-    $("div.thing").draggable({
+    // the active things on a panel
+    $("div.panel div.thing").draggable({
         revert: false,
-        containment: "parent",
+        containment: "#dragregion",
         delay: 50,
         // grid: [10, 10],
         stop: function(event, ui) {
@@ -438,6 +454,95 @@ function setupDraggable() {
             $.post(returnURL, 
                    {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
             );
+        }
+    });
+    
+    // show the catalog
+    $("#catalog").show();
+    
+    // enable dropping things from the catalog into panel
+    $("div.panel").droppable({
+        accept: "#catalog div.thing",
+        tolerance: "fit",
+        drop: function(event, ui) {
+            var thing = ui.draggable;
+            var bid = $(thing).attr("bid");
+            var thingtype = $(thing).attr("type");
+            var thingname = $(thing).find(".thingname").text();
+                       
+            // get panel of active page - have to do this the hard way
+            // because the thing in the catalog doesn't have a panel attr
+            $("li.ui-tabs-tab").each(function() {
+                if ( $(this).hasClass("ui-tabs-active") ) {
+                    var panel = $(this).text();
+                    createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
+                        var clk = $(ui).attr("name");
+                        if ( clk=="okay" ) {
+                            // add it to the system
+                            // the ajax call must return a valid "div" block for the dragged new thing
+
+                            // get the last thing in the current room
+                            var lastthing = $("div.panel-"+panel+" div.thing").last();
+                            var cnt = $("div.thing").last().attr("id");
+                            cnt = cnt.substring(2);
+                            alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
+
+                            $.post(returnURL, 
+                                {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
+                                function (presult, pstatus) {
+                                    if (pstatus==="success") {
+                                        console.log( "Added drag thing: "+ presult );
+                                        lastthing.after(presult);
+                                    }
+                                }
+                            );
+                        }
+                    });
+                } 
+            });
+        }
+    });
+
+    // enable dragging things from catalog
+    $("#catalog div.thing").draggable({
+        revert: false,
+        containment: "#dragregion",
+        delay: 50,
+        helper: "clone"
+    });
+    
+    // enable dropping things from panel into catalog to remove
+    $("#catalog").droppable({
+        accept: "div.panel div.thing",
+        tolerance: "fit",
+        drop: function(event, ui) {
+            var thing = ui.draggable;
+            var bid = $(thing).attr("bid");
+            var thingtype = $(thing).attr("type");
+            // easy to get panel of active things
+            var panel = $(thing).attr("panel");
+            var id = $(thing).attr("id");
+            var aid = id.substring(2);
+            var tile = $(thing).attr("tile");
+            var tilename = $("#s-"+aid).text();
+    
+            createModal("Remove room: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?","#controlpanel", true, function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk=="okay" ) {
+                    // remove it from the system
+                    $.post(returnURL, 
+                        {useajax: "dragdelete", id: bid, type: thingtype, value: panel, attr: tile},
+                        function (presult, pstatus) {
+                            if (pstatus==="success" && presult=="success") {
+                                console.log( "Removed tile: "+ $("#"+id).html() );
+
+                                // remove it visually
+                                $("#"+id).remove();
+                            }
+                        }
+                    );
+                }
+            });
         }
     });
     
@@ -487,19 +592,16 @@ function setupButtons() {
     $("div.modeoptions").on("click","input.radioopts",function(evt){
         var opmode = $(this).attr("value");
         if ( opmode !== priorOpmode ) {
+            cancelDraggable();
+            cancelSortable();
+            cancelPagemove();
             if ( opmode=="Reorder" ) {
-                cancelDraggable();
-                cancelPagemove();
                 setupSortable();
                 setupPagemove();
             } else if ( opmode=="DragDrop" ) {
-                cancelSortable();
-                cancelPagemove();
                 setupDraggable();
                 setupPagemove();
             } else if ( opmode=="Operate" ) {
-                cancelDraggable();
-                cancelSortable();
                 cancelPagemove();
             }
             priorOpmode = opmode;
@@ -590,28 +692,61 @@ function setupFilters() {
         $("#noneid").prop("checked", false);
         $("#allid").attr("checked", false);
         $("#noneid").attr("checked", false);
-        // var that = this;
-        // alert("clicked on val = "+theval+ " ischecked = " + ischecked + " ... about to change screen...");
         
         // set the class of all rows to invisible or visible
         var rowcnt = 0;
         var odd = "";
-        $('tr[type="'+theval+'"]').each(function() {
-//            var theclass = $(this).attr("class");
-            if ( ischecked ) {
-                $(this).attr("class", "showrow");
-            } else {
-                $(this).attr("class", "hiderow");
-           }
+        if ( $("#optionspage") ) {
+            $('table.roomoptions tr[type="'+theval+'"]').each(function() {
+                if ( ischecked ) {
+                    $(this).attr("class", "showrow");
+                } else {
+                    $(this).attr("class", "hiderow");
+               }
+            });
+        
+            $('table.roomoptions tr').each(function() {
+                var theclass = $(this).attr("class");
+                if ( theclass != "hiderow" ) {
+                    rowcnt++;
+                    rowcnt % 2 == 0 ? odd = " odd" : odd = "";
+                    $(this).attr("class", "showrow"+odd);
+               }
+            });
+        }
+        
+        // handle main screen catalog
+        if ( $("#catalog") ) {
+            $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
+                if ( ischecked && ! $(this).hasClass("hidden") ) {
+                    $(this).addClass("hidden");
+                } else if ( ! ischecked ) {
+                    $(this).removeClass("hiddden");
+                }
+            });
+        }
+    });
+    
+    $("#allid").click(function() {
+        $("#allid").prop("checked", true);
+        $('input[name="useroptions[]"]').each(function() {
+            if ( !$(this).prop("checked") ) {
+                $(this).click()
+            }
         });
-        $('table.roomoptions tr').each(function() {
-            var theclass = $(this).attr("class");
-            if ( theclass != "hiderow" ) {
-                rowcnt++;
-                rowcnt % 2 == 0 ? odd = " odd" : odd = "";
-                $(this).attr("class", "showrow"+odd);
-           }
+        $("#noneid").attr("checked", false);
+        $("#noneid").prop("checked", false);
+    });
+    
+    $("#noneid").click(function() {
+        $("#noneid").prop("checked", true);
+        $('input[name="useroptions[]"]').each(function() {
+            if ( $(this).prop("checked") ) {
+                $(this).click()
+            }
         });
+        $("#allid").attr("checked", false);
+        $("#allid").prop("checked", false);
     });
     
     $("#allid").click(function() {
@@ -680,7 +815,6 @@ function setupPopup() {
 //            "cursor": "pointer"
 //        });
 //        $(this).on("click", "th.roomname", jeditTableCell);
-//    });
     $("table.headoptions").on("click", "th.roomname", function() {
         if ($(this).html().startsWith("<input id")) { return true; }
 
@@ -712,12 +846,6 @@ function setupPopup() {
         return false;
         
     });
-
-// Hiding Confirmation of Customization Span Until Needed
-//$('#showCssSaved').hide();  
-//    $("table.headoptions th.thingname").click(function() {
-//        alert("clicked on Room names row");
-//    });
        
 }
 
@@ -781,14 +909,6 @@ function strObject(o) {
     }
   }
   return out;
-}
-
-function lenObject(o) {
-  var cnt= 0;
-  for (var p in o) {
-      cnt++;
-  }
-  return cnt;
 }
 
 function fixTrack(tval) {
@@ -1000,10 +1120,10 @@ function setupTimers() {
     });
 }
 
-function allTimerSetup() {
+function allTimerSetup(timerval) {
 
     // define the timer callback function to update all tiles every 60 seconds
-    var timerval = 15000;
+    // var timerval = 15000;
     var updarray = ["all",timerval];
     updarray.myMethod = function() {
         var that = this;
@@ -1284,7 +1404,7 @@ function setupPage(trigger) {
             $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
                 function(presult, pstatus) {
-                    // alert("pstatus= "+pstatus+" len= "+lenObject(presult)+" presult= "+strObject(presult));
+                    // alert("pstatus= "+pstatus+" presult= "+strObject(presult));
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         if (thetype==="piston") {
                             $(that).addClass("firing");
