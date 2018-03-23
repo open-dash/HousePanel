@@ -567,17 +567,17 @@ function setupSaveButton() {
         alldata.append("useajax", "saveoptions");
         
         var request = new XMLHttpRequest();
-        request.open('POST', 'housepanel.php', false);
+        request.open('POST', 'housepanel.php', true);
 //        $response = $.post(returnURL, 
 //                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
 //        );
         
         request.send(alldata);
-        console.log(request.response);
+        // console.log(request.response);
         
-        if (request.response == "success") {
+        // if (request.response == "success") {
             $("form.options").submit(); 
-        }
+        // }
     });
 }
 
