@@ -429,10 +429,8 @@ function setupSortable() {
     
 }
 
-function setupDraggable() {
-    
-    // the active things on a panel
-    $("div.panel div.thing").draggable({
+function thingDraggable(thing) {
+    thing.draggable({
         revert: false,
         containment: "#dragregion",
         delay: 50,
@@ -456,7 +454,13 @@ function setupDraggable() {
             );
         }
     });
+}
+
+function setupDraggable() {
     
+    // the active things on a panel
+    thingDraggable( $("div.panel div.thing") );
+        
     // show the catalog
     $("#catalog").show();
     
@@ -493,6 +497,7 @@ function setupDraggable() {
                                     if (pstatus==="success") {
                                         console.log( "Added drag thing: "+ presult );
                                         lastthing.after(presult);
+                                        thingDraggable( lastthing.next() );
                                     }
                                 }
                             );
