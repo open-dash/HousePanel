@@ -455,7 +455,7 @@ function setupDraggable() {
     
     // the active things on a panel
     thingDraggable( $("div.panel div.thing") );
-    
+        
     // show the catalog
     $("#catalog").show();
     
@@ -492,6 +492,7 @@ function setupDraggable() {
                                     if (pstatus==="success") {
                                         console.log( "Added drag thing: "+ presult );
                                         lastthing.after(presult);
+                                        thingDraggable( lastthing.next() );
                                     }
                                 }
                             );
