@@ -433,10 +433,8 @@ function setupSortable() {
     
 }
 
-function setupDraggable() {
-    
-    // the active things on a panel
-    $("div.panel div.thing").draggable({
+function thingDraggable(thing) {
+    thing.draggable({
         revert: false,
         containment: "#dragregion",
         delay: 50,
@@ -460,7 +458,13 @@ function setupDraggable() {
             );
         }
     });
+}
+
+function setupDraggable() {
     
+    // the active things on a panel
+    thingDraggable( $("div.panel div.thing") );
+        
     // show the catalog
     $("#catalog").show();
     
@@ -497,6 +501,7 @@ function setupDraggable() {
                                     if (pstatus==="success") {
                                         console.log( "Added drag thing: "+ presult );
                                         lastthing.after(presult);
+                                        thingDraggable( lastthing.next() );
                                     }
                                 }
                             );
@@ -673,7 +678,7 @@ function setupSaveButton() {
         alldata.append("useajax", "saveoptions");
         
         var request = new XMLHttpRequest();
-        request.open('POST', 'housepanel.php', false);
+        request.open('POST', 'housepanel.php', true);
 //        $response = $.post(returnURL, 
 //                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
 //        );
@@ -681,9 +686,9 @@ function setupSaveButton() {
         request.send(alldata);
         console.log(request.response);
         
-        if (request.response == "success") {
+//        if (request.response == "success") {
             $("form.options").submit(); 
-        }
+//        }
     });
 }
 
