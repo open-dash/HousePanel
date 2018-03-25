@@ -18,6 +18,7 @@ div.maintable {
     -moz-transform-origin: 0 0;
     -o-transform-origin: 0 0;
     -webkit-transform-origin: 0 0;*/
+    width: auto;
 }
 h1, h2, h3 {
     color: #000000;
@@ -46,6 +47,9 @@ div#catalog {
     top: 0px;
     left: 1014px;
     border: 2px solid rgb(128, 128, 128);
+}
+div#dragregion {
+    width: 1526px;
 }
 
 .ui-widget.ui-widget-content{
@@ -345,8 +349,11 @@ div.restoretabs, div.formbutton {
     width: 130px; height: 32px;
     margin-left: 4px; margin-right: 4px;
 }
-div.restoretabs.hidden {
+div.restoretabs.hidden, div.thing.hidden.catalog-thing {
     display: none;
+}
+div.thing.catalog-thing {
+    display: inline-block;
 }
 .smallbutton {
     padding: 4px;
@@ -364,7 +371,7 @@ div.modalbox {
     background-color: rgba(255, 255, 240, 1);
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
-    position: absolute; left: 5%; bottom: 5%; z-index: 999;
+    position: absolute; z-index: 999;
 }
 div.modalbuttons {
     margin-top: 5px;
@@ -1573,6 +1580,9 @@ div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
     margin-left: 8px; margin-right: 8px;
     color: rgba(0, 0, 0, 1);
     background-size: 80px;
+}
+div.overlay.healthStatus {
+    display: none;
 }
 /* weather icons */
 div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {

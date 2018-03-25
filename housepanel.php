@@ -1023,8 +1023,9 @@ function writeOptions($options) {
     $f = fopen("hmoptions.cfg","wb");
     $str =  json_encode($options);
     fwrite($f, cleanupStr($str));
+    fflush($f);
     fclose($f);
-	chmod($f, 0777);
+    chmod($f, 0777);
 }
 
 // make the string easier to look at
@@ -1351,6 +1352,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div id=\"optionspage\" class=\"optionstable\">";
     $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
+    $tc.= hidden("returnURL", $retpage);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
@@ -1596,7 +1598,9 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     
     // add it to our system
     $options["things"][$panel] = array_values($options["things"][$panel]);
-    $options["things"][$panel][] = array($tilenum,0,0);
+    $lastid = count( $options["things"][$panel] ) - 1;
+    $lastitem = $options["things"][$panel][$lastid];
+    $options["things"][$panel][] = array($tilenum, $lastitem[1], $lastitem[2]);
     writeOptions($options);
     
     return $thing;
@@ -1613,7 +1617,7 @@ function delThing($bid, $thingtype, $panel, $tile) {
 
         // as a double check the options file tile should match
         // if it doesn't then something weird triggered drag drop
-        $tilenum = intval($options["index"][$idx], 10);
+        $tilenum = $options["index"][$idx];
         if ( $tile == $tilenum ) {
 
             // remove tile from this room
@@ -2037,8 +2041,8 @@ function is_ssl() {
             case "dragdelete":
                 if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
                 if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
-                if ( $id && $swtype && $swval && swattr ) {
-                    $retcode = delThing($id, $swtype, $swval, $swattr);
+                if ( $swid && $swtype && $swval && swattr ) {
+                    $retcode = delThing($swid, $swtype, $swval, $swattr);
                 } else {
                     $retcode = "error";
                 }
@@ -2120,6 +2124,8 @@ function is_ssl() {
                 if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     processOptions($_POST);
                     echo "success";
+                } else {
+                    echo "error: invalid save options request";
                 }
                 break;
         }
