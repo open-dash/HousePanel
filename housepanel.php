@@ -1617,7 +1617,7 @@ function delThing($bid, $thingtype, $panel, $tile) {
 
         // as a double check the options file tile should match
         // if it doesn't then something weird triggered drag drop
-        $tilenum = intval($options["index"][$idx], 10);
+        $tilenum = $options["index"][$idx];
         if ( $tile == $tilenum ) {
 
             // remove tile from this room
@@ -2124,6 +2124,8 @@ function is_ssl() {
                 if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     processOptions($_POST);
                     echo "success";
+                } else {
+                    echo "error: invalid save options request";
                 }
                 break;
         }
