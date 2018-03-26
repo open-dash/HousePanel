@@ -485,6 +485,44 @@ function setupDraggable() {
                                             console.log( "Added " + thingname + " to room " + panel + " thing= "+ presult );
                                             lastthing.after(presult);
                                             thingDraggable( lastthing.next() );
+
+                                            // activate the controls on the dropped tile
+                                            if ( thingtype=="switch" || thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="light" ) {
+                                                setupPage("switch.on");
+                                                setupPage("switch.off");
+                                            }
+                                            if ( thingtype=="momentary" ) {
+                                                setupPage("momentary");
+                                            }
+                                            if ( thingtype=="piston" ) {
+                                                setupPage("piston.pistonName");
+                                            }
+                                            if ( thingtype=="door" ) {
+                                                setupPage("door.open");
+                                                setupPage("door.closed");
+                                            }
+                                            if ( thingtype=="lock" ) {
+                                                setupPage("lock.locked");
+                                                setupPage("lock.unlocked");
+                                            }
+                                            if ( thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="music" ) {
+                                                setupSliders();
+                                            }
+                                            if ( thingtype=="bulb" ) {
+                                                setupColors();
+                                            }
+                                            if ( thingtype==="music" ) {
+                                                var triggers = ["musicmute","musicstatus","music-previous","music-pause","music-play","music-stop","music-next"];
+                                                triggers.forEach(function(item) {
+                                                    setupPage(item);
+                                                });
+                                            }
+                                            if ( thingtype==="thermostat" ) {
+                                                var triggers = ["heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan"];
+                                                triggers.forEach(function(item) {
+                                                    setupPage(item);
+                                                });
+                                            }
                                         }
                                     }
                                 );
