@@ -1339,6 +1339,7 @@ iframe body {
 div.frame-thing {
     width: 500px;
     height: 230px;
+    /*width: auto !important;*/
 }
 div.frame.forecast > iframe {
     width: 500px;

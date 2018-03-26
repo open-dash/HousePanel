@@ -804,29 +804,6 @@ function setupFilters() {
         $("#allid").attr("checked", false);
         $("#allid").prop("checked", false);
     });
-    
-    $("#allid").click(function() {
-        $("#allid").attr("prop", true);
-        $("#allid")
-        $('input[name="useroptions[]"]').each(function() {
-            if ( !$(this).prop("checked") ) {
-                $(this).click()
-            }
-        });
-        $("#noneid").attr("checked", false);
-        $("#noneid").prop("checked", false);
-    });
-    
-    $("#noneid").click(function() {
-        $("#noneid").prop("checked", true);
-        $('input[name="useroptions[]"]').each(function() {
-            if ( $(this).prop("checked") ) {
-                $(this).click()
-            }
-        });
-        $("#allid").attr("checked", false);
-        $("#allid").attr(prop, false);
-    });
 }
 
 function setupPopup() {
@@ -965,14 +942,6 @@ function strObject(o) {
     }
   }
   return out;
-}
-
-function lenObject(o) {
-  var cnt= 0;
-  for (var p in o) {
-      cnt++;
-  }
-  return cnt;
 }
 
 function fixTrack(tval) {
