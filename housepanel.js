@@ -713,7 +713,7 @@ function setupFilters() {
         // set the class of all rows to invisible or visible
         var rowcnt = 0;
         var odd = "";
-        if ( $("#optionspage") ) {
+        if ( $("#optionstable") ) {
             $('table.roomoptions tr[type="'+theval+'"]').each(function() {
                 if ( ischecked ) {
                     $(this).attr("class", "showrow");
@@ -927,6 +927,14 @@ function strObject(o) {
     }
   }
   return out;
+}
+
+function lenObject(o) {
+  var cnt= 0;
+  for (var p in o) {
+      cnt++;
+  }
+  return cnt;
 }
 
 function fixTrack(tval) {

@@ -121,10 +121,10 @@ function htmlHeader($skindir="skin-housepanel") {
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
-    
+
     // TODO: replace this with jQuery native handling and update editTile
     $tc.= '<script src="jquery.form.min.js"></script>';
-
+    
     // load quicktime script for video
     $tc.= '<script src="ac_quicktime.js"></script>';
 
@@ -1349,8 +1349,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     $tc = "";
     
-    $tc.= "<div id=\"optionspage\" class=\"optionstable\">";
-    $tc.= "<form class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
+    $tc.= "<div id=\"optionstable\" class=\"optionstable\">";
+    $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= hidden("returnURL", $retpage);
     $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skinoptions\"/></div>";
