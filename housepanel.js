@@ -105,8 +105,8 @@ window.addEventListener("load", function(event) {
     // but you can always run a refresh to update the panel manually
     // or you can run it every once in a blue moon too
 //    allTimerSetup(300000);
-    allTimerSetup(60000);
-    allHubitatSetup();
+//    allTimerSetup(60000);
+//    allHubitatSetup();
 
     cancelDraggable();
     cancelSortable();
@@ -494,7 +494,7 @@ function setupDraggable() {
                                     {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
                                     function (presult, pstatus) {
                                         if (pstatus==="success") {
-                                            console.log( "Added " + thingname + " to room " + panel + " thing= "+ presult );
+                                            console.log( "Added " + thingname + " of type " + thingtype + " to room " + panel + " thing= "+ presult );
                                             lastthing.after(presult);
                                             thingDraggable( lastthing.next() );
 
@@ -1423,7 +1423,9 @@ function setupPage(trigger) {
     // alert("setting up " + trigger);
     var actionid = "div." + trigger;
 
-    $(actionid).click(function() {
+    // $(actionid).click(function() {
+    $(".panel").off("click.tileactions", actionid);
+    $(".panel").on("click.tileactions", actionid, function() {
         
         var aid = $(this).attr("aid");
         

@@ -962,16 +962,12 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
 }
 
 function readOptions() {
-    $options = false;
     if ( file_exists("hmoptions.cfg") ) {
-        $f = fopen("hmoptions.cfg","rb");
-        $optsize = filesize("hmoptions.cfg");
-        if ($f && $optsize) {
-            $serialoptions = fread($f, $optsize );
-            $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
-            $options = json_decode($serialnew,true);
-        }
-        fclose($f);
+        $serialoptions = file_get_contents("hmoptions.cfg");
+        $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
+        $options = json_decode($serialnew,true);
+    } else {
+        $options = false;
     }
     return $options;
 }
@@ -1186,7 +1182,7 @@ function getOptions($allthings) {
         }
 
         // find the largest index number for a sensor in our index
-        // and undoo the old flawed absolute positioning
+        // and undo the old flawed absolute positioning
         $cnt = count($options["index"]) - 1;
         foreach ($options["index"] as $thingid => $idxarray) {
             if ( is_array($idxarray) ) {
@@ -1201,6 +1197,7 @@ function getOptions($allthings) {
         $cnt++;
         
         // update the index with latest sensor information
+        /*
         foreach ($allthings as $thingid =>$thesensor) {
             if ( !key_exists($thingid, $options["index"]) ) {
                 $options["index"][$thingid] = $cnt;
@@ -1219,27 +1216,24 @@ function getOptions($allthings) {
             }
         }
         
-        // make sure there is at least one room
-//        $rcount = count($options["rooms"]);
-//        if (!$rcount) {
-//            $options["rooms"]["All"] = 0;
-//        }
+        */
+        
         
         // make sure all options are in a valid room
         // we don't need to check for valid thing as that is done later
         // this way things can be removed and added back later
         // and they will still show up where they used to be setup
         // TODO: add new rooms to the options["things"] index
-        $tempthings = $options["things"];
-        $k = 0;
-        foreach ($tempthings as $key => $var) {
-            if ( !key_exists($key, $options["rooms"]) ) {
-                array_splice($options["things"], $k, 1);
-                $updated = true;
-            } else {
-                $k++;
-            }
-        }
+//        $tempthings = $options["things"];
+//        $k = 0;
+//        foreach ($tempthings as $key => $var) {
+//            if ( !key_exists($key, $options["rooms"]) ) {
+//                unset( $options["things"][$key][$var] );
+//                $updated = true;
+//            } else {
+//                $k++;
+//            }
+//        }
         
     }
         
