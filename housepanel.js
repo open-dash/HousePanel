@@ -43,8 +43,11 @@ window.addEventListener("load", function(event) {
 //$(document).ready( function() {
 
     // set the global return URL value
-    returnURL = $("input[name='returnURL']").val();
-    $(document).data('returnURL',returnURL);
+    try {
+        returnURL = $("input[name='returnURL']").val();
+    } catch(e) {
+        returnURL = "housepanel.php";
+    }
     
     $( "#tabs" ).tabs();
     

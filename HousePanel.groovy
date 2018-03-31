@@ -715,82 +715,83 @@ def doQuery() {
     def cmdresult = false
 
 	// get the type if auto is set
-    if (swtype=="auto" || swtype=="none" || swtype=="") {
+    if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
         swtype = autoType(swid)
     }
 
     switch(swtype) {
 
     // special case to return an array of all things
+    // each case below also now includes multi-item options for the API
     case "all" :
         cmdresult = getAllThings()
         break
 
     case "switch" :
-      	cmdresult = getSwitch(swid)
+        cmdresult = swid ? getSwitch(swid) : getSwitches( [] )
         break
          
     case "bulb" :
-      	cmdresult = getBulb(swid)
+        cmdresult = swid ? getBulb(swid) : getBulbs( [] )
         break
          
     case "light" :
-      	cmdresult = getLight(swid)
+        cmdresult = swid ? getLight(swid) : getLights( [] )
         break
          
     case "switchlevel" :
-        cmdresult = getDimmer(swid)
+        cmdresult = swid ? getDimmer(swid) : getDimmers( [] )
         break
          
     case "momentary" :
-        cmdresult = getMomentary(swid)
+        cmdresult = swid ? getMomentary(swid) : getMomentaries( [] )
         break
         
     case "motion" :
-    	cmdresult = getSensor(swid)
+        cmdresult = swid ? getSensor(swid) : getSensors( [] )
         break
         
     case "contact" :
-    	cmdresult = getContact(swid)
+        cmdresult = swid ? getContact(swid) : getContacts( [] )
         break
       
     case "lock" :
-        cmdresult = getLock(swid)
+        cmdresult = swid ? getLock(swid) : getLocks( [] )
         break
          
     case "thermostat" :
-        cmdresult = getThermostat(swid)
+        cmdresult = swid ? getThermostat(swid) : getThermostats( [] )
         break
          
     case "music" :
-        cmdresult = getMusic(swid)
+        cmdresult = swid ? getMusic(swid) : getMusics( [] )
         break
         
     case "presence" :
-    	cmdresult = getPresence(swid)
+        cmdresult = swid ? getPresence(swid) : getPresences( [] )
         break
          
     case "water" :
-        cmdresult = getWater(swid)
+        cmdresult = swid ? getWater(swid) : getWaters( [] )
         break
          
     case "valve" :
-      	cmdresult = getValve(swid)
+        cmdresult = swid ? getValve(swid) : getValves( [] )
         break
     case "door" :
-      	cmdresult = getDoor(swid)
+        cmdresult = swid ? getDoor(swid) : getDoors( [] )
         break
     case "illuminance" :
-      	cmdresult = getIlluminance(swid)
+        cmdresult = swid ? getIlluminance(swid) : getIlluminances( [] )
         break
     case "smoke" :
-      	cmdresult = getSmoke(swid)
+        cmdresult = swid ? getSmoke(swid) : getSmokes( [] )
         break
     case "temperature" :
-      	cmdresult = getTemperature(swid)
+        cmdresult = swid ? getTemperature(swid) : getTemperatures( [] )
         break
     case "weather" :
-    	cmdresult = getWeather(swid)
+        cmdresult = swid ? getWeather(swid) : getWeathers( [] )
         break
     case "other" :
     	cmdresult = getOther(swid)
@@ -802,7 +803,7 @@ def doQuery() {
         cmdresult = getSHMState(swid)
         break
     case "routine" :
-        cmdresult = getRoutine(swid)
+        cmdresult = swid ? getRoutine(swid) : getRoutines( [] )
         break
 
     }

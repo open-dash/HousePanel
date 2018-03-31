@@ -1818,7 +1818,7 @@ function is_ssl() {
     }
     
     // handle special non-groovy based tile types
-    if ( $swtype=="auto") {
+    if ( $swtype=="auto" && $swid) {
         if ( substr($swid,0,5)=="clock") {
             $swtype = "clock";
         } else if ( substr($swid,0,3)=="vid") {
