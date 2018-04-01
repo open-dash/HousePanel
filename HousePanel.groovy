@@ -1099,13 +1099,14 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 hue = cmd.substring(4,7).toInteger()
                 saturation = cmd.substring(8,11).toInteger()
                 newsw = cmd.substring(12,15).toInteger()
-//                log.debug "cmd= ${cmd} hue= ${hue} sat= ${saturation} level= ${newsw}"
                 item.setHue(hue)
                 item.setSaturation(saturation)
-                item.setLevel(newsw)
+                // item.setLevel(newsw)
                 newcolor = hsv2rgb(hue, saturation, newsw)
-//                log.debug "New color = $newcolor"
                 newonoff = "on"
+
+                // disable overriding the existing level
+                newsw = false
             }
             break
               
@@ -1115,7 +1116,6 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            // newonoff=="on" ? item.on() : item.off()
             if ( swattr.isNumber() ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
@@ -1131,8 +1131,6 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         if ( hue ) { resp.put("hue", hue) }
         if ( saturation ) { resp.put("saturation", saturation) }
         if ( temperature ) { resp.put("colorTemperature", temperature) }
-        
-        // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
 
     return resp

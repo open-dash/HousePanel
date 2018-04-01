@@ -251,6 +251,8 @@ function setupColors() {
 }
 
 function setupSliders() {
+    
+    // $("div.overlay.level >div.level").slider( "destroy" );
     $("div.overlay.level >div.level").slider({
         orientation: "horizontal",
         min: 0,
@@ -306,6 +308,7 @@ function setupSliders() {
     });
 
     // now set up all colorTemperature sliders
+    // $("div.overlay.colorTemperature >div.colorTemperature").slider( "destroy" );
     $("div.overlay.colorTemperature >div.colorTemperature").slider({
         orientation: "horizontal",
         min: 2000,

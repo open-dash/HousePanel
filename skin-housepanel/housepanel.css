@@ -1171,9 +1171,11 @@ div.shm.state.off, div.shm.state.stay, div.shm.state.away {
     color: rgba(255, 255, 255, 1);
 }
 div.shm.state {
-    background-size: 80px;
+    background-size: 70px;
     background-repeat: no-repeat;
     height: 90px;
+    background-position-x: center;
+    background-position-y: bottom;
 }
 div.shm.state.stay {
     background-image: url('icons/security-blue.png');
@@ -1406,6 +1408,7 @@ div.frame-thing {
     height: auto;
     background: none;
     box-shadow: none;
+    margin: 0px;
 }
 div.thingname.frame {
     width: 480px;
