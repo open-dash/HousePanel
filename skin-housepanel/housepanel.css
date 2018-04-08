@@ -1689,7 +1689,7 @@ div#opmode {
 /* disable commands in general */
 div._on, div._off, div._open, div._close, 
 div._onPhysical, div._offPhysical,
-div._startmotion, div._stopmotion {
+div._startmotion, div._stopmotion, div.overlay._reset {
     display: none;
 }
 div.other.lg.tv.switch {
