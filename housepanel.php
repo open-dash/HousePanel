@@ -1575,15 +1575,22 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     if ( !$cnt || $cnt < 0 ) {
         $cnt = 1000;
     }
-    
-    // make a new tile based on the dragged information
-    $thing = makeThing($cnt, $tilenum, $thesensor, $panel);
-    
-    // add it to our system
+
     $options["things"][$panel] = array_values($options["things"][$panel]);
     $lastid = count( $options["things"][$panel] ) - 1;
     $lastitem = $options["things"][$panel][$lastid];
-    $options["things"][$panel][] = array($tilenum, $lastitem[1], $lastitem[2]);
+    $ypos  = intval($lastitem[1], 10);
+    $xpos = intval($lastitem[2], 10);
+    if ( $xpos < -400 || $xpos > 400 || $ypos < -400 || $ypos > 400 ) {
+        $xpos = 0;
+        $ypos = 0;
+    }
+    
+    // make a new tile based on the dragged information
+    $thing = makeThing($cnt, $tilenum, $thesensor, $panel, $ypos, $xpos);
+    
+    // add it to our system
+    $options["things"][$panel][] = array($tilenum, $ypos, $xpos);
     writeOptions($options);
     
     return $thing;
