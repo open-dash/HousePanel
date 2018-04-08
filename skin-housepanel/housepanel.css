@@ -27,7 +27,7 @@ h1, h2, h3 {
 }
 
 div#tabs, div#controlpanel {
-    width: 1012px;
+    width: 1140px;
 /*    transform: scale(0.6);
     -ms-transform: scale(0.6);
     -moz-transform: scale(0.6);
@@ -45,11 +45,11 @@ div#catalog {
     display: inline-block;
     position: absolute;
     top: 0px;
-    left: 1014px;
+    left: 1142px;
     border: 2px solid rgb(128, 128, 128);
 }
 div#dragregion {
-    width: 1526px;
+    width: 1650px;
 }
 
 .ui-widget.ui-widget-content{
@@ -365,6 +365,7 @@ div.thing.catalog-thing {
 
 div.modalbox {
     display: inline-block;
+    text-align: left;
     margin-left: 5px; margin-top: 5px;
     padding: 5px;
     border: 2px solid #3a5795;
@@ -372,6 +373,7 @@ div.modalbox {
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
     position: absolute; z-index: 999;
+    width: 320px;
 }
 div.modalbuttons {
     margin-top: 5px;
@@ -1435,7 +1437,6 @@ div.switch.yard.power {
 }*/
 div.video-thing {
     width: 369px;
-    height: 240px;
 }
 div.thingname.video {
     display: none;
@@ -1683,4 +1684,22 @@ div#opmode {
 }
 .minicolors-position-left .minicolors-panel {
     left: 60px;
+}
+
+/* disable commands in general */
+div._on, div._off, div._open, div._close, 
+div._onPhysical, div._offPhysical,
+div._startmotion, div._stopmotion {
+    display: none;
+}
+div.other.lg.tv.switch {
+    display: none;
+}
+div.p_174 div.overlay._on, div.p_174 div.overlay._off, div.p_174._on, div.p_174._off {
+    display: inline-block;
+    color: rgba(255,255,255,1);
+    font-size: 12pt;
+}
+div.p_174 {
+    width: 420px;
 }

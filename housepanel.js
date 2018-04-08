@@ -160,7 +160,7 @@ function convertToModal(modalcontent) {
     return modalcontent;
 }
 
-function createModal(modalcontent, modaltag, addok, responsefunction) {
+function createModal(modalcontent, modaltag, addok, responsefunction, pos) {
     var modalid = "modalid";
     
     // skip if a modal is already up...
@@ -171,16 +171,20 @@ function createModal(modalcontent, modaltag, addok, responsefunction) {
     if ( modaltag && modaltag.hasOwnProperty("on") ) {
         modalhook = modaltag;
     } else {
-        if ( !modaltag ) { modaltag = "#controlpanel"; }
+        if ( !modaltag ) { modaltag = "#tabs"; }
         modalhook = $(modaltag)
     }
+    var styleinfo = "";
+    if ( pos ) {
+        styleinfo = " style=\"position: absolute; left: " + pos.left + "px; top: " + pos.top + "px;\"";
+    }
     
-    modalcontent = "<div id='" + modalid +"' class='modalbox'>" + modalcontent;
+    modalcontent = "<div id='" + modalid +"' class='modalbox'" + styleinfo + ">" + modalcontent;
     if ( addok ) {
         modalcontent = convertToModal(modalcontent);
     }
     modalcontent = modalcontent + "</div>";
-    modalhook.after(modalcontent);
+    modalhook.prepend(modalcontent);
     modalStatus = 1;
     $("#"+modalid).on("click",".dialogbtn",function() {
 //        var clk = $(this).attr("name");
@@ -472,7 +476,8 @@ function setupDraggable() {
                     if ( $(this).hasClass("ui-tabs-active") ) {
                         var panel = $(this).text();
                         var lastthing = $("div.panel-"+panel+" div.thing").last();
-                        createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?",lastthing, true, function(ui, content) {
+                        var pos = {left: 400, top: 100};
+                        createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?","body", true, function(ui, content) {
                             var clk = $(ui).attr("name");
                             if ( clk=="okay" ) {
                                 // add it to the system
@@ -533,7 +538,7 @@ function setupDraggable() {
                                     }
                                 );
                             }
-                        });
+                        }, pos );
                     } 
                 });
             // otherwise this is an existing thing we are moving
@@ -1394,7 +1399,7 @@ function setupPage(trigger) {
         
         // avoid doing click if the target was the title bar
         // or if not in Operate mode
-        if ( priorOpmode!=="Operate" || modalStatus ||
+        if ( aid==undefined || priorOpmode!=="Operate" || modalStatus ||
              ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
 
         var theclass = $(this).attr("class");
@@ -1403,18 +1408,17 @@ function setupPage(trigger) {
         var bid = $(tile).attr("bid");
         var bidupd = bid;
         var thetype = $(tile).attr("type");
+        var targetid = '#a-'+aid+'-'+subid;
         
         // set the action differently for Hubitat
         var ajaxcall = "doaction";
+//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+']');
         if ( bid.startsWith("h_") ) {
             ajaxcall = "dohubitat";
             // bid = bid.substring(2);
         }
 
-        // get target id and contents
-        var targetid = '#a-'+aid+'-'+subid;
         var thevalue;
-        
         // for switches and locks set the command to toggle
         // for most things the behavior will be driven by the class value = swattr
         if (thetype==="switch" || thetype==="lock" || thetype==="door" ||
@@ -1468,6 +1472,12 @@ function setupPage(trigger) {
 //                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
+        } else if ( thetype=="videozzz" ) {
+            alert( "Clicked on video");
+            thevalue = '<video width="369" autoplay ><source src="media/arlovideo.mp4" type="video/mp4"></video>';
+            var presult = {url: thevalue};
+            console.log("Replaying latest embedded video");
+            updateTile(aid, presult);
         } else {
 //            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             console.log("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);

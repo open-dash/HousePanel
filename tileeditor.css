@@ -1,4 +1,4 @@
-edit_Tile {
+#edit_Tile {
 	position: absolute;
 }
 
@@ -21,12 +21,31 @@ dialog {
   	top: 50%;
   	left: 35%;
 } 
-div.tile_buttons {
-	width: auto;
-	height: 33px;
-	font-size: 9pt;
+div.tile_buttons, .iconwidth {
+	width: 210px;
+	height: auto;
+	font-size: 10pt;
         text-align: center;
+        margin-bottom: 5px;
+}
+.iconwidth {
+        text-align: left;
         margin-bottom: 10px;
+        margin-left: 10px;
+}
+.iconwidth label {
+    background: #3498db;
+    color: #ffffff;
+    font-size: 10pt;
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+    padding: 2px 7px 1px 7px;
+    margin-left: 10px;
+    margin-right: 5px;
+}
+.iconwidth input {
+    display: inline-block;
+    width: 80px;
 }
 #wysISwyg {
 	margin-left:1px;
@@ -34,9 +53,11 @@ div.tile_buttons {
 }
 .tileDisplay {
     display: inline-block;
-    float: right;
+    float: left;
     width: auto; 
     height: auto;
+    position: absolute;
+    top: 0px;
 }
 #tileDialog {
     display: block;
@@ -45,9 +66,10 @@ div.tile_buttons {
 }
 #tileEdit {
 	background-color: #666;
-        position: absolute;
+        position: relative;
         width: 250px;
         height: auto;
+        float: left;
 }
 #iconChoices {
 	margin: 3px;
@@ -62,11 +84,11 @@ div.tile_buttons {
 }
 #editicon {
 	margin: 1px 1px 1px 2px;
-	position:absolute;
+	position:relative;
 	top: 24px;
 	display: none;
 	float: left;
-    width: 209px;
+    width: 230px;
     height: 176px;
 	overflow-x: hidden;
 	background-color: #999;
@@ -193,6 +215,7 @@ input.editSection_txt.color {
 .icon {
 	float: left;
 	margin: 2px;
+    margin-bottom: 5px;
 	max-height: 40px;
 	max-width: auto;
 	-o-object-fit: contain;
@@ -218,6 +241,7 @@ input.editSection_txt.color {
 	justify-content: center;
 	align-items: center;  
 	top: 220px;
+        left: 0px;
 	height: 46px;
 	width: 211px;
 	  background: #3498db;
@@ -305,11 +329,6 @@ input[name='sectionToggle']:checked+label{
 }
 .btn {
   background: #3498db;
-  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
-  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
-  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
-  background-image: -o-linear-gradient(top, #3498db, #2980b9);
-  background-image: linear-gradient(to bottom, #3498db, #2980b9);
   -webkit-border-radius: 28;
   -moz-border-radius: 28;
   border-radius: 28px;

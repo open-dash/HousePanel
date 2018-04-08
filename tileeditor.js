@@ -1,15 +1,3 @@
-function getTileNumber() {
-	return $(".tileDisplay:first").attr('id');
-}
-
-function getToggleStatus() {
-//	if($('#tileImage_on').is(":visible")) {
-//		return "#tileImage_on";
-//	}
-//	return "#tileImage_off";
-    return "#a-0-";
-}
-
 function getOnOff(str_type) {
     var onoff = ["",""];
     
@@ -42,48 +30,48 @@ function getOnOff(str_type) {
 
 function getCssRuleTarget(strSection, str_type, thingindex) {
 
-        if ( thingindex==null ) {
-            thingindex = 1;
-        }
-        
-        var target = "";
-        // use new logic for reading on/off due to multiple tile types
-        // when writing both states we must determine onoff from type
-        // when writing the active state we get that state from the HTML
+    if ( thingindex==null ) {
+        thingindex = 1;
+    }
+
+    var target = "";
+    // use new logic for reading on/off due to multiple tile types
+    // when writing both states we must determine onoff from type
+    // when writing the active state we get that state from the HTML
+    
 	switch (strSection) {
 		case "iconOn":
-                        var onoff = getOnOff(str_type);
-                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[0];
+            var onoff = getOnOff(str_type);
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[0];
 			break;
 		case "iconOff":
-                        var onoff = getOnOff(str_type);
-                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[1];
+            var onoff = getOnOff(str_type);
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[1];
 			break;
 		case "icon":
-                        var onoff = $("#a-0-"+str_type).html();
-                        if ( $.isNumeric(onoff) ) {
-                            onoff = "";
-                        } else {
-                            onoff = "."+onoff;
-                        }
-                        target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff;
+            var onoff = $("#a-0-"+str_type).html();
+            if ( $.isNumeric(onoff) ) {
+                onoff = "";
+            } else {
+                onoff = "."+onoff;
+            }
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff;
 			break;
                 // every sub-element is wrapped with this so size width this way
 		case "overlay":
-                        target = "div.overlay"+'.v_'+thingindex;
+            target = "div.overlay"+'.v_'+thingindex;
 			break;
 		case "text":
 			target = "div.thingname.t_"+thingindex;
 			break;
 		case "tile":
-//			arrClass = $("#wysISwyg").attr('class').split(/ +/);
 			target = "div.thing.p_"+thingindex;
 			break;
 		case "head":
 			target = "div.thingname.t_"+thingindex;
 			break;
 	};	
-        return target;
+    return target;
 };
 
 // special lightweight function to get the displayed values
@@ -91,23 +79,23 @@ function getCssRuleTarget(strSection, str_type, thingindex) {
 // currently unused but we could use this to speed things up a bit if needed
 function getCssDisplayTarget(strSection, str_type, thingindex) {
 
-        var target = "";
+    var target = "";
 	switch (strSection) {
 		case "icon":
-                        target = "#a-0-"+str_type;
+            target = "#a-0-"+str_type;
 			break;
 		case "text":
-                        target = "span.n_"+thingindex;
+            target = "span.n_"+thingindex;
 			break;
 		case "tile":
 			target = "#t-0";
 			break;
 		case "head":
-                        target = "#s-0";
+            target = "#s-0";
 			break;
 	};	
         return target;
-};
+}
 
 function toggleTile(target, thingindex) {
     var swval = $(target).html();
@@ -177,29 +165,36 @@ function toggleTile(target, thingindex) {
 	}
 };
 
+// activate ability to click on icons
+function setupIcons(icontarget, str_type, thingindex) {
+    $("div.cat.Local_Storage").off("click","img");
+    $("div.cat.Local_Storage").on("click","img",function() {
+        var img = "../" + $(this).attr("src");
+        // alert("Clicked on img= "+img);
+        iconSelected(icontarget, img, str_type, thingindex);
+    });
+}
 
 function initDialogBinds(str_type, thingindex, str_on, str_off) {
 	
-        var obj = {type: str_type, pid: thingindex};
-        
-        // fabricate the proper target for the options page click event
-	$('#toggle').bind('click', function (event) {
+    // fabricate the proper target for the options page click event
+	$('#toggle').on('click', function (event) {
             var target = '#a-0-' + str_type;
             toggleTile(target, thingindex);
             event.stopPropagation;
 	});
 
-        // set up the trigger for only the tile being edited
-        // and use the real tile div as the target
-        var trigger = "div." + str_type;
-        if ( str_on ) trigger += "." + str_on;
-        if ( str_off ) {
-            trigger += ",div." + str_type + "." + str_off;
-        }
-        $(trigger).bind('click', function(event) {
-            toggleTile(event.target, thingindex);
-            event.stopPropagation();
-        });
+    // set up the trigger for only the tile being edited
+    // and use the real tile div as the target
+    var trigger = "div." + str_type;
+    if ( str_on ) trigger += "." + str_on;
+    if ( str_off ) {
+        trigger += ",div." + str_type + "." + str_off;
+    }
+    $(trigger).on('click', function(event) {
+        toggleTile(event.target, thingindex);
+        event.stopPropagation();
+    });
         
 	$('#fileInput').bind('change', function() {
 		$('#uploadform').submit();
@@ -232,26 +227,10 @@ function initDialogBinds(str_type, thingindex, str_on, str_off) {
 		var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
 		if($("#noHead").is(':checked')){
 			addCSSRule(cssRuleTarget, "display: none;", 1);
-
-//			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-//			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-//			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
-//						console.log(cssRuleTarget);
-//			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
-//			addCSSRule(cssRuleTarget, "visibility: visible;", 1);
-//						console.log(cssRuleTarget);
 		} else {
 			addCSSRule(cssRuleTarget, "display: inline-block;", 0);
-//			var rule = "width: " + ($("#wysISwyg").width() - 2) + "px;";
 			var rule = "width: " + ($("#t-0").width() - 2) + "px;";
 			addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
-
-//			cssRuleTarget = "div.ovCaption.vc_" + getTileNumber();
-//			addCSSRule(cssRuleTarget, "", 1);
-//						console.log(cssRuleTarget);
-//			cssRuleTarget = "div.ovStatus.vs_" + getTileNumber();
-//			addCSSRule(cssRuleTarget, "", 1);
-//						console.log(cssRuleTarget);		
 		}
 	});	
 	
@@ -401,15 +380,15 @@ function tilebuttons(str_type, thingindex) {
     var dh = "";
 	//tileDisplay_buttons
 	dh += "<div class='tile_buttons'>";
-	dh += "<div>";
+//	dh += "<div>";
 	dh += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
 	dh += "<span class='btn' onclick='tileCopy(" + thingindex + ")'>&#x2398</span>";
 	dh += "<span class='btn' onclick='tilePaste(" + thingindex + ")'>&#x1f4cb</span>";
 	dh += "<span id='dgclose' class='btn' onclick='tileDialogClose()'>Close</span>";
+	// dh += "<span class='btn' id='toggle'>Toggle</span>";
 	dh += "</div>";
-	dh += "<div>";
-	dh += "<span class='btn' id='toggle'>Toggle</span>";
-	dh += "</div>";
+	dh += "<div class='iconwidth'>";
+        dh += "<label for='iconwidth'>Icon Size: </label><input id='iconwidth' type='text' value='auto' />";
 	dh += "</div>";
 	//End: tileDisplay_buttons
     return dh;
@@ -458,6 +437,7 @@ function colorpicker() {
 	dh += "</div>";	
     return dh;
 }
+
 function editTile(str_type, thingindex, str_on, str_off) {  
 	$('#edit_Tile').empty();
 	
@@ -500,7 +480,7 @@ function editTile(str_type, thingindex, str_on, str_off) {
 	//End: LEFT SIDE - tileEdit	
 
 	//RIGHT SIDE - tileDisplay
-	dialog_html += "<div id='" + thingindex + "' class='tileDisplay'>";
+	dialog_html += "<div class='tileDisplay'>";
 
 	//tileDisplay_buttons
 	dialog_html += tilebuttons(str_type, thingindex);
@@ -546,9 +526,9 @@ function editTile(str_type, thingindex, str_on, str_off) {
             var newsize = parseInt( $(target).width() );
             var newhigh = parseInt( $(target).height() );
             if ( newsize > 120 ) {
-                $("#edit_Tile").width(320 + newsize);
+                $("#edit_Tile").width(340 + newsize);
             } else {
-                $("#edit_Tile").width(420);
+                $("#edit_Tile").width(460);
             }
             if ( newhigh < 200 ) {
                 newhigh = 200;
@@ -571,14 +551,14 @@ function tileCopy(thingindex) {
 };
 
 function tilePaste(thingindex) {
-	alert("Not Yet Implemented - Pasted To: " + thingindex)
-};
+    alert("Not Yet Implemented - Pasted To: " + thingindex);
+}
 
 function invertHex(hexnum){
-  if(hexnum.length != 6) {
+  if(hexnum.length !== 6) {
     console.log("Hex color must be six hex numbers in length.");
     return false;
-  }
+}
 	
   hexnum = hexnum.toUpperCase();
   var splitnum = hexnum.split("");
@@ -619,7 +599,7 @@ function resetInverted(str_type, thingindex) {
 		  }	  		
       }
     }
-};
+}
 
 function changeInverted(strColor, str_type, thingindex) {
     //Searching of the selector matching cssRules
@@ -635,7 +615,7 @@ function changeInverted(strColor, str_type, thingindex) {
       }
     }
 	return strColor;
-};
+}
 
 
 function pickColor(strCaller, str_type, thingindex) {
@@ -657,7 +637,7 @@ function pickColor(strCaller, str_type, thingindex) {
 	$('#editColor').val(startColor);	
 	$('#editColor').trigger('keyup');;
 
-};
+}
 
 function relayColor(str_type, thingindex) {
     var section = $("input[name='sectionToggle']:checked").val();
@@ -674,7 +654,7 @@ function relayColor(str_type, thingindex) {
     } else {
             addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
     }
-};
+}
 
 function rgb2hex(colorVal) {
 	try {
@@ -692,11 +672,11 @@ function rgb2hex(colorVal) {
                 // default below should never be used - but we also grab above the transparency value
 		return "#0033cc";
 	}
-};
+}
 
 function hex(x) {
 	return ("0" + parseInt(x).toString(16)).slice(-2);
-};
+}
 
 function section_Toggle(sectionView, str_type) {
 	$("#uploadWrapper").hide();
@@ -736,28 +716,28 @@ function section_Toggle(sectionView, str_type) {
 			$("#colorWrapper").show();
                         $("#buttonWrapper").show();
 			break;
-	};
-};
+	}
+}
 
 function getIconCategories() {
 	var iconDoc = 'iconlist.txt';
 	var arrCat = ['Local_Storage'];
 	$.ajax({
-	url:iconDoc,
-	type:'GET',
-	success: function (data) {
-		var arrIcons = data.toString().replace(/[\t\n]+/g,'').split(',');
-		  $.each(arrIcons, function(index, val) {
-			var iconCategory = val.substr(0, val.indexOf('|'));
-			iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
-				arrCat.push(iconCategory);					
-			}); //end each Icon
-	arrCat = makeUnique(arrCat);
-	$.each(arrCat, function(index, iconCat) {
-		var catText = iconCat.replace(/_/g, ' ')
-		$('#iconSrc').append($('<option></option>').val(iconCat).text(catText));
-	}); 
-	} //end function()
+        url:iconDoc,
+        type:'GET',
+        success: function (data) {
+            var arrIcons = data.toString().replace(/[\t\n]+/g,'').split(',');
+            $.each(arrIcons, function(index, val) {
+                var iconCategory = val.substr(0, val.indexOf('|'));
+                iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
+                arrCat.push(iconCategory);					
+            }); //end each Icon
+            arrCat = makeUnique(arrCat);
+            $.each(arrCat, function(index, iconCat) {
+                var catText = iconCat.replace(/_/g, ' ')
+                $('#iconSrc').append($('<option></option>').val(iconCat).text(catText));
+            }); 
+        } //end function()
 	}); //end ajax
 }
 
@@ -765,29 +745,27 @@ function getIcons(response, str_type, thingindex) {
 	var strIconTarget = getCssRuleTarget('icon', str_type, thingindex);
 	var iCategory = $("#iconSrc").val();
 	var skindir = $("#skinid").val();
-	var localPath = skindir + '/icons/';	
-	
+	var localPath = skindir + '/icons/';
+    
+    // change to use php to gather icons in an ajax post call
+    // this replaces the old method that fails on GoDaddy
 	if(iCategory === 'Local_Storage') {
-		var icons = '';		
-		$.ajax({
-			url : localPath,
-			success: function (data) {
-				$(data).find("a").attr("href", function (i, val) {
-				if( val.match(/\.(jpe?g|png|gif|jpg|JPG)$/)) {
-						var iconImage = localPath + val; 
-						icons+='<div class="cat Local_Storage">'
-						icons+='<img onclick="iconSelected(\'' + strIconTarget + '\',\'../' + iconImage + '\',\'' + str_type+ '\',' + thingindex + ')" ';
-						icons+='class="icon" src="' + iconImage + '" alt="' + val + '"></div>'		
-					}
-				});//end find()
-				$('#iconList').html(icons);
-			}//end function
-		});//end Local Storage ajax	
+            $.post("getdir.php", 
+               {useajax: "geticons", id: thingindex, type: str_type, value: strIconTarget, attr: localPath},
+               function (presult, pstatus) {
+                    if (pstatus==="success" ) {
+                        $('#iconList').html(presult);
+                        setupIcons(strIconTarget, str_type, thingindex);
+                    } else {
+                        $('#iconList').html("<div class='error'>Error reading local icons</div>");
+                    }
+               }
+            );
 	} else {
-		var icons = '';
-		var iconDoc = 'iconlist.txt';
-		var arrCat = ['Local_Storage'];
-		$.ajax({
+            var icons = '';
+            var iconDoc = 'iconlist.txt';
+            var arrCat = ['Local_Storage'];
+            $.ajax({
 		url:iconDoc,
 		type:'GET',
 		success: function (data) {
@@ -804,15 +782,16 @@ function getIcons(response, str_type, thingindex) {
 				}); //end each Icon			
 		$('#iconList').html(icons);
 		} //end function()
-		}); //end ajax
+            }); //end ajax
 	}
+        
 	if(response) {
 		$(function() {
 			iconSelected(strIconTarget, '../' + localPath + response, str_type, thingindex);
 		});				
 	}
 
-};
+}
 
 function makeUnique(list) {
     var result = [];
@@ -842,57 +821,60 @@ function iconSelected(cssRuleTarget, imagePath, str_type, thingindex) {
     
 //    alert("Target= "+cssRuleTarget+" Icon= " + imagePath + " type= "+str_type+" index= "+thingindex);
     
-	$("#noIcon").attr('checked', false);
-	
-	var strEffect = getBgEffect();
+    $("#noIcon").attr('checked', false);
 
-	addCSSRule(cssRuleTarget, "background-image: url('" + imagePath + "')" + strEffect + ";", 0);
+    var strEffect = getBgEffect();
+    
+    var imgurl = "background-image: url('" + imagePath + "')";
+//    alert("target= " + cssRuleTarget + " imagePath= [" + imgurl + "] effect= [" + strEffect + "] type= "+ str_type+ " idx= " + thingindex);
+	addCSSRule(cssRuleTarget, imgurl + strEffect + ";", 1);
+	addCSSRule(cssRuleTarget, "background-size: auto;");
 
-	if($("#invertIcon").is(':checked')){
-		addCSSRule(cssRuleTarget, "filter: invert(1);");
-		addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
-	} else {
-		resetInverted(str_type, thingindex);
-	}
-};
+    if($("#invertIcon").is(':checked')){
+        addCSSRule(cssRuleTarget, "filter: invert(1);");
+        addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
+    } else {
+        resetInverted(str_type, thingindex);
+    }
+}
 
 function tileDialogClose() {  
     var dialog = document.getElementById('edit_Tile');
-	dialog.close();
-};
+    dialog.close();
+}
 
 function addCSSRule(selector, rules, resetFlag){
     //Searching of the selector matching cssRules
-	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
-	var index = -1;
+//    alert("Adding rules: " + rules);
+    
+    var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
+    var index = -1;
     for(var i=sheet.cssRules.length; i--;){
       var current_style = sheet.cssRules[i];
       if(current_style.selectorText === selector){
         //Append the new rules to the current content of the cssRule;
-		if(resetFlag !== 1){
+            if(resetFlag !== 1){
         	rules=current_style.style.cssText + rules;			
-		}
+            }
         sheet.deleteRule(i);
         index=i;
       }
     }
     if(sheet.insertRule){
-	  if(index > -1) {
-      	sheet.insertRule(selector + "{" + rules + "}", index);		  
-	  }
-	  else{
-      	sheet.insertRule(selector + "{" + rules + "}");			  
-	  }
+        if(index > -1) {
+            sheet.insertRule(selector + "{" + rules + "}", index);		  
+	} else {
+            sheet.insertRule(selector + "{" + rules + "}");			  
+        }
     }
     else{
-	  if(index > -1) {
-      	sheet.addRule(selector, rules, index);	  
-	  }
-	  else{
-      	sheet.addRule(selector, rules);	  
-	  }
+        if(index > -1) {
+            sheet.addRule(selector, rules, index);	  
+        } else {
+            sheet.addRule(selector, rules);	  
+        }
     }
-};
+}
 
 function resetCSSRules(str_type, thingIndex){
 	removeCSSRule("span.n_" + thingIndex);
@@ -905,7 +887,7 @@ function resetCSSRules(str_type, thingIndex){
 	$("#noHead").prop("checked", false);
 	section_Toggle('icon', str_type);
 	pickColor('icon', str_type, thingIndex);
-};
+}
 
 function removeCSSRule(strMatchSelector){
 	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
@@ -915,7 +897,7 @@ function removeCSSRule(strMatchSelector){
             sheet.deleteRule (i);
         }
     }  
-};
+}
 		 
 function invertImage(){
     //Searching of the selector matching cssRules
@@ -952,4 +934,4 @@ function invertImage(){
 		sheet.addRule(selector, rules);	  
 	  }
 	}	
-};
+}

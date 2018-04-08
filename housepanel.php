@@ -104,7 +104,8 @@ error_reporting(E_ERROR);
 
 // header and footer
 function htmlHeader($skindir="skin-housepanel") {
-    $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
+    $tc = '<!DOCTYPE html>';
+    // $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
     $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
     $tc.= '<meta name="msapplication-TileColor" content="#2b5797">';
@@ -154,17 +155,19 @@ function htmlHeader($skindir="skin-housepanel") {
     // load the custom tile sheet if it exists
     // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("$skindir/customtiles.css")) {
-        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css?v=". time() ."\">";
+        // $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css?v=". time() ."\">";
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/customtiles.css" ."\">";
     }
     $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
         // dynamically create the jquery startup routine to handle all types
         // note - we dont need bulb, light, or switchlevel because they all have a switch subtype
         $tc.= '<script type="text/javascript">';
-        $clicktypes = array("switch.on","switch.off",
+        $clicktypes = array("switch.on","switch.off","video.url",
                             "lock.locked","lock.unlocked","door.open","door.closed",
                             "momentary","shm",
-                            "heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan",
-                            "musicmute","musicstatus", 
+                            "heat-dn","heat-up","cool-dn","cool-up",
+                            "thermostat.thermomode","thermostat.thermofan",
+                            "music.musicmute", 
                             "music-previous","music-pause","music-play","music-stop","music-next",
                             "level-dn","level-up", "level-val","mode.themode",
                             "vol-up","vol-dn",
@@ -417,6 +420,11 @@ function processName($thingname, $thingtype) {
     return array($thingname, $subtype);
 }
 
+function returnVideo() {
+    $v= '<video width="369" autoplay><source src="media/arlovideo.mp4" type="video/mp4"></video>';
+    return $v;
+}
+
 function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
 // rewritten to use thing numbers as primary keys
     
@@ -484,35 +492,15 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0) {
             }
         }
         
-    // temporary crude video tag hack - must replace the small.mp4 or small.ogv
+    // temporary crude video tag hack - must edit returnVideo
     // with the video stream from your camera source or a video of your choice
     } else if ( $thingtype === "video") {
         $vidname = $thingvalue["name"];
         $tkey = "url";
         $vidname = $thingvalue["url"];
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\"><span class=\"n_$kindex\">" . $thingpr . "</span></div>";
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video url\" id=\"a-$i"."-$tkey\">";
-        
-        $tc.= '<video width="369" height="240" autoplay >';
-        $tc.= '  <source src="media/small.mp4" type="video/mp4">';
-        // $tc.= '  <source src="media/last-time-race-start.ogg" type="video/ogg">';
-        $tc.= '<div id="QuickTimeLayer" align="center"></div>';
-        $tc.= '  <script>';
-        $tc.= 'var isIE = /*@cc_on!@*/false || !!document.documentMode;' . 
-              'var isEdge = !isIE && !!window.StyleMedia;' . 
-              'var isChrome = !!window.chrome && !!window.chrome.webstore;';
-  
-        $tc.= " if ( isChrome ) {       QT_WriteOBJECT('media/small.ogv',";
-        $tc.= "                '369px', '240px',            "; // width & height
-        $tc.= "                '',                          "; // required version of the ActiveX control, we're OK with the default value
-        $tc.= "                'scale', 'tofit',            "; // scale to fit element size exactly so resizing works
-        $tc.= "                'autoplay', 'true', ";
-        $tc.= "                'controller', 'true', ";
-        $tc.= "                'qtsrc', 'media/small.ogv', ";
-        $tc.= "                'emb#id', 'qtrtsp_embed', "; // ID for embed tag only
-        $tc.= "                'obj#id', 'qtrtsp_object');  "; // ID for object tag only
-        $tc.= "}        </script>";
-        $tc.= "</video>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video $tkey\" id=\"a-$i"."-$tkey\">";
+        $tc.= returnVideo();
         $tc.= "</div>";
         
     } else {
@@ -740,7 +728,7 @@ function getCatalog($allthings) {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "shm", "piston", "other",
-                        "clock","blank","image","frame");
+                        "clock","blank","image","frame","video");
     sort($thingtypes);
     $options = getOptions($allthings);
     $useroptions = $options["useroptions"];
@@ -858,6 +846,11 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
     $todaydate = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     if ($swtype==="clock") {
         $response = $todaydate;
+    } else if ($swtype=="video") {
+        // instead of doing this it is safer to put it in a crontab
+        // exec("python getarlo.py");
+        $videodata = returnVideo();
+        $response = array("url" => $videodata);
     } else {
     
         // do nothing if we don't have things loaded in a session
@@ -1197,26 +1190,23 @@ function getOptions($allthings) {
         $cnt++;
         
         // update the index with latest sensor information
-        /*
         foreach ($allthings as $thingid =>$thesensor) {
             if ( !key_exists($thingid, $options["index"]) ) {
                 $options["index"][$thingid] = $cnt;
                 
-                // put the newly added sensor in a default room
-                $thename= $thesensor["name"];
-                foreach($defaultrooms as $room => $regexp) {
-                    $regstr = "/(".$regexp.")/i";
-                    if ( preg_match($regstr, $thename) ) {
-                        $options["things"][$room][] = array($cnt,0,0);   // $thingid;
-                        break;
-                    }
-                }
+//                // put the newly added sensor in a default room
+//                $thename= $thesensor["name"];
+//                foreach($defaultrooms as $room => $regexp) {
+//                    $regstr = "/(".$regexp.")/i";
+//                    if ( preg_match($regstr, $thename) ) {
+//                        $options["things"][$room][] = array($cnt,0,0);   // $thingid;
+//                        break;
+//                    }
+//                }
                 $cnt++;
                 $updated = true;
             }
         }
-        
-        */
         
         
         // make sure all options are in a valid room

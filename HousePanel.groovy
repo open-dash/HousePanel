@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/08/2018 - Important bug fixes for thermostat and music tiles
  * 03/11/2018 - Added Smart Home Monitor from Chris Hoadley
  * 03/10/2018 - Major speedup by reading all things at once
  * 02/25/2018 - Update to support sliders and color hue picker
@@ -301,8 +302,8 @@ def getThing(things, swid, item=null) {
     def resp = item ? [:] : false
     if ( item ) {
         resp.put("name",item.displayName)
-    }
-            item?.capabilities.each {cap ->
+    
+            item.capabilities.each {cap ->
                 // def capname = cap.getName()
                 cap.attributes?.each {attr ->
                     try {
@@ -314,6 +315,25 @@ def getThing(things, swid, item=null) {
                     } 
                 }
             }
+            // add commands other than standard ones
+            item.supportedCommands.each { comm ->
+                try {
+                    def reserved = ["setLevel","setHue",\
+                                    "setSaturation","setColorTemperature","setColor","setAdjustedColor",\
+                                    "indicatorWhenOn","indicatorWhenOff","indicatorNever",\
+                                    "enrollResponse","poll","ping","configure","refresh"]
+                    def comname = comm.getName()
+                    def args = comm.getArguments()
+                    def arglen = args.size()
+                    log.debug "Command for ${swid} = $comname with $arglen args = $args "
+                    if ( arglen==0 && ! reserved.contains(comname) ) {
+                        resp.put( "_"+comname, comname )
+                    }
+                } catch (ex) {
+                    log.warn "Attempt to read command for ${swid} failed"
+                }
+            }
+    }
     return resp
 }
 
@@ -1261,7 +1281,7 @@ def setThermostat(swid, curtemp, swattr) {
           // case "heat-dn":
           else if ( swattr.endsWith("heat-dn")) {
               newsw = curtemp.toInteger() - 1
-              if (newsw < 60) newsw = 60
+              if (newsw < 50) newsw = 50
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
               resp['heat'] = newsw
@@ -1269,9 +1289,9 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "cool-dn":
-          else if ( swattr.endsWith("heat-dn")) {
+          else if ( swattr.endsWith("cool-dn")) {
               newsw = curtemp.toInteger() - 1
-              if (newsw < 65) newsw = 60
+              if (newsw < 60) newsw = 60
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
               resp['cool'] = newsw
@@ -1279,7 +1299,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermomode heat":
-          else if ( swattr.endsWith("thermomode emergency heat")) {
+          else if ( swattr.contains("emergency")) {
               item.heat()
               newsw = "heat"
               resp['thermomode'] = newsw
@@ -1287,7 +1307,8 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermomode heat":
-          else if ( swattr.endsWith("thermomode heat")) {
+          else if ( swattr.contains("thermomode") && swattr.endsWith("heat")) {
+              def modecmd = swattr
               item.cool()
               newsw = "cool"
               resp['thermomode'] = newsw
@@ -1295,7 +1316,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermomode cool":
-          else if ( swattr.endsWith("thermomode cool")) {
+          else if ( swattr.contains("thermomode") && swattr.endsWith("cool")) {
               item.auto()
               newsw = "auto"
               resp['thermomode'] = newsw
@@ -1303,7 +1324,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermomode auto":
-          else if ( swattr.endsWith("thermomode auto")) {
+          else if ( swattr.contains("thermomode") && swattr.endsWith("auto")) {
               item.off()
               newsw = "off"
               resp['thermomode'] = newsw
@@ -1311,7 +1332,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermomode off":
-          else if ( swattr.endsWith("thermomode off")) {
+          else if ( swattr.contains("thermomode") && swattr.endsWith("off")) {
               item.heat()
               newsw = "heat"
               resp['thermomode'] = newsw
@@ -1319,7 +1340,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermofan fanOn":
-          else if ( swattr.endsWith("thermofan on")) {
+          else if ( swattr.contains("thermofan") && swattr.endsWith("on")) {
               item.fanAuto()
               newsw = "auto"
               resp['thermofan'] = newsw
@@ -1327,7 +1348,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.endsWith("thermofan auto")) {
+          else if ( swattr.contains("thermofan") && swattr.endsWith("auto")) {
               item.fanCirculate()
               newsw = "circulate"
               resp['thermofan'] = newsw
@@ -1335,7 +1356,7 @@ def setThermostat(swid, curtemp, swattr) {
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.endsWith("thermofan circulate")) {
+          else if ( swattr.contains("thermofan") && swattr.endsWith("circulate")) {
               item.fanOn()
               newsw = "on"
               resp['thermofan'] = newsw
@@ -1347,9 +1368,11 @@ def setThermostat(swid, curtemp, swattr) {
           // default:
               if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
+                  resp['heat'] = swattr
               }
               else if (cmd=="cool" && swattr.isNumber()) {
                   item.setCoolingSetpoint(swattr)
+                  resp['cool'] = swattr
               }
               else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
                   item.thermostatSetpoint(swattr)
@@ -1372,85 +1395,72 @@ def setMusic(swid, cmd, swattr) {
     if (item) {
 //        log.debug "music command = $cmd for id = $swid swattr = $swattr"
         resp = getMusic(swid, item)
-        switch(swattr) {
-         
-        case "level-up":
-        case "vol-up":
-              newsw = cmd.toInteger()
-              newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
-              item.setLevel(newsw)
-              resp['level'] = newsw
-              break
-              
-        case "level-dn":
-        case "vol-dn":
-              newsw = cmd.toInteger()
-              def del = (newsw % 5) == 0 ? 5 : newsw % 5
-              newsw = (newsw <= 5) ? 5 : newsw - del
-              item.setLevel(newsw)
-              resp['level'] = newsw
-              break
-              
-        case "level":
-              newsw = cmd.toInteger()
-              item.setLevel(newsw)
-              resp['level'] = newsw
-              break
+        
+        // fix old bug from addition of extra class stuff
+        if ( swattr.contains("musicmute") && swattr.endsWith("unmuted" )) {
+            newsw = "muted"
+            item.mute()
+            resp['musicmute'] = newsw
+        } else if ( swattr.contains("musicmute") && swattr.endsWith("muted" )) {
+            newsw = "unmuted"
+            item.unmute()
+            resp['musicmute'] = newsw
+        } else {
+        
+            switch(swattr) {
 
-        case "music musicstatus paused":
-        case "music musicstatus stopped":
-              newsw = "playing"
-              item.play()
-              resp['musicstatus'] = newsw
-              break
+                case "level-up":
+                case "vol-up":
+                      newsw = cmd.toInteger()
+                      newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
+                      item.setLevel(newsw)
+                      resp['level'] = newsw
+                      break
 
-        case "music musicstatus playing":
-              newsw = "paused"
-              item.pause()
-              resp['musicstatus'] = newsw
-              break
-              
-        case "music-play":
-              newsw = "playing"
-              item.play()
-              resp['musicstatus'] = newsw
-              break
-              
-        case "music-stop":
-              newsw = "stopped"
-              item.stop()
-              resp['musicstatus'] = newsw
-              break
-              
-        case "music-pause":
-              newsw = "paused"
-              item.pause()
-              resp['musicstatus'] = newsw
-              break
-              
-        case "music-previous":
-              item.previousTrack()
-              resp['track'] = item.currentValue("trackDescription")
-              break
-              
-        case "music-next":
-              item.nextTrack()
-              resp['track'] = item.currentValue("trackDescription")
-              break
-              
-        case "music musicmute muted":
-              newsw = "unmuted"
-              item.unmute()
-              resp['musicmute'] = newsw
-              break
-              
-        case "music musicmute unmuted":
-              newsw = "muted"
-              item.mute()
-              resp['musicmute'] = newsw
-              break
-              
-         }
+                case "level-dn":
+                case "vol-dn":
+                      newsw = cmd.toInteger()
+                      def del = (newsw % 5) == 0 ? 5 : newsw % 5
+                      newsw = (newsw <= 5) ? 5 : newsw - del
+                      item.setLevel(newsw)
+                      resp['level'] = newsw
+                      break
+
+                case "level":
+                      newsw = cmd.toInteger()
+                      item.setLevel(newsw)
+                      resp['level'] = newsw
+                      break
+
+                case "music-play":
+                      newsw = "playing"
+                      item.play()
+                      resp['musicstatus'] = newsw
+                      break
+
+                case "music-stop":
+                      newsw = "stopped"
+                      item.stop()
+                      resp['musicstatus'] = newsw
+                      break
+
+                case "music-pause":
+                      newsw = "paused"
+                      item.pause()
+                      resp['musicstatus'] = newsw
+                      break
+
+                case "music-previous":
+                      item.previousTrack()
+                      resp['track'] = item.currentValue("trackDescription")
+                      break
+
+                case "music-next":
+                      item.nextTrack()
+                      resp['track'] = item.currentValue("trackDescription")
+                      break
+            }
+        }
          // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
     return resp
