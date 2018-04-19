@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.53       Drag and drop tile addition and removal and bug fixes
  * 1.52       Bugfix for disappearing rooms, add Cancel in options, SmartHomeMonitor add
  * 1.51       Integrate skin-material from @vervallsweg to v1.0.0 to work with sliders
  * 1.50       Enable Hubitat devices when on same local network as HP
@@ -699,9 +700,9 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
             $tc.="<div class=\"restoretabs\">Hide Tabs</div>";
         }
         // add a placeholder dummy to force background if almost empty page
-        if ($thiscnt <= 9) {
-           $tc.= '<div class="minheight"> </div>';
-        }
+//        if ($thiscnt <= 17) {
+//           $tc.= '<div class="minheight"> </div>';
+//        }
        
         // end the form and this panel
         $tc.= "</div></form>";
@@ -1575,15 +1576,22 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     if ( !$cnt || $cnt < 0 ) {
         $cnt = 1000;
     }
-    
-    // make a new tile based on the dragged information
-    $thing = makeThing($cnt, $tilenum, $thesensor, $panel);
-    
-    // add it to our system
+
     $options["things"][$panel] = array_values($options["things"][$panel]);
     $lastid = count( $options["things"][$panel] ) - 1;
     $lastitem = $options["things"][$panel][$lastid];
-    $options["things"][$panel][] = array($tilenum, $lastitem[1], $lastitem[2]);
+    $ypos  = intval($lastitem[1], 10);
+    $xpos = intval($lastitem[2], 10);
+    if ( $xpos < -400 || $xpos > 400 || $ypos < -400 || $ypos > 400 ) {
+        $xpos = 0;
+        $ypos = 0;
+    }
+    
+    // make a new tile based on the dragged information
+    $thing = makeThing($cnt, $tilenum, $thesensor, $panel, $ypos, $xpos);
+    
+    // add it to our system
+    $options["things"][$panel][] = array($tilenum, $ypos, $xpos);
     writeOptions($options);
     
     return $thing;
@@ -1675,12 +1683,6 @@ function processOptions($optarray) {
         }
         else if ( $key=="useroptions" && is_array($val) ) {
             $newuseroptions = $val;
-//            $newuseroptions = array();
-//            foreach ($thingtypes as $opt) {
-//                if ( in_array($opt,$val) !== FALSE) {
-//                    $newuseroptions[] = $opt;
-//                }
-//            }
             $options["useroptions"] = $newuseroptions;
         }
         else if ( $key=="cssdata") {
@@ -1911,6 +1913,10 @@ function is_ssl() {
     else if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
     else if ( isset($_POST["id"]) ) { $swid = $_POST["id"]; }
+    if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
+    else if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
+    if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
+    else if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
 
     // implement ability to use tile number to get the $swid information
     if ( isset($_GET["tile"]) ) { $tileid = $_GET["tile"]; }
@@ -1946,18 +1952,10 @@ function is_ssl() {
     if ( $useajax && $valid ) {
         switch ($useajax) {
             case "doaction":
-                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
-                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo doAction($endpt . "/doaction", $access_token, $swid, $swtype, $swval, $swattr);
                 break;
                 
             case "dohubitat":
-                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
-                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo doHubitat("doaction", $swid, $swtype, $swval, $swattr);
                 break;
         
@@ -1980,18 +1978,10 @@ function is_ssl() {
                 break;
         
             case "pageorder":
-                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
-                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
                 
             case "confighubitat":
-                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
-                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo $swattr . " " . $swval;
                 setcookie("hubitatToken", $swattr, $expiry, "/", $serverName);
                 setcookie("hubitatID", $swval, $expiry, "/", $serverName);
@@ -2000,17 +1990,11 @@ function is_ssl() {
         
             // implement free form drag drap capability
             case "dragdrop":
-                if ( isset($_GET["value"]) ) { $swval = $_GET["value"]; }
-                if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
                 break;
         
             // make new tile from drag / drop
             case "dragmake":
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 if ( $swid && $swtype && $swval && $swattr ) {
                     $allthings = getAllThings($endpt, $access_token);
                     $retcode = addThing($swid, $swtype, $swval, $swattr, $allthings);
@@ -2022,8 +2006,6 @@ function is_ssl() {
             
             // remove tile from drag / drop
             case "dragdelete":
-                if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
-                if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
                 if ( $swid && $swtype && $swval && swattr ) {
                     $retcode = delThing($swid, $swtype, $swval, $swattr);
                 } else {
@@ -2102,7 +2084,13 @@ function is_ssl() {
                 echo $tc;
                 echo htmlFooter();
                 break;
-            
+
+            case "savefilters":
+                $options = readOptions();
+                $options["useroptions"] = $swval;
+                writeOptions($options);
+                break;
+                
             case "saveoptions":
                 if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     processOptions($_POST);

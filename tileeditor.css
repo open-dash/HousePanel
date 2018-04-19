@@ -47,9 +47,11 @@ div.tile_buttons, .iconwidth {
     display: inline-block;
     width: 80px;
 }
-#wysISwyg {
+#wysiwyg {
 	margin-left:1px;
         text-align: center;
+        display: inline-block;
+        margin-top: 40px;
 }
 .tileDisplay {
     display: inline-block;
@@ -205,8 +207,10 @@ input.editSection_txt.color {
   width: 50px;
 }
 
-
-
+#tileDialog .modalbuttons {
+    float: right;
+    margin-bottom: 10px;
+}
 
 .iconlist {
 	position: relative;

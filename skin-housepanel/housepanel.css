@@ -169,6 +169,7 @@ div.panel {
     position:relative;    background-repeat: no-repeat;
     background-position: 0 0;
     background-size: cover;
+    min-height: 600px;
 }
 
 div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {

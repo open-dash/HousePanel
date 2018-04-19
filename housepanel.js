@@ -105,8 +105,8 @@ window.addEventListener("load", function(event) {
     // but you can always run a refresh to update the panel manually
     // or you can run it every once in a blue moon too
 //    allTimerSetup(300000);
-    allTimerSetup(60000);
-    allHubitatSetup();
+     allTimerSetup(60000);
+     allHubitatSetup();
 
     cancelDraggable();
     cancelSortable();
@@ -160,19 +160,23 @@ function convertToModal(modalcontent) {
     return modalcontent;
 }
 
-function createModal(modalcontent, modaltag, addok, responsefunction, pos) {
+function createModal(modalcontent, modaltag, addok,  pos, responsefunction, loadfunction) {
     var modalid = "modalid";
     
     // skip if a modal is already up...
     if ( modalStatus ) { return; }
     var modaldata = modalcontent;
     var modalhook;
-
-    if ( modaltag && modaltag.hasOwnProperty("on") ) {
+    
+    if ( modaltag && typeof modaltag === "object" && modaltag.hasOwnProperty("attr") ) {
+//        alert("object");
         modalhook = modaltag;
-    } else {
-        if ( !modaltag ) { modaltag = "#tabs"; }
+    } else if ( modaltag && typeof modaltag === "string" ) {
+//        alert("string: "+modaltag);
         modalhook = $(modaltag)
+    } else {
+//        alert("default body");
+        modalhook = $("body");
     }
     var styleinfo = "";
     if ( pos ) {
@@ -186,15 +190,38 @@ function createModal(modalcontent, modaltag, addok, responsefunction, pos) {
     modalcontent = modalcontent + "</div>";
     modalhook.prepend(modalcontent);
     modalStatus = 1;
-    $("#"+modalid).on("click",".dialogbtn",function() {
-//        var clk = $(this).attr("name");
-//        alert("Clicked " + clk); 
-        if ( responsefunction ) {
-            responsefunction(this, modaldata);
-        }
-        $("#"+modalid).remove();
-        modalStatus = 0;
-    });
+    
+    // call post setup function if provided
+    if ( loadfunction ) {
+        loadfunction(modalhook, modaldata);
+    }
+
+    // invoke response to click
+    if ( addok ) {
+        $("#"+modalid).on("click",".dialogbtn", function(evt) {
+            // alert("clicked on button");
+            if ( responsefunction ) {
+                responsefunction(this, modaldata);
+            }
+            $("#"+modalid).remove();
+            modalStatus = 0;
+        });
+    } else {
+        $("body").on("click",function(evt) {
+            if ( evt.target.id === modalid ) {
+                evt.stopPropagation();
+                return;
+            } else {
+                if ( responsefunction ) {
+                    responsefunction(evt.target, modaldata);
+                }
+                $("#"+modalid).remove();
+                modalStatus = 0;
+            }
+        });
+        
+    }
+    
 }
 
 function setupColors() {
@@ -440,7 +467,7 @@ var startPos = {top: 0, left: 0};
 function thingDraggable(thing) {
     thing.draggable({
         revert: "invalid",
-        containment: "#dragregion",
+        // containment: "#dragregion",
         start: function(evt, ui) {
             startPos.left = $(evt.target).css("left");
             startPos.top = $(evt.target).css("top");
@@ -460,14 +487,20 @@ function setupDraggable() {
     // and movement of existing things around on the panel itself
     // use this instead of stop method to deal with cancelling drops
     $("div.panel").droppable({
-        accept: "div.thing",
+        accept: function(thing) {
+            var accepting = false;
+            if ( thing.hasClass("thing") && modalStatus===0 ) {
+                accepting = true;
+            }
+            return accepting;
+        },
         tolerance: "fit",
         drop: function(event, ui) {
             var thing = ui.draggable;
             var bid = $(thing).attr("bid");
             var thingtype = $(thing).attr("type");
             var thingname = $(thing).find(".thingname").text();
-
+            
             // handle new tile creation
             if ( thing.hasClass("catalog-thing") ) {
                 // get panel of active page - have to do this the hard way
@@ -477,9 +510,9 @@ function setupDraggable() {
                         var panel = $(this).text();
                         var lastthing = $("div.panel-"+panel+" div.thing").last();
                         var pos = {left: 400, top: 100};
-                        createModal("Add: "+ thingname + " of Type: "+thingtype+" from catalog to Room: "+panel+"? Are you sure?","body", true, function(ui, content) {
+                        createModal("Add: "+ thingname + " of Type: "+thingtype+" to Room: "+panel+"?<br />Are you sure?","body", true, pos, function(ui, content) {
                             var clk = $(ui).attr("name");
-                            if ( clk=="okay" ) {
+                            if ( clk==="okay" ) {
                                 // add it to the system
                                 // the ajax call must return a valid "div" block for the dragged new thing
 
@@ -538,7 +571,7 @@ function setupDraggable() {
                                     }
                                 );
                             }
-                        }, pos );
+                        });
                     } 
                 });
             // otherwise this is an existing thing we are moving
@@ -564,14 +597,21 @@ function setupDraggable() {
     // enable dragging things from catalog
     $("#catalog div.thing").draggable({
         revert: false,
-        containment: "#dragregion",
-        delay: 50,
+        // containment: "#dragregion",
         helper: "clone"
     });
     
     // enable dropping things from panel into catalog to remove
     $("#catalog").droppable({
         accept: "div.panel div.thing",
+//        accept: function(thing) {
+//            var accepting = false;
+//            if ( thing.hasClass("panel") && modalStatus===0 ) {
+//                accepting = true;
+//            }
+////            alert("modalStatus = " + modalStatus);
+//            return accepting;
+//        },
         tolerance: "fit",
         drop: function(event, ui) {
             var thing = ui.draggable;
@@ -583,8 +623,9 @@ function setupDraggable() {
             var aid = id.substring(2);
             var tile = $(thing).attr("tile");
             var tilename = $("#s-"+aid).text();
-    
-            createModal("Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?",thing, true, function(ui, content) {
+            var pos = {top: 100, left: 10};
+            
+            createModal("Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk=="okay" ) {
                     // remove it from the system
@@ -644,9 +685,11 @@ function setupButtons() {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
         if ( $(this).hasClass("confirm") ) {
-            createModal("Perform " + buttonid + " operation... Are you sure?","#controlpanel", true, function(ui, content) {
+            var pos = {top: 100, left: 0};
+            var target = $(this);
+            createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
-                if ( clk=="okay" ) {
+                if ( clk==="okay" ) {
                     var newForm = dynoForm(buttonid);
                     newForm.submit();
                 }
@@ -670,10 +713,25 @@ function setupButtons() {
                 setupDraggable();
                 setupPagemove();
             }
+//            $("#opmode").html("Mode set to: " + opmode );
+//            $("#opmode").show();
+//            $("#opmode").hide("fade",null,3000);
+            
+            // save filter options
+            if ( priorOpmode === "DragDrop" ) {
+                var filters = [];
+                $('input[name="useroptions[]"').each(function(){
+                    if ( $(this).prop("checked") ) {
+                        filters.push($(this).attr("value")); 
+                    }
+                });
+//                alert(filters);
+                $.post(returnURL, 
+                    {useajax: "savefilters", id: 0, type: "none", value: filters, attr: opmode}
+                );
+            }
+            
             priorOpmode = opmode;
-            $("#opmode").html("Mode set to: " + opmode );
-            $("#opmode").show();
-            $("#opmode").hide("fade",null,3000);
         }
     });
 
@@ -682,7 +740,7 @@ function setupButtons() {
     });
 
     $("div.panel").on("click",function(evt){
-        if ( priorOpmode === "Operate" && evt.target == this ) { toggleTabs(); }
+        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
     });
 }
 
@@ -703,7 +761,7 @@ function pageEdit() {
     });
     
     if ( goodrooms ) {
-        createModal(tc,"#roomtabs", true, function(ui, content) {
+        createModal(tc,"#roomtabs", true, null, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk=="okay" ) {
                 var newForm = dynoForm("pageedit",content);
