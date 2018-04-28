@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/18/2018 - Bugfix curtemp in Thermostat, thanks to @kembod for finding this
  * 04/08/2018 - Important bug fixes for thermostat and music tiles
  * 03/11/2018 - Added Smart Home Monitor from Chris Hoadley
  * 03/10/2018 - Major speedup by reading all things at once
@@ -1366,6 +1367,7 @@ def setThermostat(swid, curtemp, swattr) {
           // define actions for python end points  
           else {
           // default:
+              def cmd = curtemp
               if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
                   resp['heat'] = swattr

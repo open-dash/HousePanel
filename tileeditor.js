@@ -7,21 +7,21 @@ function getOnOff(str_type) {
         case "bulb":
         case "light":
         case "momentary":
-            onoff = [".on",".off"];
+            onoff = ["on","off"];
             break;
         case "contact":
         case "door":
         case "valve":
-            onoff = [".open",".closed"];
+            onoff = ["open","closed"];
             break;
         case "motion":
-            onoff = [".active",".inactive"];
+            onoff = ["active","inactive"];
             break;
         case "lock":
-            onoff = [".locked",".unlocked"];
+            onoff = ["locked","unlocked"];
             break;
         case "piston":
-            onoff = [".firing",".idle"];
+            onoff = ["firing","idle"];
             break;
     }
     
@@ -40,62 +40,43 @@ function getCssRuleTarget(strSection, str_type, thingindex) {
     // when writing the active state we get that state from the HTML
     
 	switch (strSection) {
-		case "iconOn":
+        case "iconOn":
             var onoff = getOnOff(str_type);
-            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[0];
-			break;
-		case "iconOff":
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex;
+            if ( onoff[0] ) { target = target + "." + onoff[0]; }
+            break;
+        case "iconOff":
             var onoff = getOnOff(str_type);
-            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff[1];
-			break;
-		case "icon":
-            var onoff = $("#a-0-"+str_type).html();
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex;
+            if ( onoff[1] ) { target = target + "." + onoff[1]; }
+            break;
+        case "icon":
+            // var onoff = $("#a-0-"+str_type).html();
+            var onoff = $("div.overlay."+str_type+".v_"+thingindex).children().first().html();
             if ( $.isNumeric(onoff) ) {
                 onoff = "";
             } else {
+                if ( !onoff ) { onoff = "on"; }
                 onoff = "."+onoff;
             }
-            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex + onoff;
-			break;
+            target = "div.overlay." + str_type+" div."+str_type+'.p_'+thingindex;
+            break;
                 // every sub-element is wrapped with this so size width this way
-		case "overlay":
+        case "overlay":
             target = "div.overlay"+'.v_'+thingindex;
-			break;
-		case "text":
-			target = "div.thingname.t_"+thingindex;
-			break;
-		case "tile":
-			target = "div.thing.p_"+thingindex;
-			break;
-		case "head":
-			target = "div.thingname.t_"+thingindex;
-			break;
+            break;
+	case "text":
+            target = "div.thingname.t_"+thingindex;
+            break;
+        case "tile":
+            target = "div.thing.p_"+thingindex;
+            break;
+        case "head":
+            target = "div.thingname.t_"+thingindex;
+            break;
 	};	
     return target;
 };
-
-// special lightweight function to get the displayed values
-// note that here the thingindex is the tile id and not the sequence number
-// currently unused but we could use this to speed things up a bit if needed
-function getCssDisplayTarget(strSection, str_type, thingindex) {
-
-    var target = "";
-	switch (strSection) {
-		case "icon":
-            target = "#a-0-"+str_type;
-			break;
-		case "text":
-            target = "span.n_"+thingindex;
-			break;
-		case "tile":
-			target = "#t-0";
-			break;
-		case "head":
-            target = "#s-0";
-			break;
-	};	
-    return target;
-}
 
 function toggleTile(target, thingindex) {
     var swval = $(target).html();
@@ -166,13 +147,15 @@ function toggleTile(target, thingindex) {
 
 // activate ability to click on icons
 function setupIcons(category, icontarget, str_type, thingindex) {
-    $("div.cat." + category).off("click","img");
-    $("div.cat." + category).on("click","img",function() {
+//    $("div.cat." + category).off("click","img");
+//    $("div.cat." + category).on("click","img",function() {
+    $("#iconList").off("click","img");
+    $("#iconList").on("click","img", function() {
         var img = $(this).attr("src");
         if ( category == "Local_Storage" ) {
             img = "../" + img;
         }
-        // alert("Clicked on img= "+img);
+        alert("Clicked on img= "+img+" icontarget= "+icontarget+" type= "+str_type+" index= "+thingindex);
         iconSelected(icontarget, img, str_type, thingindex);
     });
 }
@@ -225,83 +208,79 @@ function initDialogBinds(str_type, thingindex, str_on, str_off) {
         }
     });
 	
-	$('#noHead').on('change', function(event) {
-		var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
-		if($("#noHead").is(':checked')){
-			addCSSRule(cssRuleTarget, "display: none;", true);
-		} else {
-			addCSSRule(cssRuleTarget, "display: inline-block;");
-			var rule = "width: " + ($("#t-0").width() - 2) + "px;";
-			addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
-		}
+    $('#noHead').on('change', function(event) {
+        var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
+        if($("#noHead").is(':checked')){
+            addCSSRule(cssRuleTarget, "display: none;", true);
+        } else {
+            addCSSRule(cssRuleTarget, "display: inline-block;");
+            var rule = "width: " + ($("#t-0").width() - 2) + "px;";
+            addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
+        }
         event.stopPropagation;
-	});	
-	
-	$("input[name='sectionToggle']").bind('change', function() {
-		section_Toggle(this.value, str_type);
-		pickColor(this.value, str_type, thingindex);
-	});
-	
-	$('#buttonWrapper').bind('click', function () {
-		if($('#editicon').is(":visible")) {
-			$('#buttonWrapper').removeClass( "btn_color" ).addClass( "btn_color image" );
-			$("#effectWrapper").hide();
-			$("#uploadWrapper").hide();
-			$("#colorWrapper").show();
-			pickColor($("input[name='sectionToggle']:checked").val(), str_type, thingindex);	
-		} else
-		{
-			$('#buttonWrapper').removeClass( "btn_color image" ).addClass( "btn_color" );
-			$('#editicon').show();
-			$('#iconChoices').show();
-			$('#pickerWrapper').hide();
-			$("#effectWrapper").show();
-			$("#uploadWrapper").show();
-			$("#colorWrapper").hide();
-			getIcons(null, str_type, thingindex);			
-		}
-	});
-	
-//	$("#editFont").bind('input', function () {
-//
-//	});
-	
-	$("#iconSrc").on('change', function (event) {
-		getIcons(null, str_type, thingindex);	
-        event.stopPropagation;
-	});
+    });	
 
-        // set overall tile width and header and overlay for all subitems
-	$("#editWidth").bind('input', function() {
+    $("input[name='sectionToggle']").bind('change', function() {
+            section_Toggle(this.value, str_type);
+            pickColor(this.value, str_type, thingindex);
+    });
+
+    $('#buttonWrapper').bind('click', function () {
+        if($('#editicon').is(":visible")) {
+            $('#buttonWrapper').removeClass( "btn_color" ).addClass( "btn_color image" );
+            $("#effectWrapper").hide();
+            $("#uploadWrapper").hide();
+            $("#colorWrapper").show();
+            pickColor($("input[name='sectionToggle']:checked").val(), str_type, thingindex);	
+        } else {
+            $('#buttonWrapper').removeClass( "btn_color image" ).addClass( "btn_color" );
+            $('#editicon').show();
+            $('#iconChoices').show();
+            $('#pickerWrapper').hide();
+            $("#effectWrapper").show();
+            $("#uploadWrapper").show();
+            $("#colorWrapper").hide();
+            getIcons(null, str_type, thingindex);			
+        }
+    });
+
+    $("#iconSrc").on('change', function (event) {
+        getIcons(null, str_type, thingindex);	
+        event.stopPropagation;
+    });
+
+    // set overall tile width and header and overlay for all subitems
+    $("#editWidth").on('input', function(event) {
         var newsize = parseInt( $("#editWidth").val() );
-		var rule = "width: " + newsize.toString() + "px;";
-		addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
-		
-                newsize -= 2;
-		rule = "width: " + newsize.toString() + "px;";
-		addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
-		addCSSRule(getCssRuleTarget('overlay', str_type, thingindex), rule);
+        var rule = "width: " + newsize.toString() + "px;";
+        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
+
+        newsize -= 2;
+        rule = "width: " + newsize.toString() + "px;";
+        addCSSRule(getCssRuleTarget('head', str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget('overlay', str_type, thingindex), rule);
 //		addCSSRule(getCssRuleTarget('iconOn', str_type, thingindex), rule);
 //		addCSSRule(getCssRuleTarget('iconOff', str_type, thingindex), rule);
-                
-                if ( newsize > 120 ) {
-                    $("#tileDialog").width(320 + newsize);
-                } else {
-                    $("#tileDialog").width(420);
-                }
-	});
 
-	$("#editHeight").on('input', function (event) {
-		var rule = '';
-		var section = $("input[name='sectionToggle']:checked").val();
-		if(section === 'head') {			
-			rule = "height: " + $("#editHeight").val() + "px;";
-			addCSSRule(getCssRuleTarget('head',str_type,thingindex), rule);				
-		} else {
-			rule = "height: " + $("#editHeight").val() + "px;";
-			addCSSRule(getCssRuleTarget('iconOn', str_type, thingindex), rule);
-			addCSSRule(getCssRuleTarget('iconOff', str_type, thingindex), rule);
-		}
+        if ( newsize > 120 ) {
+            $("#tileDialog").width(320 + newsize);
+        } else {
+            $("#tileDialog").width(420);
+        }
+        event.stopPropagation;
+    });
+
+    $("#editHeight").on('input', function (event) {
+        var rule = '';
+        var section = $("input[name='sectionToggle']:checked").val();
+        if(section === 'head') {			
+            rule = "height: " + $("#editHeight").val() + "px;";
+            addCSSRule(getCssRuleTarget('head',str_type,thingindex), rule);				
+        } else {
+            rule = "height: " + $("#editHeight").val() + "px;";
+            addCSSRule(getCssRuleTarget('iconOn', str_type, thingindex), rule);
+            addCSSRule(getCssRuleTarget('iconOff', str_type, thingindex), rule);
+        }
 
         rule = "height: auto";
         addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);	
@@ -311,17 +290,8 @@ function initDialogBinds(str_type, thingindex, str_on, str_off) {
         }
         $("#tileDialog").height(newhigh + 80);
         event.stopPropagation;
-				
     });
-        
-    // set up color click local edits
-    var obj = {type: str_type, pid: thingindex};
-    $("#editColor").on('change', null, obj, function(event ) {
-        relayColor(event.data.type, event.data.pid);
-        event.stopPropagation();
-    });
-        
-	
+
 } //End initDialogBinds()
 
 function upleft() {
@@ -376,16 +346,16 @@ function uploadform() {
 
 function tilebuttons(str_type, thingindex) {
     var dh = "";
-	dh += "<div class='tile_buttons'>";
-	dh += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
-	dh += "<span class='btn' onclick='tileCopy(" + thingindex + ")'>&#x2398</span>";
-	dh += "<span class='btn' onclick='tilePaste(" + thingindex + ")'>&#x1f4cb</span>";
-	dh += "<span id='dgclose' class='btn' onclick='tileDialogClose()'>Close</span>";
-	// dh += "<span class='btn' id='toggle'>Toggle</span>";
-	dh += "<div class='iconwidth'>";
-        dh += "<label for='iconwidth'>Icon Size: </label><input id='iconwidth' type='text' value='auto' />";
-	dh += "</div>";
-	dh += "</div>";
+//	dh += "<div class='tile_buttons'>";
+//	dh += "<span class='btn' onclick='resetCSSRules(\"" + str_type + "\", " + thingindex + ")'>Reset</span>";
+//	dh += "<span class='btn' onclick='tileCopy(" + thingindex + ")'>&#x2398</span>";
+//	dh += "<span class='btn' onclick='tilePaste(" + thingindex + ")'>&#x1f4cb</span>";
+//	dh += "<span id='dgclose' class='btn' onclick='tileDialogClose()'>Close</span>";
+//	// dh += "<span class='btn' id='toggle'>Toggle</span>";
+//	dh += "<div class='iconwidth'>";
+//        dh += "<label for='iconwidth'>Icon Size: </label><input id='iconwidth' type='text' value='auto' />";
+//	dh += "</div>";
+//	dh += "</div>";
     return dh;
 }
 
@@ -434,77 +404,95 @@ function colorpicker() {
 }
 
 // popup dialog box now uses createModal
-function editTile(str_type, thingindex, str_on, str_off) {  
+function editTile(str_type, thingindex, htmlcontent) {  
+    
+    var onoff = getOnOff(str_type)
+    var str_on = onoff[0];
+    var str_off = onoff[1];
+    
 	//*DIALOG START*	
-	var dialog_html = "<div id='tileDialog'>";
+    var dialog_html = "<div id='tileDialog'>";
 	
-	// tileEdit
-	dialog_html += "<div id='tileEdit'>";	
+    // tileEdit
+    dialog_html += "<div id='tileEdit'>";	
     dialog_html += upleft();
-	dialog_html += iconlist();
-	
-	// wrapToggles
-	dialog_html += "<div id='wrapToggles' class='wrapToggles'>";
-	dialog_html += bottomleft();
+    dialog_html += iconlist();
+
+    // wrapToggles
+    dialog_html += "<div id='wrapToggles' class='wrapToggles'>";
+    dialog_html += bottomleft();
 
     dialog_html += "<div id='editSection'>";
     dialog_html += uploadform();
-	dialog_html += fontpicker();
-	dialog_html += effectspicker();
-	dialog_html += sizepicker();
+    dialog_html += fontpicker();
+    dialog_html += effectspicker();
+    dialog_html += sizepicker();
     dialog_html += "</div>";
-	
+
     dialog_html += "</div>";
-	//End: wrapToggles
-	
-	dialog_html += colorpicker();
-	dialog_html += "</div>";
-	// End: tileEdit	
+    //End: wrapToggles
 
-	//RIGHT SIDE - tileDisplay
-	dialog_html += "<div class='tileDisplay'>";
+    dialog_html += colorpicker();
+    dialog_html += "</div>";
+    // End: tileEdit	
 
-	//tileDisplay_buttons
-	dialog_html += tilebuttons(str_type, thingindex);
+    //RIGHT SIDE - tileDisplay
+    dialog_html += "<div class='tileDisplay'>";
+
+    //tileDisplay_buttons
+    dialog_html += tilebuttons(str_type, thingindex);
+    var jqxhr = null;
+    
+    if ( htmlcontent ) {
+        dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing\" id='wysiwyg'>" + htmlcontent + "</div>";
+    } else {
         
-    // use the real routine to get a true wysiwyg and put it into html
-    var jqxhr = $.post("housepanel.php", 
-        {useajax: "wysiwyg", id: '', type: '', tile: thingindex, value: '', attr: ''},
-        function (presult, pstatus) {
-//            alert("status= " + pstatus + " result= " + presult );
-            if (pstatus=="success" ) {
-                dialog_html += "<div id='wysiwyg'>" + presult + "</div>";
+        // use the real routine to get a true wysiwyg and put it into html
+        jqxhr = $.post("housepanel.php", 
+            {useajax: "wysiwyg", id: '', type: '', tile: thingindex, value: '', attr: ''},
+            function (presult, pstatus) {
+    //            alert("status= " + pstatus + " result= " + presult );
+                if (pstatus=="success" ) {
+                    dialog_html += "<div id='wysiwyg'>" + presult + "</div>";
+                }
             }
-        }
-    );
-	
-	dialog_html += "</div>";
-//	dialog_html += "</div>";
- 
-    jqxhr.done(function() {
-    	var btn_caller = $( "#btn_" + thingindex );
+        );
+    }
+    
+    var dodisplay = function() {
         var pos = {top: 100, left: 200};
-        createModal( dialog_html, "body", true, pos, function(ui, content) {
-            var clk = $(ui).attr("name");
-            if ( clk=="okay" ) {
-                alert("Accepting icon edits...");
+        createModal( dialog_html, "body", true, pos, 
+            function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk=="okay" ) {
+                    alert("Accepting icon edits...");
+                }
+            }, 
+            function(hook, content) {
+        //            alert("Displayed content");
+                getIconCategories();
+                initDialogBinds(str_type, thingindex, str_on, str_off);
+                pickColor('icon', str_type, thingindex);
+                section_Toggle('icon', str_type);
+                var target = "#t-0";
+                var newsize = parseInt( $(target).width() );
+                var newhigh = parseInt( $(target).height() );
+                newsize = newsize < 120 ? 120 : newsize;
+                newhigh = newhigh < 200 ? 200 : newhigh;
+                $("#modalid").width(newsize + 360);
+                $("#modalid").height(newhigh + 120);
             }
-        },
-        function(hook, content) {
-//            alert("Displayed content");
-            getIconCategories();
-            initDialogBinds(str_type, thingindex, str_on, str_off);
-            pickColor('icon', str_type, thingindex);
-            section_Toggle('icon', str_type);
-            var target = "#t-0";
-            var newsize = parseInt( $(target).width() );
-            var newhigh = parseInt( $(target).height() );
-            newsize = newsize < 120 ? 120 : newsize;
-            newhigh = newhigh < 200 ? 200 : newhigh;
-            $("#modalid").width(newsize + 360);
-            $("#modalid").height(newhigh + 120);
-        });
-    });
+        );
+    };
+	
+    dialog_html += "</div>";
+
+    // either wait for ajax or just display the box
+    if ( jqxhr ) {
+        jqxhr.done(dodisplay);
+    } else {
+        dodisplay();
+    }
 
 }
 
@@ -563,18 +551,18 @@ function resetInverted(str_type, thingindex) {
 
 function changeInverted(strColor, str_type, thingindex) {
     //Searching of the selector matching cssRules
-	var selector = getCssRuleTarget('icon', str_type, thingindex);
-	var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
-	var index = -1;
+    var selector = getCssRuleTarget('icon', str_type, thingindex);
+    var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
     for(var i=sheet.cssRules.length; i--;){
-      var current_style = sheet.cssRules[i];
-      if(current_style.selectorText === selector){
-		  if(current_style.cssText.indexOf("invert") !== -1) {
-			return invertHex(strColor);
-		  }	  		
-      }
+        var current_style = sheet.cssRules[i];
+        if(current_style.selectorText === selector){
+            if(current_style.cssText.indexOf("invert") !== -1) {
+                strColor = invertHex(strColor);
+                break;
+            }
+        }
     }
-	return strColor;
+    return strColor;
 }
 
 
@@ -592,27 +580,44 @@ function pickColor(strCaller, str_type, thingindex) {
 	};
 	$('#editicon').hide();
 	$('#iconChoices').hide();
-	$('#pickerWrapper').show();		
-	$('#colorpicker').farbtastic('#editColor');
+	$('#pickerWrapper').show();
+        
+        $("#colorpicker").minicolors({
+            position: "bottom left",
+            defaultValue: startColor,
+            theme: 'default',
+            format: 'hex',
+            inline: true,
+            change: function(hex) {
+                // alert("picked color: " + hex);
+                $("#editColor").val(hex);
+                relayColor(strCaller, cssRuleTarget, hex, str_type, thingindex);
+            }
+        });
+        
+        
+//	$('#colorpicker').farbtastic('#editColor');
 	$('#editColor').val(startColor);	
 	$('#editColor').trigger('keyup');;
 
 }
 
-function relayColor(str_type, thingindex) {
-    var section = $("input[name='sectionToggle']:checked").val();
-    var strColor = $('#editColor').val(); //yoda only if icon:
+function relayColor(section, cssRuleTarget, strColor, str_type, thingindex) {
+    // var section = $("input[name='sectionToggle']:checked").val();
+    // var strColor = $('#editColor').val(); //yoda only if icon:
     
-    var cssRuleTarget = getCssRuleTarget(section, str_type, thingindex);
-    // alert("section: "+section+" color: "+strColor+" type: "+str_type+" pid: "+thingindex+" ruletarget: "+cssRuleTarget);
+    // var cssRuleTarget = getCssRuleTarget(section, str_type, thingindex);
+//    alert("section: "+section+" color: "+strColor+" type: "+str_type+" pid: "+thingindex+" ruletarget: "+cssRuleTarget);
+    console.log ("section: "+section+" color: "+strColor+" type: "+str_type+" pid: "+thingindex+" ruletarget: "+cssRuleTarget);
 
     if ( section === 'icon') {
             strColor = '#' + changeInverted(strColor.substr(1), str_type, thingindex);		
-    }
-    if( section === 'text' ) {
+    } else if( section === 'text' ) {
             addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
+            $(cssRuleTarget).css( "color: " + strColor + ";" );
     } else {
             addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
+            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
     }
 }
 
@@ -802,7 +807,8 @@ function iconSelected(cssRuleTarget, imagePath, str_type, thingindex) {
 
 // support the old close function by hacking modal box
 function tileDialogClose() {  
-    $("#tileDialog").remove();
+    $("#modalid").remove();
+    // $("#tileDialog").remove();
     modalStatus = 0;
 }
 

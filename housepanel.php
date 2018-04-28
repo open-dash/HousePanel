@@ -799,10 +799,7 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
         $timezone = date("T");
         $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     } else {
-        if ( isset($_SESSION["allthings"]) ) {
-            $allthings = $_SESSION["allthings"];
-            $options= getOptions($allthings);
-            if ( substr($swid,0,2) == "h_" ) { $swid = substr($swid,2); }
+            if ( substr($swid,0,2) === "h_" ) { $swid = substr($swid,2); }
             
             $host = HUBITAT_HOST . "/apps/api/" . HUBITAT_ID . "/" . $path;
             $headertype = array("Authorization: Bearer " . HUBITAT_ACCESS_TOKEN);
@@ -811,6 +808,10 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
                       "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
             $response = curl_call($host, $headertype, $nvpreq, "POST");
 
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+            $options= getOptions($allthings);
+            
             if ( $swtype=="all" ) {
                 $respvals = array();
                 foreach($response as $thing) {
@@ -828,8 +829,6 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none") {
                 }
             }
             $_SESSION["allthings"] = $allthings;
-        } else {
-            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -854,10 +853,6 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
         $response = array("url" => $videodata);
     } else {
     
-        // do nothing if we don't have things loaded in a session
-        if ( isset($_SESSION["allthings"]) ) {
-            $allthings = $_SESSION["allthings"];
-            $options= getOptions($allthings);
             
             $headertype = array("Authorization: Bearer " . $access_token);
             $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
@@ -866,6 +861,13 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
                       "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
             $response = curl_call($host, $headertype, $nvpreq, "POST");
 
+        // do nothing if we don't have things loaded in a session
+        // but we can still return the API feature
+        // we jsut don't update the session for a web browser
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+            $options= getOptions($allthings);
+            
         // update session with new status and pick out all if needed
             if ( $swtype=="all" ) {
                 $respvals = array();
@@ -892,8 +894,8 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
             }
             $_SESSION["allthings"] = $allthings;
         
-        } else {
-            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
+//        } else {
+//            $response = array("id" => "0", "name" => "Unknown", "value" => $swval, "type" => $swtype);
         }
     }
     
@@ -1422,66 +1424,12 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $str_on="";
         $str_off="";
         $str_edit="";
-        switch ($thetype) {
-        
-            case "switch":
-            case "switchlevel":
-            case "bulb":
-            case "light":
-                $str_type="switch";
-                $str_on="on";
-                $str_off="off";
-                break;
-            
-            case "momentary":
-                $str_on="on";
-                $str_off="off";
-                break;
-                
-            case "contact":
-            case "door":
-            case "valve":
-                $str_on="open";
-                $str_off="closed";
-                break;
-                
-            case "motion":
-                $str_on="active";
-                $str_off="inactive";
-                break;      
-                         
-            case "lock":
-                $str_on="locked";
-                $str_off="unlocked";
-                break;
-            
-            case "clock":
-                $str_type = "time";
-                break;
-            
-            case "thermostat":
-            case "temperature":
-                $str_type = "temperature";
-                break;
-            
-            case "piston":
-                $str_type = "pistonName";
-                $str_on="firing";
-                $str_off="idle";
-                break;
-            
-            case "video":
-                $str_edit="hidden";
-                break;
-                
-//            default:
-//            	$str_edit="hidden";
-        }       
+        if ( $thetype=="video") { $str_edit = "hidden"; }
 
         $thingname = $thesensor["name"];
         $iconflag = "editable " . strtolower($thingname);
         
-        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingindex', '$str_on', '$str_off')\">Edit</span></td>";
+        $tc.= "<td class=\"customedit\"><span id=\"btn_$thingindex\" class=\"btn $str_edit\" onclick=\"editTile('$str_type', '$thingindex', '')\">Edit</span></td>";
         $tc.= "<td class=\"customname\"><span class=\"n_$thingindex\">$thingname</span></td>";
 
         // loop through all the rooms in proper order
@@ -1929,6 +1877,16 @@ function is_ssl() {
         $swid = substr($idx, $k+1);
     }
     
+//    echo "type= $swtype id= $swid tile= $tileid";
+//    exit;
+//    
+    // fix up useajax for hubitat
+    if ( substr($swid,0,2) == "h_" && $useajax=="doquery" ) {
+        $useajax = "queryhubitat";
+    } else if ( substr($swid,0,2) == "h_" && $useajax=="doaction" ) {
+        $useajax = "dohubitat";
+    }
+    
     // handle special non-groovy based tile types
     if ( $swtype=="auto" && $swid) {
         if ( substr($swid,0,5)=="clock") {
@@ -1946,12 +1904,17 @@ function is_ssl() {
         if ( array_key_exists($idx, $options) ) { $tileid = $options[$idx]; }
     }
     
+//    echo "useajax= $useajax valid= $valid type= $swtype id= $swid tile= $tileid value= $swval attr= $swattr";
+//    exit;
+//    
     // handle all Ajax calls
     // this block returns control to caller immediately
     // it can either show a webpage or return a block of data to js file
     if ( $useajax && $valid ) {
         switch ($useajax) {
             case "doaction":
+                // echo "endpt= $endpt token= $access_token useajax= $useajax valid= $valid type= $swtype id= $swid tile= $tileid value= $swval attr= $swattr";
+                // $allthings = getAllThings($endpt, $access_token);
                 echo doAction($endpt . "/doaction", $access_token, $swid, $swtype, $swval, $swattr);
                 break;
                 
@@ -1960,7 +1923,7 @@ function is_ssl() {
                 break;
         
             case "doquery":
-                // echo "tile = $tileid <br />id = $swid <br />type = $swtype <br />token = $access_token <br />";
+                // $allthings = getAllThings($endpt, $access_token);
                 echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
                 break;
         
@@ -2012,6 +1975,11 @@ function is_ssl() {
                     $retcode = "error";
                 }
                 echo $retcode;
+                break;
+                
+            case "getcatalog":
+                $allthings = getAllThings($endpt, $access_token);
+                echo getCatalog($allthings);
                 break;
                 
             case "showoptions":
@@ -2171,7 +2139,7 @@ function is_ssl() {
         $tc.= "</div>";
         
         // add catalog on right
-        $tc.= getCatalog($allthings);
+        // $tc.= getCatalog($allthings);
         
         // end drag region enclosing catalog and main things
         $tc.= "</div>";
@@ -2194,6 +2162,7 @@ function is_ssl() {
               <input class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><span class=\"radioopts\">Edit</div>
             </div><div id=\"opmode\"></div>";
             $tc.="</div>";
+            $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skinoptions\"/></div>";
         }
         $tc.= "</form>";
     }

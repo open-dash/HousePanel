@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/18/2018 - Bugfix curtemp in Thermostat, thanks to @kembod for finding this
  * 03/10/2018 - Major speedup by reading all things at once
  * 02/25/2018 - Update to support sliders and color hue picker
  * 02/04/2018 - Port over to Hubitat
@@ -1292,6 +1293,7 @@ def setThermostat(swid, curtemp, swattr) {
           // define actions for python end points  
           else {
           // default:
+              def cmd = curtemp
               if ( item.hasCommand(cmd) ) {
                   item.${cmd}()
               }

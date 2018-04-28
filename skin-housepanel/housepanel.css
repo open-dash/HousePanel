@@ -49,7 +49,7 @@ div#catalog {
     border: 2px solid rgb(128, 128, 128);
 }
 div#dragregion {
-    width: 1650px;
+    width: auto;
 }
 
 .ui-widget.ui-widget-content{
@@ -367,14 +367,11 @@ div.thing.catalog-thing {
 div.modalbox {
     display: inline-block;
     text-align: left;
-    margin-left: 5px; margin-top: 5px;
     padding: 5px;
-    border: 2px solid #3a5795;
-    background-color: rgba(255, 255, 240, 1);
+    background-color: rgba(255, 255, 246, 1);
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
-    position: absolute; z-index: 999;
-    width: 320px;
+    position: absolute; z-index: 900;
 }
 div.modalbuttons {
     margin-top: 5px;
@@ -1341,6 +1338,22 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
     text-align: center;
     font-size: 9px;
     color: #000000;
+}
+
+div.editlink, div.editlink:hover {
+    background-color: rgba(204, 0, 51, 1);
+    color: rgba(255, 255, 204, 1);
+    cursor: pointer;
+    font-size: 16pt;
+}
+div.editlink:hover {
+    background-color: rgba(204, 0, 51, 0.2);
+    position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+    transition-duration: .2s;
+    -webkit-transition-duration: .2s;
 }
 
 /* Example custom settings from Ken's home */

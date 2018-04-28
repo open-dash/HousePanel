@@ -1,15 +1,21 @@
 <?php
 
+$icondir = "skin-housepanel/icons/";
 if ( isset($_POST["useajax"]) ) {
     $useajax = $_POST["useajax"];
-    if ( isset($_POST["attr"]) ) { 
+    if ( isset($_POST["attr"]) && file_exists($_POST["attr"]) ) { 
         $icondir = $_POST["attr"]; 
-    } else { 
-        $icondir = "skin-housepanel/icons/";
     }
-    $thingindex = $_POST["id"];
-    $str_type = $_POST["type"];
-    $icontarget = $_POST["value"];
+   
+//    $thingindex = $_POST["id"];
+//    $str_type = $_POST["type"];
+//    $icontarget = $_POST["value"];
+} else if ( isset($_GET["useajax"]) ) {
+    $useajax = $_GET["useajax"];
+    if ( isset($_GET["attr"]) && file_exists($_POST["attr"]) ) { 
+        $icondir = $_GET["attr"]; 
+    }
+    
 } else {
     $useajax = false;
     $icondir = "skin-housepanel/icons/";
