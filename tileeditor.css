@@ -1,56 +1,27 @@
-#edit_Tile {
-	position: absolute;
-}
-
 div.tileDialog {
   overflow: hidden;
 }
-dialog {  
-    background:#666;
-    border: 1px solid #666;
-	-webkit-border-radius: 4px;
-  	-moz-border-radius: 4px;
-  	border-radius: 4px;
-    font-family:sans-serif;
-    padding: 0px 0px 0px 1px;
-  	position: absolute;
-  	top: 50%;
-  	left: 50%;
-    width: 450px; 
+
+#tileDialog {
+    display: block;
+    background-color: rgba(20, 20, 20, 1);
+    width: auto;
     height: auto;
-  	top: 50%;
-  	left: 35%;
-} 
-div.tile_buttons, .iconwidth {
-	width: 210px;
-	height: auto;
-	font-size: 10pt;
-        text-align: center;
-        margin-bottom: 5px;
 }
-.iconwidth {
-        text-align: left;
-        margin-bottom: 10px;
-        margin-left: 10px;
+
+#editheader {
+    border-bottom: 2px solid rgba(255, 255, 255, 1);
+    background-color: #000066;
+    color:#ffffff;
+    font-weight: bold;    padding: 2px;    width: 100%;
+    text-align: center;    line-height: 2;    height: 30px;
+    padding-top: 5px; margin-bottom: 5px;
+    cursor: move;
 }
-.iconwidth label {
-    background: #3498db;
-    color: #ffffff;
-    font-size: 10pt;
-    border-top-left-radius: 14px;
-    border-bottom-left-radius: 14px;
-    padding: 2px 7px 1px 7px;
-    margin-left: 10px;
-    margin-right: 5px;
-}
-.iconwidth input {
-    display: inline-block;
-    width: 80px;
-}
+
 #wysiwyg {
-        display: inline-block;
-        position: absolute;
-        left: 5px;
+    display: inline-block;
+    margin-left: 5px;
 }
 
 #wysiwyg > div.editlink {
@@ -58,278 +29,123 @@ div.tile_buttons, .iconwidth {
 }
 
 .tileDisplay {
-    display: block;
-    position: absolute;
-    top: 6px; left: 260px;
-    width: auto;  height: auto;
-    background-color: rgba(64,64,64,1);
+    display: inline-block;
+    width: auto;  
+    height: auto;
+    margin-left: 2px;
+    margin-right: 7px;
 }
-#tileDialog {
-    display: block;
-    background-color: black;
-    width: 600px;
-    height: 340px;
-}
-#tileEdit {
-    display: block;
-    position: absolute;
-    top: 6px; left: 6px;
-    width: 250px; height: 280px;
-    background-color: rgba(64,64,64,1);
+
+#tileEdit, #pickerWrapper {
+    display: inline;
+    background-color: rgba(0, 0, 0, 1);
     float: left;
+    margin-left: 5px;
 }
 #iconChoices {
     margin: 3px;
-    position:absolute;
+    margin-bottom: 5px;
     display: inline-block;
     float: left;
-    width: 210px; 
-    height: 15px;
+    width: 240px; 
+    height: 18px;
 }
-#colorpicker {
-	margin-left: 6px;
-}
+
 #editicon {
-	margin: 1px 1px 1px 2px;
-	position:relative;
-	top: 24px;
-	display: none;
-	float: left;
-    width: 230px;
-    height: 176px;
-	overflow-x: hidden;
-	background-color: #999;
+    display: inline;
+    margin: 0px 0px 5px 7px;
+    float: left;
+    width: 245px;
+    max-height: 410px;
+    overflow-x: hidden;
+    background-color: rgba(170, 170, 170, 1);
 }
-#editcolor {
-	margin: 3px;
-	position:absolute;
-	display: inline-block;
-	float: left;
-	width: 200px; 
-	height: 195px;
-	overflow-x: hidden;
-	text-align:center;
+#colorpicker, #editSection {
+    display: inline;
+    float: left;
+    text-align: left;
+    margin: 10px;
+    margin-top: 0px;
 }
 #editSection {
-	text-align: center;
-	margin-top: 2px;
+    width: 200px;
 }
-.editSection_input {
-	position: absolute;	
-	font-size: 9pt;
-	color: #faebd7;	
-}
-
-.ddlDialog {
-	font-size: 13px;
-	border-radius: 2px;
-	border: 1px solid transparent;
-	border-top: none;
-	border-bottom: 1px solid #DDD;
-	box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
-}
-#iconSrc option {
-	font-size: 13px;
-}
-#iconSrc {
-	width: 118px;
-	margin-right: 9px;	
-}
-#editFont {
-	width: 107px;
-	margin: 3px;	
-}
-#editEffect {
-	width: 107px;
-	margin: 3px;	
-}
-input.editSection_txt {
-	font-size: 10pt;
-	border-radius: 2px;
-	border: 1px solid transparent;
-	border-top: none;
-	border-bottom: 1px solid #DDD;
-	box-shadow: inset 0 1px 2px rgba(0,0,0,.39), 0 -1px 1px #FFF, 0 1px 0 #FFF;
-	margin: 3px;
-}
-
-#heightWrapper {
-	left: 60px;	
-}
-
-#colorWrapper {
-	left: 115px;
-}
-
-#fontWrapper, #effectWrapper {
-	left: 3px;	
-}
-
-#widthwrapper {
-	left: 5px;
-}
-#uploadWrapper {
-	left: 115px;
-}
-input.editSection_txt.height, input.editSection_txt.width {
-	width: 40px;
-}
-input.editSection_txt.color {
-	width: 60px;
-}
-
-#uploadform {
-	height: 0px;
-}
-.upload-btn-wrapper {
-	position: absolute;	
-	font-size: 11px;
-	margin: 1px;
-    width: 64px;
-	display: inline-block;
-	justify-content: center;
-	align-items: center;
-}
-
-.btn_upload {
-  border: 3px double #333;
-  color:#333;
-  background-color: white;
-  background-image: linear-gradient(to bottom, rgba(0,0,0,.3) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 70%, rgba(0,0,0,.3) 100%);
-  border-radius: 2px;
-  padding: 1px;
-  font-size: 11px;
-  width: 64px;
-}
-
-.upload-btn-wrapper input[type=file] {
-  font-size: 11px;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  position: relative;
-  top: -20px;
-  width: 50px;
-}
-
-#tileDialog .modalbuttons {
-    top: 276px; left: 6px;
-    position: absolute;
-    z-index: 999;
-    background-color: rgba(64, 64, 64, 1);
+#colorpicker {
     width: 250px;
 }
 
+.editSection_input {
+    display: block;
+    margin-left: 0px;
+    margin-top: 5px;
+    font-size: 11pt;
+}
+
+.ddlDialog {
+    font-size: 11pt;
+    margin-top: 2px;
+}
+
+#iconSrc option {
+    font-size: 13px;
+}
+#iconSrc {
+    width: 118px;
+    margin-right: 9px;	
+}
+#editFont {
+    width: 90px;
+    margin-left: 0px;
+}
+div.colorgroup.font {
+    display: inline-block;
+    margin-right: 10px;
+}
+#editEffect {
+    margin-left: 0px;
+}
 .iconlist {
-	position: relative;
-	display: inline-block;
+    position: relative;
+    display: inline-block;
 }
 .icon {
-	float: left;
-	margin: 2px;
+    float: left;
+    margin: 2px;
     margin-bottom: 5px;
-	max-height: 40px;
-	max-width: auto;
-	-o-object-fit: contain;
-	object-fit: contain;
+    max-height: 40px;
+    width: auto;
+    object-fit: contain;
 }
-
 .icon:hover {
 	position: relative;
-	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
-	transition-duration: .2s;
-	-webkit-transition-duration: .2s;
+	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70);
+	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70);
+	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70); 
+	transition-duration: .1s;
+	-webkit-transition-duration: .1s;
 }
 
-.wrapToggles.black {
-	  background: #000000;	
+div.editSection_input label {
+    margin-left: 0px;
+    margin-right: 5px;
+    font-size: 11pt;
+    color: white;
 }
-.wrapToggles{
-    position:absolute;
-    width: 100%;
+
+div.editSection_input input {
+    margin-right: 5px;
+}
+
+div.editSection_input.autochk {
     display: inline-block;
-    justify-content: center;
-    align-items: center;  
-    top: 220px;
-    left: 0px;
-    height: 46px;
-    width: 211px;
-    background: #3498db;
-    background-image: -webkit-linear-gradient(top, #3498db, #4a677b);
-    background-image: -moz-linear-gradient(top, #3498db, #4a677b);
-    background-image: -ms-linear-gradient(top, #3498db, #4a677b);
-    background-image: -o-linear-gradient(top, #3498db, #4a677b);
-    background-image: linear-gradient(to bottom, #3498db, #4a677b);
-}
-.toggleSections {
-	width: 220px;
-	margin-left: 3px;
-	margin-top: 1px;
-}
-.toggleSections label{
-  border: 1px solid #fff;
-  font-size: 12px;
-  text-align: center;
-  width:50px;
-  padding: 1px 0px;
-  display:inline-block;
-  cursor: pointer;
-  color: #ffffff;
-  background-color: #777777;
-  transition: all 0.2s;
+    margin-right: 5px;
 }
 
-.toggleSections label:not(:first-of-type){
-  border-left: 0;
-}
-
-.toggleSections label:hover{
-  background-color: #333;
-}
-
-/* Hide the radio button */
-input[name='sectionToggle']{ 
-  display:none;
-}
-
-/* The checked buttons label style */
-input[name='sectionToggle']:checked+label{
-  background-color: #ed6b06;
-} 
-#noHead {
-  display: inline-block;
-  position: absolute;
-  left: 190px;
-  top: 22px;	
-}
 #noHead-label {
   display: inline-block;
-  position: absolute;
-  left: 183px;
-  top: 33px;	
-}
-.btn_color.image {
-    background-image: url('media/pickImage.png');
-}
-.btn_color {
-  display: inline-block;
-  position: absolute;
-  height: 24px;
-  width: 24px;
-  left: 184px;
-  top: 20px;
-  -webkit-border-radius: 50%;
-  -moz-border-radius: 50%;
-  border-radius: 50%;
-  background: #3498db;
-  background-image: -webkit-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  background-image: -moz-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  background-image: -ms-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  background-image: -o-linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  background-image: linear-gradient(90deg, #00C0FF 0%, #FFCF00 49%, #FC4F4F 80%, #00C0FF 100%);
-  vertical-align: middle;
+  text-align: left;
+  float: left;
+  margin-top: 5px;
 }
 #toggle {
 	width: 120px;
@@ -425,14 +241,80 @@ input[name='sectionToggle']:checked+label{
 #tileImage_on {
     display: inline-block;
 }
-.iconChecks {
-	font-size: 8pt;
-	margin-right: 4px;
-	color: #FFF;
+.iconChecks, .dlgtext {
+    font-size: 11pt;
+    margin-right: 4px;
+    margin-left: 10px;
+    color: rgba(255, 255, 255, 1);
+    display: inline-block;
+}
+.sizeText {
+    font-size: 11pt;
+    margin-right: 5px;
+    margin-left: 0px;
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 1);
+    display: block;
+    border-top: 1px solid white;
 }
 #invertIcon, #noIcon {
-	vertical-align: middle;
+    vertical-align: middle;
 }
 #tileEdit .minicolors-inline .minicolors-panel {
     left: auto;
+}
+
+div.colorgroup {
+    display: block;
+    margin-top: 10px;
+}
+
+div.colorgroup label {
+    color: white;
+    width: auto;
+    display: block;
+}
+
+#colorpicker .minicolors-swatch {
+  top: 2px;
+  left: 0px;
+  width: 18px;
+  height: 18px;
+  border-radius: 0%;
+  cursor: pointer;
+}
+#colorpicker .minicolors-swatch-color {
+  border-radius: 0%;
+}
+#colorpicker .minicolors-panel {
+    left: 0px;
+}
+#fontWrapper {
+    display: block;
+}
+#fontWrapper input {
+    display: block;
+}
+#tileSizeEffect {
+    display: block;
+    color: black;
+}
+#alignEffect {
+    display: block;
+    color: white;
+}
+#alignEffect input, #alignEffect label {
+    display: inline-block;
+    margin-right: 5px;
+}
+#editReset {
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-right: 10px;
+    font-weight: bold;
+    font-size: 16px;
+}
+.minicolors-theme-default .minicolors-input {
+    width: 170px;
 }

@@ -188,7 +188,7 @@ def getThermostat(swid, item=null) {
                               thermomode: item.currentValue("thermostatMode"),
                               thermostate: item.currentValue("thermostatOperatingState")
                          ] : false
-    if ( item.hasCapability("relativeHumidityMeasurement") ) {
+    if ( item.hasAttribute("humidity") ) {
         resp.put("humidity", item.currentValue("humidity"))
     }
     // log.debug "Thermostat response = ${resp}"
@@ -297,6 +297,27 @@ def getDevice(mydevices, swid, item=null) {
     return resp
 }
 
+def setOther(swid, cmd, attr, subid ) {
+    def resp = false
+    def item  = myothers.find {it.id == swid }
+    
+    if (item && subid.startsWith("_")) {
+        subid = subid.substring(1)
+        log.debug "Activating other device " + item + " command: " + subid
+        resp = [:]
+        if ( item.hasCommand(subid) ) {
+            item."$subid"()
+            resp = getOther(swid, item)
+        }
+    }
+    
+    else if ( subid == "switch" ) {
+        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr)
+        resp = onoff ? [switch: onoff] : false
+    }
+    return resp
+}
+
 // make a generic thing getter to streamline the code
 def getThing(things, swid, item=null) {
     item = item ? item : things.find {it.id == swid }
@@ -326,7 +347,7 @@ def getThing(things, swid, item=null) {
                     def comname = comm.getName()
                     def args = comm.getArguments()
                     def arglen = args.size()
-                    log.debug "Command for ${swid} = $comname with $arglen args = $args "
+                    // log.debug "Command for ${swid} = $comname with $arglen args = $args "
                     if ( arglen==0 && ! reserved.contains(comname) ) {
                         resp.put( "_"+comname, comname )
                     }
@@ -581,32 +602,32 @@ def getOthers(resp) {
     myothers?.each {
         
         def thatid = it.id;
-        def inlist = ( myswitches?.find {it.id == thatid } ||
-             mydimmers?.find {it.id == thatid } ||
-             mybulbs?.find {it.id == thatid } ||
-             mylights?.find {it.id == thatid } ||
-             mycontacts?.find {it.id == thatid } ||
-             mylocks?.find {it.id == thatid } ||
-             mysensors?.find {it.id == thatid} ||
-             mymusics?.find {it.id == thatid } ||
-             mymomentaries?.find {it.id == thatid } ||
-             mythermostats?.find {it.id == thatid} ||
-             myweathers?.find {it.id == thatid} ||
-             mydoors?.find {it.id == thatid } ||
-             mywaters?.find {it.id == thatid } ||
-             myvalves?.find {it.id == thatid } ||
-             myilluminances?.find {it.id == thatid } ||
-             mysmokes?.find {it.id == thatid } ||
-             mytemperatures?.find {it.id == thatid } ||
-             mypresences?.find {it.id == thatid}
-            )
+//        def inlist = ( myswitches?.find {it.id == thatid } ||
+//             mydimmers?.find {it.id == thatid } ||
+//             mybulbs?.find {it.id == thatid } ||
+//             mylights?.find {it.id == thatid } ||
+//             mycontacts?.find {it.id == thatid } ||
+//             mylocks?.find {it.id == thatid } ||
+//             mysensors?.find {it.id == thatid} ||
+//             mymusics?.find {it.id == thatid } ||
+//             mymomentaries?.find {it.id == thatid } ||
+//             mythermostats?.find {it.id == thatid} ||
+//             myweathers?.find {it.id == thatid} ||
+//             mydoors?.find {it.id == thatid } ||
+//             mywaters?.find {it.id == thatid } ||
+//             myvalves?.find {it.id == thatid } ||
+//             myilluminances?.find {it.id == thatid } ||
+//             mysmokes?.find {it.id == thatid } ||
+//             mytemperatures?.find {it.id == thatid } ||
+//             mypresences?.find {it.id == thatid}
+//            )
         
-        if ( !inlist ) {
+        // if ( !inlist ) {
             uniquenum++
             def multivalue = getThing(myothers, thatid, it)
             resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
             // log.debug it.displayName + " = " + multivalue
-        }
+        // }
     }
 //    log.debug "Number of unique other sensors = " + uniquenum
     return resp
@@ -648,8 +669,11 @@ def doAction() {
     def swid = params.swid
     def swtype = params.swtype
     def swattr = params.swattr
+    def subid = params.subid
     def cmdresult = false
     // sendLocationEvent( [name: "housepanel", value: "touch", isStateChange:true, displayed:true, data: [id: swid, type: swtype, attr: swattr, cmd: cmd] ] )
+   
+    log.debug "doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid"
 
     // get the type if auto is set
     if (swtype=="auto" || swtype=="none" || swtype=="") {
@@ -682,11 +706,11 @@ def doAction() {
          break
          
       case "thermostat" :
-         cmdresult = setThermostat(swid, cmd, swattr)
+         cmdresult = setThermostat(swid, cmd, swattr, subid)
          break
          
       case "music" :
-         cmdresult = setMusic(swid, cmd, swattr)
+         cmdresult = setMusic(swid, cmd, swattr, subid)
          break
          
       // note: this requires a special handler for motion to manually set it
@@ -722,9 +746,13 @@ def doAction() {
         cmdresult = setRoutine(swid, cmd, swattr)
         break;
         
+      case "other" :
+          cmdresult = setOther(swid, cmd, swattr, subid)
+          break
+        
     }
    
-    log.debug "HousePanel doaction: cmd = $cmd type = $swtype id = $swid cmdresult = $cmdresult"
+    log.debug "HousePanel doaction: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult"
     return cmdresult
 
 }
@@ -1248,7 +1276,7 @@ def setValve(swid, cmd, swattr) {
 }
 
 // fixed bug to get just the last words of the class
-def setThermostat(swid, curtemp, swattr) {
+def setThermostat(swid, curtemp, swattr, subid) {
     def resp = false
     def newsw = 72
     def tempint
@@ -1379,7 +1407,7 @@ def setThermostat(swid, curtemp, swattr) {
               else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
                   item.thermostatSetpoint(swattr)
               } else if ( item.hasCommand(cmd) ) {
-                  item.${cmd}()
+                  item."$cmd"()
               }
 
             // break
@@ -1390,7 +1418,7 @@ def setThermostat(swid, curtemp, swattr) {
     return resp
 }
 
-def setMusic(swid, cmd, swattr) {
+def setMusic(swid, cmd, swattr, subid) {
     def resp = false
     def item  = mymusics.find {it.id == swid }
     def newsw

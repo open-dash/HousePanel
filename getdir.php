@@ -1,10 +1,11 @@
 <?php
 
-$icondir = "skin-housepanel/icons/";
 if ( isset($_POST["useajax"]) ) {
     $useajax = $_POST["useajax"];
     if ( isset($_POST["attr"]) && file_exists($_POST["attr"]) ) { 
         $icondir = $_POST["attr"]; 
+    } else {
+        $icondir = "skin-housepanel/icons/";
     }
    
 //    $thingindex = $_POST["id"];
@@ -12,13 +13,19 @@ if ( isset($_POST["useajax"]) ) {
 //    $icontarget = $_POST["value"];
 } else if ( isset($_GET["useajax"]) ) {
     $useajax = $_GET["useajax"];
-    if ( isset($_GET["attr"]) && file_exists($_POST["attr"]) ) { 
+    if ( isset($_GET["attr"]) && file_exists($_GET["attr"]) ) { 
         $icondir = $_GET["attr"]; 
+    } else {
+        $icondir = "skin-housepanel/icons/";
     }
     
 } else {
     $useajax = false;
-    $icondir = "skin-housepanel/icons/";
+    if ( isset($_GET["attr"]) && file_exists($_GET["attr"]) ) { 
+        $icondir = $_GET["attr"]; 
+    } else {
+        $icondir = "skin-housepanel/icons/";
+    }
 }
 $ipos = strpos($icondir,"/");
 $subdir = substr($icondir, $ipos+1);
@@ -34,18 +41,14 @@ foreach ($dirlist as $filename) {
         $froot = $parts['basename'];
         if ( in_array($ext, $allowed) ) {
             $tc.= '<div class="cat Local_Storage">';
-            $tc.= "<img src='$icondir" . $filename . "' class=\"icon\" title=\"$froot\" ";
-//            if ( $icontarget && $str_type && $thingindex ) {
-//                $tc.= 'onclick="iconSelected(\'' . $icontarget . '\',\'' . urldecode($subdir . $filename) . '\',\'' . $str_type . '\',\'' . $thingindex . '\')"';
-//            } 
-            $tc.= " />";
+            $tc.= "<img src='$icondir" . $filename . "' class=\"icon\" title=\"$froot\" />";
             $tc.= "</div>";
         }
     }
     
 }
 
-if ( $useajax ) {
+if ( $useajax && $useajax!=="false" ) {
     echo $tc;
 } else {
     echo '<!DOCTYPE html>';

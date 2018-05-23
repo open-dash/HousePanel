@@ -57,14 +57,13 @@ window.addEventListener("load", function(event) {
             $("#"+defaultTab).click();
         } catch (e) {}
     }
-    
-//    var cookies = decodeURIComponent(document.cookie);
-//    cookies = cookies.split(';');
-//    alert(strObject(cookies));
-    
-    // setupPagemove();
-    // setupDraggable();
 
+    // hide the skin and 
+    $("div.skinoption").hide();
+
+    // setup page clicks
+    setupPage("");
+    
     // disable return key
     $("form.options").keypress(function(e) {
         if ( e.keyCode===13  && popupStatus===1){
@@ -104,9 +103,9 @@ window.addEventListener("load", function(event) {
     // if you do this manual controls will not be reflected in panel
     // but you can always run a refresh to update the panel manually
     // or you can run it every once in a blue moon too
-//    allTimerSetup(300000);
-     allTimerSetup(60000);
-     allHubitatSetup();
+    // any value less than 5000 (5 sec) will be interpreted as never
+    allTimerSetup(60000);
+    allHubitatSetup(5000);
 
     cancelDraggable();
     cancelSortable();
@@ -294,30 +293,34 @@ function setupSliders() {
             var bid = $(tile).attr("bid");
             var bidupd = bid;
             var ajaxcall = "doaction";
+            var subid = thing.attr("subid");
+            var thevalue = parseInt(ui.value);
             if ( bid.startsWith("h_") ) {
                 ajaxcall = "dohubitat";
                 bid = bid.substring(2);
             }
             var thetype = $(tile).attr("type");
+            console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue);
             
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
+                                console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                                 updAll("slider",aid,bidupd,thetype,presult);
-//                                updateTile(aid, presult);
                             }
                        }, "json"
                 );
             } else {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "level"},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 // alert( strObject(presult) );
+                                console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                                 updateTile(aid, presult);
                             }
                        }, "json"
@@ -775,23 +778,28 @@ function setupButtons() {
 
 function addEditLink() {
     $("div.panel > div.thing").each(function() {
-       var styleinfo = " style=\"position: absolute; z-index: 999; left: 1px; top: 1px;\"";
-       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + styleinfo  + ">[E]</div>";
+       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + ">[Edit]</div>";
        $(this).append(editdiv);
     });
+    
+    // show the skin and 
+    $("div.skinoption").show();
     
     $("div.editlink").on("click",function(evt) {
         var aid = "#" + $(evt.target).attr("aid");
         var str_type = $(aid).attr("type");
         var tile = $(aid).attr("tile");
         var strhtml = $(aid).html();
+        var csstarget = $(aid).attr("class");
+        // alert("csstarget= " + csstarget);
         
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
-//        var onoff = getOnOff(str_type);
-//        if ( onoff[0] && onoff[1] ) {
+        var onoff = getOnOff(str_type);
+        if ( onoff[0] && onoff[1] ) {
+            
 //            strhtml = strhtml + strhtml;
-//        }
+        }
         
 //        alert("Clicked on aid= " + aid + " tile = " + tile + " of type = " + str_type);
         editTile(str_type, tile, strhtml);
@@ -803,6 +811,9 @@ function delEditLink() {
     $("div.editlink").each(function() {
        $(this).remove();
     });
+    // hide the skin and 
+    $("div.skinoption").hide();
+    
     closeModal();
 }
 
@@ -1292,39 +1303,44 @@ function allTimerSetup(timerval) {
 
     // define the timer callback function to update all tiles every 60 seconds
     // var timerval = 15000;
+    if ( !timerval || timerval < 5000 ) { return; }
     var updarray = ["all",timerval];
     updarray.myMethod = function() {
+        // skip if not in operation mode or if inside a modal dialog box
+        if ( priorOpmode !== "Operate" || modalStatus ) { return; }
         var that = this;
-        // alert("About to post update...");
-        $.post(returnURL, 
-            {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
-            function (presult, pstatus) {
-//                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
-                if (pstatus=="success" && presult!==undefined ) {
-//                    console.log("Polling [" + returnURL + "] update: ST returned "+ Object.keys(presult).length+ " items");
-                    
-                    // go through all tiles and update
-                    $('div.panel div.thing').each(function() {
-                        var aid = $(this).attr("id").substring(2);
-                        // skip the edit in place tile
-                        if ( aid !== "wysiwyg") {
-                            var tileid = $(this).attr("tile");
-                            var bid = $(this).attr("bid");
-                            if ( !bid.startsWith("h_") && tileid in presult ) {
-                                var thevalue = presult[tileid];
-                                // handle both direct values and bundled values
-                                if ( thevalue.hasOwnProperty("value") ) {
-                                    thevalue = thevalue.value;
-                                }
-                                // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
-                                if ( thevalue ) { updateTile(aid,thevalue); }
-                            }
-                        }
-                    });
-                }
-            }, "json"
-        );
+        // console.log ( "Posting SmartThings update..." );
+        try {
+            $.post(returnURL, 
+                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
+                function (presult, pstatus) {
+    //                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
+                    if (pstatus==="success" && presult!==undefined ) {
+                        // console.log("Success polling [" + returnURL + "]. SmartThings returned "+ Object.keys(presult).length+ " items");
 
+                        // go through all tiles and update
+                        $('div.panel div.thing').each(function() {
+                            var aid = $(this).attr("id").substring(2);
+                            // skip the edit in place tile
+                            if ( aid !== "wysiwyg") {
+                                var tileid = $(this).attr("tile");
+                                var bid = $(this).attr("bid");
+                                if ( !bid.startsWith("h_") && tileid in presult ) {
+                                    var thevalue = presult[tileid];
+                                    // handle both direct values and bundled values
+                                    if ( thevalue.hasOwnProperty("value") ) {
+                                        thevalue = thevalue.value;
+                                    }
+                                    // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                                    if ( thevalue ) { updateTile(aid,thevalue); }
+                                }
+                            }
+                        });
+                    }
+                }, "json"
+            );
+        } catch(e) {}
+        
         // repeat the method above indefinitely
         setTimeout(function() {updarray.myMethod();}, this[1]);
     };
@@ -1333,21 +1349,22 @@ function allTimerSetup(timerval) {
     setTimeout(function() {updarray.myMethod();}, timerval);
 }
 
-function allHubitatSetup() {
+function allHubitatSetup(timerval) {
 
     // define the timer callback function to update all Hubitat tiles every 5 seconds
-    var timerval = 5000;
+    // var timerval = 5000;
+    if ( !timerval || timerval < 5000 ) { return; }
     var hubarray = ["all",timerval];
     hubarray.myMethod = function() {
+        // skip if not in operation mode or if inside a modal dialog box
+        if ( priorOpmode !== "Operate" || modalStatus ) { return; }
         var that = this;
-        // alert("About to post update...");
         try {
             $.post(returnURL, 
                 {useajax: "queryhubitat", id: that[0], type: that[0], value: "none", attr: "none"},
                 function (presult, pstatus) {
-    //                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
-                    if (pstatus=="success" && presult!==undefined ) {
-                        // console.log("Polling [" + returnURL + "] update: Hubitat returned "+ Object.keys(presult).length+ " items");
+                    if (pstatus==="success" && presult!==undefined && presult ) {
+                        // console.log("Success polling [" + returnURL + "]. Hubitat returned "+ Object.keys(presult).length+ " items");
 
                         // go through all tiles and update
                         $('div.thing').each(function() {
@@ -1434,7 +1451,7 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // actually we do both for instant on screen viewing
     // the second call is needed to make screen refreshes work properly
 //    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
-    if (trigger=="switch.on" || trigger=="switch.off") {
+    if (trigger==="switch") {
         // updateMode();
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -1446,23 +1463,11 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            if (otheraid !== aid) {
-                updateTile(otheraid, pvalue);
-//                var rbid = $(this).attr("bid");
-//                setTimeout(function() {
-//                    refreshTile(otheraid, rbid, "bulb");
-//                }, 10000);
-            }
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            if (otheraid !== aid) {
-                updateTile(otheraid, pvalue);
-//                var rbid = $(this).attr("bid");
-//                setTimeout(function() {
-//                    refreshTile(otheraid, rbid, "light");
-//                }, 10000);
-            }
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
     }
     
@@ -1477,7 +1482,6 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // change to use refreshTile function so it triggers PHP session update
     // but we have to do this after waiting a few seconds for ST to catch up
     // NOTE: removed the above logic because our updates are now faster and frequent
-    // if (thetype==="switchlevel" || thetype==="bulb" || thetype==="light") {
     if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
         trigger==="hue-up" || trigger==="hue-dn" ||
         trigger==="saturation-up" || trigger==="saturation-dn" ||
@@ -1485,31 +1489,19 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
 //        alert("level trigger: bid= "+bid+" pvalue= "+strObject(pvalue));
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="switchlevel"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-//            var rbid = $(this).attr("bid");
-//            setTimeout(function() {
-//                refreshTile(otheraid, rbid, "switchlevel");
-//            }, 10000);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="bulb"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-//            var rbid = $(this).attr("bid");
-//            setTimeout(function() {
-//                refreshTile(otheraid, rbid, "bulb");
-//            }, 10000);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
         $('div.thing[bid="'+bid+'"][type="light"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
-            updateTile(otheraid, pvalue);
-//            var rbid = $(this).attr("bid");
-//            setTimeout(function() {
-//                refreshTile(otheraid, rbid, "light");
-//            }, 10000);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
         });
     }
     
@@ -1520,21 +1512,22 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
 function setupPage(trigger) {
    
     // alert("setting up " + trigger);
-    var actionid = "div." + trigger;
+    // var actionid = "div." + trigger;
 
     // $(actionid).click(function() {
-    $(".panel").off("click.tileactions", actionid);
-    $(".panel").on("click.tileactions", actionid, function() {
+    $("div.overlay > div").off("click.tileactions");
+    $("div.overlay > div").on("click.tileactions", function() {
         
         var aid = $(this).attr("aid");
-        
-        // avoid doing click if the target was the title bar
-        // or if not in Operate mode
-        if ( aid==undefined || priorOpmode!=="Operate" || modalStatus ||
-             ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
-
         var theclass = $(this).attr("class");
         var subid = $(this).attr("subid");
+        
+        // avoid doing click if the target was the title bar
+        // or if not in Operate mode; also skip sliders tied to subid === level
+        if ( aid===undefined || priorOpmode!=="Operate" || modalStatus ||
+             subid==="level" ||
+             ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
+        
         var tile = '#t-'+aid;
         var bid = $(tile).attr("bid");
         var bidupd = bid;
@@ -1543,7 +1536,6 @@ function setupPage(trigger) {
         
         // set the action differently for Hubitat
         var ajaxcall = "doaction";
-//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+']');
         if ( bid.startsWith("h_") ) {
             ajaxcall = "dohubitat";
             // bid = bid.substring(2);
@@ -1552,8 +1544,7 @@ function setupPage(trigger) {
         var thevalue;
         // for switches and locks set the command to toggle
         // for most things the behavior will be driven by the class value = swattr
-        if (thetype==="switch" || thetype==="lock" || thetype==="door" ||
-            thetype==="switchlevel" ||thetype==="bulb" || thetype==="light") {
+        if (subid==="switch" || subid==="lock" || thetype==="door" ) {
             thevalue = "toggle";
         // handle shm special case
         } else if ( thetype=="shm") {
@@ -1565,7 +1556,8 @@ function setupPage(trigger) {
             thevalue = $(targetid).html();
         }
 
-        // alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
+//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
+//        return;
 
         // turn momentary items on or off temporarily
         if (thetype==="momentary" || thetype==="piston") {
@@ -1578,7 +1570,7 @@ function setupPage(trigger) {
                 this[0].html(this[2]);
             };
             $.post(returnURL, 
-                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid},
                 function(presult, pstatus) {
                     // alert("pstatus= "+pstatus+" presult= "+strObject(presult));
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
@@ -1603,22 +1595,23 @@ function setupPage(trigger) {
 //                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
-        } else if ( thetype=="videozzz" ) {
-            alert( "Clicked on video");
-            thevalue = '<video width="369" autoplay ><source src="media/arlovideo.mp4" type="video/mp4"></video>';
-            var presult = {url: thevalue};
-            console.log("Replaying latest embedded video");
-            updateTile(aid, presult);
+        } else if ( thetype==="video" ) {
+//            alert( "Clicked on video: " + thevalue);
+            console.log("Replaying latest embedded video: " + thevalue);
+            // thevalue = '<video width="369" autoplay ><source src="media/arlovideo.mp4" type="video/mp4"></video>';
+            // var presult = {url: thevalue};
+            // updateTile(aid, presult);
+            $(targetid).html(thevalue);
         } else {
 //            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
-            console.log("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
+            console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass},
+                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
 //                            alert( strObject(presult) );
-                            console.log( "POST returned: "+ strObject(presult) );
-                            updAll(trigger,aid,bidupd,thetype,presult);
+                            console.log( ajaxcall + " POST returned: "+ strObject(presult) );
+                            updAll(subid,aid,bidupd,thetype,presult);
                         }
                    }, "json"
             );
