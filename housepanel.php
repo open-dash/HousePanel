@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.622      Updated info dump to include json dump of variables
  * 1.621      ***IMPT*** bugfix to prior 1.62 update resolving corrupt config files
  * 1.62       New ability to use only a Hubitat hubg
  * 1.61       Bugfixes to TileEditor
@@ -1772,9 +1773,9 @@ function showInfo($returnURL, $access_token, $endpt, $sitename, $allthings) {
     $tc.= "<div>Hubitat Hub IP = " . HUBITAT_HOST . "</div>";
     $tc.= "<div>Hubitat ID = " . HUBITAT_ID . "</div>";
     $tc.= "<div>Hubitat Token = " . HUBITAT_ACCESS_TOKEN . "</div>";
-    $tc.= "<div>url = $returnURL </div><br /><hr><br />";
+    $tc.= "<div>url = $returnURL </div><br />";
     $tc.= "<table class=\"showid\">";
-    $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingarr\">" . "Thing Values Arraygit s" . 
+    $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingarr\">" . "Value Array" . 
           "</th><th class=\"thingvalue\">" . "Type" . 
           "</th><th class=\"thingvalue\">" . "Thing id" .
           "</th><th class=\"thingvalue\">" . "Tile Num" . "</th></tr></thead>";
@@ -1802,6 +1803,11 @@ function showInfo($returnURL, $access_token, $endpt, $sitename, $allthings) {
               "</td></tr>";
     }
     $tc.= "</table>";
+    $tc.= "<div><b>json dump of each thing</b></div>";
+    foreach ($allthings as $bid => $thing) {
+        $tc.= "<div class='jsonid'>" . $bid . "</div>";
+        $tc.= "<div class='jsondump'>" . json_encode($thing) . "</div>";
+    }
     return $tc;
 }
 

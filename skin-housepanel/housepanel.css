@@ -331,7 +331,6 @@ table.showid .thingarr {
     border-bottom: 1px solid #999999;
     border-top: 1px solid #999999;
 }
-
 table.showid .thingvalue {
     text-align: center; 
     width: 10%;  
@@ -339,6 +338,10 @@ table.showid .thingvalue {
     border-right: 1px solid #999999;
     border-bottom: 1px solid #999999;
     border-top: 1px solid #999999;
+}
+table.showid th, table.showid th.thingvalue {
+    font-weight: bold;
+    font-size: 14pt;
 }
 
 /* only adjust for scrollbar on screens with hover */
@@ -553,6 +556,9 @@ div.thingname.lock, div.thingname.piston, catalog-thing div.thingname {
 div.thingname:hover {
     background-color: #5050a0; 
     color: #cccccc;
+}
+div.thingname.door {
+    width: 100%;
 }
 
 /* style the on and off states of things to not show up */
@@ -1790,4 +1796,16 @@ div.other-thing div.overlay._on {
     display: inline-block;
     color: rgba(255,255,255,1);
     font-size: 12pt;
+}
+
+div.jsonid {
+    margin-top: 5px;
+    border-bottom: 1px solid black;
+}
+div.jsondump {
+    background-color: #ffffc6;
+    color: black;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-bottom: 1px solid black;
 }

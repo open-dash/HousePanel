@@ -1168,12 +1168,18 @@ function disablePopup(){
     popupStatus = 0;
 }
 
-function strObject(o) {
+function strObject(o, level) {
   var out = '';
+  if ( !level ) { level = 0; }
+  
   for (var p in o) {
     out += p + ': ';
     if (typeof o[p] === "object") {
-        out += strObject(o[p]);
+        if ( level > 10 ) {
+            out+= ' [more beyond 10 levels...] \n';
+        } else {
+            out += strObject(o[p], level+1);
+        }
     } else {
         out += o[p] + '\n';
     }
