@@ -432,10 +432,10 @@ div.thing {
     margin: 3px;
     text-align: center;
     vertical-align: top;
-    border-top: 2px solid #cccccc; 
+    border-top: 2px solid #999999; 
     border-right: 2px solid #333333;
     border-bottom: 2px solid #333333; 
-    border-left: 2px solid #cccccc;
+    border-left: 2px solid #999999;
     background-color: rgba(0, 51, 204, 0.6);
     box-shadow: 2px 2px 7px black;
     color: rgba(250, 250, 250, 1);
@@ -548,29 +548,25 @@ div.thermostat.thermomode.on, div.thermostat.thermofan.on {
 /* contact styling - note we changed to generic contact */
 div.contact.open {
     background-image: url('icons/opencontact.png');
-    background-color: rgba(27,177,75,0.3);
     color: rgba(255, 255, 255, 0.01);
 }
 div.contact.closed {
     background-image: url('icons/closecontact.png');
-    background-color: rgba(27,177,75,0.3);
     color: rgba(255, 255, 255, 0.01);
 }
 div.contact.mat.open {
     background-image: url('icons/matempty.png');
-    background-color: rgba(27,177,75,0.3);
     color: rgba(255, 255, 255, 0.01);
     background-size: 120px;
 }
 div.contact.mat.closed {
     background-image: url('icons/matfull.png');
-    background-color: rgba(27,177,75,0.3);
     color: rgba(255, 255, 255, 0.01);
     background-size: 120px;
 }
 
 /* specific contact types one might find */
-div.door.open, div.contact.door.closed {
+div.door.open, div.contact.door.open {
     background-image: url('icons/opendoor.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 40px;
@@ -1031,18 +1027,20 @@ div.music.track {
     font-size: 11pt;
     font-style: italic;
     height: 48px;
+    width: 180px;
     padding-top: 2px;
     border-bottom: none;
     background-color: rgba(80, 80, 80, 0.7);
 }
 div.music.musicstatus, div.music.musicmute {
     height: 24px;
+    width: 180px;
     font-size: 11pt;
     background-color: rgba(80, 80, 80, 0.7);
 }
-div.music div.level-val, div.music div.vol-val {
+/*div.music div.level-val, div.music div.vol-val {
     width: 60%;
-}
+}*/
 
 /* pistons */
 div.piston-thing {
@@ -1063,7 +1061,7 @@ div.piston.pistonName.firing {
 }
 /* weather styling */
 div.thing.weather-thing {
-    background-color: rgba(50,50,50,0.4);
+    background-color: rgba(0,0,0,0.01);
     width: 240px;
     text-align: center;
     height: auto;
@@ -1334,47 +1332,6 @@ div.switchlevel.colorTemperature, div.bulb.colorTemperature {
     height: 4px;
 }
 
-/* simple things for the All panel */
-/* note - the code for an ALL panel is disabled */
-div.panel-all div.thing {
-    display: inline-block;
-    font-size: 9pt;
-    text-align: center;
-    margin: 1px;
-    vertical-align: top;
-    border: 1px solid #000000; 
-    background-color: #eeeeee;
-    color: #000000;
-    cursor: default;
-    width: 60px; 
-    height: 20px;
-}
-div.panel-all div.thing:hover{
-    color: #eeeeee;
-    background-color: #000000;
-}
-div.panel-all div.thingname {
-    background-color: #303050;
-    font-size: 9pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    border-bottom: 1px solid rgba(0,0,0,0.3);
-    height: 20px;
-}
-div.panel-all div.open, div.panel-all div.closed, 
-div.panel-all div.inactive, div.panel-all div.active, 
-div.panel-all div.locked, div.panel-all div.unlocked, 
-div.panel-all div.on, div.panel-all div.off, 
-div.panel-all div.present, div.panel-all div.absent, 
-div.panel-all div.firing, div.panel-all div.piston.pistonName {
-    background-position: center;
-    text-align: center;
-    font-size: 9px;
-    color: #000000;
-}
-
 div.editlink, div.dellink {
     border: 2px solid white; 
     padding: 2px;
@@ -1451,23 +1408,25 @@ div.switchlevel.screen.power, div.switchlevel.screen.energy {
 iframe body {
     margin: 0px;
 }
-div.frame iframe, div.frame-thing {
-    width: 500px;
-    height: 230px;
-    background: none;
-}
-div.frame-thing {
+/*div.thing.frame-thing {
     width: auto;
     height: auto;
     background: none;
     box-shadow: none;
     margin: 0px;
-}
-div.thingname.frame {
+}*/
+div.thing.frame-thing.weather div.thingname.frame {
     width: 480px;
-    margin-left: 10px;
+    margin-left: 13px;
+    padding: 0;
 }
-div.frame-thing div.overlay.status {
+div.thing.frame-thing.weather {
+    width: 500px;
+    height: 250px;
+    background-color: rgba(0, 0, 0, 0.01);
+    border: 0; 
+}
+div.thing.frame-thing div.overlay.status {
     display: none;
 }
 /* this custom setting moves power and energy up for my yard switches */

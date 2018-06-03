@@ -321,7 +321,7 @@ function getAllThings($endpt, $access_token) {
         // $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => "Analog Clock", "value" => $todaydate, "type" => "clock");
 
         // add 4 generic iFrame tiles
-        $forecast = "<iframe width=\"490\" height=\"220\" src=\"forecast.html\" frameborder=\"0\"></iframe>";
+        $forecast = "<iframe width=\"490\" height=\"230\" src=\"forecast.html\" frameborder=\"0\"></iframe>";
         $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Weather Forecast", "value" => array("name"=>"Weather Forecast", "frame"=>"$forecast","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Frame 2", "value" => array("name"=>"Frame 2", "frame"=>"","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame3"] = array("id" => "frame3", "name" => "Frame 3", "value" => array("name"=>"Frame 3", "frame"=>"","status"=>"stop"), "type" => "frame");
@@ -368,7 +368,7 @@ function processName($thingname, $thingtype) {
     // get rid of 's and split along white space
     // but only for tiles that are not weather
     if ( $thingtype!=="weather") {
-        $ignores = array("'s","*","<",">","!","{","}","-",".",",",":","+","switch","contact","momentary","door","thermostat","bulb","level");
+        $ignores = array("'s","*","<",">","!","{","}","-",".",",",":","+","switch","contact","momentary","weather","thermostat","bulb","level");
         $lowname = str_replace($ignores, "", strtolower($thingname));
         $subopts = preg_split("/[\s,;|]+/", $lowname);
         $subtype = "";
@@ -493,8 +493,8 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         
     } else {
 
-        if (strlen($thingname) > 32 ) {
-            $thingpr = substr($thingname,0,30) . " ...";
+        if (strlen($thingname) > 56 ) {
+            $thingpr = substr($thingname,0,56) . " ...";
         } else {
             $thingpr = $thingname;
         }
@@ -641,7 +641,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\"  method=\"POST\">";
         
         // add room index to the id so can be style by number and names can duplicate
-        $tc.= "<div id=\"panel-$kroom\" title=\"" . $roomtitle . "\" class=\"panel panel-$roomname\">";
+        $tc.= "<div id=\"panel-$kroom\" title=\"" . $roomtitle . "\" class=\"panel panel-$kroom panel-$roomname\">";
         // $tc.= hidden("panelname",$keyword);
 
         $thiscnt = 0;

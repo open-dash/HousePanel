@@ -1398,7 +1398,10 @@ function allTimerSetup(timerval) {
     var updarray = ["all",timerval];
     updarray.myMethod = function() {
         // skip if not in operation mode or if inside a modal dialog box
-        if ( priorOpmode !== "Operate" || modalStatus ) { return; }
+        if ( priorOpmode !== "Operate" || modalStatus ) { 
+            console.log ("Timer skipped: opmode= "+priorOpmode+" modalStatus= "+modalStatus);
+            return; 
+        }
         var that = this;
         // console.log ( "Posting SmartThings update..." );
         try {
@@ -1411,9 +1414,10 @@ function allTimerSetup(timerval) {
 
                         // go through all tiles and update
                         $('div.panel div.thing').each(function() {
-                            var aid = $(this).attr("id").substring(2);
+                            var aid = $(this).attr("id");
                             // skip the edit in place tile
                             if ( aid !== "wysiwyg") {
+                                aid = aid.substring(2);
                                 var tileid = $(this).attr("tile");
                                 var bid = $(this).attr("bid");
                                 if ( !bid.startsWith("h_") && tileid in presult ) {
@@ -1422,7 +1426,7 @@ function allTimerSetup(timerval) {
                                     if ( thevalue.hasOwnProperty("value") ) {
                                         thevalue = thevalue.value;
                                     }
-                                    // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
+                                    // if ( tileid=="201" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
                                     if ( thevalue ) { updateTile(aid,thevalue); }
                                 }
                             }
@@ -1430,7 +1434,9 @@ function allTimerSetup(timerval) {
                     }
                 }, "json"
             );
-        } catch(e) {}
+        } catch(err) {
+            console.error ("Polling error", err.message);
+        }
         
         // repeat the method above indefinitely
         setTimeout(function() {updarray.myMethod();}, this[1]);
@@ -1693,6 +1699,8 @@ function setupPage(trigger) {
             // var presult = {url: thevalue};
             // updateTile(aid, presult);
             $(targetid).html(thevalue);
+        } else if ( thetype==="weather") {
+            console.log("Weather tiles have no actions...");
         } else {
 //            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
@@ -1701,8 +1709,15 @@ function setupPage(trigger) {
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
 //                            alert( strObject(presult) );
-                            console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                            updAll(subid,aid,bidupd,thetype,presult);
+                            try {
+                                var keys = Object.keys(presult);
+                                if ( keys && keys.length) {
+                                    console.log( ajaxcall + " POST returned: "+ strObject(presult) );
+                                    updAll(subid,aid,bidupd,thetype,presult);
+                                } else {
+                                    console.log( ajaxcall + " POST returned nothing to update ");
+                                }
+                            } catch (e) { }
                         }
                    }, "json"
             );
