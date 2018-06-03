@@ -312,6 +312,35 @@ table.roomoptions tr.hiderow {
     display: none;
 }
 
+table.showid .thingname {
+    line-height: 25px;
+    text-align: left; 
+    width: 15%;    
+    font-weight: bold;
+    border-left: 1px solid #999999;    
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+    border-top: 1px solid #999999;
+    padding-left: 5px;
+}
+
+table.showid .thingarr {
+    text-align: left; 
+    width: 25%;    
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+    border-top: 1px solid #999999;
+}
+
+table.showid .thingvalue {
+    text-align: center; 
+    width: 10%;  
+    font-weight: normal;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+    border-top: 1px solid #999999;
+}
+
 /* only adjust for scrollbar on screens with hover */
 @media only screen and (hover: hover) {
     table.roomoptions tbody {
@@ -519,9 +548,6 @@ div.thingname.lock, div.thingname.piston, catalog-thing div.thingname {
     padding-bottom: 0px;
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
-    width: 92%;
-    padding-left: 4%;
-    padding-right: 4%;
     cursor: default;
 }
 div.thingname:hover {

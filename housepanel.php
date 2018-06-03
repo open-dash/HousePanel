@@ -19,6 +19,8 @@
  * 
  *
  * Revision History
+ * 1.62       New ability to use only a Hubitat hub
+ * 1.61       Bugfixes to TileEditor
  * 1.60       Major rewrite of TileEditor
  * 1.53       Drag and drop tile addition and removal and bug fixes
  * 1.52       Bugfix for disappearing rooms, add Cancel in options, SmartHomeMonitor add
@@ -299,7 +301,8 @@ function getAllThings($endpt, $access_token) {
         session_unset();
         $allthings = array();
         
-        if ( $endpt && $access_token ) {
+        // skip this if hubitat only
+        if ( $endpt && $access_token && $access_token!=="hubitatonly" ) {
             $allthings = getResponse($endpt . "/getallthings", $access_token);
         }
         
@@ -788,14 +791,22 @@ function getCatalog($allthings) {
 }
 
 function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none", $subid= "") {
+
+    $weekday = date("l");
+    $dateofmonth = date("M d, Y");
+    $timeofday = date("g:i a");
+    $timezone = date("T");
+    $clockname = "Digital Clock";
+    $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     
     // intercept clock things to return updated date and time
     if ($swtype==="clock") {
-        $weekday = date("l");
-        $dateofmonth = date("M d, Y");
-        $timeofday = date("g:i a");
-        $timezone = date("T");
-        $response = array("weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+        $response = $todaydate;
+    } else if ($swtype=="video") {
+        // instead of doing this it is safer to put it in a crontab
+        // exec("python getarlo.py");
+        $videodata = returnVideo();
+        $response = array("url" => $videodata);
     } else {
             if ( substr($swid,0,2) === "h_" ) { $swid = substr($swid,2); }
             
@@ -819,6 +830,10 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none", $subid=
                     $tileid = $options["index"][$idx];
                     $respvals[$tileid] = $thing;
                 }
+                $tileid = $options["index"]["clock|clockdigital"];
+                $clockthing = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock");
+                $respvals[$tileid] = $clockthing;
+                $allthings["clock|clockdigital"] = $clockthing;
                 $response = $respvals;
             } else {
                 $idx = $swtype . "|h_" . $swid;
@@ -835,9 +850,10 @@ function doHubitat($path, $swid, $swtype, $swval="none", $swattr="none", $subid=
     
 }
 
-function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid="") {
+function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid="") {
     
     // intercept clock things to return updated date and time
+    $host = $url . "/" . $path;
     $weekday = date("l");
     $dateofmonth = date("M d, Y");
     $timeofday = date("g:i a");
@@ -851,6 +867,8 @@ function doAction($host, $access_token, $swid, $swtype, $swval="none", $swattr="
         // exec("python getarlo.py");
         $videodata = returnVideo();
         $response = array("url" => $videodata);
+    } else if ( $access_token==="hubitatonly" ) {
+        $response = doHubitat($path, $swid, $swtype, $swval, $swattr, $subid);
     } else {
             
         $headertype = array("Authorization: Bearer " . $access_token);
@@ -1752,28 +1770,34 @@ function showInfo($returnURL, $access_token, $endpt, $sitename, $allthings) {
     $tc.= "<div>Hubitat Hub IP = " . HUBITAT_HOST . "</div>";
     $tc.= "<div>Hubitat ID = " . HUBITAT_ID . "</div>";
     $tc.= "<div>Hubitat Token = " . HUBITAT_ACCESS_TOKEN . "</div>";
-    $tc.= "<div>url = $returnURL </div>";
+    $tc.= "<div>url = $returnURL </div><br /><hr><br />";
     $tc.= "<table class=\"showid\">";
-    $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingvalue\">" . "Thing Value" . 
-          "</th><th class=\"thingvalue\">" . "Thing id" . 
-          "</th><th class=\"thingvalue\">" . "Tile id" .
-          "</th><th class=\"thingvalue\">" . "Type" . "</th></tr></thead>";
+    $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingarr\">" . "Thing Values Arraygit s" . 
+          "</th><th class=\"thingvalue\">" . "Type" . 
+          "</th><th class=\"thingvalue\">" . "Thing id" .
+          "</th><th class=\"thingvalue\">" . "Tile Num" . "</th></tr></thead>";
     foreach ($allthings as $bid => $thing) {
         if (is_array($thing["value"])) {
             $value = "[";
             foreach ($thing["value"] as $key => $val) {
-                $value.= $key . "=" . $val . " ";
+                if ( $key === "frame" ) {
+                    $value.= $key . "= <i><b>EmbeddedFrame</b></i> ";
+                } else {
+                    $value.= $key . "=" . $val . " ";
+                }
             }
             $value .= "]";
         } else {
             $value = $thing["value"];
         }
-        $idx = $thing["type"] . "|" . $thing["id"];
+        
+        // $idx = $thing["type"] . "|" . $thing["id"];
         $tc.= "<tr><td class=\"thingname\">" . $thing["name"] . 
-              "</td><td class=\"thingvalue\">" . $value . 
+              "</td><td class=\"thingname\">" . $value . 
+              "</td><td class=\"thingvalue\">" . $thing["type"] .
               "</td><td class=\"thingvalue\">" . $thing["id"] . 
-              "</td><td class=\"thingvalue\">" . $options["index"][$idx] . 
-              "</td><td class=\"thingvalue\">" . $thing["type"] . "</td></tr>";
+              "</td><td class=\"thingvalue\">" . $options["index"][$bid] . 
+              "</td></tr>";
     }
     $tc.= "</table>";
     return $tc;
@@ -1828,6 +1852,16 @@ function is_ssl() {
     }
     $returnURL = $url . $uri;
     
+    // skip all of the ST authentication if this is a HUBITAT only install
+    $sthost = ST_WEB;
+    if ( ( !$sthost || strtolower($sthost)==="hubitat" ) &&
+         ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) ) {
+        $hubitatonly = true;
+    } else {
+        $hubitatonly = false;
+    }
+    
+if ( !$hubitatonly ) {
     // check if this is a return from a code authorization call
     $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
     if ( $code ) {
@@ -1882,6 +1916,7 @@ function is_ssl() {
     	exit(0);
     
     }
+}
 /*
  * *****************************************************************************
  * Gather Authentication Tokens
@@ -1903,6 +1938,9 @@ function is_ssl() {
     } else if ( isset($_REQUEST["hmtoken"]) && isset($_REQUEST["hmendpoint"]) ) {
         $access_token = $_REQUEST["hmtoken"];
         $endpt = $_REQUEST["hmendpoint"];
+    } else if ( $hubitatonly ) {
+        $access_token = "hubitatonly";
+        $endpt = "hubitatonly";
     }
 
     // get the site name
@@ -1910,6 +1948,8 @@ function is_ssl() {
         $sitename = USER_SITENAME;
     } else if ( isset($_COOKIE["hmsitename"]) ) {
         $sitename = $_COOKIE["hmsitename"];
+    } else if ( $hubitatonly ) {
+        $sitename = "Hubitat SmartHome";
     } else {
         $sitename = "SmartHome";
     }
@@ -1919,7 +1959,7 @@ function is_ssl() {
  * Check for either SmartThings or Hubitat being valid
  * *****************************************************************************
  */
-    $valid = ( ($access_token && $endpt) || ( HUBITAT_HOST && HUBITAT_ID && HUBITAT_ACCESS_TOKEN ) );
+    $valid = ($access_token && $endpt);
     if ( ! $valid ) {
         unset($_SESSION["allthings"]);
         $tc .= "<br /><h2>" . APPNAME . "</h2><div>";
@@ -1962,9 +2002,9 @@ function is_ssl() {
         $swid = substr($idx, $k+1);
     }
     // fix up useajax for hubitat
-    if ( substr($swid,0,2) == "h_" && $useajax=="doquery" ) {
+    if ( (substr($swid,0,2) == "h_") && $useajax=="doquery" ) {
         $useajax = "queryhubitat";
-    } else if ( substr($swid,0,2) == "h_" && $useajax=="doaction" ) {
+    } else if ( (substr($swid,0,2) == "h_") && $useajax=="doaction" ) {
         $useajax = "dohubitat";
     }
     
@@ -1997,7 +2037,7 @@ function is_ssl() {
             case "doaction":
                 // echo "endpt= $endpt token= $access_token useajax= $useajax valid= $valid type= $swtype id= $swid tile= $tileid value= $swval attr= $swattr";
                 // $allthings = getAllThings($endpt, $access_token);
-                echo doAction($endpt . "/doaction", $access_token, $swid, $swtype, $swval, $swattr, $subid);
+                echo doAction($endpt,"doaction", $access_token, $swid, $swtype, $swval, $swattr, $subid);
                 break;
 
             case "dohubitat":
@@ -2010,7 +2050,7 @@ function is_ssl() {
         
             case "doquery":
                 // $allthings = getAllThings($endpt, $access_token);
-                echo doAction($endpt . "/doquery", $access_token, $swid, $swtype);
+                echo doAction($endpt,"doquery", $access_token, $swid, $swtype);
                 break;
         
             case "queryhubitat":
