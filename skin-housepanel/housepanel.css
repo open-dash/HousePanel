@@ -7,7 +7,7 @@
 body {
     background-color: #ffffff;
     color: #000000;
-    width: 1180px;
+    width: 1190px;
 }
 div.maintable {
 /*    transform: scale(0.6);
@@ -29,7 +29,7 @@ h1, h2, h3 {
 }
 
 div#tabs, div#controlpanel {
-    width: 1170px;
+    /*width: 1180px;*/
 /*    transform: scale(0.6);
     -ms-transform: scale(0.6);
     -moz-transform: scale(0.6);
@@ -44,11 +44,15 @@ div#tabs, div#controlpanel {
 
 div#catalog {
     width: 395px;
-    display: inline-block;
+    display: block;
     position: absolute;
     top: 0px;
-    left: 1182px;
+    left: 1192px;
     border: 2px solid rgb(128, 128, 128);
+    background-color: rgba(255, 255, 255, 1);
+    
+    /* set z-index above all tiles but below dragged tiles set to 999 */
+    z-index: 500;
 }
 div#dragregion {
     width: auto;
@@ -369,7 +373,8 @@ div.modalbox {
     background-color: rgba(255, 255, 246, 1);
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
-    position: absolute; z-index: 900;
+    position: absolute; 
+    z-index: 9999;
 }
 div.modalbuttons {
     margin-top: 5px;
@@ -448,6 +453,7 @@ div.thing {
     -moz-transform-origin: 0 0;
     -o-transform-origin: 0 0;
     -webkit-transform-origin: 0 0;
+    z-index: 2;
 }
 div.thing:hover{
     position: relative;
@@ -464,6 +470,7 @@ div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.bulb-thing {
 }
 div.thing.catalog-thing {
     display: inline-block;
+    width: 120px;
 }
 
 /* styling defaults without state or specific thing subtypes */
@@ -705,15 +712,9 @@ div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.lig
 }
 div.switch.plug.on {
     background-image: url('icons/plugon.png');
-    background-color: rgba(204, 51, 0, 0.6);
-    color: rgba(255, 255, 255, 0.01);
-    height: 112px;
 }
 div.switch.plug.off {
     background-image: url('icons/plugoff.png');
-    background-color: rgba(0, 51, 204, 0.6);
-    color: rgba(255, 255, 255, 0.01);
-    height: 112px;
 }
 /* enable this if you want to show levels for switches and bulbs */
 /* this will duplicate the switchlevel functionality */
@@ -742,13 +743,13 @@ div.switch.power::before, div.switchlevel.power:before {
 
 div.overlay.power, div.overlay.energy {
 	position: absolute; top: 32px; left: 0px;
-	z-index: 20;
+	z-index: 100;
         border: none;
         background: none;
 	height: auto;
 }
 div.overlay.power div.switch.power {
-    z-index: 21;
+    z-index: 101;
     display: block;
     float: left;
     height: 12px;
@@ -759,7 +760,7 @@ div.overlay.power div.switch.power {
     margin-left: 5px;
 }
 div.overlay.energy div.switch.energy {
-    z-index: 21;
+    z-index: 101;
     display: block;
     float: right;
     height: 12px;
@@ -842,9 +843,6 @@ div.colorTemperature-up, div.hue-up, div.saturation-up {
 }
 
 /* music styling */
-div.music {
-    width: 178px;
-}
 div.music.level, div.music.vol {
     width: 99%;
 }
@@ -1278,7 +1276,7 @@ div.presence.absent {
 .modalhide, .modalshow {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
+    z-index: 9999; /* Sit on top */
     left: 0;
     top: 0;
     width: 40%; /* Full width */
@@ -1292,9 +1290,7 @@ div.presence.absent {
     display: block;
 }
 
-div.bulb.color {
-/*    background-image: url("../media/colorwheel.png");
-    background-size: 32px 32px;*/
+div.bulb.color, div.light.color {
     position: absolute;
     left: 8px;
     top: 44px;
@@ -1302,9 +1298,10 @@ div.bulb.color {
     width: 32px;
     /*border-radius: 50%;*/
     font-size: 12px;
-    color: rgba(128,128,128, 0.01);
+    /*color: rgba(128,128,128, 0.01);*/
     display: none;
     cursor: pointer;
+    z-index: 9999;
 }
 
 /* do not display these items */
@@ -1378,12 +1375,23 @@ div.panel-all div.firing, div.panel-all div.piston.pistonName {
     color: #000000;
 }
 
-div.editlink {
-    background-color: rgba(204, 0, 51, 1);
-    color: rgba(255, 255, 204, 1);
-    position: absolute; z-index: 999; left: 1px; top: 1px;
+div.editlink, div.dellink {
+    border: 2px solid white; 
+    padding: 2px;
+    color: rgba(255, 255, 255, 1);
+    position: absolute; 
+    z-index: 501; 
+    top: 0px;
     cursor: pointer;
-    font-size: 16pt;
+    font-size: 20px;
+}
+div.editlink {
+    background-color: rgba(0, 102, 102, 1);
+    left: 0px;
+}
+div.dellink {
+    background-color: rgba(255, 0, 0, 1);
+    right: 0px;
 }
 
 /* Example custom settings from Ken's home */
@@ -1411,11 +1419,6 @@ div.presence.jana.present {
 div.presence.jana.absent {
     background-image: url('icons/girlabsent.png');
     color: rgba(255, 255, 255, 0.01);
-}
-
-/* motion detector in family room that also has temperature */
-div.motion.family.room {
-    height: 80px;
 }
 div.motion.family.room.battery {
     height: 13px; font-size: 9pt; color: #ffffff;
@@ -1744,6 +1747,9 @@ div.overlay.color .minicolors-theme-default.minicolors {
 .minicolors-position-left .minicolors-panel {
     left: 60px;
 }
+div.thing .minicolors-theme-default .minicolors-input {
+    display: none;
+}
 
 /* disable commands in general */
 div.overlay._on, div.overlay._off, 
@@ -1761,6 +1767,8 @@ div.other-thing div.switch {
 
 div.other-thing.pioneer, div.other-thing.pioneer div.thingname, div.other-thing.lg, div.other-thing.lg div.thingname {
     width: 420px;
+    padding-left: 0;
+    padding-right: 0;
 }
 div.other-thing.pioneer, div.other-thing.lg {
     background-color: rgba(110, 222, 222, 0.3);

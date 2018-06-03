@@ -118,6 +118,31 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             target = target + on;
             break;
                 // every sub-element is wrapped with this so size width this way
+                
+        case "subid":
+            // set the target to determine on/off status
+            // we always use the very specific target to this tile
+            // get the on/off state
+            var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
+            var on = $(onofftarget).html();
+            if ( on && ! $.isNumeric(on) && (on.indexOf(" ") == -1) ) {
+                on = "."+on;
+            } else {
+                on = "";
+            }
+            
+            // handle music controls special case
+            target = "div";
+            if ( useall < 2 ) {
+                if ( str_type.startsWith("music-" ) ) {
+                    target+= ".music-controls";
+                } else {
+                    target+= "." + str_type;
+                }
+            }
+            target = target + on;
+            break;
+            
         case "overlay":
             target = "div.overlay";
             if ( useall < 2 ) { target+= "." + str_type; }
@@ -312,6 +337,14 @@ function initDialogBinds(str_type, thingindex) {
     });
 
     // set overall tile width and header and overlay for all subitems
+    $("#tileHeight").on('input', function(event) {
+        var newsize = parseInt( $("#tileHeight").val() );
+        var rule = "height: " + newsize.toString() + "px;";
+        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
+        event.stopPropagation;
+    });
+
+    // set overall tile width and header and overlay for all subitems
     $("#editHeight").on('input', function(event) {
         var newsize = parseInt( $("#editHeight").val() );
         var subid = $("#subidTarget").html();
@@ -331,11 +364,16 @@ function initDialogBinds(str_type, thingindex) {
         event.stopPropagation;
     });
 
-    // set overall tile width and header and overlay for all subitems
+    // set overall tile width and height header and overlay for all subitems
     var target = getCssRuleTarget("tile", str_type, thingindex);
     var tilesize = $(target).width();
+    var tilehigh = $(target).height();
+    
     tilesize = parseInt(tilesize);
     $("#tileWidth").val(tilesize);
+    tilehigh = parseInt(tilehigh);
+    $("#tileHeight").val(tilehigh);
+    
     $("#autoTileWidth").on('change', function(event) {
         var rule;
         if($("#autoTileWidth").is(':checked')) {
@@ -346,7 +384,22 @@ function initDialogBinds(str_type, thingindex) {
             rule = "width: " + newsize.toString() + "px;";
             $("#tileWidth").prop("disabled", false);
         }
-        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
+        event.stopPropagation;
+    });
+
+    // set overall tile width and header and overlay for all subitems
+    $("#autoTileHeight").on('change', function(event) {
+        var rule;
+        if($("#autoTileHeight").is(':checked')) {
+            rule = "height: auto;";
+            $("#tileHeight").prop("disabled", true);
+        } else {
+            var newsize = parseInt( $("#tileHeight").val() );
+            rule = "height: " + newsize.toString() + "px;";
+            $("#tileHeight").prop("disabled", false);
+        }
+        addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
         event.stopPropagation;
     });
 
@@ -363,10 +416,10 @@ function initDialogBinds(str_type, thingindex) {
             }
             $("#editHeight").prop("disabled", true);
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
         } else {
             var newsize = parseInt( $("#editHeight").val() );
             // special handling for default temperature circles
-            rule = "height: " + newsize.toString() + "px;";
             $("#editHeight").prop("disabled", false);
             if ( newsize === 0 ) {
                 newsize = "148px;";
@@ -375,6 +428,7 @@ function initDialogBinds(str_type, thingindex) {
             }
             rule = "height: " + newsize;
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
         }
         event.stopPropagation;
     });
@@ -392,7 +446,8 @@ function initDialogBinds(str_type, thingindex) {
             }
             $("#editWidth").prop("disabled", true);
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-        } else {
+            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
+       } else {
             var newsize = parseInt( $("#editWidth").val() );
             $("#editWidth").prop("disabled", false);
             if ( newsize === 0 ) {
@@ -402,7 +457,8 @@ function initDialogBinds(str_type, thingindex) {
                 rule = "width: " + newsize;
             }
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-        }
+            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
+       }
         event.stopPropagation;
     });
 
@@ -410,7 +466,11 @@ function initDialogBinds(str_type, thingindex) {
     $("#topPadding").on('change', function(event) {
         var subid = $("#subidTarget").html();
         var newsize = parseInt( $("#topPadding").val() );
-        newsize = newsize.toString() + "px;";
+        if ( !newsize || newsize==="NaN" ) { 
+            newsize = "0px;";
+        } else {
+            newsize = newsize.toString() + "px;";
+        }
         var rule = "padding-top: " + newsize;
         addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
         event.stopPropagation;
@@ -420,7 +480,11 @@ function initDialogBinds(str_type, thingindex) {
     $("#botPadding").on('change', function(event) {
         var subid = $("#subidTarget").html();
         var newsize = parseInt( $("#botPadding").val() );
-        newsize = newsize.toString() + "px;";
+        if ( !newsize || newsize==="NaN" ) { 
+            newsize = "0px;";
+        } else {
+            newsize = newsize.toString() + "px;";
+        }
         var rule = "padding-bottom: " + newsize;
         addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
         event.stopPropagation;
@@ -496,42 +560,53 @@ function sizepicker(str_type, thingindex) {
 
     // overall tile size effect
     var target2 = "div.thing."+str_type+"-thing";
-    var w = $(target2).css("width");
-    if ( w==="auto" || w.indexOf("px") === -1 ) { 
-        w= 0; 
+    var th = $(target2).css("height");
+    var tw = $(target2).css("width");
+    if ( th.indexOf("px") === -1 ) { 
+        th= 0; 
     } else {
-        w = parseInt(w.substring(0,w.indexOf("px")));
+        th = parseInt(th);
+    }
+    if ( tw==="auto" || tw.indexOf("px") === -1 ) { 
+        tw= 0; 
+    } else {
+        tw = parseInt(tw);
     }
     
     var h = $(target).css("height");
     var w = $(target).css("width");
-    if ( h.indexOf("px") === -1 ) { 
+    if ( !h || !h.hasOwnProperty("indexOf") || h.indexOf("px") === -1 ) { 
         h= 0; 
     } else {
         h = parseInt(h);
     }
-    if ( w.indexOf("px") === -1 ) { 
+    if ( !w || !w.hasOwnProperty("indexOf") ||  w.indexOf("px") === -1 ) { 
         w= 0; 
     } else {
         w = parseInt(w);
     }
     
     // alert("target= "+target+" w= "+w+" h= "+h);
-    dh += "<div class='sizeText'></div>";
+    dh += "<div class='sizeText'>Overall Tile Size</div>";
     dh += "<div class='editSection_input'>";
-    dh += "<label for='tileWidth'>Tile Width: </label>";
-    dh += "<input size='8' type=\"number\" min='10' max='800' step='10' id=\"tileWidth\" value=\"" + w + "\"/>";
+    dh += "<label for='tileHeight'>Tile H: </label>";
+    dh += "<input size='8' type=\"number\" min='10' max='800' step='10' id=\"tileHeight\" value=\"" + th + "\"/>";
     dh += "</div>";
-    dh += "<div class='editSection_input'><input type='checkbox' id='autoTileWidth'><label class=\"iconChecks\" for=\"autoTileWidth\">Auto Tile W?</label></div>";
+    dh += "<div class='editSection_input autochk'>";
+    dh += "<label for='tileWidth'>Tile W: </label>";
+    dh += "<input size='8' type=\"number\" min='10' max='800' step='10' id=\"tileWidth\" value=\"" + tw + "\"/>";
+    dh += "</div>";
+    dh += "<div class='editSection_input autochk'><input type='checkbox' id='autoTileHeight'><label class=\"iconChecks\" for=\"autoTileHeight\">Auto H?</label></div>";
+    dh += "<div class='editSection_input autochk'><input type='checkbox' id='autoTileWidth'><label class=\"iconChecks\" for=\"autoTileWidth\">Auto W?</label></div>";
 
     dh += "<div class='sizeText'><p>Text Size & Position:</p></div>";
     dh += "<div class='editSection_input autochk'>";
-    dh += "<label for='editHeight'>H: </label>";
+    dh += "<label for='editHeight'>Text H: </label>";
     dh += "<input size='4' type=\"number\" min='5' max='400' step='5' id=\"editHeight\" value=\"" + h + "\"/>";
     dh += "</div>";
     dh += "<div>";
     dh += "<div class='editSection_input autochk'>";
-    dh += "<label for='editWidth'>W: </label>";
+    dh += "<label for='editWidth'>Text W: </label>";
     dh += "<input size='4' type=\"number\" min='5' max='400' step='5' id=\"editWidth\" value=\"" + w + "\"/>";
     dh += "</div>";
     dh += "</div>";
@@ -541,11 +616,13 @@ function sizepicker(str_type, thingindex) {
     // font size (returns px not pt)
     var ptop = parseInt($(target).css("padding-top"));
     var pbot = parseInt($(target).css("padding-bottom"));
+    
+    if ( !ptop || ptop==="NaN" ) { ptop = 0; }
+    if ( !pbot || pbot==="NaN" ) { pbot = 0; }
     dh += "<div class='editSection_input'>";
     dh += "<label for='topPadding'>Top gap:</label>\t";
     dh += "<input size='4' type=\"number\" min='0' max='100' step='5' id=\"topPadding\" value=\"" + ptop + "\"/>";
-    dh += "</div>";
-    dh += "<div class='editSection_input'>";
+    dh += "</div>";    dh += "<div class='editSection_input'>";
     dh += "<label for='botPadding'>Bottom gap:</label>\t";
     dh += "<input size='4' type=\"number\" min='0' max='100' step='5' id=\"botPadding\" value=\"" + pbot + "\"/>";
     dh += "</div>";
@@ -709,9 +786,10 @@ function saveTileEdit(str_type, thingindex) {
 }
 
 function cancelTileEdit(str_type, thingindex) {
-    // resetCSSRules(str_type, thingindex);
+    resetCSSRules(str_type, thingindex);
     document.getElementById('customtiles').sheet = savedSheet;
-    location.reload(true);
+    
+    // location.reload(true);
 }
 
 function resetInverted(selector) {
@@ -1243,11 +1321,12 @@ function addCSSRule(selector, rules, resetFlag){
 
 function resetCSSRules(str_type, thingindex){
 
-        var ruletypes = ['icon','tile','head','text'];
+        var ruletypes = ['icon','subid','tile','head','text'];
         ruletypes.forEach( function(rule, idx, arr) {
             var strIconTarget = getCssRuleTarget(rule, str_type, thingindex);
             // alert("rule= " + rule + " type= "+ str_type + " thingindex" + thingindex + "target= "+strIconTarget);
-            removeCSSRule(strIconTarget, thingindex, null);
+            removeCSSRule(strIconTarget, thingindex, null, 0);
+            removeCSSRule(strIconTarget, thingindex, null, 2);
         });
 
         // remove all the subs
@@ -1256,21 +1335,25 @@ function resetCSSRules(str_type, thingindex){
         if ( onoff && onoff.length ) {
             for (var i= 0; i < onoff.length; i++) {
                 var subtarget = target + "." + onoff[i];
-                removeCSSRule(subtarget, thingindex, null);
+                removeCSSRule(subtarget, thingindex, null, 0);
             }
         }
         
+        document.getElementById('customtiles').sheet = savedSheet;
 }
 
-function removeCSSRule(strMatchSelector, thingindex, target){
+function removeCSSRule(strMatchSelector, thingindex, target, ignoreall){
     var scope = $("#scopeEffect").val();
     var useall = 0;
-    if ( useall === undefined ) {
+    
+    if ( ignoreall ) {
+        if ( ignoreall===0 || ignoreall===1 || ignoreall===2 ) {
+            useall = ignoreall;
+        }
+    } else {
         if ( scope=== "alltypes") { useall= 1; }
         else if ( scope=== "alltiles") { useall= 2; }
         else { useall = 0; }
-    } else {
-        if ( !useall || useall!==1 || useall!==2 ) { useall= 0; }
     }
     
     var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList

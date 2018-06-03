@@ -8,6 +8,7 @@ var popupVal = 0;
 var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
+var dragZindex = 1;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -62,7 +63,7 @@ window.addEventListener("load", function(event) {
     $("div.skinoption").hide();
 
     // setup page clicks
-    setupPage("");
+    setupPage();
     
     // disable return key
     $("form.options").keypress(function(e) {
@@ -76,6 +77,8 @@ window.addEventListener("load", function(event) {
             disablePopup();
         }
     });
+    
+    getMaxZindex();
     
     // set up popup editing - disabled because it is broken
     // setupPopup();
@@ -153,6 +156,17 @@ function rgb2hsv(r, g, b) {
     return {"hue": h, "saturation": s, "level": v};
 }
 
+function getMaxZindex() {
+    dragZindex = 2;
+    $("div.panel div.thing").each( function() {
+        var zindex = $(this).css("z-index");
+        if ( zindex ) {
+            zindex = parseInt(zindex);
+            if ( zindex > dragZindex ) { dragZindex = zindex; }
+        }
+    });
+}
+
 function convertToModal(modalcontent) {
     modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
     modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
@@ -187,6 +201,8 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
         modalcontent = convertToModal(modalcontent);
     }
     modalcontent = modalcontent + "</div>";
+    
+    // console.log(modalcontent);
     modalhook.prepend(modalcontent);
     modalStatus = 1;
     
@@ -382,9 +398,14 @@ function setupSliders() {
 }
 
 function cancelDraggable() {
-    $("div.thing").each(function(){
+    $("div.panel div.thing").each(function(){
         if ( $(this).draggable("instance") ) {
             $(this).draggable("destroy");
+            
+            // remove the position so color swatch stays on top
+            if ( $(this).css("left")===0 || $(this).css("left")==="" ) {
+                $(this).css("position","");
+            }
         }
     });
     
@@ -473,7 +494,7 @@ function setupSortable() {
     
 }
 
-var startPos = {top: 0, left: 0};
+var startPos = {top: 0, left: 0, zindex: 0};
 function thingDraggable(thing) {
     thing.draggable({
         revert: "invalid",
@@ -481,6 +502,15 @@ function thingDraggable(thing) {
         start: function(evt, ui) {
             startPos.left = $(evt.target).css("left");
             startPos.top = $(evt.target).css("top");
+            
+            startPos.zindex = $(evt.target).css("z-index");
+            if ( !startPos.zindex || !parseInt(startPos.zindex) ) {
+                startPos.zindex = 2;
+            }
+            console.log("Starting drag top= "+startPos.top+" left= "+startPos.left+" z= "+startPos.zindex);
+            
+            // while dragging make sure we are on top
+            $(evt.target).css("z-index", 9999);
         }
     });
     
@@ -508,6 +538,8 @@ function setupDraggable() {
     // enable filters and other stuff if successful
     xhr.done( function() {
         
+        $("#catalog").draggable();
+        
         setupFilters();
 
         // show the catalog
@@ -531,8 +563,10 @@ function setupDraggable() {
             drop: function(event, ui) {
                 var thing = ui.draggable;
                 var bid = $(thing).attr("bid");
+                var tile = $(thing).attr("tile");
                 var thingtype = $(thing).attr("type");
-                var thingname = $(thing).find(".thingname").text();
+                // var thingname = $(thing).find(".thingname").text();
+                var thingname = $("span.orignal.n_"+tile).html();
 
                 // handle new tile creation
                 if ( thing.hasClass("catalog-thing") ) {
@@ -561,45 +595,52 @@ function setupDraggable() {
                                             if (pstatus==="success") {
                                                 console.log( "Added " + thingname + " of type " + thingtype + " to room " + panel + " thing= "+ presult );
                                                 lastthing.after(presult);
-                                                thingDraggable( lastthing.next() );
+                                                var newthing = lastthing.next();
+                                                dragZindex = dragZindex + 1;
+                                                $(newthing).css( {"z-index": dragZindex.toString()} );
+                                                thingDraggable( newthing );
+                                                setupPage();
+                                                setupSliders();
+                                                setupColors();
 
                                                 // activate the controls on the dropped tile
-                                                if ( thingtype=="switch" || thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="light" ) {
-                                                    setupPage("switch.on");
-                                                    setupPage("switch.off");
-                                                }
-                                                if ( thingtype=="momentary" ) {
-                                                    setupPage("momentary");
-                                                }
-                                                if ( thingtype=="piston" ) {
-                                                    setupPage("piston.pistonName");
-                                                }
-                                                if ( thingtype=="door" ) {
-                                                    setupPage("door.open");
-                                                    setupPage("door.closed");
-                                                }
-                                                if ( thingtype=="lock" ) {
-                                                    setupPage("lock.locked");
-                                                    setupPage("lock.unlocked");
-                                                }
-                                                if ( thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="music" ) {
-                                                    setupSliders();
-                                                }
-                                                if ( thingtype=="bulb" ) {
-                                                    setupColors();
-                                                }
-                                                if ( thingtype==="music" ) {
-                                                    var triggers = ["musicmute","musicstatus","music-previous","music-pause","music-play","music-stop","music-next"];
-                                                    triggers.forEach(function(item) {
-                                                        setupPage(item);
-                                                    });
-                                                }
-                                                if ( thingtype==="thermostat" ) {
-                                                    var triggers = ["heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan"];
-                                                    triggers.forEach(function(item) {
-                                                        setupPage(item);
-                                                    });
-                                                }
+                                                // no longer need to do this by type
+//                                                if ( thingtype=="switch" || thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="light" ) {
+//                                                    setupPage("switch.on");
+//                                                    setupPage("switch.off");
+//                                                }
+//                                                if ( thingtype=="momentary" ) {
+//                                                    setupPage("momentary");
+//                                                }
+//                                                if ( thingtype=="piston" ) {
+//                                                    setupPage("piston.pistonName");
+//                                                }
+//                                                if ( thingtype=="door" ) {
+//                                                    setupPage("door.open");
+//                                                    setupPage("door.closed");
+//                                                }
+//                                                if ( thingtype=="lock" ) {
+//                                                    setupPage("lock.locked");
+//                                                    setupPage("lock.unlocked");
+//                                                }
+//                                                if ( thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="music" ) {
+//                                                    setupSliders();
+//                                                }
+//                                                if ( thingtype=="bulb" ) {
+//                                                    setupColors();
+//                                                }
+//                                                if ( thingtype==="music" ) {
+//                                                    var triggers = ["musicmute","musicstatus","music-previous","music-pause","music-play","music-stop","music-next"];
+//                                                    triggers.forEach(function(item) {
+//                                                        setupPage(item);
+//                                                    });
+//                                                }
+//                                                if ( thingtype==="thermostat" ) {
+//                                                    var triggers = ["heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan"];
+//                                                    triggers.forEach(function(item) {
+//                                                        setupPage(item);
+//                                                    });
+//                                                }
                                             }
                                         }
                                     );
@@ -611,13 +652,31 @@ function setupDraggable() {
                 } else {
                     var dragthing = {};
                     dragthing["id"] = $(thing).attr("id");
-                    dragthing["tile"] = $(thing).attr("tile");
+                    dragthing["tile"] = tile;
                     dragthing["panel"] = $(thing).attr("panel");
+                    var customname = $("span.customname.m_"+tile).html();
+                    if ( !customname ) { customname = ""; }
+                    dragthing["custom"] = customname;
+                    dragZindex = parseInt(dragZindex,10);
+                    
+                    if ( !startPos.zindex ) {
+                        startPos.zindex = 2;
+                    }
+                    if ( startPos.zindex < dragZindex ) { 
+                        startPos.zindex = dragZindex + 1; 
+                    }
+                    dragZindex = startPos.zindex;
+                    
+                    // make this sit on top
+                    dragthing["zindex"] = startPos.zindex;
+                    $(thing).css( {"z-index": startPos.zindex.toString()} );
+                    
+                    // alert("Stopped drag: z-index= " + startPos.zindex.toString() );
 
                     // now post back to housepanel to save the position
                     // also send the dragthing object to get panel name and tile pid index
                     if ( ! $("#catalog").hasClass("ui-droppable-hover") ) {
-                        console.log( "Moved " + thingname + " to {"+ ui.position.top + "," + ui.position.left + ")");
+                        console.log( "Moved " + customname + " to top: "+ ui.position.top + ", left: " + ui.position.left + ", z: " + dragZindex );
                         $.post(returnURL, 
                                {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
                         );
@@ -653,9 +712,9 @@ function setupDraggable() {
                 // easy to get panel of active things
                 var panel = $(thing).attr("panel");
                 var id = $(thing).attr("id");
-                var aid = id.substring(2);
                 var tile = $(thing).attr("tile");
-                var tilename = $("#s-"+aid).text();
+                // var tilename = $("#s-"+aid).text();
+                var tilename = $("span.original.n_"+tile).html();
                 var pos = {top: 100, left: 10};
 
                 createModal("Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
@@ -680,6 +739,7 @@ function setupDraggable() {
                         // $("#"+id).data('draggable').options.revert();
                         try {
                             $(thing).css("position","relative").css("left",startPos.left).css("top",startPos.top);
+                            $(thing).css( {"z-index": startPos.zindex.toString()} );
                         } catch(e) { 
                             alert("Drag/drop error. Please share this with @kewashi on the ST Community Forum: " + e.message); 
                         }
@@ -755,12 +815,16 @@ function setupButtons() {
                 delEditLink();
             }
             
-            if ( opmode=="Reorder" ) {
+            if ( opmode==="Reorder" ) {
                 setupSortable();
                 setupPagemove();
-            } else if ( opmode=="DragDrop" ) {
+            } else if ( opmode==="DragDrop" ) {
                 setupDraggable();
                 addEditLink();
+                
+            // reload page fresh if we are returning from drag mode to operate mode
+            } else if ( opmode==="Operate" && (priorOpmode === "DragDrop") ) {
+                location.reload(true);
             }
             
             priorOpmode = opmode;
@@ -777,38 +841,65 @@ function setupButtons() {
 }
 
 function addEditLink() {
+    
+    // add links to edit and delete this tile
     $("div.panel > div.thing").each(function() {
-       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + ">[Edit]</div>";
-       $(this).append(editdiv);
+       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + ">Edit</div>";
+       var deldiv = "<div class=\"dellink\" aid=" + $(this).attr("id") + ">Del</div>";
+       $(this).append(editdiv).append(deldiv);
     });
     
-    // show the skin and 
+    // show the skin 
     $("div.skinoption").show();
     
     $("div.editlink").on("click",function(evt) {
-        var aid = "#" + $(evt.target).attr("aid");
-        var str_type = $(aid).attr("type");
-        var tile = $(aid).attr("tile");
-        var strhtml = $(aid).html();
-        var csstarget = $(aid).attr("class");
-        // alert("csstarget= " + csstarget);
+        var thing = "#" + $(evt.target).attr("aid");
+        var str_type = $(thing).attr("type");
+        var tile = $(thing).attr("tile");
+        var strhtml = $(thing).html();
         
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
-        var onoff = getOnOff(str_type);
-        if ( onoff[0] && onoff[1] ) {
-            
-//            strhtml = strhtml + strhtml;
-        }
-        
-//        alert("Clicked on aid= " + aid + " tile = " + tile + " of type = " + str_type);
         editTile(str_type, tile, strhtml);
+    });
+    
+    $("div.dellink").on("click",function(evt) {
+        var thing = "#" + $(evt.target).attr("aid");
+        var str_type = $(thing).attr("type");
+        var tile = $(thing).attr("tile");
+        var bid = $(thing).attr("bid");
+        var panel = $(thing).attr("panel");
+        var tilename = $("span.original.n_"+tile).html();
+        var pos = {top: 100, left: 10};
+
+        createModal("Remove: "+ tilename + " of type: "+str_type+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+            var clk = $(ui).attr("name");
+            if ( clk=="okay" ) {
+                // remove it from the system
+                // alert("Removing thing = " + tilename);
+                $.post(returnURL, 
+                    {useajax: "dragdelete", id: bid, type: str_type, value: panel, attr: tile},
+                    function (presult, pstatus) {
+                        console.log("ajax call: status = " + pstatus + " result = "+presult);
+                        if (pstatus==="success" && presult==="success") {
+                            console.log( "Removed tile: "+ $(thing).html() );
+                            // remove it visually
+                            $(thing).remove();
+                        }
+                    }
+                );
+            }
+        });
+        
     });
 }
 
 function delEditLink() {
 //    $("div.editlink").off("click");
     $("div.editlink").each(function() {
+       $(this).remove();
+    });
+    $("div.dellink").each(function() {
        $(this).remove();
     });
     // hide the skin and 

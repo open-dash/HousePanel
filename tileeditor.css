@@ -24,7 +24,7 @@ div.tileDialog {
     margin-left: 5px;
 }
 
-#wysiwyg > div.editlink {
+#wysiwyg > div.editlink, #wysiwyg > div.dellink {
     display: none;
 }
 
@@ -56,7 +56,7 @@ div.tileDialog {
     margin: 0px 0px 5px 7px;
     float: left;
     width: 245px;
-    max-height: 410px;
+    max-height: 450px;
     overflow-x: hidden;
     background-color: rgba(170, 170, 170, 1);
 }
