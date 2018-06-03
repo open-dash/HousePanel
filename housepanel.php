@@ -19,7 +19,8 @@
  * 
  *
  * Revision History
- * 1.62       New ability to use only a Hubitat hub
+ * 1.621      ***IMPT*** bugfix to prior 1.62 update resolving corrupt config files
+ * 1.62       New ability to use only a Hubitat hubg
  * 1.61       Bugfixes to TileEditor
  * 1.60       Major rewrite of TileEditor
  * 1.53       Drag and drop tile addition and removal and bug fixes
@@ -1214,12 +1215,13 @@ function getOptions($allthings) {
             } else {
                 $idx = $idxarray;
             }
+            $idx = intval($idx);
             $cnt = ($idx > $cnt) ? $idx : $cnt;
         }
         $cnt++;
 
         // set zindex and custom names if not there
-        // of set positions too if the file is really old
+        // set positions too if the file is really old
         $copyopts = $options["things"];
         foreach ($copyopts as $roomname => $thinglist) {
             foreach ($thinglist as $n => $idxarray) {
@@ -1227,9 +1229,9 @@ function getOptions($allthings) {
                     $idx = array($idxarray, 0, 0, 1, "");
                     $options["things"][$roomname][$n] = $idx;
                     $updated = true;
-                } else if ( is_array($idxarray) && count($idxarray) < 5 ) {
-                    $idx = array($idxarray[0], $idxarray[1], $idxarray[2], 1, "");
-                    $options["index"][$thingid] = $idx;
+                } else if ( is_array($idxarray) && count($idxarray) < 4 ) {
+                    $idx = array($idxarray[0], $idxarray[1], $idxarray[2], 2, "");
+                    $options["things"][$roomname][$n] = $idx;
                     $updated = true;
                 }
             }
