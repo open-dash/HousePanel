@@ -324,7 +324,6 @@ function setupSliders() {
                        {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
-                                // alert( strObject(presult) );
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                                 updAll("slider",aid,bidupd,thetype,presult);
                             }
@@ -335,7 +334,6 @@ function setupSliders() {
                        {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
-                                // alert( strObject(presult) );
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                                 updateTile(aid, presult);
                             }
@@ -379,9 +377,8 @@ function setupSliders() {
                    {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature" },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
-                            // alert( strObject(presult) );
+                            console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                             updAll("slider",aid,bidupd,thetype,presult);
-//                                updateTile(aid, presult);
                         }
                    }, "json"
             );
@@ -1171,6 +1168,8 @@ function disablePopup(){
 function strObject(o, level) {
   var out = '';
   if ( !level ) { level = 0; }
+
+  if ( typeof o !== "object") { return o + '\n'; }
   
   for (var p in o) {
     out += p + ': ';
@@ -1273,7 +1272,6 @@ function refreshTile(aid, bid, thetype) {
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none"},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
-//                alert( strObject(presult) );
                 updateTile(aid, presult);
             }
         }, "json"
@@ -1409,27 +1407,37 @@ function allTimerSetup(timerval) {
             return; 
         }
         var that = this;
+        var err;
+        
         // console.log ( "Posting SmartThings update..." );
         try {
             $.post(returnURL, 
                 {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
                 function (presult, pstatus) {
-    //                alert("pstatus = " + pstatus+ " presut= "+ strObject(presult));
                     if (pstatus==="success" && presult!==undefined ) {
                         // console.log("Success polling [" + returnURL + "]. SmartThings returned "+ Object.keys(presult).length+ " items");
 
                         // go through all tiles and update
+                        try {
                         $('div.panel div.thing').each(function() {
                             var aid = $(this).attr("id");
                             // skip the edit in place tile
-                            if ( aid !== "wysiwyg") {
+                            if ( aid.startsWith("t-") ) {
                                 aid = aid.substring(2);
                                 var tileid = $(this).attr("tile");
                                 var bid = $(this).attr("bid");
-                                if ( !bid.startsWith("h_") && tileid in presult ) {
-                                    var thevalue = presult[tileid];
+                                if ( !bid.startsWith("h_") ) { // && tileid in presult ) {
+                                    var thevalue;
+                                    try {
+                                        thevalue = presult[tileid];
+                                    } catch (err) {
+                                        tileid = parseInt(tileid, 10);
+                                        try {
+                                            thevalue = presult[tileid];
+                                        } catch (err) {}
+                                    }
                                     // handle both direct values and bundled values
-                                    if ( thevalue.hasOwnProperty("value") ) {
+                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
                                         thevalue = thevalue.value;
                                     }
                                     // if ( tileid=="201" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
@@ -1437,6 +1445,7 @@ function allTimerSetup(timerval) {
                                 }
                             }
                         });
+                        } catch (err) { console.error("Polling error", err.message); }
                     }
                 }, "json"
             );
@@ -1467,23 +1476,30 @@ function allHubitatSetup(timerval) {
                 {useajax: "queryhubitat", id: that[0], type: that[0], value: "none", attr: "none"},
                 function (presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult ) {
-                        // console.log("Success polling [" + returnURL + "]. Hubitat returned "+ Object.keys(presult).length+ " items");
+//                        console.log("Success polling [" + returnURL + "]. Hubitat returned "+ Object.keys(presult).length+ " items");
 
                         // go through all tiles and update
-                        $('div.thing').each(function() {
+                        $('div.panel div.thing').each(function() {
                             var aid = $(this).attr("id");
                             // skip the edit in place tiles
-                            if ( aid !== "wysiwyg") {
+                            if ( aid.startsWith("t-") ) {
+                                aid = aid.substring(2);
                                 var tileid = $(this).attr("tile");
                                 var bid = $(this).attr("bid");
-                                if ( aid && aid.length > 2 && bid.startsWith("h_") && tileid in presult ) {
-                                    aid = aid.substring(2);
-                                    var thevalue = presult[tileid];
+                                if ( bid.startsWith("h_") ) {
+                                    var thevalue;
+                                    try {
+                                        thevalue = presult[tileid];
+                                    } catch (err) {
+                                        tileid = parseInt(tileid, 10);
+                                        try {
+                                            thevalue = presult[tileid];
+                                        } catch (err) {}
+                                    }
                                     // handle both direct values and bundled values
-                                    if ( thevalue.hasOwnProperty("value") ) {
+                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
                                         thevalue = thevalue.value;
                                     }
-                                    // if ( tileid=="74" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
                                     if ( thevalue ) { updateTile(aid,thevalue); }
                                 }
                             }
@@ -1527,7 +1543,6 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     
     // for music tiles, wait few seconds and refresh again to get new info
     if (thetype==="music") {
-        // alert( strObject(pvalue));
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
         }, 3000);
@@ -1535,7 +1550,6 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     
     // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
-        // alert( strObject(pvalue));
         setTimeout(function() {
             refreshTile(aid, bid, thetype);
         }, 15000);
@@ -1675,8 +1689,8 @@ function setupPage(trigger) {
             $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid},
                 function(presult, pstatus) {
-                    // alert("pstatus= "+pstatus+" presult= "+strObject(presult));
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
+                        console.log( ajaxcall + " POST returned: "+ strObject(presult) );
                         if (thetype==="piston") {
                             $(that).addClass("firing");
                             $(that).html("firing");
@@ -1714,7 +1728,6 @@ function setupPage(trigger) {
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
-//                            alert( strObject(presult) );
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
