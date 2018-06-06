@@ -303,7 +303,7 @@ def setOther(swid, cmd, attr, subid ) {
     
     if (item && subid.startsWith("_")) {
         subid = subid.substring(1)
-        log.debug "Activating other device " + item + " command: " + subid
+        // log.debug "Activating other device " + item + " command: " + subid
         resp = [:]
         if ( item.hasCommand(subid) ) {
             item."$subid"()
@@ -363,7 +363,7 @@ def getThing(things, swid, item=null) {
 def getThings(resp, things, thingtype) {
 //    def resp = []
     def n  = things ? things.size() : 0
-//    log.debug "Number of things of type ${thingtype} = ${n}"
+    log.debug "Number of things of type ${thingtype} = ${n}"
     things?.each {
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
@@ -414,7 +414,7 @@ def getAllThings() {
 // this is done so we can treat this like any other set of tiles
 def getModes(resp) {
 //    def resp = []
-    // log.debug "Getting the mode tile"
+    log.debug "Getting 4 mode tiles"
     def val = getmyMode(0)
     resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
     resp << [name: "Mode", id: "m1x2", value: val, type: "mode"]
@@ -430,7 +430,7 @@ def getSHMStates(resp) {
 }
 
 def getBlanks(resp) {
-//    log.debug "Getting the blank tiles"
+    log.debug "Getting 4 blank tiles"
 //    def resp = []
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
@@ -443,7 +443,7 @@ def getBlanks(resp) {
 
 def getImages(resp) {
 //    def resp = []
-//    log.debug "Getting the image tiles"
+    log.debug "Getting 4 image tiles"
     def vals = ["img1","img2","img3","img4"]
     def val
     vals.each {
@@ -456,7 +456,7 @@ def getImages(resp) {
 def getPistons(resp) {
 //    def resp = []
     def plist = webCoRE_list()
-//    log.debug "Number of pistons = " + plist?.size() ?: 0
+    log.debug "Number of pistons = " + plist?.size() ?: 0
     plist?.each {
         def val = getPiston(it.id, it)
         resp << [name: it.name, id: it.id, value: val, type: "piston"]
@@ -467,7 +467,7 @@ def getPistons(resp) {
 def getSwitches(resp) {
 //    getThings(myswitches, "switch")
 //    def resp = []
-//    log.debug "Number of switches = " + myswitches?.size() ?: 0
+    log.debug "Number of switches = " + myswitches?.size() ?: 0
     myswitches?.each {
         def multivalue = getSwitch(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
@@ -497,7 +497,7 @@ def getContacts(resp) {
 
 def getMomentaries(resp) {
 //    def resp = []
-//    log.debug "Number of momentaries = " + mymomentaries?.size() ?: 0
+    log.debug "Number of momentaries = " + mymomentaries?.size() ?: 0
     mymomentaries?.each {
         if ( it.hasCapability("Switch") ) {
             def val = getMomentary(it.id, it)
@@ -510,7 +510,7 @@ def getMomentaries(resp) {
 def getLocks(resp) {
 //    getThings(mylocks, "lock")
 //    def resp = []
-//    log.debug "Number of locks = " + mylocks?.size() ?: 0
+    log.debug "Number of locks = " + mylocks?.size() ?: 0
     mylocks?.each {
         def multivalue = getLock(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
@@ -520,7 +520,7 @@ def getLocks(resp) {
 
 def getMusics(resp) {
 //    def resp = []
-//    log.debug "Number of music players = " + mymusics?.size() ?: 0
+    log.debug "Number of music players = " + mymusics?.size() ?: 0
     mymusics?.each {
         def multivalue = getMusic(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
@@ -530,7 +530,7 @@ def getMusics(resp) {
 
 def getThermostats(resp) {
 //    def resp = []
-//    log.debug "Number of thermostats = " + mythermostats?.size() ?: 0
+    log.debug "Number of thermostats = " + mythermostats?.size() ?: 0
     mythermostats?.each {
         def multivalue = getThermostat(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
@@ -541,7 +541,7 @@ def getThermostats(resp) {
 def getPresences(resp) {
 //    getThings(mypresences, "presence")
 //    def resp = []
-//    log.debug "Number of presences = " + mypresences?.size() ?: 0
+    log.debug "Number of presences = " + mypresences?.size() ?: 0
     mypresences?.each {
         def multivalue = getPresence(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
@@ -565,7 +565,7 @@ def getSmokes(resp) {
 }
 def getTemperatures(resp) {
 //    def resp = []
-//    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
+    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
     mytemperatures?.each {
         def val = getTemperature(it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
@@ -575,7 +575,7 @@ def getTemperatures(resp) {
 
 def getWeathers(resp) {
 //    def resp = []
-//    log.debug "Number of weathers = " + myweathers?.size() ?: 0
+    log.debug "Number of weathers = " + myweathers?.size() ?: 0
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
@@ -587,7 +587,7 @@ def getWeathers(resp) {
 def getRoutines(resp) {
 //    def resp = []
     def routines = location.helloHome?.getPhrases()
-//    log.debug "Number of routines = " + routines?.size() ?: 0
+    log.debug "Number of routines = " + routines?.size() ?: 0
     routines?.each {
         def multivalue = getRoutine(it.id, it)
         resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
@@ -598,7 +598,7 @@ def getRoutines(resp) {
 def getOthers(resp) {
 //    def resp = []
     def uniquenum = 0
-//    log.debug "Number of selected other sensors = ${myothers ? myothers.size() : 0}"
+    log.debug "Number of selected other sensors = ${myothers ? myothers.size() : 0}"
     myothers?.each {
         
         def thatid = it.id;
