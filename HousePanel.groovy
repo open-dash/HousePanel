@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 06/10/2018 - changed icons to amazon web services location for https
  * 04/18/2018 - Bugfix curtemp in Thermostat, thanks to @kembod for finding this
  * 04/08/2018 - Important bug fixes for thermostat and music tiles
  * 03/11/2018 - Added Smart Home Monitor from Chris Hoadley
@@ -37,14 +38,14 @@ definition(
     author: "Kenneth Washington",
     description: "Tap here to install ${handle()} ${version()} - a highly customizable tablet smart app. ",
     category: "Convenience",
-    iconUrl: "http://www.kenw.com/smartthings/icons/hpicon1x.png",
-    iconX2Url: "http://www.kenw.com/smartthings/icons/hpicon2x.png",
-    iconX3Url: "http://www.kenw.com/smartthings/icons/hpicon3x.png",
+    iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
+    iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
+    iconX3Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon3x.png",
     oauth: [displayName: "kewashi house panel", displayLink: ""])
 
 
 preferences {
-    section("Lights and Switches...") {
+    section("Lights and Switches") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
         input "mydimmers", "capability.switchLevel", hideWhenEmpty: true, multiple: true, required: false, title: "Dimmers"
         input "mymomentaries", "capability.momentary", hideWhenEmpty: true, multiple: true, required: false, title: "Momentary Buttons"
@@ -75,6 +76,9 @@ preferences {
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
+    section(mobileOnly: true, "Options") {
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+    }
 }
 
 mappings {
@@ -104,7 +108,10 @@ def updated() {
 
 def initialize() {
     log.debug "Installed with settings: ${settings}"
-    webCoRE_init()
+    state.usepistons = usepistons
+    if ( state.usepistons ) {
+        webCoRE_init()
+    }
 }
 
 def getWeatherInfo(evt) {
@@ -374,8 +381,7 @@ def getThings(resp, things, thingtype) {
 // This retrieves and returns all things
 // used up front or whenever we need to re-read all things
 def getAllThings() {
-//    def incpistons = params.incpistons
-    def incpistons = true
+    def incpistons = state.usepistons
 
     def resp = []
     resp = getSwitches(resp)
@@ -655,7 +661,7 @@ def autoType(swid) {
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
     else if ( swid=="m1x1" || swid=="m1x2" || swid=="m2x1" || swid=="m2x2" ) { swtype= "mode" }
-    else if ( webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
+    else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
 
     else { swtype = "" }
     return swtype
@@ -736,9 +742,11 @@ def doAction() {
          break
 
       case "piston" :
-         webCoRE_execute(swid)
-         // set the result to piston information (could be false)
-         cmdresult = getPiston(swid)
+         if ( state.usepistons ) {
+             webCoRE_execute(swid)
+             // set the result to piston information (could be false)
+             cmdresult = getPiston(swid)
+         }
          // log.debug "Executed webCoRE piston: $cmdresult"
          break;
       

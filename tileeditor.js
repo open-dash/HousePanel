@@ -40,6 +40,9 @@ function getOnOff(str_type) {
         case "musicmute":
             onoff = ["muted","unmuted"];
             break;
+        case "presence":
+            onoff = ["present","absent"];
+            break;
     }
     
     return onoff;
@@ -194,7 +197,7 @@ function toggleTile(target, tile_type, thingindex) {
 //    } else {
 //        $("#onoffTarget").html("");
     }
-    
+                
     initColor(tile_type, str_type, thingindex);
     
 //    var on = onoff[0];
@@ -243,12 +246,15 @@ function initDialogBinds(str_type, thingindex) {
         if ( $(event.target).attr("subid") ) {
             toggleTile(event.target, str_type, thingindex);
             event.stopPropagation();
+//        } else if ( $(event.target).hasClass("thingname") ) {
+//            toggleTile( $("#wysiwyg"), str_type, thingindex);
+//            event.stopPropagation();
         }
     });
     
     $("#invertIcon").on("change",function() {
 //        invertImage();
-        var strInvert = "filter: invert(1);\n-webkit-filter: invert(1);";
+        var strInvert = "filter: invert(1);";
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
         if($("#invertIcon").is(':checked')){
@@ -284,7 +290,15 @@ function initDialogBinds(str_type, thingindex) {
         }
         event.stopPropagation;
     });	
-
+    var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
+    var csstext = $(cssRuleTarget).css("display");
+    if ( csstext === "none" ) {
+        $("#noHead").prop("checked", true);
+    } else {
+        $("#noHead").prop("checked", false);
+    }
+//    console.log ("csstarget = " + cssRuleTarget + " txt= " + csstext);
+    
 //    $("#editName").on('input', function (event) {
 //        var target1 = "span.n_"+thingindex;
 //        var target2 = "div.customname.m_"+thingindex+"::after";
@@ -708,6 +722,9 @@ function editTile(str_type, thingindex, htmlcontent) {
                 getIcons(str_type, thingindex);	
                 initColor(str_type, subid, thingindex);
                 initDialogBinds(str_type, thingindex);
+//                var target = $("#wysiwyg div." + str_type + "[subid='" + subid + "']"   );
+//                console.log(" startup target html= " + $(target).html() );
+//                toggleTile(target, subid, thingindex);
                 $("#modalid").draggable();
             }
         );
@@ -1080,6 +1097,14 @@ function initColor(tile_type, str_type, thingindex) {
         addCSSRule(target, fontstr);
         event.stopPropagation;
     });
+    
+    var cssRuleTarget = getCssRuleTarget('icon', str_type, thingindex);
+    console.log ( "target= " + cssRuleTarget + " css= " + $(cssRuleTarget).css("filter") );
+    if ( $(cssRuleTarget).css("filter") && $(cssRuleTarget).css("filter").startsWith("invert") ) {
+        $("#invertIcon").prop("checked",true);
+    } else {
+        $("#invertIcon").prop("checked",false);
+    }
     
 }
 
