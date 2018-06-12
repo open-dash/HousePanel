@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 06/11/2018 - added mobile option to enable or disable pistons and fix debugs
  * 06/10/2018 - changed icons to amazon web services location for https
  * 04/18/2018 - Bugfix curtemp in Thermostat, thanks to @kembod for finding this
  * 04/08/2018 - Important bug fixes for thermostat and music tiles
@@ -430,14 +431,13 @@ def getModes(resp) {
 }
 
 def getSHMStates(resp) {
-	def val = getSHMState(0)
-        resp << [name: "Smart Home Monitor", id: "shm", value: val, type: "shm"]
-	return resp
+    def val = getSHMState(0)
+    resp << [name: "Smart Home Monitor", id: "shm", value: val, type: "shm"]
+    return resp
 }
 
 def getBlanks(resp) {
     log.debug "Getting 4 blank tiles"
-//    def resp = []
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
     vals.each {
@@ -448,7 +448,6 @@ def getBlanks(resp) {
 }
 
 def getImages(resp) {
-//    def resp = []
     log.debug "Getting 4 image tiles"
     def vals = ["img1","img2","img3","img4"]
     def val
@@ -460,7 +459,6 @@ def getImages(resp) {
 }
 
 def getPistons(resp) {
-//    def resp = []
     def plist = webCoRE_list()
     log.debug "Number of pistons = " + plist?.size() ?: 0
     plist?.each {
@@ -471,9 +469,8 @@ def getPistons(resp) {
 }
 
 def getSwitches(resp) {
-//    getThings(myswitches, "switch")
-//    def resp = []
-    log.debug "Number of switches = " + myswitches?.size() ?: 0
+    def n  = myswitches ? myswitches.size() : 0
+    log.debug "Number of switches = ${n}"
     myswitches?.each {
         def multivalue = getSwitch(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
@@ -502,8 +499,8 @@ def getContacts(resp) {
 }
 
 def getMomentaries(resp) {
-//    def resp = []
-    log.debug "Number of momentaries = " + mymomentaries?.size() ?: 0
+    def n  = mymomentaries ? mymomentaries.size() : 0
+    log.debug "Number of momentaries = ${n}"
     mymomentaries?.each {
         if ( it.hasCapability("Switch") ) {
             def val = getMomentary(it.id, it)
@@ -514,9 +511,8 @@ def getMomentaries(resp) {
 }
 
 def getLocks(resp) {
-//    getThings(mylocks, "lock")
-//    def resp = []
-    log.debug "Number of locks = " + mylocks?.size() ?: 0
+    def n  = mylocks ? mylocks.size() : 0
+    log.debug "Number of locks = ${n}"
     mylocks?.each {
         def multivalue = getLock(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
@@ -525,8 +521,8 @@ def getLocks(resp) {
 }
 
 def getMusics(resp) {
-//    def resp = []
-    log.debug "Number of music players = " + mymusics?.size() ?: 0
+    def n  = mymusics ? mymusics.size() : 0
+    log.debug "Number of music players = ${n}"
     mymusics?.each {
         def multivalue = getMusic(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
@@ -535,8 +531,8 @@ def getMusics(resp) {
 }
 
 def getThermostats(resp) {
-//    def resp = []
-    log.debug "Number of thermostats = " + mythermostats?.size() ?: 0
+    def n  = mythermostats ? mythermostats.size() : 0
+    log.debug "Number of thermostats = ${n}"
     mythermostats?.each {
         def multivalue = getThermostat(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
@@ -545,9 +541,8 @@ def getThermostats(resp) {
 }
 
 def getPresences(resp) {
-//    getThings(mypresences, "presence")
-//    def resp = []
-    log.debug "Number of presences = " + mypresences?.size() ?: 0
+    def n  = mypresences ? mypresences.size() : 0
+    log.debug "Number of presences = ${n}"
     mypresences?.each {
         def multivalue = getPresence(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
@@ -570,8 +565,8 @@ def getSmokes(resp) {
     getThings(resp, mysmokes, "smoke")
 }
 def getTemperatures(resp) {
-//    def resp = []
-    log.debug "Number of temperatures = " + mytemperatures?.size() ?: 0
+    def n  = mytemperatures ? mytemperatures.size() : 0
+    log.debug "Number of temperatures = ${n}"
     mytemperatures?.each {
         def val = getTemperature(it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
@@ -580,8 +575,8 @@ def getTemperatures(resp) {
 }
 
 def getWeathers(resp) {
-//    def resp = []
-    log.debug "Number of weathers = " + myweathers?.size() ?: 0
+    def n  = myweathers ? myweathers.size() : 0
+    log.debug "Number of weathers = ${n}"
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
@@ -591,7 +586,6 @@ def getWeathers(resp) {
 
 // get hellohome routines - thanks to ady264 for the tip
 def getRoutines(resp) {
-//    def resp = []
     def routines = location.helloHome?.getPhrases()
     log.debug "Number of routines = " + routines?.size() ?: 0
     routines?.each {
@@ -604,7 +598,8 @@ def getRoutines(resp) {
 def getOthers(resp) {
 //    def resp = []
     def uniquenum = 0
-    log.debug "Number of selected other sensors = ${myothers ? myothers.size() : 0}"
+    def n  = myothers ? myothers.size() : 0
+    log.debug "Number of selected other sensors = ${n}"
     myothers?.each {
         
         def thatid = it.id;
@@ -632,7 +627,6 @@ def getOthers(resp) {
             uniquenum++
             def multivalue = getThing(myothers, thatid, it)
             resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
-            // log.debug it.displayName + " = " + multivalue
         // }
     }
 //    log.debug "Number of unique other sensors = " + uniquenum
@@ -640,7 +634,7 @@ def getOthers(resp) {
 }
 
 def autoType(swid) {
-	def swtype
+    def swtype
     if ( mydimmers?.find {it.id == swid } ) { swtype= "switchlevel" }
     else if ( mymomentaries?.find {it.id == swid } ) { swtype= "momentary" }
     else if ( mylights?.find {it.id == swid } ) { swtype= "light" }
