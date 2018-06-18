@@ -576,12 +576,12 @@ function sizepicker(str_type, thingindex) {
     var target2 = "div.thing."+str_type+"-thing";
     var th = $(target2).css("height");
     var tw = $(target2).css("width");
-    if ( th.indexOf("px") === -1 ) { 
+    if ( !th || th.indexOf("px") === -1 ) { 
         th= 0; 
     } else {
         th = parseInt(th);
     }
-    if ( tw==="auto" || tw.indexOf("px") === -1 ) { 
+    if ( tw==="auto" || !tw || tw.indexOf("px") === -1 ) { 
         tw= 0; 
     } else {
         tw = parseInt(tw);
@@ -685,7 +685,7 @@ function editTile(str_type, thingindex, htmlcontent) {
         dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing p_" + thingindex+"\" id='wysiwyg'>" + htmlcontent + "</div>";
     } else {
         // put placeholder and populate after Ajax finishes retrieving true wysiwyg content
-        dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing\" id='wysiwyg'></div>";
+        dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing p_"+thingindex+"\" id='wysiwyg'></div>";
         jqxhr = $.post("housepanel.php", 
             {useajax: "wysiwyg", id: '', type: '', tile: thingindex, value: '', attr: ''},
             function (presult, pstatus) {

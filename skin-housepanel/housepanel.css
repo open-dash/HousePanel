@@ -137,6 +137,7 @@ form {
 }
 form.houseauth {
     text-align: left;
+    display: inline;
 }
 
 /* how the tab page shows up - this affects everything shown */
@@ -361,6 +362,8 @@ div.processoptions {
     margin-left: 0px; margin-top: 0px;    
     padding-top: 10px;
     background-color: white;
+    width: 550px;
+    display: inline-block;
 }
 
 /* buttons */
@@ -438,6 +441,7 @@ input.authbutton {
     background-color: #993300;
     margin: 0;
     margin-left: 10px;
+    width: 250px;
 }
 input.submitbutton:hover, input.resetbutton:hover, 
 input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
@@ -447,8 +451,11 @@ input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
     border-right: 0px; */
 }
 div.sitebutton {
-    background: #ffffff;     display: block;    position: relative;
-    left: 600px;    width: 300px;    bottom: 49px;
+    background: #ffffff;     
+    display: inline-block; 
+    position: relative;
+    font-size: 14pt;
+    font-weight: bold;
 }
 
 div.formbutton a {
