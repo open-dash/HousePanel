@@ -85,10 +85,14 @@ ul.ui-tabs-nav {
     padding: 0;
 }
 
+.normal {
+  background-color: white;
+  color: black;
+  font-size: 12pt;
+}
 .debug, .error {
   background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
 }
-
 .hidden, ul.ul-tabs-nav.hidden {
     display: none;
 }
@@ -135,9 +139,10 @@ form {
     background: #ffffff;
     width: 100%;
 }
+
 form.houseauth {
-    text-align: left;
     display: inline;
+    width: auto;
 }
 
 /* how the tab page shows up - this affects everything shown */

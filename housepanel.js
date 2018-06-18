@@ -83,9 +83,6 @@ window.addEventListener("load", function(event) {
     // set up popup editing - disabled because it is broken
     // setupPopup();
         
-    // setup time based updater
-    // setupTimers();
-    
     // set up option box clicks
     setupFilters();
     
@@ -777,7 +774,6 @@ function setupButtons() {
         var buttonid = $(this).attr("id");
         if ( $(this).hasClass("confirm") ) {
             var pos = {top: 100, left: 0};
-            var target = $(this);
             createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
@@ -1287,110 +1283,6 @@ function setupTabclick() {
         if ( defaultTab ) {
             setCookie( 'defaultTab', defaultTab, 30 );
         }
-        
-        // disable the refresh feature because it is too slow and not really needed
-//        var panel = $(this).text();
-//        if ( panel ) {
-//            alert("Updating panel = "+panel);
-//            $("div.panel-"+panel+" div.thing").each(function() {
-//                var aid = $(this).attr("id").substring(2);
-//                var bid = $(this).attr("bid");
-//                var thetype = $(this).attr("type");
-//                refreshTile(aid, bid, thetype);
-//
-//            });
-//        }
-    });
-}
-
-function setupTimers() {
-    
-    // set up a timer for each tile to update automatically
-    // but only for tabs that are being shown
-    $('div.thing').each(function() {
-        
-            var bid = $(this).attr("bid");
-            var aid = $(this).attr("id").substring(2);
-            var thetype = $(this).attr("type");
-            var panel = $(this).attr("panel");
-
-            // fix bug where panel was not proper case
-            // eventually we'll have to use actual item - now is eventually!!
-            // panel = panel.toLowerCase();
-            var timerval = 0;
-
-            switch (thetype) {
-                case "switch":
-                case "bulb":
-                case "light":
-                case "switchlevel":
-                case "presence":
-                    timerval = 30000;
-                    if ( bid.startsWith("h_") ) { timerval = 5000; }
-                    break;
-
-                case "motion":
-                case "contact":
-                    timerval = 30001;
-                    if ( bid.startsWith("h_") ) { timerval = 5000; }
-                    break;
-
-                case "thermostat":
-                case "temperature":
-                    timerval = 60002;
-                    break;
-
-                case "music":
-                    timerval = 60003;
-                    break;
-
-                case "weather":
-                    timerval = 90004;
-                    break;
-
-                case "mode":
-                case "routine":
-                    timerval = 90005;
-                    break;
-
-                case "lock":
-                case "door":
-                case "valve":
-                    timerval = 60006;
-                    if ( bid.startsWith("h_") ) { timerval = 5002; }
-                    break;
-
-                case "image":
-                    timerval = 60007;
-                    break;
-
-                // update clock every minute
-                case "clock":
-                    timerval = 60000;
-                    break;
-            }
-
-            if ( timerval && aid && bid ) {
-
-                // define the timer callback function to update this tile
-                var apparray = [aid, bid, thetype, panel, timerval];
-                apparray.myMethod = function() {
-
-                    // only call and update things if this panel is visible
-                    // or if it is a clock tile
-                    if ( this[2]=="clock" || $('#'+this[3]+'-tab').attr("aria-hidden") === "false" ) {
-                        var that = this;
-    //                    alert("aid= "+that[0]+" bid= "+that[1]+" type= "+that[2]);
-                        refreshTile(that[0], that[1], that[2]);
-                    }
-                    setTimeout(function() {apparray.myMethod();}, this[4]);
-                };
-
-                // wait before doing first one
-                setTimeout(function() {apparray.myMethod();}, timerval);
-//            }
-        
-        }
     });
 }
 
@@ -1694,8 +1586,7 @@ function setupPage(trigger) {
                         if (thetype==="piston") {
                             $(that).addClass("firing");
                             $(that).html("firing");
-                        }
-                        else if ( $(that).hasClass("on") ) {
+                        } else if ( $(that).hasClass("on") ) {
                             $(that).removeClass("on");
                             $(that).addClass("off");
                             $(that).html("off");
@@ -1713,12 +1604,12 @@ function setupPage(trigger) {
         // now we invoke action for everything
         // within the groovy code if action isn't relevant then nothing happens
         } else if ( thetype==="video" ) {
-//            alert( "Clicked on video: " + thevalue);
-            console.log("Replaying latest embedded video: " + thevalue);
-            // thevalue = '<video width="369" autoplay ><source src="media/arlovideo.mp4" type="video/mp4"></video>';
-            // var presult = {url: thevalue};
-            // updateTile(aid, presult);
-            $(targetid).html(thevalue);
+            if ( subid === "url" ) {
+                console.log("Replaying latest embedded video: " + thevalue);
+                $(targetid).html(thevalue);
+            } else {
+                console.log("Video actions require you to click on the video");
+            }
         } else if ( thetype==="weather") {
             console.log("Weather tiles have no actions...");
         } else {
