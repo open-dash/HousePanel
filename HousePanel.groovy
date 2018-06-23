@@ -66,7 +66,7 @@ preferences {
     	input "mythermostats", "capability.thermostat", hideWhenEmpty: true, multiple: true, required: false, title: "Thermostats"
     	input "mytemperatures", "capability.temperatureMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Temperature Measures"
     	input "myilluminances", "capability.illuminanceMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Illuminances"
-    	input "myweathers", "device.smartweatherStationTile", hideWhenEmpty: true, title: "Weather tile", multiple: false, required: false
+    	input "myweathers", "device.smartweatherStationTile", hideWhenEmpty: true, title: "Weather tile", multiple: true, required: false
     }
     section ("Water") {
     	input "mywaters", "capability.waterSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Water Sensors"
@@ -575,8 +575,8 @@ def getTemperatures(resp) {
 }
 
 def getWeathers(resp) {
-    def n  = myweathers ? myweathers.size() : 0
-    log.debug "Number of weathers = ${n}"
+//    def n  = myweathers ? 1 : 0
+//    log.debug "Retrieving Weather tile"
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]

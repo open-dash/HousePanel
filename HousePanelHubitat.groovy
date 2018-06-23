@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 06/21/2018 - Automatic push of Hubitat settings to HP server
  * 06/16/2018 - Sync important bug fixes from SmartThings version
  * 06/16/2018 - Add cloud and local options and auto configuration
  * 06/15/2018 - Port over updates from ST side; icon change other cleanup
@@ -81,7 +82,7 @@ preferences {
     	input "mythermostats", "capability.thermostat", hideWhenEmpty: true, multiple: true, required: false, title: "Thermostats"
     	input "mytemperatures", "capability.temperatureMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Temperature Measures"
     	input "myilluminances", "capability.illuminanceMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Illuminances"
-    	input "myweathers", "device.smartweatherStationTile", hideWhenEmpty: true, title: "Weather tile", multiple: false, required: false
+    	// input "myweathers", "device.smartweatherStationTile", hideWhenEmpty: true, title: "Weather tile", multiple: false, required: false
     }
     section ("Water") {
     	input "mywaters", "capability.waterSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Water Sensors"
@@ -90,7 +91,7 @@ preferences {
     section ("Other Sensors (duplicates allowed)...") {
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
-    	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
+//    	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
 }
 
@@ -143,10 +144,12 @@ def configureHub() {
 
     // send debug info to log for manual setup option
     log.debug "This information is being sent to your HousePanel web app at ${hpurl}"
+    log.debug "HousePanel url = ${hpurl}"
+    log.debug "Hubitat IP = ${hubip}"
     log.debug "app.id = ${app.id}"
     log.debug "accessToken = ${state.accessToken}"
-    log.debug "Hubitat IP = ${hubip}"
     log.debug "Hubitat endpt = ${endpt}"
+    log.debug "Hubitat only? = ${state.hubitatOnly}"
 
     // push these variables to our HousePanel server
     // this can be local or somewhere out on the Internet
@@ -161,24 +164,29 @@ def configureHub() {
             hubitatid: app.id,
             accesstoken: state.accessToken,
             endpt: endpt,
-            hubitatonly: state.hubitatOnly, 
+            hubitatonly: state.hubitatOnly
         ]
     ]
 
     def params = [
         uri: "${hpurl}",
+//        requestContentType: "application/json",
+//        query: null,
+//        body: cmds
+        requestContentType: "application/x-www-form-urlencoded",
         query: cmds
     ]
 
     try {
-        httpPost(params) { resp ->
-        if (resp?.status == 200) {
-			msg = "Success"
-		}
-		else {
-			msg = "Failure: ${resp?.status}"
-		}
-        log.debug "response: ${msg} (${resp.data})"
+        httpGet(params) { resp ->
+            def msg = ""
+            if (resp?.status == 200) {
+                msg = "Success"
+            } else {
+                msg = "Failure: ${resp?.status}"
+            }
+            log.debug "response: ${msg} (${resp.data})"
+        }
     } catch (e) {
         log.debug "Something went wrong: $e"
     }
@@ -407,7 +415,7 @@ def getThing(things, swid, item=null) {
                         resp.put( "_"+comname, comname )
                     }
                 } catch (ex) {
-                    log.warn "Attempt to read command for ${swid} failed"
+                    // log.warn "Attempt to read command for ${swid} failed"
                 }
             }
     }
@@ -417,8 +425,8 @@ def getThing(things, swid, item=null) {
 // make a generic thing list getter to streamline the code
 def getThings(resp, things, thingtype) {
 //    def resp = []
-    def n  = things ? things.size() : 0
-    log.debug "Number of things of type ${thingtype} = ${n}"
+//    def n  = things ? things.size() : 0
+//    if ( n > 0 ) { log.debug "Number of things of type ${thingtype} = ${n}" }
     things?.each {
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
@@ -625,7 +633,7 @@ def getRoutines(resp) {
 
 def getOthers(resp) {
     def n  = myothers ? myothers.size() : 0
-    log.debug "Number of selected other sensors = ${n}"
+    if ( n > 0 ) { log.debug "Number of selected other sensors = ${n}" }
     myothers?.each {
         def thatid = it.id;
         def multivalue = getThing(myothers, thatid, it)

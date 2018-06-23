@@ -786,7 +786,7 @@ function setupButtons() {
             newForm.submit();
         }
     });
-
+    
     $("div.modeoptions").on("click","input.radioopts",function(evt){
         var opmode = $(this).attr("value");
         if ( opmode !== priorOpmode ) {
@@ -828,9 +828,9 @@ function setupButtons() {
         toggleTabs();
     });
 
-    $("div.panel").on("click",function(evt){
-        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
-    });
+//    $("div.panel").on("click",function(evt){
+//        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
+//    });
 }
 
 function addEditLink() {

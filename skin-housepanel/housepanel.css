@@ -9,6 +9,39 @@ body {
     color: #000000;
     width: 1190px;
 }
+div.greeting {
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-bottom: 20px;
+    border: 2px solid black;
+    width: 860px;
+    background-color: #eeeeee;
+    color: black;
+    font-size: 12pt;
+}
+
+div.greeting p {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+div.greetingopts {
+    margin-left: 10px;
+    margin-bottom: 20px;
+}
+div.greetingopts div {
+    margin-top: 6px;
+}
+div.greetingopts div.hubopt {
+    margin-top: 15px;
+    width: 220px;
+    border-bottom: 2px solid blue;
+}
+
+label.startupinp {
+    font-style: italic;
+    font-weight: bold;
+}
+
 div.maintable {
 /*    transform: scale(0.6);
     -ms-transform: scale(0.6);
@@ -26,6 +59,13 @@ h1, h2, h3 {
     color: #000000;
     font-size: 24pt;
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
+}
+
+input.startupinp {
+    width: 700px;
+    position: absolute;
+    left: 170px;
+    display: inline-block;
 }
 
 div#tabs, div#controlpanel {
@@ -143,6 +183,7 @@ form {
 form.houseauth {
     display: inline;
     width: auto;
+    margin-left: 10px;
 }
 
 /* how the tab page shows up - this affects everything shown */
@@ -318,36 +359,59 @@ table.roomoptions tr.hiderow {
     display: none;
 }
 
-table.showid .thingname {
-    line-height: 25px;
-    text-align: left; 
-    width: 15%;    
-    font-weight: bold;
-    border-left: 1px solid #999999;    
-    border-right: 1px solid #999999;
-    border-bottom: 1px solid #999999;
-    border-top: 1px solid #999999;
+table.showid .thingname, table.showid .thingarr, table.showid .infotype, table.showid .infoid, table.showid .infonum {
     padding-left: 5px;
-}
-
-table.showid .thingarr {
-    text-align: left; 
-    width: 25%;    
-    border-right: 1px solid #999999;
-    border-bottom: 1px solid #999999;
-    border-top: 1px solid #999999;
-}
-table.showid .thingvalue {
     text-align: center; 
     width: 10%;  
     font-weight: normal;
-    border-right: 1px solid #999999;
+    border-left: 1px solid #999999;    
     border-bottom: 1px solid #999999;
-    border-top: 1px solid #999999;
 }
-table.showid th, table.showid th.thingvalue {
+table.showid td.thingname {
+    font-weight: bold;
+    text-align: left; 
+    width: 20%;  
+}
+table.showid td.thingarr {
+    text-align: left; 
+    width: 30%;  
+}
+table.showid td.infotype {
+    text-align: center; 
+    width: 10%;  
+}
+table.showid td.infoid {
+    text-align: left; 
+    width: 30%;  
+}
+table.showid td.infonum, table.showid th.infonum {
+    border-right: 1px solid #999999;
+}
+table.showid th.thingname, table.showid th.thingarr, table.showid th.infotype, table.showid th.infoid, table.showid th.infonum {
     font-weight: bold;
     font-size: 14pt;
+    border-top: 1px solid #999999;
+}
+div.infopage {
+    margin-left: 20px;
+    width: 85%;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: 1px solid black;
+    padding: 10px;
+}
+div.returninfo {
+    margin-left: 20px;
+    background-color: #cccccc;
+    font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+    display: inline-block;
+    width: 200px; height: 32px;
+    padding-top: 10px;
+}
+div.returninfo a {
+    text-decoration: none;
 }
 
 /* only adjust for scrollbar on screens with hover */
@@ -379,7 +443,7 @@ div.buttons, form.buttons {
     display: inline;
 }
 input.submitbutton, input.resetbutton, input.authbutton, 
-.smallbutton, div.restoretabs, div.formbutton {
+div.restoretabs, div.formbutton {
     background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;
@@ -391,10 +455,19 @@ input.submitbutton, input.resetbutton, input.authbutton,
 /* style restore tabs like a button - notice adjustments for border and vertical centering */
 div.restoretabs, div.formbutton {
     display: inline-block;
-    padding-top: 12px; padding-right: 2px;
-    width: 130px; height: 32px;
-    margin-left: 4px; margin-right: 4px;
+    padding-top: 14px; padding-right: 2px;
+    width: 90px; height: 24px;
+    margin-left: 2px; margin-right: 2px;
+    font-size: 12pt;
 }
+input.resetbutton, input.submitbutton {
+    padding-right: 2px;
+    padding-top: 8px;
+    width: 90px; height: 42px;
+    margin-left: 2px; margin-right: 2px;
+    font-size: 12pt;
+}
+
 div.restoretabs.hidden, div.thing.hidden.catalog-thing {
     display: none;
 }
@@ -443,7 +516,7 @@ div.panel div.restoretabs {
     position: absolute; right: -1px; bottom: -1px;
 }
 input.authbutton {
-    background-color: #993300;
+    background-color: #000099;
     margin: 0;
     margin-left: 10px;
     width: 250px;
@@ -572,6 +645,7 @@ div.thingname:hover {
 div.thingname.door {
     width: 100%;
 }
+
 
 /* style the on and off states of things to not show up */
 /* set size to show text to avoid funky resizing, but use transparent color */
@@ -1043,7 +1117,7 @@ div.thermostat.thermostate, div.thermostat.humidity {
 }
 
 div.thing.temperature-thing {
-    height: 150px;
+    height: 147px;
 }
 /* hover over the adjustment arrows */
 div.heat-up:hover, div.heat-dn:hover, 
@@ -1064,6 +1138,9 @@ div.thing.music-thing {
     background-color: rgba(80,0,50,0.4);
     width: 180px;
     height: auto;
+}
+div.thingname.music {
+    width: 180px;
 }
 /* use italic serif font for music titles and a custom size */
 div.music.track {
@@ -1178,6 +1255,9 @@ div.weather.ultravioletIndex, div.weather.lastUpdate {
 }
 div.weather.weatherIcon, div.weather.forecastIcon {
     display: inline-block;
+}
+div.temperature-thing, div.thingname.temperature {
+    width: 120px;
 }
 
 /* blank tiles styling */
@@ -1702,14 +1782,13 @@ div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
 }
 div.modeoptions {
     background-color: #3a5795;
-    width: 350px; height: 34px; margin-left: 60px; margin-right: 0px;
+    width: auto; height: 24px; margin-left: 20px; margin-right: 0px;
     cursor: default;    border: none;
     color: #eeeeee;    text-align: center;    font-weight: normal;
     border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
     border-right: 4px solid rgba(0, 0, 0, 0.8); 
-    font-size: 14pt;
     display: inline-block;
-    padding-top: 12px; padding-right: 4px;
+    padding-top: 14px; padding-left: 16px;
 }
 input.radioopts {
     cursor: pointer;
@@ -1718,11 +1797,16 @@ input.radioopts {
     display: inline-block;
 }
 label.radioopts {
-    font-size: 14pt;
     cursor: pointer;
     margin-left: 0px;
     margin-right: 10px;
+    font-size: 12pt;
+    width: 50px;
+    text-align: left;
     display: inline-block;
+}
+label.radioopts:hover {
+    font-weight: bold;
 }
 div#opmode {
     position: absolute;
