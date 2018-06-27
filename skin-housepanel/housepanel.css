@@ -1562,6 +1562,9 @@ div.thing.frame-thing div.overlay.status {
     height: 160px;
 }
 */
+div.frame.forecast {
+    height: 200px;
+}
 
 /*div.switch.yard.energy {
     position: relative; top: -16px;
