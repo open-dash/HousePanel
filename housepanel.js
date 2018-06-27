@@ -212,11 +212,11 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     if ( addok ) {
         $("#"+modalid).on("click",".dialogbtn", function(evt) {
             // alert("clicked on button");
+            modalStatus = 0;
             if ( responsefunction ) {
                 responsefunction(this, modaldata);
             }
-            $("#"+modalid).remove();
-            modalStatus = 0;
+            closeModal();
         });
     } else {
         $("body").on("click",function(evt) {
@@ -224,11 +224,10 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
                 evt.stopPropagation();
                 return;
             } else {
+                closeModal();
                 if ( responsefunction ) {
                     responsefunction(evt.target, modaldata);
                 }
-                $("#"+modalid).remove();
-                modalStatus = 0;
             }
         });
         
@@ -754,9 +753,6 @@ function dynoForm(ajaxcall, content, idval, typeval) {
     controlForm.appendTo("body");
     // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
     // lets now add the hidden fields we need to post our form
-    if ( content ) {
-        controlForm.append( content );
-    }
     controlForm.append(
                   $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
         ).append(
@@ -764,6 +760,11 @@ function dynoForm(ajaxcall, content, idval, typeval) {
         ).append(
                   $('<input>', {'name': 'type', 'value': typeval, 'type': 'hidden'})
         );
+    if ( content ) {
+        // controlForm.append( $('<input>', {'name': 'value', 'value': content, 'type':'hidden'} ));
+        controlForm.append(content);
+        $("#dynocontent").hide();
+    }
     return controlForm;
 }
 
@@ -773,17 +774,26 @@ function setupButtons() {
     $("#controlpanel").on("click", "div.formbutton", function() {
         var buttonid = $(this).attr("id");
         if ( $(this).hasClass("confirm") ) {
-            var pos = {top: 100, left: 0};
+            var pos = {top: 100, left: 100};
             createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
-                    var newForm = dynoForm(buttonid);
-                    newForm.submit();
+                    // handle page editor
+                    if ( buttonid == "editpage") {
+                        pageEdit();
+                    } else {
+                        var newForm = dynoForm(buttonid);
+                        newForm.submit();
+                    }
                 }
             });
         } else {
-            var newForm = dynoForm(buttonid);
-            newForm.submit();
+            if ( buttonid == "editpage") {
+                pageEdit();
+            } else {
+                var newForm = dynoForm(buttonid);
+                newForm.submit();
+            }
         }
     });
     
@@ -907,26 +917,35 @@ function pageEdit() {
 
     var tc = "";
     var goodrooms = false;
+    tc = tc + "<div id='dynocontent'><h2>Page Editor</h2>";
+    tc = tc + "<div>With this module you can rename, delete, or add new pages</div>";
+    var pos = {top: 100, left: 100};
     
-    $("#roomtabs > li").each(function() {
+    $("#roomtabs > li.ui-tab").each(function() {
         var roomname = $(this).text();
-        var roomid = $(this).children("a").first().attr("id");
-        if ( roomid.startsWith("ui-id-") ) {
-            goodrooms = true;
-            roomid = roomid.substring(6);
-            tc = tc + "<label for='ed-" + roomid+"'>Room Name:</label><input id='ed-"+roomid+"' value='"+roomname+"'/><br />";
-        }
+        var roomid = $(this).attr("roomnum");
+        tc = tc + "<div class='roomedit'>";
+        tc = tc + "<input type='number' min=0 step=1 max=20 size='4' name='id-" + roomid+"' value='" + roomid+"' /><input name='rn-"+roomid+"' value='"+roomname+"'/>";
+        tc = tc + "<button roomid='" + roomid + "' class='roomdel'>Del</button>";
+        tc = tc + "</div>";
+        goodrooms = true;
     });
+    tc = tc + "</div>";
     
     if ( goodrooms ) {
-        createModal(tc,"#roomtabs", true, null, function(ui, content) {
+        createModal(tc,"#roomtabs", true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk=="okay" ) {
-                var newForm = dynoForm("pageedit",content);
-                // alert(newForm.html());
-                // newForm.submit();
+                
+                tc = "test";
+                
+                var newForm = dynoForm("editpage",content);
+
+                alert(content);
+                newForm.submit();
             }
         });
+        $("#modalid").draggable();
     }
     
     

@@ -19,6 +19,8 @@
  * 
  *
  * Revision History
+ * 1.72       Timezone bug fix and merge into master
+ * 1.71       Bug fixes and draft page edit commented out until fixed
  * 1.7        New authentication approach for easier setup and major code cleanup
  * 1.622      Updated info dump to include json dump of variables
  * 1.621      ***IMPT*** bugfix to prior 1.62 update resolving corrupt config files
@@ -96,7 +98,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.71');
+define('HPVERSION', 'Version 1.72');
 define('APPNAME', 'House Panel ' . HPVERSION);
 
 // developer debug options
@@ -2716,12 +2718,49 @@ function is_ssl() {
                 break;
                 
             case "editpage":
-                $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
                 $options= readOptions(); // getOptions($allthings);
-                $optpage = getEditPage($options, $returnURL, $allthings, $sitename);
-                echo htmlHeader($skindir);
-                echo $optpage;
-                echo htmlFooter();
+                $oldoptions = $options;
+                $options["rooms"] = array();
+                $options["things"] = array();
+                $blanktile = $oldoptions["index"]["blank|b1x1"];
+                $good = false;
+                foreach ( $_POST as $key => $val ) {
+                    if ( substr($key,0,3) == "id-" ) {
+                        $oldid = substr($key,3);
+                        $roomkey = "rn-" . $oldid;
+                        if ( isset( $_POST[$roomkey]) ) {
+                            $newroom = $_POST[$roomkey];
+                            // TODO - check for valid and duplicate room numbers
+                        } else {
+                            $newroom = false;
+                        }
+                        $oldroom = array_search($oldid, $oldoptions["rooms"]);
+                        
+                        if ( $newroom && $oldroom ) {
+                            $options["rooms"][$newroom] = $val;
+                            $options["things"][$newroom] = $oldoptions["things"][$oldroom];
+                            $good = true;
+                        } else if ( $newroom ) {
+                            $options["rooms"][$newroom] = $val;
+                            $options["things"][$newroom] = array();
+                            $options["things"][$newroom][] = array($blanktile,0,0,1,"");
+                            $good = true;
+                        }
+                    } 
+                }
+                if ( $good ) {
+                    writeOptions($options);
+                    $tc = print_r($_POST, true);
+                    $tc.= "<br /><hr><br />";
+                    $tc.= print_r($options, true);
+                    echo htmlHeader($skindir);
+                    echo $tc;
+                    echo htmlFooter();
+                }
+                
+                // reload the page
+                header("Location: $returnURL");
+                exit(0);
                 break;
         
             case "refactor":
@@ -2798,6 +2837,11 @@ function is_ssl() {
  * *****************************************************************************
  */
     if ( $valid ) {
+
+        $options = readOptions();
+        $configoptions = $options["config"];
+        $timezone = $configoptions["timezone"];
+        date_default_timezone_set($timezone);
     
         // read all the smartthings from API
         $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
@@ -2809,10 +2853,7 @@ function is_ssl() {
         $roomoptions = $options["rooms"];
         $indexoptions = $options["index"];
         $configoptions = $options["config"];
-
-        $timezone = $configoptions["timezone"];
-        date_default_timezone_set($timezone);
-
+        
         // get the skin directory name or use the default
         $skindir = $options["skin"];
         if (! $skindir || !file_exists("$skindir/housepanel.css") ) {
@@ -2842,7 +2883,7 @@ function is_ssl() {
             
             // use the list of things in this room
             if ($room !== FALSE) {
-                $tc.= "<li class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
+                $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
             }
         }
         
