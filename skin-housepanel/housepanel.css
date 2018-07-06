@@ -320,7 +320,7 @@ table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions
     font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
 }
-table.headoptions th.roomname {
+table.headoptions th.roomname, td.thingname.clickable {
     cursor: pointer;
 }
 table.headoptions td, table.roomoptions td {
@@ -477,6 +477,17 @@ div.restoretabs.hidden, div.thing.hidden.catalog-thing {
     width: 60px;
     display: inline-block;
     font-size: 11pt;
+    margin-left: 10px;
+    background-color: #000099;
+    color: white;
+    border-bottom: black 2px solid;
+    border-right: black 2px solid;
+    cursor: pointer;
+    font-weight: normal;
+    text-align: center;
+}
+.smallbutton:hover {
+    font-weight: bold;
 }
 
 div.modalbox {

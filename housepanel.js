@@ -9,6 +9,12 @@ var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 var dragZindex = 1;
+var hpconfig;
+
+// Store
+// localStorage.setItem("lastname", "Smith");
+// Retrieve
+// document.getElementById("result").innerHTML = localStorage.getItem("lastname");
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -49,69 +55,156 @@ window.addEventListener("load", function(event) {
         returnURL = "housepanel.php";
     }
     
-    $( "#tabs" ).tabs();
-    
-    // get default tab from cookie
-    var defaultTab = getCookie( 'defaultTab' );
-    if ( defaultTab ) {
+    // get options file and push it to php or if not there
+    // ask the server to create a default config
+    if (typeof(Storage) !== "undefined" ) {
+        
+        // if ( localStorage.getItem("housepanelconfig") )
         try {
-            $("#"+defaultTab).click();
-        } catch (e) {}
+            hpconfig = getConfig();
+            console.log("Retrieved configuration from local storage");
+        } catch(e) {
+            hpconfig = "none";
+            console.log("Local storage not found. Performing new authorization." );
+        }
+    } else {
+        hpconfig = null;
+        alert("HousePanel will not run on this Browser because it does not support Local Storage.");
+        console.log("HousePanel will not run on this Browser because it does not support Local Storage." );
+        return;
+    }
+    
+    // grab the coonfiguration parameters from our webpage
+    var configpage = $("input[name='configpage']");
+    
+    // main page push is here
+    var protloop = getCookie("protloop");
+    if ( protloop === "" ) { protloop = "0"; }
+    protloop = parseInt(protloop, 10);
+    
+    if ( configpage && configpage.val()=="operate" ) {
+        console.log ("hpconfig before sync:");
+        console.log(hpconfig);
+        $.post(returnURL, 
+            {useajax: "hpconfig", id: 1, type: "config", value: "none", attr: hpconfig},
+            function (presult, pstatus) {
+                if (pstatus==="success" && presult["status"]==="success") {
+                    setConfig(presult["hpconfig"]);
+                    console.log ("hpconfig after sync:");
+                    console.log(hpconfig);
+                    if ( presult["reload"]==="true" && protloop < 2) {
+                        protloop = protloop + 1;
+                        setCookie("protloop",protloop,1);
+                        window.location.href = returnURL;
+                    } else {
+                        setCookie("protloop",0,1);
+                    }
+                } else {
+                    setCookie("protloop",0,1);
+                    alert("HousePanel could not find or create a valid coonfiguration");
+                    return;
+                }
+            }, "json"
+        );
+    } else {
+        setCookie("protloop",0,1);
     }
 
-    // hide the skin and 
-    $("div.skinoption").hide();
-
-    // setup page clicks
-    setupPage();
+    // this will only happen when authorization page is used
+    if ( configpage && configpage.val()==="configure" ) {
+        configPage();
+        setTimeout(function() {
+            window.location.href = returnURL;
+        }, 3000);
+    }
     
-    // disable return key
-    $("form.options").keypress(function(e) {
-        if ( e.keyCode===13  && popupStatus===1){
-            processPopup();
-            return false;
-        }
-        else if (e.keyCode===13) {
-            return false;
-        } else if ( e.keyCode===27 && popupStatus===1 ){
-            disablePopup();
-        }
-    });
+    if ( configpage && configpage.val()=="showoptions" ) {
+        setupFilters();
+        setupSaveButton();
+    }
     
-    getMaxZindex();
-    
-    // set up popup editing - disabled because it is broken
-    // setupPopup();
+    if ( configpage && configpage.val()=="operate" ) {
         
-    // set up option box clicks
-    setupFilters();
+        $( "#tabs" ).tabs();
     
-    setupButtons();
-    
-    setupSaveButton();
-    
-    setupSliders();
-    
-    // setup click on a page
-    // this appears to be painfully slow so disable
-    setupTabclick();
-    
-    setupColors();
-    
-    // invoke the new timer that updates everything at once
-    // disable these if you want to minimize cloud web traffic
-    // if you do this manual controls will not be reflected in panel
-    // but you can always run a refresh to update the panel manually
-    // or you can run it every once in a blue moon too
-    // any value less than 5000 (5 sec) will be interpreted as never
-    allTimerSetup(60000);
-    allHubitatSetup(5000);
+    // get default tab from cookie
+        var defaultTab = getCookie( 'defaultTab' );
+        if ( defaultTab ) {
+            try {
+                $("#"+defaultTab).click();
+            } catch (e) {}
+        }
 
-    cancelDraggable();
-    cancelSortable();
-    cancelPagemove();
+        // hide the skin and 
+        $("div.skinoption").hide();
 
+        // setup page clicks
+        setupPage();
+
+        // disable return key
+        $("form.options").keypress(function(e) {
+            if ( e.keyCode===13  && popupStatus===1){
+                processPopup();
+                return false;
+            }
+            else if (e.keyCode===13) {
+                return false;
+            } else if ( e.keyCode===27 && popupStatus===1 ){
+                disablePopup();
+            }
+        });
+
+        getMaxZindex();
+
+        // set up popup editing - disabled because it is broken
+        // setupPopup();
+
+        // set up option box clicks
+        setupFilters();
+
+        setupButtons();
+
+        // setupSaveButton();
+
+        setupSliders();
+
+        // setup click on a page
+        // this appears to be painfully slow so disable
+        setupTabclick();
+
+        setupColors();
+
+        // invoke the new timer that updates everything at once
+        // disable these if you want to minimize cloud web traffic
+        // if you do this manual controls will not be reflected in panel
+        // but you can always run a refresh to update the panel manually
+        // or you can run it every once in a blue moon too
+        // any value less than 5000 (5 sec) will be interpreted as never
+        // allTimerSetup(60000);
+        // allHubitatSetup(5000);
+
+        cancelDraggable();
+        cancelSortable();
+        cancelPagemove();
+    }
 });
+
+function publishConfig() {
+    hpconfig = getConfig();
+    console.log ("hpconfig before sync:");
+    console.log(hpconfig);
+    $.post(returnURL, 
+        {useajax: "hpconfig", id: 1, type: "config", value: "none", attr: hpconfig},
+        function (presult, pstatus) {
+            if (pstatus==="success" && presult["status"]==="success") {
+                hpconfig = setConfig(presult["hpconfig"]);
+                console.log ("hpconfig after sync:");
+                console.log(hpconfig);
+            }
+        }, "json"
+    );
+    
+}
 
 function rgb2hsv(r, g, b) {
      //remove spaces from input RGB values, convert to int
@@ -452,12 +545,23 @@ function setupPagemove() {
             // get the new list of pages in order
             // fix nasty bug to correct room tab move
             $("#roomtabs >li.ui-tab").each(function() {
-                var pagename = $(this).text();
+                // changed this to use the class to get the original room name
+                // instead of the text which can be the custom name
+                // var pagename = $(this).text();
+                var pagename = $(this).attr("class");
+                pagename = pagename.substring(4);
                 pages[pagename] = k;
                 k++;
             });
+            hpconfig = getConfig();
             $.post(returnURL, 
-                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
+                {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: hpconfig},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult["status"]==="success") {
+                        console.log("Reordered page tabs");
+                        setConfig(presult["hpconfig"]);
+                    }
+                }, "json"
             );
         }
     });
@@ -472,14 +576,22 @@ function setupSortable() {
         delay: 50,
         grid: [1, 1],
         stop: function(event, ui) {
-            var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
             var things = [];
             $("div.thing[panel="+roomtitle+"]").each(function(){
-                things.push($(this).attr("tile"));
+                var thingobj = {tile: $(this).attr("tile"), zindex: $(this).attr("zindex"), custom: $(this).attr("custom")}
+                things.push( thingobj );
+                // things.push($(this).attr("tile"));
             });
+            hpconfig = getConfig();
             $.post(returnURL, 
-                   {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
+                {useajax: "pageorder", id: "none", type: "things", value: things, subid: roomtitle,  attr: hpconfig},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult["status"]==="success") {
+                        console.log("Reordered tiles on page: " + roomtitle);
+                        setConfig(presult["hpconfig"]);
+                    }
+                }, "json"
             );
         }
     });
@@ -516,13 +628,13 @@ function setupDraggable() {
 
     // get the catalog content and insert after main tabs content
     var xhr = $.post(returnURL, 
-        {useajax: "getcatalog", id: 0, type: "catalog", value: "none", attr: "none"},
+        {useajax: "getcatalog", id: 0, type: "catalog", value: "none", attr: hpconfig},
         function (presult, pstatus) {
-            if (pstatus==="success") {
+            if (pstatus==="success" && presult["status"]==="success") {
                 console.log("Displaying catalog");
-                $("#tabs").after(presult);
+                $("#tabs").after(presult["thing"]);
             }
-        }
+        }, "json"
     );
     
     // if we failed clean up
@@ -558,8 +670,8 @@ function setupDraggable() {
                 var bid = $(thing).attr("bid");
                 var tile = $(thing).attr("tile");
                 var thingtype = $(thing).attr("type");
-                // var thingname = $(thing).find(".thingname").text();
-                var thingname = $("span.orignal.n_"+tile).html();
+                var thingname = $(thing).find(".thingname").text();
+                // var thingname = $("span.orignal.n_"+tile).html();
 
                 // handle new tile creation
                 if ( thing.hasClass("catalog-thing") ) {
@@ -580,14 +692,20 @@ function setupDraggable() {
                                     // var lastthing = $("div.panel-"+panel+" div.thing").last();
                                     var cnt = $("div.panel div.thing").last().attr("id");
                                     cnt = parseInt(cnt.substring(2),10) + 1;
-                                    // alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
-
+                                    hpconfig = getConfig();
+                                    console.log("hpconfig before add: ");
+                                    console.log(hpconfig);
+                                    // alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + 
+                                    //       " name= " + thingname + " hpconfig keys= " + strObject(Object.keys(hpconfig)) );
                                     $.post(returnURL, 
-                                        {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
+                                        {useajax: "dragmake", id: bid, type: thingtype, value: panel, tile: cnt, attr: hpconfig},
                                         function (presult, pstatus) {
-                                            if (pstatus==="success") {
-                                                console.log( "Added " + thingname + " of type " + thingtype + " to room " + panel + " thing= "+ presult );
-                                                lastthing.after(presult);
+                                            console.log("presult after add:");
+                                            console.log(presult);
+                                            if (pstatus==="success" && presult["status"]==="success" ) {
+                                                console.log( "Added " + thingname + " of type " + thingtype + " to room " + panel + " thing= "+ presult["thing"] );
+                                                lastthing.after(presult["thing"]);
+                                                setConfig(presult["hpconfig"]);
                                                 var newthing = lastthing.next();
                                                 dragZindex = dragZindex + 1;
                                                 $(newthing).css( {"z-index": dragZindex.toString()} );
@@ -595,47 +713,10 @@ function setupDraggable() {
                                                 setupPage();
                                                 setupSliders();
                                                 setupColors();
-
-                                                // activate the controls on the dropped tile
-                                                // no longer need to do this by type
-//                                                if ( thingtype=="switch" || thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="light" ) {
-//                                                    setupPage("switch.on");
-//                                                    setupPage("switch.off");
-//                                                }
-//                                                if ( thingtype=="momentary" ) {
-//                                                    setupPage("momentary");
-//                                                }
-//                                                if ( thingtype=="piston" ) {
-//                                                    setupPage("piston.pistonName");
-//                                                }
-//                                                if ( thingtype=="door" ) {
-//                                                    setupPage("door.open");
-//                                                    setupPage("door.closed");
-//                                                }
-//                                                if ( thingtype=="lock" ) {
-//                                                    setupPage("lock.locked");
-//                                                    setupPage("lock.unlocked");
-//                                                }
-//                                                if ( thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="music" ) {
-//                                                    setupSliders();
-//                                                }
-//                                                if ( thingtype=="bulb" ) {
-//                                                    setupColors();
-//                                                }
-//                                                if ( thingtype==="music" ) {
-//                                                    var triggers = ["musicmute","musicstatus","music-previous","music-pause","music-play","music-stop","music-next"];
-//                                                    triggers.forEach(function(item) {
-//                                                        setupPage(item);
-//                                                    });
-//                                                }
-//                                                if ( thingtype==="thermostat" ) {
-//                                                    var triggers = ["heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan"];
-//                                                    triggers.forEach(function(item) {
-//                                                        setupPage(item);
-//                                                    });
-//                                                }
+                                            } else {
+                                                console.log("Failed to make thing. pstatus = " + pstatus + " presult status = " + presult["status"]);
                                             }
-                                        }
+                                        }, "json"
                                     );
                                 }
                             });
@@ -668,10 +749,18 @@ function setupDraggable() {
 
                     // now post back to housepanel to save the position
                     // also send the dragthing object to get panel name and tile pid index
+                    // we use subid to pass position now so attr can be used for standard options
                     if ( ! $("#catalog").hasClass("ui-droppable-hover") ) {
+                        hpconfig = getConfig();
                         console.log( "Moved " + customname + " to top: "+ ui.position.top + ", left: " + ui.position.left + ", z: " + dragZindex );
                         $.post(returnURL, 
-                               {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
+                            {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, subid: ui.position, attr: hpconfig},
+                            function (presult, pstatus) {
+                                if (pstatus==="success" && presult["status"]==="success") {
+                                    setConfig(presult["hpconfig"]);
+                                    console.log( "Moved tile: "+ $(thing).html() );
+                                }
+                            }, "json"
                         );
                     }
 
@@ -715,14 +804,18 @@ function setupDraggable() {
                     if ( clk=="okay" ) {
                         // remove it from the system
                         // alert("Removing thing = " + tilename);
+                        hpconfig = getConfig();
                         $.post(returnURL, 
-                            {useajax: "dragdelete", id: bid, type: thingtype, value: panel, attr: tile},
+                            {useajax: "dragdelete", id: bid, type: thingtype, value: panel, tile: tile, attr: hpconfig},
                             function (presult, pstatus) {
                                 console.log("ajax call: status = " + pstatus + " result = "+presult);
-                                if (pstatus==="success" && presult==="success") {
+                                if (pstatus==="success" && presult["status"]==="success") {
+                                    setConfig(presult["hpconfig"]);
                                     console.log( "Removed tile: "+ $(thing).html() );
                                     // remove it visually
                                     $(thing).remove();
+                                } else {
+                                    console.log("Failed to remove tile. pstatus = " + pstatus + " rstatus = " + presult["status"]);
                                 }
                             }
                         );
@@ -744,28 +837,60 @@ function setupDraggable() {
     });
 }
 
+function getConfig() {
+    var contents = localStorage.getItem("housepanelconfig");
+    return JSON.parse(contents);
+}
+
+function setConfig(config) {
+    hpconfig = config;
+    localStorage.setItem("housepanelconfig", JSON.stringify(hpconfig));
+    return hpconfig;
+}
+
+// rewrite this to do a real Ajax post so we can send and return options
 function dynoForm(ajaxcall, content, idval, typeval) {
     idval = idval ? idval : 0;
     typeval = typeval ? typeval : "none";
     content = content ? content : "";
+    hpconfig = getConfig();
+
+    $.post(returnURL, 
+        {useajax: ajaxcall, id: idval, type: typeval, value: content, attr: hpconfig },
+        function (presult, pstatus) {
+            formresult = presult;
+            if ( pstatus==="success" && presult["status"]==="success" ) {
+                console.log( ajaxcall + " POST returned: ");
+                console.log(presult);
+                if ( presult["hpconfig"] ) { setConfig(presult["hpconfig"]); }
+                if ( presult["reload"] === "true") {
+                    window.location.href = returnURL;
+                }
+            }
+        }, "json"
+    );
     
-    var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
-    controlForm.appendTo("body");
-    // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
-    // lets now add the hidden fields we need to post our form
-    controlForm.append(
-                  $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
-        ).append(
-                  $('<input>', {'name': 'id', 'value': idval, 'type': 'hidden'})
-        ).append(
-                  $('<input>', {'name': 'type', 'value': typeval, 'type': 'hidden'})
-        );
-    if ( content ) {
-        // controlForm.append( $('<input>', {'name': 'value', 'value': content, 'type':'hidden'} ));
-        controlForm.append(content);
-        $("#dynocontent").hide();
-    }
-    return controlForm;
+//    var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
+//    controlForm.appendTo("body");
+//    // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
+//    // lets now add the hidden fields we need to post our form
+//    controlForm.append(
+//                  $('<input>', {'name': 'useajax', 'value': ajaxcall, 'type': 'hidden'})
+//        ).append(
+//                  $('<input>', {'name': 'id', 'value': idval, 'type': 'hidden'})
+//        ).append(
+//                  $('<input>', {'name': 'type', 'value': typeval, 'type': 'hidden'})
+//        ).append(
+//                  $('<input>', {'name': 'attr', 'value': tmpconfig, 'type': 'hidden'})
+//        );
+//    if ( content ) {
+//        // controlForm.append( $('<input>', {'name': 'value', 'value': content, 'type':'hidden'} ));
+//        controlForm.append(content);
+//        // $("#dynocontent").hide();
+//    }
+//    if ( controlForm ) {
+//        controlForm.submit();
+//    }
 }
 
 function setupButtons() {
@@ -778,22 +903,13 @@ function setupButtons() {
             createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
-                    // handle page editor
-                    if ( buttonid == "editpage") {
-                        pageEdit();
-                    } else {
-                        var newForm = dynoForm(buttonid);
-                        newForm.submit();
-                    }
+                    dynoForm(buttonid);
+                    // if ( newForm) { newForm.submit(); }
                 }
             });
         } else {
-            if ( buttonid == "editpage") {
-                pageEdit();
-            } else {
-                var newForm = dynoForm(buttonid);
-                newForm.submit();
-            }
+            dynoForm(buttonid);
+            // if ( newForm) { newForm.submit(); }
         }
     });
     
@@ -811,9 +927,18 @@ function setupButtons() {
                     }
                 });
 //                alert(filters);
-                $.post(returnURL, 
-                    {useajax: "savefilters", id: 0, type: "none", value: filters, attr: opmode}
-                );
+                hpconfig = getConfig();
+                hpconfig["useroptions"] = filters;
+                publishConfig();
+//                $.post(returnURL, 
+//                    {useajax: "savefilters", id: 0, type: "none", value: filters, attr: tmpconfig},
+//                    function (presult, pstatus) {
+//                        if (pstatus==="success" && presult["status"]==="success") {
+//                            setConfig(presult["hpconfig"]);
+//                            console.log( "Updated filters to: "+ strObject(filters) );
+//                        }
+//                    }, "json"
+//                );
                 cancelDraggable();
                 delEditLink();
             }
@@ -826,8 +951,10 @@ function setupButtons() {
                 addEditLink();
                 
             // reload page fresh if we are returning from drag mode to operate mode
-            } else if ( opmode==="Operate" && (priorOpmode === "DragDrop") ) {
-                location.reload(true);
+//            } else if ( opmode==="Operate" && (priorOpmode !== "Operate") ) {
+//                // location.reload(true);
+//                publishConfig();
+//                window.location.href = returnURL;
             }
             
             priorOpmode = opmode;
@@ -880,16 +1007,17 @@ function addEditLink() {
             if ( clk=="okay" ) {
                 // remove it from the system
                 // alert("Removing thing = " + tilename);
+                hpconfig = getConfig();
                 $.post(returnURL, 
-                    {useajax: "dragdelete", id: bid, type: str_type, value: panel, attr: tile},
+                    {useajax: "dragdelete", id: bid, type: str_type, value: panel, tile: tile, attr: hpconfig},
                     function (presult, pstatus) {
-                        console.log("ajax call: status = " + pstatus + " result = "+presult);
-                        if (pstatus==="success" && presult==="success") {
+                        if (pstatus==="success" && presult["status"]==="success") {
+                            setConfig(presult["hpconfig"]);
                             console.log( "Removed tile: "+ $(thing).html() );
                             // remove it visually
                             $(thing).remove();
                         }
-                    }
+                    }, "json"
                 );
             }
         });
@@ -911,76 +1039,28 @@ function delEditLink() {
     closeModal();
 }
 
-
-// work in progress - this will eventually be a room editor
-function pageEdit() {
-
-    var tc = "";
-    var goodrooms = false;
-    tc = tc + "<div id='dynocontent'><h2>Page Editor</h2>";
-    tc = tc + "<div>With this module you can rename, delete, or add new pages</div>";
-    var pos = {top: 100, left: 100};
-    
-    $("#roomtabs > li.ui-tab").each(function() {
-        var roomname = $(this).text();
-        var roomid = $(this).attr("roomnum");
-        tc = tc + "<div class='roomedit'>";
-        tc = tc + "<input type='number' min=0 step=1 max=20 size='4' name='id-" + roomid+"' value='" + roomid+"' /><input name='rn-"+roomid+"' value='"+roomname+"'/>";
-        tc = tc + "<button roomid='" + roomid + "' class='roomdel'>Del</button>";
-        tc = tc + "</div>";
-        goodrooms = true;
-    });
-    tc = tc + "</div>";
-    
-    if ( goodrooms ) {
-        createModal(tc,"#roomtabs", true, pos, function(ui, content) {
-            var clk = $(ui).attr("name");
-            if ( clk=="okay" ) {
-                
-                tc = "test";
-                
-                var newForm = dynoForm("editpage",content);
-
-                alert(content);
-                newForm.submit();
-            }
-        });
-        $("#modalid").draggable();
-    }
-    
-    
-}
-
 function setupSaveButton() {
     
     $("#submitoptions").click(function(evt) {
-        var sheet = document.getElementById('customtiles').sheet;
-        var sheetContents = "";
-        c=sheet.cssRules;
-        for(j=0;j<c.length;j++){
-            sheetContents += c[j].cssText;
-        };
-        var regex = /[{;}]/g;
-        var subst = "$&\n";
-        sheetContents = sheetContents.replace(regex, subst);
-        
-        // create form data from our table plus the custom edits
-        var alldata = new FormData(document.getElementById("optionspage"));
-        alldata.append("cssdata", sheetContents);
-        alldata.append("useajax", "saveoptions");
-        
-        var request = new XMLHttpRequest();
-        request.open('POST', 'housepanel.php', true);
-//        $response = $.post(returnURL, 
-//                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
+        $("form.options").submit(); 
+    });
+    
+    $("#resetoptions").click(function(evt) {
+        $("form.options").reset(); 
+    });
+    
+    $("#canceloptions").click(function(evt) {
+        window.location.href = returnURL;
+//        $.post(returnURL, 
+//            {useajax: "canceloptions", id: 1, type: "none", value: "none", attr: hpconfig},
+//            function (presult, pstatus) {
+//                if (pstatus==="success" && presult["status"]==="success") {
+//                    if ( presult["reload"]==="true") {
+//                        window.location.href = returnURL;
+//                    }
+//                }
+//            }, "json"
 //        );
-        
-        request.send(alldata);
-        // console.log(request.response);
-        
-        // if (request.response == "success") {
-            $("form.options").submit(); 
-        // }
     });
 }
 
@@ -1091,13 +1171,8 @@ function setupPopup() {
         processPopup();
     });
     
-//    $("table.headoptions th.roomname").each(function() {
-//        // bind click events to incell editing
-//        $(this).css({
-//            "cursor": "pointer"
-//        });
-//        $(this).on("click", "th.roomname", jeditTableCell);
     $("table.headoptions").on("click", "th.roomname", function() {
+        // alert("in cell editing");
         if ($(this).html().startsWith("<input id")) { return true; }
 
         // if another popup is active, process it
