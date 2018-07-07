@@ -95,6 +95,7 @@ define('DEBUG2', false); // authentication flow debug
 define('DEBUG3', false); // room display debug - show all things
 define('DEBUG4', false); // options processing debug
 define('DEBUG5', false); // debug print included in output table
+define('DEBUG6', false); //  auth check
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -342,6 +343,8 @@ function authButton($returl, $hpcode, $greeting = false) {
             $tc.= "<div class=\"error\">$msg</div>";
         }
         
+        $tc.= "<div class=\"error\">hpcode = $hpcode</div>";
+            
         $tc.="<p>You are seeing this because you either requested a re-authentication " .
                 "or you have not yet authorized " .
                 "HousePanel to access SmartThings or Hubitat. With HousePanel " .
@@ -369,16 +372,15 @@ function authButton($returl, $hpcode, $greeting = false) {
                 "To do this launch your Hubitat app and enter this url where noted. " .
                 "HousePanel url = $returl </p>";
         
-        $tc.= "<p>You also have the option of manually specifying your Access Tokens in " .
-                "below or in the optional clientinfo.php file. You will find the information needed printed " .
+        $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
+                "below. You will find the information needed printed " .
                 "in the SmartThings and/or Hubitat log when you install the app. You must have the log " .
                 "window open when you are installing to view this information. " . 
                 "Please note that if you provide a manual Access Token and Endpoint that you will " .
                 "not be sent through the OAUTH flow process and this screen will only show " .
                 "again if you manually request it.</p>";
         
-        $tc.= "<p>If you have trouble after authorizing, check your file permissions " .
-                "to ensure you can write to the home directory where HousePanel is installed. " .
+        $tc.= "<p>If you have trouble authorizing, check to see if your Browser supports HTML5. " .
                 "You should also confirm that your PHP is set up to use cURL. " .
                 "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
                 "(opens in a new window or tab)</p>";
@@ -392,7 +394,7 @@ function authButton($returl, $hpcode, $greeting = false) {
     // we no longer use clientinfo but it is supported for backward compatibility purposes
     // but only if the hmoptions file is not current
     $options = readOptions();
-    $rewrite = false;
+    $rewrite = true;
     
     if ( $options && array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
@@ -610,6 +612,9 @@ function authButton($returl, $hpcode, $greeting = false) {
     $tc.= "<div class=\"sitebutton\">";
     if ( !$greeting ) { $tc.= "<span class=\"sitename\">$userSitename</span>"; }
     $tc .= "<input  class=\"authbutton\" value=\"Authorize HousePanel\" name=\"submit1\" type=\"submit\" />";
+    if ( $greeting ) {
+        $tc.= "<input id=\"readlegacy\" class=\"authbutton\" value=\"Import Legacy\" name=\"readlegacy\" type=\"button\" />";
+    }
     $tc.= "</div></form>";
     return $tc;
 }
@@ -620,7 +625,7 @@ function configPage($options, $returnURL) {
     $tc.= "<form>";
     $tc.= hidden("returnURL", $returnURL);
     $tc.= hidden("configpage", "configure");
-    $tc.= "<br /><br /><div class='configuring'>Your page will reload soon...</div>";
+    $tc.= "<br /><br /><div class='configuring'>Your page will reload soon...</div><br /><br />";
 
     $configoptions = $options["config"];
     $timezone = $configoptions["timezone"];
@@ -640,45 +645,52 @@ function configPage($options, $returnURL) {
     $st_endpt = $configoptions["st_endpt"];
     $skin = $options["skin"];
     $kiosk = $options["kiosk"];
-    
-    $tc.= "
-    <script type=\"text/javascript\">
-        function configPage() {
-            var hpconfig = getConfig();
-            var timezone = \"$timezone\";
-            var user_sitename = \"$userSitename\";
-            var use_st = \"$useSmartThings\";
-            var st_web = \"$stweb\";
-            var client_id = \"$clientId\";
-            var client_secret = \"$clientSecret\";
-            var user_access = \"$userAccess\";
-            var user_endpt = \"$userEndpt\";
-            var use_he = \"$useHubitat\";
-            var hubitat_host = \"$hubitatHost\";
-            var hubitat_id = \"$hubitatId\";
-            var hubitat_access = \"$hubitatAccess\";
-            var hubitat_endpt = \"$hubitatEndpt\";
-            var st_access = \"$st_access\";
-            var st_endpt = \"$st_endpt\";
-            var skin = \"$skin\";
-            var kiosk = \"$kiosk\";
 
-            var configauth = {timezone: timezone, user_sitename: user_sitename, use_st: use_st,
-                st_web: st_web, client_id: client_id, client_secret: client_secret, user_access: user_access,
-                user_endpt: user_endpt, use_he: use_he, hubitat_id: hubitat_id, hubitat_host: hubitat_host, hubitat_access: hubitat_access,
-                hubitat_endpt: hubitat_endpt, st_access: st_access, st_endpt: st_endpt};
-            hpconfig['config'] = configauth;
-            hpconfig['skin'] = skin;
-            hpconfig['kiosk'] = kiosk;
-            setConfig(hpconfig);
-        }
-    </script>
-    ";
+    $configvars = array("timezone" => $timezone, "user_sitename" => $userSitename, "use_st" => $useSmartThings,
+        "st_web" => $stweb, "client_id" => $clientId, "client_secret" => $clientSecret, "user_access" => $userAccess,
+        "user_endpt" => $userEndpt, "use_he" => $useHubitat, "hubitat_host" => $hubitatHost, "hubitat_id" => $hubitatId, "hubitat_access" => $hubitatAccess,
+        "hubitat_endpt" => $hubitatEndpt, "st_access" => $st_access, "st_endpt" => $st_endpt,
+        "skin" => $skin, "kiosk" => $kiosk);
+    foreach ($configvars as $key => $val) {
+        $tc.= hidden($key, $val);
+        // $tc.= "<div>$key = $val </div>";
+    }
+    
+//    $tc.= "
+//    <script type=\"text/javascript\">
+//        function configPage() {
+//            var hpconfig = getConfig();
+//            var timezone = \"$timezone\";
+//            var user_sitename = \"$userSitename\";
+//            var use_st = \"$useSmartThings\";
+//            var st_web = \"$stweb\";
+//            var client_id = \"$clientId\";
+//            var client_secret = \"$clientSecret\";
+//            var user_access = \"$userAccess\";
+//            var user_endpt = \"$userEndpt\";
+//            var use_he = \"$useHubitat\";
+//            var hubitat_host = \"$hubitatHost\";
+//            var hubitat_id = \"$hubitatId\";
+//            var hubitat_access = \"$hubitatAccess\";
+//            var hubitat_endpt = \"$hubitatEndpt\";
+//            var st_access = \"$st_access\";
+//            var st_endpt = \"$st_endpt\";
+//            var skin = \"$skin\";
+//            var kiosk = \"$kiosk\";
+//
+//            var configauth = {timezone: timezone, user_sitename: user_sitename, use_st: use_st,
+//                st_web: st_web, client_id: client_id, client_secret: client_secret, user_access: user_access,
+//                user_endpt: user_endpt, use_he: use_he, hubitat_id: hubitat_id, hubitat_host: hubitat_host, hubitat_access: hubitat_access,
+//                hubitat_endpt: hubitat_endpt, st_access: st_access, st_endpt: st_endpt};
+//            hpconfig['config'] = configauth;
+//            hpconfig['skin'] = skin;
+//            hpconfig['kiosk'] = kiosk;
+//            setConfig(hpconfig);
+//        }
+//    </script>
+//    ";
     
     $tc.= "</form>";
-    
-    // TODO: Figure out how to reload page after we get the parameters
-    // header("Location: $returnURL");
     return $tc;
 }
 
@@ -1399,12 +1411,13 @@ function writeOptions($options) {
     $options["time"] = HPVERSION . " @ " . strval(time());
     $str =  json_encode($options);
     $_SESSION["hpconfig"] = $str;
+    
+    // leave this for debug purposes for now
+    $f = fopen("hmoptions.cfg","w");
+    fwrite($f, cleanupStr($str));
+    fflush($f);
+    fclose($f);
     return $options;
-//    $f = fopen("hmoptions.cfg","w");
-//    fwrite($f, cleanupStr($str));
-//    fflush($f);
-//    fclose($f);
-//    chmod($f, 0777);
 }
 
 // make the string easier to look at
@@ -1441,7 +1454,7 @@ function refactorOptions($oldoptions) {
 // TODO: refactor the customtiles.css file as well by reading and writing it
    
     // hack to read old options
-    // $oldoptions = readOptions(true);
+    $oldoptions = readOptions(true);
     
     $options = array();
     $options["config"] = $oldoptions["config"];
@@ -2313,9 +2326,10 @@ function clearAuth() {
  * the $hpcode is a security measure that assures we are returning from this web session
  * *****************************************************************************
  */
-    if ( substr($hpcode,0,5) === "auth-" &&
-         isset($_POST["doauthorize"]) && 
-         $_POST["doauthorize"] === $hpcode ) {
+//    if ( substr($hpcode,0,5) === "auth-" &&
+//         isset($_POST["doauthorize"]) && 
+//         $_POST["doauthorize"] === $hpcode ) {
+    if ( isset($_POST["doauthorize"]) ) {
 
         unset($_SESSION["hperror"]);
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -2404,6 +2418,7 @@ function clearAuth() {
     $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
     if ( $hpcode==="returncode" || ($hpcode==="external" && $code==="reset") ) {
         $options = readOptions();
+        if ( !$options ) { $options = readOptions(true); }
 
         // check for manual reset flag or for problem with OAUTH flow or options
         if (!$code || !$options || $code==="reset") {
@@ -2435,13 +2450,7 @@ function clearAuth() {
             $endpt = $endptinfo[0];
             $sitename = $endptinfo[1];
 
-            // save auth info in a cookie
-            // changed this to use a single cookie with all options now
             if ($endpt) {
-                // setcookie("hmtoken", $token, $expiry, "/", $serverName);
-                // setcookie("hmendpoint", $endpt, $expiry, "/", $serverName);
-                // setcookie("hmsitename", $sitename, $expiry, "/", $serverName);
-
                 $configoptions["use_st"] = true;
                 $configoptions["st_access"] = $token;
                 $configoptions["st_endpt"] = $endpt;
@@ -2489,18 +2498,21 @@ function clearAuth() {
             
             unset($_SESSION["allthings"]);
             $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
-            
+
             if ( !array_key_exists("things", $options) ||
                     !array_key_exists("index", $options) ||
                     count($options["things"]) == 0 ||
                     count($options["index"]) <= 10 ) {
                 
                 // if a legacy file exists, read it
-                $options = readOptions(true);
-                if ( !$options ) {
-                    $options = getDefaultOptions($allthings, $options);
-                }
+                $options = getDefaultOptions($allthings, $options);
                 $options = writeOptions($options);
+            }
+            if ( DEBUG6 ) {
+                echo "<br />options = <br /><pre>";
+                print_r($options);
+                echo "</pre>";
+                exit(0);
             }
 
             // reload the page and display the config parameters

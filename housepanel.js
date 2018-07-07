@@ -112,8 +112,10 @@ window.addEventListener("load", function(event) {
 
     // this will only happen when authorization page is used
     if ( configpage && configpage.val()==="configure" ) {
-        configPage();
         setTimeout(function() {
+            configPage();
+            console.log ("hpconfig after auth flow:");
+            console.log(hpconfig);
             window.location.href = returnURL;
         }, 3000);
     }
@@ -188,6 +190,39 @@ window.addEventListener("load", function(event) {
         cancelPagemove();
     }
 });
+
+function configPage() {
+    
+    hpconfig = getConfig();
+    var timezone = $("input[name='timezone']").val();
+    var user_sitename = $("input[name='user_sitename']").val();
+    var use_st = $("input[name='use_st']").val();
+    var st_web = $("input[name='st_web']").val();
+    var client_id = $("input[name='client_id']").val();
+    var client_secret = $("input[name='client_secret']").val();
+    var user_access = $("input[name='user_access']").val();
+    var user_endpt = $("input[name='user_endpt']").val();
+    var use_he = $("input[name='use_he']").val();
+    var hubitat_host = $("input[name='hubitat_host']").val();
+    var hubitat_id = $("input[name='hubitat_id']").val();
+    var hubitat_access = $("input[name='hubitat_access']").val();
+    var hubitat_endpt = $("input[name='hubitat_endpt']").val();
+    var st_access = $("input[name='st_access']").val();
+    var st_endpt = $("input[name='st_endpt']").val();
+    var skin = $("input[name='skin']").val();
+    var kiosk = $("input[name='kiosk']").val();
+    
+
+    var configauth = {timezone: timezone, user_sitename: user_sitename, use_st: use_st,
+        st_web: st_web, client_id: client_id, client_secret: client_secret, user_access: user_access,
+        user_endpt: user_endpt, use_he: use_he, hubitat_id: hubitat_id, hubitat_host: hubitat_host, hubitat_access: hubitat_access,
+        hubitat_endpt: hubitat_endpt, st_access: st_access, st_endpt: st_endpt};
+    hpconfig['config'] = configauth;
+    hpconfig['skin'] = skin;
+    hpconfig['kiosk'] = kiosk;
+    setConfig(hpconfig);
+    
+}
 
 function publishConfig() {
     hpconfig = getConfig();
@@ -839,12 +874,13 @@ function setupDraggable() {
 
 function getConfig() {
     var contents = localStorage.getItem("housepanelconfig");
-    return JSON.parse(contents);
+    hpconfig = JSON.parse(contents);
+    return hpconfig;
 }
 
 function setConfig(config) {
     hpconfig = config;
-    localStorage.setItem("housepanelconfig", JSON.stringify(hpconfig));
+    localStorage.setItem("housepanelconfig", JSON.stringify(config));
     return hpconfig;
 }
 
