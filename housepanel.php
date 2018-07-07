@@ -4,13 +4,14 @@
  * author: Ken Washington  (c) 2017
  *
  * Revision History
+ * 1.74       Update customtiles on refactor and more code cleanup and comments
  * 1.73       Major change to store room id in things and replace hmoptions
  * 1.72       Timezone bug fix and merge into master
  * 1.71       Bug fixes and draft page edit commented out until fixed
  * 1.7        New authentication approach for easier setup and major code cleanup
  * 1.622      Updated info dump to include json dump of variables
  * 1.621      ***IMPT*** bugfix to prior 1.62 update resolving corrupt config files
- * 1.62       New ability to use only a Hubitat hubg
+ * 1.62       New ability to use only a Hubitat hub
  * 1.61       Bugfixes to TileEditor
  * 1.60       Major rewrite of TileEditor
  * 1.53       Drag and drop tile addition and removal and bug fixes
@@ -83,18 +84,18 @@
  * 
 */
 ini_set('max_execution_time', 300);
-ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.73');
-define('APPNAME', 'House Panel ' . HPVERSION);
+ini_set('max_input_vars', 100);
+define('HPVERSION', 'Version 1.74');
+define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
-// options 2 and 4 will stop the flow and must be reset to continue normal operation
+// options 2, 4, 6 will stop the flow and must be reset to continue normal operation
 // option3 can stay on and will just print lots of stuff on each page
 define('DEBUG',  false);  // all debugs
 define('DEBUG2', false); // authentication flow debug
 define('DEBUG3', false); // room display debug - show all things
 define('DEBUG4', false); // options processing debug
-define('DEBUG5', false); // debug print included in output table
+define('DEBUG5', false); // debug info included in output table
 define('DEBUG6', false); //  auth check
 
 // set error reporting to just show fatal errors
@@ -289,8 +290,14 @@ function getAccessToken($returl, $stweb, $clientId, $clientSecret, $code) {
     
     $nvpreq = "grant_type=authorization_code&code=" . urlencode($code) . "&client_id=" . urlencode($clientId) .
                          "&client_secret=" . urlencode($clientSecret) . "&scope=app" . "&redirect_uri=" . $returl;
-    
-    $response = curl_call($host, $headertype, $nvpreq, "POST");
+
+    $msg = "";
+    try {
+        $response = curl_call($host, $headertype, $nvpreq, "POST");
+    } catch( Exceptiion $e ) {
+        $response = false;
+        $msg = $e->getMessage();
+    }
 
     // save the access token    
     if ($response) {
@@ -299,7 +306,7 @@ function getAccessToken($returl, $stweb, $clientId, $clientSecret, $code) {
         $token = false;
     }
 
-    return $token;
+    return array($token, $msg);
     
 }
 
@@ -325,7 +332,9 @@ function getEndpoint($access_token, $stweb, $clientId) {
 }
 
 // screen that greets user and asks for authentication
-function authButton($returl, $hpcode, $greeting = false) {
+// renamed from old authbutton function that just made a button
+// can still be used for that if needed but currently not used
+function getGreetingPage($returl, $hpcode, $greeting = true) {
     $tc = "";
     
     if ( $greeting ) {
@@ -390,11 +399,10 @@ function authButton($returl, $hpcode, $greeting = false) {
     
     $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
     
-    // get the current settings from options file
+    // get the current settings from options session or legacy file if session not set
     // we no longer use clientinfo but it is supported for backward compatibility purposes
-    // but only if the hmoptions file is not current
     $options = readOptions();
-    $rewrite = true;
+    if ( !$options ) { readOptions(true); }
     
     if ( $options && array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
@@ -413,7 +421,7 @@ function authButton($returl, $hpcode, $greeting = false) {
         $hubitatEndpt = $configoptions["hubitat_endpt"];
         
         // set default end point if not defined
-        if ( !$hubitatEndpt ) {
+        if ( $useHubitat && $hubitatHost && $hubitatId && !$hubitatEndpt ) {
             $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
             $rewrite = true;
         }
@@ -434,20 +442,20 @@ function authButton($returl, $hpcode, $greeting = false) {
         $userSitename = "SmartHome";
 
         $useHubitat = false;
-        $hubitatHost = "192.168.11.26";
+        $hubitatHost = "192.168.1.100";
         $hubitatId = 0;
         $hubitatAccess = "";
         $hubitatEndpt = "";
     }
-    
-    if ( $options && array_key_exists("skin", $options) ) {
+
+    if ( array_key_exists("skin", $options) ) {
         $skin = $options["skin"];
     } else {
         $skin = "skin-housepanel";
         $rewrite = true;
     }
-    
-    if ( $options && array_key_exists("kiosk", $options) ) {
+
+    if ( array_key_exists("kiosk", $options) ) {
         $kiosk = strval($options["kiosk"]);
         if ( $kiosk == "true" || $kiosk=="yes" || $kiosk=="1" ) {
             $kiosk = true;
@@ -459,25 +467,10 @@ function authButton($returl, $hpcode, $greeting = false) {
         $rewrite = true;
     }
     
-    if ( $options && array_key_exists("time", $options) ) {
-        $time = $options["time"];
-        $info = explode(" @ ", $time);
-        $version = $info[0];
-        $timestamp = $info[1];
-        $lastedit = date("M j, Y h:i:s a", $timestamp);
-        if ( $version != HPVERSION ) {
-            $rewrite = true;
-        }
-    } else {
-        $rewrite = true;
-        $lastedit = "Unknown";
-        $version = "Pre Version 1.7";
-    }
-
-    
     // try to gather defaults from the clientinfo file
     // this is only here for backward compatibility purposes
     // there is no need for this file any more
+    // but... if it is present all parameters given will be used as a priority
     if (file_exists("clientinfo.php")) {
         include "clientinfo.php";
         if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
@@ -504,8 +497,25 @@ function authButton($returl, $hpcode, $greeting = false) {
         }
         $rewrite = true;
     }
+
+    date_default_timezone_set($timezone);
+    if ( $options && array_key_exists("time", $options) ) {
+        $time = $options["time"];
+        $info = explode(" @ ", $time);
+        $version = $info[0];
+        $timestamp = $info[1];
+        $lastedit = date("M j, Y h:i:s a", $timestamp);
+        if ( $version != HPVERSION ) {
+            $rewrite = true;
+        }
+    } else {
+        $rewrite = true;
+        $lastedit = "Unknown";
+    }
     
     // update the options with updated set
+    // important to note that the access token and end point from SmartThings
+    // are not available at this point - that happens in the next OAUTH step
     if ( $rewrite ) {
         $configoptions = array(
             "timezone" => $timezone,
@@ -602,24 +612,30 @@ function authButton($returl, $hpcode, $greeting = false) {
         $tc.= "</div>";
         
         $tc.= "<div id=\"authmessage\"></div>";
+        $tc.= hidden("configpage", "reauth");
         
     }
 
-    // if no greeting, this just restarts the SmartThings authorization flow
+    // Create the button that starts the SmartThings authorization flow
+    // we also include two new buttons for forcing old hmoptions import and export
     $tc.= hidden("doauthorize", $hpcode);
-    $tc.= hidden("configpage", "reauth");
     
     $tc.= "<div class=\"sitebutton\">";
     if ( !$greeting ) { $tc.= "<span class=\"sitename\">$userSitename</span>"; }
     $tc .= "<input  class=\"authbutton\" value=\"Authorize HousePanel\" name=\"submit1\" type=\"submit\" />";
     if ( $greeting ) {
         $tc.= "<input id=\"readlegacy\" class=\"authbutton\" value=\"Import Legacy\" name=\"readlegacy\" type=\"button\" />";
+        $tc.= "<input id=\"writelegacy\" class=\"authbutton\" value=\"Export Legacy\" name=\"writelegacy\" type=\"button\" />";
     }
     $tc.= "</div></form>";
     return $tc;
 }
 
-function configPage($options, $returnURL) {
+// fancy footwork done here to push options to Javascript
+// we do this by saving them in hidden fields that our script reads
+// i tried using direct javascript writing but this was clumsy and unreliable
+// that code is left here commented out in case someone wants to try it
+function getConfigPage($options, $returnURL) {
     $tc = "";
     $tc.= "<h2>Finalizing HousePanel SmartThings Configuration</h2>";
     $tc.= "<form>";
@@ -658,7 +674,7 @@ function configPage($options, $returnURL) {
     
 //    $tc.= "
 //    <script type=\"text/javascript\">
-//        function configPage() {
+//        function getConfigPage() {
 //            var hpconfig = getConfig();
 //            var timezone = \"$timezone\";
 //            var user_sitename = \"$userSitename\";
@@ -935,10 +951,6 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
 function fixTrack($tval) {
     if ( trim($tval)==="" ) {
         $tval = "None"; 
-//    } else if ( strpos($tval, "Grouped with") ) {
-//        $tval = substr($tval,0, strpos($tval, "Grouped with"));
-//        if (strlen($tval) > 124) { $tval = substr($tval,0,120) . " ..."; } 
-//        $tval.= " (*)";
     } else if ( strlen($tval) > 124) { 
         $tval = substr($tval,0,120) . " ..."; 
     }
@@ -1097,6 +1109,8 @@ function getNewPage(&$cnt, $allthings, $roomname, $roomtitle, $kroom, $things, $
     return $tc;
 }
 
+// this function generates a catalog of things used to do drag/drop editing
+// it returns a new div that is inserted on the main page in edit mode
 function getCatalog($allthings, $options) {
     $thingtypes = getTypes();
     sort($thingtypes);
@@ -1158,6 +1172,8 @@ function getCatalog($allthings, $options) {
     return $tc;
 }
 
+// Hubitat version of function to retrieve data from the hub
+// it returns a json object of the requested thing and type
 function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid= "") {
 
     $host = $url . "/" . $path;
@@ -1172,21 +1188,23 @@ function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $s
     if ($swtype==="clock") {
         $response = $todaydate;
     } else if ($swtype=="video") {
-        // instead of doing this it is safer to put it in a crontab
-        // exec("python getarlo.py");
         $videodata = returnVideo($swval);
         $response = array("url" => $videodata);
     } else {
         if ( substr($swid,0,2) === "h_" ) { $swid = substr($swid,2); }
 
-        $headertype = array("Authorization: Bearer " . $access_token);
-        $nvpreq = "access_token=" . $access_token .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
+        try {
+            $headertype = array("Authorization: Bearer " . $access_token);
+            $nvpreq = "access_token=" . $access_token .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+        } catch (Exception $e) {
+            $response = false;
+        }
 
-        if ( isset($_SESSION["allthings"]) && isset($_SESSION["hpconfig"]) ) {
+        if ( $response && isset($_SESSION["allthings"]) && isset($_SESSION["hpconfig"]) ) {
             $allthings = $_SESSION["allthings"];
             $options = $_SESSION["hpconfig"];
             // $options= readOptions();
@@ -1216,9 +1234,10 @@ function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $s
     }
     
     return json_encode($response);
-    
 }
 
+// SmartThings version of the function to retrieve data from hub
+// it returns a json object of the requested thing and type
 function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid="") {
     
     // intercept clock things to return updated date and time
@@ -1232,29 +1251,31 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     if ($swtype==="clock") {
         $response = $todaydate;
     } else if ($swtype=="video") {
-        // instead of doing this it is safer to put it in a crontab
-        // exec("python getarlo.py");
         $videodata = returnVideo($swval);
         $response = array("url" => $videodata);
     } else {
-            
-        $headertype = array("Authorization: Bearer " . $access_token);
-        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
+        
+        try {
+            $headertype = array("Authorization: Bearer " . $access_token);
+            $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
+                      "&scope=app&client_id=" . urlencode(CLIENT_ID) .
+                      "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
+                      "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+            if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
+            $response = curl_call($host, $headertype, $nvpreq, "POST");
+        } catch(Exception $e) {
+            $response = false;
+        }
 
         // do nothing if we don't have things loaded in a session
         // but we can still return the API feature
         // we just don't update the session for a web browser
-        if ( isset($_SESSION["allthings"]) && isset($_SESSION["hpconfig"]) ) {
+        if ( $response && isset($_SESSION["allthings"]) && isset($_SESSION["hpconfig"]) ) {
             $allthings = $_SESSION["allthings"];
             $options = $_SESSION["hpconfig"];
             // $options= readOptions();
             
-        // update session with new status and pick out all if needed
+            // update session with new status and pick out all if needed
             if ( $swtype=="all" ) {
                 $respvals = array();
                 foreach($response as $thing) {
@@ -1285,6 +1306,8 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     return json_encode($response);
 }
 
+// reorder things in the options variable
+// this can be used to reorder either rooms or tiles
 function setOrder($swid, $swtype, $swval, $roomtitle, $options) {
     $updated = false;
     $result = "error";
@@ -1326,8 +1349,9 @@ function setOrder($swid, $swtype, $swval, $roomtitle, $options) {
     return array("status"=> $result, "reload"=> "false", "thing" => null, "hpconfig" => $options);
 }
 
+// changes the on screen position of a tile and stores in our options array
 function setPosition($endpt, $access_token, $swid, $swtype, $thing, $pos, $options, $sitename, $returnURL) {
-    $updated = "failure";
+    $updated = "error";
     // $options = readOptions();
     
     $panel = $thing["panel"];
@@ -1381,19 +1405,26 @@ function readOptions($legacy=false) {
 
     if ( $legacy===true && file_exists("hmoptions.cfg") ) {
         $serialoptions = file_get_contents("hmoptions.cfg");
+        if ( $serialoptions===false ) { return false; }
         $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
         $oldoptions = json_decode($serialnew,true);
         $options = $oldoptions;
 
         // add our new room index and remove the "rooms" element
-        unset( $options["rooms"] );
-        foreach ($oldoptions["things"] as $room => $thinglist ) {
-            $roomnum = $oldoptions["rooms"][$room];
-            $roomindex = array($roomnum, 0, 0, 1, $room);
-            array_unshift($thinglist, $roomindex);
-            $options["things"][$room] = $thinglist;
-            $k++;
+        // if the file is not an export. exported files already have this fixed
+        if (array_key_exists("rooms", $options)) {
+            unset( $options["rooms"] );
+            foreach ($oldoptions["things"] as $room => $thinglist ) {
+                $roomnum = $oldoptions["rooms"][$room];
+                $roomindex = array($roomnum, 0, 0, 1, $room);
+                array_unshift($thinglist, $roomindex);
+                $options["things"][$room] = $thinglist;
+                $k++;
+            }
         }
+        // just save options to session
+        // user must request an export to update the legacy file format
+        $options = writeOptions($options);
         
     } else if ( isset($_SESSION["hpconfig"]) ) {
         $serialnew = $_SESSION["hpconfig"];
@@ -1405,26 +1436,39 @@ function readOptions($legacy=false) {
     return $options;
 }
 
-// this function no longer writes to disk
+// by default this function no longer writes to disk
 // instead it saves the options to a SESSION
-function writeOptions($options) {
+// if legacy variable true is passed then file is exported
+function writeOptions($options, $legacy=false) {
     $options["time"] = HPVERSION . " @ " . strval(time());
     $str =  json_encode($options);
     $_SESSION["hpconfig"] = $str;
     
-    // leave this for debug purposes for now
-    $f = fopen("hmoptions.cfg","w");
-    fwrite($f, cleanupStr($str));
-    fflush($f);
-    fclose($f);
+// but the export is always in the new format
+// and we do not export the config parameters since
+// they contain sensitive authentication information
+// exported files also do not have the cleanup stuff
+    if ( $legacy ) {
+        if ( array_key_exists("config", $options) ) {
+            $configoptions = $options["config"];
+            unset( $options["config"] );
+            $str =  json_encode($options);
+            $options["config"]= $configoptions;
+        }
+        
+        $f = fopen("hmoptions.cfg","wb");
+        // fwrite($f, cleanupStr($str));
+        fwrite($f, $str);
+        fflush($f);
+        fclose($f);
+    }
     return $options;
 }
 
-// make the string easier to look at
+// make the string easier to look at on a linux machine
 function cleanupStr($str) {
-    $str1 = str_replace(",\"",",\r\n\"",$str);
-    $str2 = str_replace(":{\"",":{\r\n\"",$str1);
-    // $str3 = str_replace("\"],","\"],\r\n",$str2);
+    $str1 = str_replace(",\"",",\n\"",$str);
+    $str2 = str_replace(":{\"",":{\n\"",$str1);
     return $str2;
 }
 
@@ -1447,14 +1491,42 @@ function writeCustomCss($str) {
     chmod($file, 0777);
 }
 
+// read in customtiles ignoring the comments
+function readCustomCss() {
+    $file = fopen("customtiles.css","rb");
+    $contents = "";
+
+    if ( $file ) {
+        while (!feof($file)) {
+            $line = fgets($file, 8192);
+            if ( substr($line, 0, 2)!=="/*" && substr($line, 0, 2)!=="//" ) {
+                $line = trim($line);
+                if ( $line ) {
+                    $contents.= $line . "\n";
+                }
+            }
+        }
+    }
+    return $contents;
+}
+
 function refactorOptions($oldoptions) {
 // new routine that renumbers all the things in your options file from 1
 // updated to no longer read file but to use passed value from javascript
-// NOTE: this also resets all the custom tile positions to relative zero
-// TODO: refactor the customtiles.css file as well by reading and writing it
-   
-    // hack to read old options
-    $oldoptions = readOptions(true);
+// NOTE: this also affects the custom tile settings
+//       refactor now also modifies customtiles.css by reading and writing it
+
+    // load in custom css strings
+    $serialoptions = file_get_contents("customtiles.cfg");
+
+    $customcss = readCustomCss();
+    $updatecss = false;
+        
+    // hack to read old options - with import this isn't used anymore
+    // I used it once to import my options into session for testing
+    // left this hack commented in case anyone wants to use refactor
+    // as a way to always import in an old hmoptions file configuration
+    // $oldoptions = readOptions(true);
     
     $options = array();
     $options["config"] = $oldoptions["config"];
@@ -1474,9 +1546,9 @@ function refactorOptions($oldoptions) {
     $cnt = 1;
     foreach ($oldoptions["index"] as $thingid => $idxarr) {
         if ( is_array($idxarr) ) {
-            $idx = $idxarr[0];
+            $idx = intval($idxarr[0]);
         } else {
-            $idx = $idxarr;
+            $idx = intval($idxarr);
         }
 
         foreach ($oldoptions["things"] as $room => $thinglist) {
@@ -1494,23 +1566,35 @@ function refactorOptions($oldoptions) {
                     $pid = $pidpos;
                 }
                 
-                if ( (intval($idx) == intval($pid)) ) {
+                if ( $idx === intval($pid) ) {
                     $options["things"][$room][$key] = array($cnt,0,0,1,$customname);
                 }
             }
         }
         
+        // replace all instances of the old "idx" with the new "cnt" in customtiles
+        if ( $customcss && $idx!==$cnt ) {
+            $customcss = str_replace("p_$idx", "p_$cnt", $customcss);
+            $customcss = str_replace("v_$idx", "v_$cnt", $customcss);
+            $customcss = str_replace("t_$idx", "t_$cnt", $customcss);
+            $updatecss = true;
+        }
+        
         $options["index"][$thingid] = $cnt;
         $cnt++;
     }
-    
-    
+        
     $options = writeOptions($options);
+    if ( $updatecss ) {
+        writeCustomCss($customcss);
+    }
     
     return $options;
     
 }
 
+// this function returns a default room configuration into options array
+// it uses the map shown below to find things that match
 function getDefaultOptions($allthings, $options) {
     
     // generic room setup
@@ -1560,7 +1644,7 @@ function getDefaultOptions($allthings, $options) {
     // second element is an array of things where each thing array is itself an array
     // those arrays are an array of type|ID indexes to the master allthings list
     // added a code to enable short indexes and faster loads
-    $cnt = 0;
+    $cnt = 1;
     foreach ($allthings as $thingid =>$thesensor) {
         if ( !key_exists($thingid, $options["index"]) ) {
             $options["index"][$thingid] = $cnt;
@@ -1583,6 +1667,9 @@ function getDefaultOptions($allthings, $options) {
 }
 
 // this function updates the option array with the current things list
+// usually the code needs to use readOptions instead of this
+// this one checks and fixes missing index and things
+// it also invokes the default settings for things if needed
 function getOptions($allthings, $options) {
     
     $updated = false;
@@ -1614,14 +1701,6 @@ function getOptions($allthings, $options) {
             $updated = true;
         }
         
-        // if our default also doesn't exist, fail and inform user to fix
-//        if ( !file_exists($options["skin"] . "/housepanel.css") ) {
-//            echo "<div class=\"error\">Error, Skin file = <b>";
-//            echo $options["skin"] . "/housepanel.css</b>  missing. Please provide a valid skin file.<br />";
-//            echo "To fix this error you may need to re-install the default setup and re-launch.</div>";
-//            exit(1);
-//        }
-
         // find the largest index number for a sensor in our index
         // and undo the old flawed absolute positioning
         if ( array_key_exists("index", $options) ) {
@@ -1669,7 +1748,6 @@ function getOptions($allthings, $options) {
                 $updated = true;
             }
         }
-        
     }
         
     // if options were not found or not processed properly, make a default set
@@ -1690,6 +1768,7 @@ function getOptions($allthings, $options) {
     
 }
 
+// return an aray of all supported tile types
 function getTypes() {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
@@ -1699,6 +1778,7 @@ function getTypes() {
     return $thingtypes;
 }
 
+// sort callback to sort the options matrix into groups of things by type
 function mysortfunc($cmpa, $cmpb) {
     $thingtypes = getTypes();
     $namea = $cmpa["name"];
@@ -1715,17 +1795,7 @@ function mysortfunc($cmpa, $cmpb) {
     return $t;
 }
 
-function thingsortfunc($cmpa, $cmpb) {
-    $id1 = intval($cmpa[0][0],10);
-    $id2 = intval($cmpa[0][0],10);
-    if ( $id1 === $id2 ) {
-        $t = 0;
-    } else {
-        $t = ($id1 < $id2 ) ? -1 : 1;
-    }
-    return $t;
-}
-
+// create the visual page that displays the room things option matrix
 function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // show an option tabls within a form
@@ -1775,7 +1845,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     
     // sort the things
     uasort($allthings, "mysortfunc");
-    // uasort($thingoptions, "thingsortfunc");
         
     $tc.= "<br /><br />";
     $tc.= "<table class=\"headoptions\"><thead>";
@@ -1886,12 +1955,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "</div>";
     $tc.= "</form>";
     
-//    if ($sitename) {
-//        $hpcode = time();
-//        $_SESSION["hpcode"] = $hpcode;
-//        $tc.= authButton($retpage, $hpcode, false);
-//    }
-    // $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     $tc.= "</div>";
 
     return $tc;
@@ -1911,6 +1974,7 @@ function inroom($idx, $things) {
     return $found;
 }
 
+// add a new thing provided by drag and drop to options array
 function addThing($bid, $thingtype, $panel, $cnt, $options, $allthings) {
     
     $idx = $thingtype . "|" . $bid;
@@ -1954,6 +2018,7 @@ function addThing($bid, $thingtype, $panel, $cnt, $options, $allthings) {
     return array("status"=>"success", "reload"=> "false", "thing" => $thing, "hpconfig" => $options);
 }
 
+// remove an existing thing from options array per the edit page
 function delThing($bid, $thingtype, $panel, $tile, $options, $allthings) {
     
     $idx = $thingtype . "|" . $bid;
@@ -1999,7 +2064,11 @@ function processOptions($optarray) {
         exit(0);
     }
     $thingtypes = getTypes();
+    
+    // get the options - includes legacy support but shouldn't be needed
+    // because by the time this funciton is called we should have a valid session setting
     $oldoptions = readOptions();
+    if ( !$oldoptions ) { $oldoptions = readOptions(true); }
     
     // make an empty options array for saving
     $options = $oldoptions;
@@ -2118,8 +2187,11 @@ function processOptions($optarray) {
     $options = writeOptions($options);
 }
 
+// create a page to display information about your configuration
 function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
     $options = readOptions();  // getOptions($allthings);
+    if ( !$options ) { $options = readOptions(true); }
+    
     $tc = "";
     $tc.= "<h3>HousePanel Information Display</h3>";
     $tc.= "<form><div class='returninfo'><a href=\"$returnURL\">Return to HousePanel</a></div><br />";
@@ -2176,6 +2248,8 @@ function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEnd
     return $tc;
 }
 
+// create a page to edit your page setup
+// work in progress...
 function getEditPage($options) {
     
     $tc = "";
@@ -2210,6 +2284,9 @@ function getEditPage($options) {
     return $tc;
 }
 
+// this function processes the Hubitat ajax call to configure itself
+// it saves the pushed information to a session variable that is later
+// picked up when HousePanel authorization is invoked
 function setHubitatConfig() {
     
     // decode the get string including hack for first and last characters
@@ -2233,6 +2310,7 @@ function setHubitatConfig() {
 // Array\n(\n    [useajax] => confighubitat\n    [id] => hubitat\n    [type] => none\n    [value] => {hubip=192.168.11.26, hubitatid=66, accesstoken=4ad54662-e880-4625-85b5-de6cb1d675aa, endpt=192.168.11.26\/apps\/api\/66\/, hubitatonly=false}\n)\n"
    
     $options = readOptions();
+    if ( !$options ) { $options = readOptions(true); }
     if ($options && array_key_exists("config", $options)) {
         $configoptions = $options["config"];
     } else {
@@ -2249,11 +2327,12 @@ function setHubitatConfig() {
         $configoptions["use_st"] = true;
     }
     $options["config"] = $configoptions;
-    // $options["debug"] = $valuestr . "\n\n\n" . print_r($valuelist, true) . "\n\n\n" . print_r($value, true);
     writeOptions($options);
     return "success";
 }
 
+// check whether ssl is used on this server
+// returns the appropriate http prefix for forming url's
 function is_ssl() {
     if ( isset($_SERVER['HTTPS']) ) {
         if ( 'on' == strtolower($_SERVER['HTTPS']) || ( '1' == $_SERVER['HTTPS'] ) ) {
@@ -2266,6 +2345,10 @@ function is_ssl() {
     }
     return "http://";
 }
+
+// clear out the authentication information from the options session
+// this is done so that a reauth will force a call to SmartThings OAUTH flow
+// no need to check legacy function here since we never store config there
 function clearAuth() {
     unset($_SESSION["allthings"]);
     $options = readOptions();
@@ -2326,10 +2409,8 @@ function clearAuth() {
  * the $hpcode is a security measure that assures we are returning from this web session
  * *****************************************************************************
  */
-//    if ( substr($hpcode,0,5) === "auth-" &&
-//         isset($_POST["doauthorize"]) && 
-//         $_POST["doauthorize"] === $hpcode ) {
-    if ( isset($_POST["doauthorize"]) ) {
+    if ( isset($_POST["doauthorize"]) && 
+         $_POST["doauthorize"] === $hpcode ) {
 
         unset($_SESSION["hperror"]);
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -2387,6 +2468,7 @@ function clearAuth() {
             "hubitat_endpt" => $hubitatEndpt
         );
         $options = readOptions();
+        if ( !$options ) { $options = readOptions(true); }
         $options["config"] = $configoptions;
         $options["skin"] = $skindir;
         $options["kiosk"] = $kiosk;
@@ -2412,6 +2494,7 @@ function clearAuth() {
  * *****************************************************************************
  * Handle user provided authentication including Smartthings OAUTH flow
  * This section only processes the callback from SmartThings
+ * It also handles user provided reset request via GET special case
  * *****************************************************************************
  */    
     
@@ -2436,13 +2519,17 @@ function clearAuth() {
         }
 
         // make call to get the token
+        // this step uses PHP cURL so cURL must be installed
+        // if it is not an error will be returned
         $configoptions = $options["config"];
         $stweb = $configoptions["st_web"];
         $clientId = $configoptions["client_id"];
         $clientSecret = $configoptions["client_secret"];
         $sitename = $configoptions["user_sitename"];
         $endpt = false;
-        $token = getAccessToken($returnURL, $stweb, $clientId, $clientSecret, $code);
+        $tokeninfo = getAccessToken($returnURL, $stweb, $clientId, $clientSecret, $code);
+        $token = $tokeninfo[0];
+        $errormsg = $tokeninfo[1];
 
         // get the endpoint if the token is valid
         if ($token) {
@@ -2474,6 +2561,7 @@ function clearAuth() {
             echo "<br />endpt = $endpt";
             echo "<br />sitename = $sitename";
             echo "<br />options = <br /><pre>";
+            echo "<br />errormsg = $errormsg";
             print_r($options);
             echo "</pre>";
             exit;
@@ -2524,8 +2612,9 @@ function clearAuth() {
             
         // something went wrong with the OAUTH flow so repeat auth setup
         } else {
-            $msg = "Something went wrong with your SmartThings OAUTH authentication flow. " . 
-                   "Please check your client_id and client_secret inputs and try again.";
+            $msg = "Something went wrong with your SmartThings OAUTH authentication flow." . 
+                   " Error msg = " . $errormsg . 
+                   " Please check your client_id and client_secret inputs and try again.";
             $_SESSION["hperror"] = $msg;
             $_SESSION["hpcode"] = "reauth";
             header("Location: $returnURL");
@@ -2554,7 +2643,9 @@ function clearAuth() {
  * *****************************************************************************
  */
     $options = readOptions();
-    if ( $options ) {
+    if ( !$options ) { $options = readOptions(true); }
+    
+    if ( $options && array_key_exists("config", $options) ) {
         $skindir = $options["skin"];
         $kiosk = $options["kiosk"];
         $configoptions = $options["config"];
@@ -2672,7 +2763,7 @@ function clearAuth() {
     // by the javascript code to read and store in a local variable
     if ( $hpcode === "configure" ) {
         $_SESSION["hpcode"] = "operate";
-        $tc.= configPage($options, $returnURL);
+        $tc.= getConfigPage($options, $returnURL);
         
     } else if ( $hpcode === "showid") {
         $_SESSION["hpcode"] = "operate";
@@ -2683,7 +2774,7 @@ function clearAuth() {
         clearAuth();
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
-        $tc.= authButton($returnURL, $hpcode, true);
+        $tc.= getGreetingPage($returnURL, $hpcode);
                 
     // this is a special page for options matrix
     // by setting the hpcode this way the page will reload itself until submitted
@@ -2772,6 +2863,7 @@ function clearAuth() {
     
         // take care of auto tile stuff
         $oldoptions = readOptions();
+        if ( !$oldoptions ) { $oldoptions = readOptions(true); }
         if ( $swid=="" && $tileid && $oldoptions ) {
             $idx = array_search($tileid, $oldoptions["index"]);
             $k = strpos($idx,"|");
@@ -2787,7 +2879,7 @@ function clearAuth() {
         }
 
         // handle special non-groovy based tile types
-        if ( $swtype=="auto" && $swid) {
+        if ( $swtype=="auto" && $swid ) {
             if ( substr($swid,0,5)=="clock") {
                 $swtype = "clock";
             } else if ( substr($swid,0,3)=="vid") {
@@ -2797,13 +2889,14 @@ function clearAuth() {
             }
         }
 
-        // set tileid from options if it isn't provided
-        if ( $tileid=="" && $swid && $swtype!="auto" && $oldoptions && $oldoptions["index"] ) {
-            $idx = $swtype . "|" . $swid;
-            if ( array_key_exists($idx, $oldoptions["index"]) ) { 
-                $tileid = $oldoptions["index"][$idx]; 
-            }
-        }
+//        // set tileid from options if it isn't provided
+//        if ( $tileid=="" && $swid!=="" && $swtype!="auto" && 
+//             $oldoptions && array_key_exists("index", $oldoptions) ) {
+//            $idx = $swtype . "|" . $swid;
+//            if ( array_key_exists($idx, $oldoptions["index"]) ) { 
+//                $tileid = $oldoptions["index"][$idx]; 
+//            }
+//        }
         
     /*
      * *****************************************************************************
@@ -2959,7 +3052,7 @@ function clearAuth() {
 
                 case "savefilters":
                     $_SESSION["hpcode"] = "operate";
-                    $options = $swattr; // readOptions();
+                    $options = $swattr;
                     $options["useroptions"] = $swval;
                     $options = writeOptions($options);
                     $result = array("status" => "success", "reload" => "true", "thing" => null, "hpconfig" => $options);
@@ -3007,18 +3100,37 @@ function clearAuth() {
         $_SESSION["hpcode"] = "operate";
         
         // get options from session that was set in the init ajax call
+        // at this point options is guaranteed to exist with config setup
+        // but just in case...
         $options = readOptions();
+            if ( !$options || !array_key_exists("config", $options) ) { 
+            unset($_SESSION["allthings"]);
+            unset($_SESSION["hpconfig"]);
+            $msg = "HousePanel re-authorization is required. Please enter your credentials below.";
+            $_SESSION["hperror"] = $msg;
+            $hpcode = "auth-" . strval(time());
+            $_SESSION["hpcode"] = $hpcode;
+            $tc = getGreetingPage($returnURL, $hpcode);
+            echo htmlHeader($skindir);
+            echo $tc;
+            echo htmlFooter();
+            exit(0);
+        }
+        
         $configoptions = $options["config"];
         $timezone = $configoptions["timezone"];
         date_default_timezone_set($timezone);
 
         // check if custom tile CSS is present
         // if it isn't then refactor the index and create one
+        // note that we no longer force a refactor because now we update
+        // the custom css whenever a refactor is performed
         if ( !file_exists("customtiles.css")) {
-            $options = refactorOptions($options);
             writeCustomCss("");
         }
-        
+
+        // get our options values. thingoptions is a list of all room configurations
+        // indexoptions is a list of all available things to add
         $thingoptions = $options["things"];
         $indexoptions = $options["index"];
         
@@ -3028,12 +3140,13 @@ function clearAuth() {
             $skindir = "skin-housepanel";
         }
     
-        // read all the smartthings from API
+        // read all the things from SmartThings and Hubitat hubs
         $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
         
         if (DEBUG || DEBUG5) {
-            $tc.= "<h2>options</h2>";
+            $tc.= "<h2>Options</h2>";
             $tc.= "<div><pre>" . print_r($options,true) . "</pre></div>";
+            $tc.= "<h2>Config Session Parameters</h2>";
             $tc.= "<div><pre>" . print_r($_SESSION["hpconfig"],true) . "</pre></div>";
         }
 
@@ -3041,18 +3154,18 @@ function clearAuth() {
         $tc.= '<div id="dragregion">';
         $tc.= '<div id="tabs"><ul id="roomtabs">';
         
-        // new way to loop through rooms
+        // loop through rooms and show each on their own tab
         for ($k=0; $k< count($thingoptions); $k++) {
 
-            $room = FALSE;
+            $room = false;
             // get name of the room in this column
             foreach ($thingoptions as $aroom => $things) {
                 $roominfo = $things[0];
                 $kroom = intval($roominfo[0],10);
                 if ( $k==$kroom ) {
                     $room = $aroom;
-                    $roomz = intval($roominfo[3],10);           // zero means hidden
-                    $customname = $roominfo[4];                 // any modified name is here
+                    $roomz = intval($roominfo[3],10);
+                    $customname = $roominfo[4];
                     break;
                 }
             }
@@ -3062,7 +3175,7 @@ function clearAuth() {
             }
             
             // use the list of things in this room
-            if ( $room !== FALSE ) {
+            if ( $room !== false ) {
                 $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$customname</a></li>";
             }
         }
@@ -3070,16 +3183,17 @@ function clearAuth() {
         $tc.= '</ul>';
         
         $cnt = 0;
-        $kioskmode = ($options["kiosk"] == "true" || $options["kiosk"] == "yes" || 
-                      $options["kiosk"] == "1" || $options["kiosk"]===true );
+        $kiosk = strval($options["kiosk"]);
+        $kioskmode = ($kiosk == "true" || $kiosk == "yes" || 
+                      $kiosk == "1" || $options["kiosk"]===true );
 
         // new approach that uses only the things list for room names and order
         // in this new model the first things is a room options paramete
         // the 4th item is to modify a name so the initial name stays for css use
         foreach ($thingoptions as $room => $things) {
             $roominfo = $things[0];
-            $kroom = intval($roominfo[0],10);          // the order of the room used above
-            $roomz = intval($roominfo[3],10);          // zero means hidden
+            $kroom = intval($roominfo[0],10);
+            $roomz = intval($roominfo[3],10);
             $customname = $roominfo[4];     // any modified name is here
             if ( $customname=="" ) { $customname = $room; }
             
@@ -3095,17 +3209,15 @@ function clearAuth() {
         // end of the tabs
         $tc.= "</div>";
         
-        // add catalog on right
-        // $tc.= getCatalog($allthings);
-        
         // end drag region enclosing catalog and main things
         $tc.= "</div>";
         
-        // create button to show the Options page instead of as a Tab
-        // but only do this if we are not in kiosk mode
         $tc.= "<form>";
         $tc.= hidden("returnURL", $returnURL);
         $tc.= hidden("configpage", $hpcode);
+
+        // create button to show the Options page instead of as a Tab
+        // but only do this if we are not in kiosk mode
         if ( !$kioskmode ) {
             $tc.= "<div id=\"controlpanel\">";
             $tc.='<div id="showoptions" class="formbutton">Options</div>';
@@ -3126,15 +3238,16 @@ function clearAuth() {
         }
         $tc.= "</form>";
  
-    // default branch means we don't understand what is happening so show reauth
+    // this final branch means we don't understand what is happening so show reauth
+    // this branch is what happens on first installation because hpcode will be empty
     } else {
         unset($_SESSION["allthings"]);
         unset($_SESSION["hpconfig"]);
-        $msg = "Something went wrong with your authentication. Please check your inputs and try again";
+        $msg = "Welcome to HousePanel";
         $_SESSION["hperror"] = $msg;
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
-        $tc.= authButton($returnURL, $hpcode, true);
+        $tc.= getGreetingPage($returnURL, $hpcode);
     }
 
     // display the dynamically created web site

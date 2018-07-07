@@ -125,6 +125,26 @@ window.addEventListener("load", function(event) {
         setupSaveButton();
     }
     
+    // setup the reauth buttons
+    if ( configpage && configpage.val()=="reauth" ) {
+        
+        // handle request to force legacy read
+        $("#readlegacy").click(function(evt) {
+            $.post(returnURL, 
+                {useajax: "readlegacy", id: 1, type: "none", value: "none", attr: hpconfig},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult["status"]==="success") {
+                        hpconfig = setConfig(presult["hpconfig"]);
+                        if ( presult["reload"]==="true") {
+                            window.location.href = returnURL;
+                        }
+                    }
+                }, "json"
+            );
+        });
+        
+    }
+    
     if ( configpage && configpage.val()=="operate" ) {
         
         $( "#tabs" ).tabs();
