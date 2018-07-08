@@ -528,17 +528,21 @@ div.panel div.restoretabs {
 }
 input.authbutton {
     background-color: #000099;
+    color: #ffffff;
     margin: 0;
     margin-left: 10px;
-    width: 250px;
+    width: 140px;
+    height: 60px;
+    padding: 10px;
+    white-space: normal;
+    word-wrap: break-word;
 }
 input.submitbutton:hover, input.resetbutton:hover, 
 input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
-    font-weight: bold;    color: #ffffff;
-    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
-    border-bottom: 0px; 
-    border-right: 0px; */
+    color: #000099;
+    background-color: #cccccc;
 }
+
 div.sitebutton {
     background: #ffffff;     
     display: inline-block; 

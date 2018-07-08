@@ -76,48 +76,43 @@ window.addEventListener("load", function(event) {
     
     // grab the coonfiguration parameters from our webpage
     var configpage = $("input[name='configpage']");
+    var pagetype = "external";
+    
+    if ( configpage ) {
+        pagetype = configpage.val();
+    }
+    // alert("pagetype = " + pagetype);
     
     // main page push is here
     var protloop = getCookie("protloop");
-    if ( protloop === "" ) { protloop = "0"; }
-    protloop = parseInt(protloop, 10);
+    if ( protloop === "" ) { protloop = "go"; }
     
-    if ( configpage && configpage.val()=="operate" ) {
-        console.log ("hpconfig before sync:");
-        console.log(hpconfig);
+    // this will only happen when authorization page is used
+    if ( configpage && configpage.val()==="configure" ) {
+        // configPage();
+//            
+        // read in options from session 
         $.post(returnURL, 
-            {useajax: "hpconfig", id: 1, type: "config", value: "none", attr: hpconfig},
+            {useajax: "hpconfig", id: 2, type: "config", value: "none", attr: "none"},
             function (presult, pstatus) {
                 if (pstatus==="success" && presult["status"]==="success") {
-                    setConfig(presult["hpconfig"]);
-                    console.log ("hpconfig after sync:");
-                    console.log(hpconfig);
-                    if ( presult["reload"]==="true" && protloop < 2) {
-                        protloop = protloop + 1;
-                        setCookie("protloop",protloop,1);
-                        window.location.href = returnURL;
-                    } else {
-                        setCookie("protloop",0,1);
-                    }
-                } else {
-                    setCookie("protloop",0,1);
-                    alert("HousePanel could not find or create a valid coonfiguration");
-                    return;
+                    setConfig( presult["hpconfig"] );
                 }
             }, "json"
         );
-    } else {
-        setCookie("protloop",0,1);
-    }
 
-    // this will only happen when authorization page is used
-    if ( configpage && configpage.val()==="configure" ) {
+        console.log ("hpconfig after reconfiguring:" );
+        console.log(hpconfig);
+//        var pos = {top: 200, left: 100};
+//        createModal("Press okay to start HousePanel", "body", true, pos, function(ui, content) {
+//            var clk = $(ui).attr("name");
+//            if ( clk==="okay" ) {
+//                window.location.href = returnURL;
+//            }
+//        });
         setTimeout(function() {
-            configPage();
-            console.log ("hpconfig after auth flow:");
-            console.log(hpconfig);
             window.location.href = returnURL;
-        }, 3000);
+        }, 2000);
     }
     
     if ( configpage && configpage.val()=="showoptions" ) {
@@ -126,18 +121,55 @@ window.addEventListener("load", function(event) {
     }
     
     // setup the reauth buttons
-    if ( configpage && configpage.val()=="reauth" ) {
+    if ( pagetype==="reauth" ) {
         
         // handle request to force legacy read
         $("#readlegacy").click(function(evt) {
             $.post(returnURL, 
                 {useajax: "readlegacy", id: 1, type: "none", value: "none", attr: hpconfig},
                 function (presult, pstatus) {
+//                        alert("reading legacy result = " + pstatus + " presult = " + presult["status"]);
                     if (pstatus==="success" && presult["status"]==="success") {
-                        hpconfig = setConfig(presult["hpconfig"]);
-                        if ( presult["reload"]==="true") {
+                        setConfig(presult["hpconfig"]);
+                        console.log ("hpconfig after legacy import:");
+                        console.log(hpconfig);
+//                        alert("returned from reading legacy. protloop = " + protloop);
+                        if ( presult["reload"]==="true" && protloop==="go") {
+                            setCookie("protloop","stop",1);
                             window.location.href = returnURL;
                         }
+                    }
+                }, "json"
+            );
+        });
+        
+        // handle request to force legacy read
+        $("#writelegacy").click(function(evt) {
+            $.post(returnURL, 
+                {useajax: "writelegacy", id: 1, type: "none", value: "none", attr: hpconfig},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult["status"]==="success") {
+                        setConfig(presult["hpconfig"]);
+                        console.log ("hpconfig after legacy export:");
+                        console.log(hpconfig);
+                        // alert("returned from writing legacy. protloop = " + protloop);
+                        if ( presult["reload"]==="true" && protloop==="go") {
+                            setCookie("protloop","stop",1);
+                            window.location.href = returnURL;
+                        }
+                    } else {
+                        console.log("error: legacy export failed");
+                    }
+                }, "json"
+            );
+        });
+        
+        $("#cancelauth").click(function(evt) {
+            $.post(returnURL, 
+                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: hpconfig},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult["status"]==="success") {
+                        window.location.href = returnURL;
                     }
                 }, "json"
             );
@@ -209,40 +241,72 @@ window.addEventListener("load", function(event) {
         cancelSortable();
         cancelPagemove();
     }
+    
+    if ( pagetype=="operate" || pagetype=="reauth" ) {
+        
+        if ( pagetype==="reauth" && protloop==="stop") {
+            console.log("hpconfig after legacy load: ");
+            protloop = "go";
+        } else {
+            console.log ("hpconfig being synced:");
+        }
+        console.log(hpconfig);
+        $.post(returnURL, 
+            {useajax: "hpconfig", id: 1, type: "config", value: "none", attr: hpconfig},
+            function (presult, pstatus) {
+                if (pstatus==="success" && presult["status"]==="success") {
+                    if ( presult["reload"]==="true" && protloop==="go") {
+                        setCookie("protloop","stop",1);
+                        window.location.href = returnURL;
+                    } else {
+                        setCookie("protloop","go",1);
+                    }
+                } else {
+                    setCookie("protloop","go",1);
+                    alert("HousePanel could not find or create a valid coonfiguration");
+                    return;
+                }
+            }, "json"
+        );
+    }
+    
 });
 
-function configPage() {
-    
-    hpconfig = getConfig();
-    var timezone = $("input[name='timezone']").val();
-    var user_sitename = $("input[name='user_sitename']").val();
-    var use_st = $("input[name='use_st']").val();
-    var st_web = $("input[name='st_web']").val();
-    var client_id = $("input[name='client_id']").val();
-    var client_secret = $("input[name='client_secret']").val();
-    var user_access = $("input[name='user_access']").val();
-    var user_endpt = $("input[name='user_endpt']").val();
-    var use_he = $("input[name='use_he']").val();
-    var hubitat_host = $("input[name='hubitat_host']").val();
-    var hubitat_id = $("input[name='hubitat_id']").val();
-    var hubitat_access = $("input[name='hubitat_access']").val();
-    var hubitat_endpt = $("input[name='hubitat_endpt']").val();
-    var st_access = $("input[name='st_access']").val();
-    var st_endpt = $("input[name='st_endpt']").val();
-    var skin = $("input[name='skin']").val();
-    var kiosk = $("input[name='kiosk']").val();
-    
-
-    var configauth = {timezone: timezone, user_sitename: user_sitename, use_st: use_st,
-        st_web: st_web, client_id: client_id, client_secret: client_secret, user_access: user_access,
-        user_endpt: user_endpt, use_he: use_he, hubitat_id: hubitat_id, hubitat_host: hubitat_host, hubitat_access: hubitat_access,
-        hubitat_endpt: hubitat_endpt, st_access: st_access, st_endpt: st_endpt};
-    hpconfig['config'] = configauth;
-    hpconfig['skin'] = skin;
-    hpconfig['kiosk'] = kiosk;
-    setConfig(hpconfig);
-    
-}
+//function configPage() {
+//    
+//    hpconfig = getConfig();
+//    if ( ! hpconfig ) {
+//        hpconfig = {};
+//    }
+//    var timezone = $("input[name='timezone']").val();
+//    var user_sitename = $("input[name='user_sitename']").val();
+//    var use_st = $("input[name='use_st']").val();
+//    var st_web = $("input[name='st_web']").val();
+//    var client_id = $("input[name='client_id']").val();
+//    var client_secret = $("input[name='client_secret']").val();
+//    var user_access = $("input[name='user_access']").val();
+//    var user_endpt = $("input[name='user_endpt']").val();
+//    var use_he = $("input[name='use_he']").val();
+//    var hubitat_host = $("input[name='hubitat_host']").val();
+//    var hubitat_id = $("input[name='hubitat_id']").val();
+//    var hubitat_access = $("input[name='hubitat_access']").val();
+//    var hubitat_endpt = $("input[name='hubitat_endpt']").val();
+//    var st_access = $("input[name='st_access']").val();
+//    var st_endpt = $("input[name='st_endpt']").val();
+//    var skin = $("input[name='skin']").val();
+//    var kiosk = $("input[name='kiosk']").val();
+//    
+//
+//    var configauth = {timezone: timezone, user_sitename: user_sitename, use_st: use_st,
+//        st_web: st_web, client_id: client_id, client_secret: client_secret, user_access: user_access,
+//        user_endpt: user_endpt, use_he: use_he, hubitat_id: hubitat_id, hubitat_host: hubitat_host, hubitat_access: hubitat_access,
+//        hubitat_endpt: hubitat_endpt, st_access: st_access, st_endpt: st_endpt};
+//    hpconfig['config'] = configauth;
+//    hpconfig['skin'] = skin;
+//    hpconfig['kiosk'] = kiosk;
+//    setConfig(hpconfig);
+//    
+//}
 
 function publishConfig() {
     hpconfig = getConfig();

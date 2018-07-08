@@ -4,6 +4,7 @@
  * author: Ken Washington  (c) 2017
  *
  * Revision History
+ * 1.75       Pulic draft release of major new revisions in 1.73 and 1.74
  * 1.74       Update customtiles on refactor and more code cleanup and comments
  * 1.73       Major change to store room id in things and replace hmoptions
  * 1.72       Timezone bug fix and merge into master
@@ -274,22 +275,22 @@ function getHubitatDevices($edited, $hubhost, $path, $access_token) {
 // function to get authorization code
 // this does a redirect back here with results
 // this is the first step of the SmartThings oauth flow
-function getAuthCode($returl, $stweb, $clientId)
+function getAuthCode($returnURL, $stweb, $clientId)
 {
-    $nvpreq="response_type=code&client_id=" . urlencode($clientId) . "&scope=app&redirect_uri=" . urlencode($returl);
+    $nvpreq="response_type=code&client_id=" . urlencode($clientId) . "&scope=app&redirect_uri=" . urlencode($returnURL);
     $location = $stweb . "/oauth/authorize?" . $nvpreq;
     header("Location: $location");
 }
 
 // return access token from SmartThings oauth flow
-function getAccessToken($returl, $stweb, $clientId, $clientSecret, $code) {
+function getAccessToken($returnURL, $stweb, $clientId, $clientSecret, $code) {
 
     $host = $stweb . "/oauth/token";
     $ctype = "application/x-www-form-urlencoded";
     $headertype = array('Content-Type: ' . $ctype);
     
     $nvpreq = "grant_type=authorization_code&code=" . urlencode($code) . "&client_id=" . urlencode($clientId) .
-                         "&client_secret=" . urlencode($clientSecret) . "&scope=app" . "&redirect_uri=" . $returl;
+                         "&client_secret=" . urlencode($clientSecret) . "&scope=app" . "&redirect_uri=" . $returnURL;
 
     $msg = "";
     try {
@@ -334,7 +335,7 @@ function getEndpoint($access_token, $stweb, $clientId) {
 // screen that greets user and asks for authentication
 // renamed from old authbutton function that just made a button
 // can still be used for that if needed but currently not used
-function getGreetingPage($returl, $hpcode, $greeting = true) {
+function getGreetingPage($returnURL, $hpcode, $greeting = true) {
     $tc = "";
     
     if ( $greeting ) {
@@ -351,8 +352,7 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
             $msg = $_SESSION["hperror"];
             $tc.= "<div class=\"error\">$msg</div>";
         }
-        
-        $tc.= "<div class=\"error\">hpcode = $hpcode</div>";
+        // $tc.= "<div class=\"error\">hpcode = $hpcode</div>";
             
         $tc.="<p>You are seeing this because you either requested a re-authentication " .
                 "or you have not yet authorized " .
@@ -379,7 +379,7 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
                 "first push the authorization tokens to HousePanel from Hubitat " .
                 "before you run this setup to pre-populate the information below. " .
                 "To do this launch your Hubitat app and enter this url where noted. " .
-                "HousePanel url = $returl </p>";
+                "HousePanel url = $returnURL </p>";
         
         $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
                 "below. You will find the information needed printed " .
@@ -397,12 +397,13 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
         $tc.= "</div>";
     }
     
-    $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
+    $tc.= "<form class=\"houseauth\" action=\"" . $returnURL . "\"  method=\"POST\">";
     
     // get the current settings from options session or legacy file if session not set
     // we no longer use clientinfo but it is supported for backward compatibility purposes
     $options = readOptions();
-    if ( !$options ) { readOptions(true); }
+    // if ( !$options ) { readOptions(true); }
+    // $options = writeOptions();
     
     if ( $options && array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
@@ -442,8 +443,8 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
         $userSitename = "SmartHome";
 
         $useHubitat = false;
-        $hubitatHost = "192.168.1.100";
-        $hubitatId = 0;
+        $hubitatHost = "192.168.11.26";
+        $hubitatId = "";
         $hubitatAccess = "";
         $hubitatEndpt = "";
     }
@@ -471,32 +472,32 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
     // this is only here for backward compatibility purposes
     // there is no need for this file any more
     // but... if it is present all parameters given will be used as a priority
-    if (file_exists("clientinfo.php")) {
-        include "clientinfo.php";
-        if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
-        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecret = CLIENT_SECRET; }
-        if ( defined("ST_WEB") && ST_WEB ) { $stweb = ST_WEB; }
-        if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
-
-        if ( $stweb && $stweb!="hubitat" &&  $stweb!="hubitatonly" ) {
-            $useSmartThings = true;
-        } else {
-            $useSmartThings = false;
-        }
-
-        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccess = USER_ACCESS_TOKEN; }
-        if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpt = USER_ENDPT; }
-        if ( defined("USER_SITENAME") && USER_SITENAME ) { $userSitename = USER_SITENAME; }
-
-        if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { $hubitatHost = HUBITAT_HOST; }
-        if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubitatId = HUBITAT_ID; }
-        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubitatAccess = HUBITAT_ACCESS_TOKEN; }
-        if ( $hubitatHost && $hubitatId ) {
-            $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
-            $useHubitat = true;
-        }
-        $rewrite = true;
-    }
+//    if (file_exists("clientinfo.php")) {
+//        include "clientinfo.php";
+//        if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
+//        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecret = CLIENT_SECRET; }
+//        if ( defined("ST_WEB") && ST_WEB ) { $stweb = ST_WEB; }
+//        if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
+//
+//        if ( $stweb && $stweb!="hubitat" &&  $stweb!="hubitatonly" ) {
+//            $useSmartThings = true;
+//        } else {
+//            $useSmartThings = false;
+//        }
+//
+//        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccess = USER_ACCESS_TOKEN; }
+//        if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpt = USER_ENDPT; }
+//        if ( defined("USER_SITENAME") && USER_SITENAME ) { $userSitename = USER_SITENAME; }
+//
+//        if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { $hubitatHost = HUBITAT_HOST; }
+//        if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubitatId = HUBITAT_ID; }
+//        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubitatAccess = HUBITAT_ACCESS_TOKEN; }
+//        if ( $hubitatHost && $hubitatId ) {
+//            $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
+//            $useHubitat = true;
+//        }
+//        $rewrite = true;
+//    }
 
     date_default_timezone_set($timezone);
     if ( $options && array_key_exists("time", $options) ) {
@@ -614,10 +615,15 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
         $tc.= "<div id=\"authmessage\"></div>";
         $tc.= hidden("configpage", "reauth");
         
+        if ( DEBUG5 ) {
+            $tc.= "<div class='debug'><h2>Session Debug</h2><pre>" . print_r($_SESSION) . "</pre></div>";
+        }
+                
     }
 
     // Create the button that starts the SmartThings authorization flow
     // we also include two new buttons for forcing old hmoptions import and export
+    $tc.= hidden("returnURL", $returnURL);
     $tc.= hidden("doauthorize", $hpcode);
     
     $tc.= "<div class=\"sitebutton\">";
@@ -625,7 +631,8 @@ function getGreetingPage($returl, $hpcode, $greeting = true) {
     $tc .= "<input  class=\"authbutton\" value=\"Authorize HousePanel\" name=\"submit1\" type=\"submit\" />";
     if ( $greeting ) {
         $tc.= "<input id=\"readlegacy\" class=\"authbutton\" value=\"Import Legacy\" name=\"readlegacy\" type=\"button\" />";
-        $tc.= "<input id=\"writelegacy\" class=\"authbutton\" value=\"Export Legacy\" name=\"writelegacy\" type=\"button\" />";
+        // $tc.= "<input id=\"writelegacy\" class=\"authbutton\" value=\"Export Legacy\" name=\"writelegacy\" type=\"button\" />";
+        $tc.= "<input id=\"cancelauth\" class=\"authbutton\" value=\"Cancel Authorization\" name=\"cancelauth\" type=\"button\" />";
     }
     $tc.= "</div></form>";
     return $tc;
@@ -667,10 +674,10 @@ function getConfigPage($options, $returnURL) {
         "user_endpt" => $userEndpt, "use_he" => $useHubitat, "hubitat_host" => $hubitatHost, "hubitat_id" => $hubitatId, "hubitat_access" => $hubitatAccess,
         "hubitat_endpt" => $hubitatEndpt, "st_access" => $st_access, "st_endpt" => $st_endpt,
         "skin" => $skin, "kiosk" => $kiosk);
-    foreach ($configvars as $key => $val) {
-        $tc.= hidden($key, $val);
-        // $tc.= "<div>$key = $val </div>";
-    }
+//    foreach ($configvars as $key => $val) {
+//        $tc.= hidden($key, $val);
+//        // $tc.= "<div>$key = $val </div>";
+//    }
     
 //    $tc.= "
 //    <script type=\"text/javascript\">
@@ -1101,7 +1108,6 @@ function getNewPage(&$cnt, $allthings, $roomname, $roomtitle, $kroom, $things, $
 
     if (DEBUG || DEBUG3) {
         $tc .= "<br /><h2>Debug Info for Room $roomname</h2><br /><pre>" . print_r($roomdebug, true) . "</pre>";
-        $tc .= "<br /><br /><b>kroom = $kroom </b><br /><h3>Things</h3><pre>" . print_r($things, true) . "</pre>";
     }
     
     // end this tab which is a different type of panel
@@ -1403,25 +1409,91 @@ function setPosition($endpt, $access_token, $swid, $swtype, $thing, $pos, $optio
 // the javascript saves the options using HTML5 local storage
 function readOptions($legacy=false) {
 
-    if ( $legacy===true && file_exists("hmoptions.cfg") ) {
-        $serialoptions = file_get_contents("hmoptions.cfg");
-        if ( $serialoptions===false ) { return false; }
-        $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
-        $oldoptions = json_decode($serialnew,true);
-        $options = $oldoptions;
+    if ( $legacy===true ) {
+        
+        if (file_exists("hmoptions.cfg")) {
+            $serialoptions = file_get_contents("hmoptions.cfg");
+            if ( $serialoptions===false ) { return false; }
+            $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
+            $oldoptions = json_decode($serialnew,true);
+            $options = $oldoptions;
 
-        // add our new room index and remove the "rooms" element
-        // if the file is not an export. exported files already have this fixed
-        if (array_key_exists("rooms", $options)) {
-            unset( $options["rooms"] );
-            foreach ($oldoptions["things"] as $room => $thinglist ) {
-                $roomnum = $oldoptions["rooms"][$room];
-                $roomindex = array($roomnum, 0, 0, 1, $room);
-                array_unshift($thinglist, $roomindex);
-                $options["things"][$room] = $thinglist;
-                $k++;
+            // add our new room index and remove the "rooms" element
+            // if the file is not an export. exported files already have this fixed
+            if (array_key_exists("rooms", $options)) {
+                foreach ($oldoptions["things"] as $room => $thinglist ) {
+                    $roomnum = $options["rooms"][$room];
+                    $roomindex = array($roomnum, 0, 0, 1, $room);
+                    array_unshift($thinglist, $roomindex);
+                    $options["things"][$room] = $thinglist;
+                    $k++;
+                }
+                unset( $options["rooms"] );
+            }
+
+            $serialnew = $_SESSION["hpconfig"];
+            $oldoptions = json_decode($serialnew,true);
+            if (array_key_exists("config", $oldoptions)) {
+                $configoptions = $oldoptions["config"];
+                $options["config"] = $configoptions;
+                $timezone = $configoptions["timezone"];
+                $userSitename = $configoptions["user_sitename"];
+                $useSmartThings = $configoptions["use_st"];
+                $stweb = $configoptions["st_web"];
+                $clientId = $configoptions["client_id"];
+                $clientSecret = $configoptions["client_secret"];
+                $userAccess = $configoptions["user_access"];
+                $userEndpt = $configoptions["user_endpt"];
+                $useHubitat = $configoptions["use_he"];
+                $hubitatHost = $configoptions["hubitat_host"];
+                $hubitatId = $configoptions["hubitat_id"];
+                $hubitatAccess = $configoptions["hubitat_access"];
+                $hubitatEndpt = $configoptions["hubitat_endpt"];
             }
         }
+
+        if (file_exists("clientinfo.php")) {
+            include_once "clientinfo.php";
+            if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
+            if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecret = CLIENT_SECRET; }
+            if ( defined("ST_WEB") && ST_WEB ) { $stweb = ST_WEB; }
+            if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
+            if ( $stweb && $stweb!="hubitat" &&  $stweb!="hubitatonly" ) {
+                $useSmartThings = true;
+            } else {
+                $useSmartThings = false;
+            }
+
+            if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccess = USER_ACCESS_TOKEN; }
+            if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpt = USER_ENDPT; }
+            if ( defined("USER_SITENAME") && USER_SITENAME ) { $userSitename = USER_SITENAME; }
+            if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { $hubitatHost = HUBITAT_HOST; }
+            if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubitatId = HUBITAT_ID; }
+            if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubitatAccess = HUBITAT_ACCESS_TOKEN; }
+            if ( $hubitatHost && $hubitatId ) {
+                $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
+                $useHubitat = true;
+            }
+            $configoptions = array(
+                "timezone" => $timezone,
+                "user_sitename" => $userSitename,
+                "use_st" => $useSmartThings,
+                "st_web" => $stweb,
+                "client_id" => $clientId, 
+                "client_secret" => $clientSecret,
+                "user_access" => $userAccess,
+                "user_endpt" => $userEndpt,
+                "use_he" => $useHubitat,
+                "hubitat_host" => $hubitatHost, 
+                "hubitat_id" => $hubitatId,
+                "hubitat_access" => $hubitatAccess,
+                "hubitat_endpt" => $hubitatEndpt
+            );
+            $options["config"] = $configoptions;
+            $options["kiosk"] = "false";
+        }
+
+
         // just save options to session
         // user must request an export to update the legacy file format
         $options = writeOptions($options);
@@ -1445,19 +1517,16 @@ function writeOptions($options, $legacy=false) {
     $_SESSION["hpconfig"] = $str;
     
 // but the export is always in the new format
-// and we do not export the config parameters since
-// they contain sensitive authentication information
-// exported files also do not have the cleanup stuff
+// beware that the new format includes all auth info
     if ( $legacy ) {
-        if ( array_key_exists("config", $options) ) {
-            $configoptions = $options["config"];
-            unset( $options["config"] );
-            $str =  json_encode($options);
-            $options["config"]= $configoptions;
-        }
-        
+//        if ( array_key_exists("config", $options) ) {
+//            $configoptions = $options["config"];
+//            unset( $options["config"] );
+//            $str =  json_encode($options);
+//            $options["config"]= $configoptions;
+//        }
         $f = fopen("hmoptions.cfg","wb");
-        // fwrite($f, cleanupStr($str));
+        fwrite($f, cleanupStr($str));
         fwrite($f, $str);
         fflush($f);
         fclose($f);
@@ -1531,7 +1600,7 @@ function refactorOptions($oldoptions) {
     $options = array();
     $options["config"] = $oldoptions["config"];
     $options["useroptions"] = getTypes();
-    $options["index"] = array();
+    $options["index"] = $oldoptions["index"];
     $options["things"] = $oldoptions["things"];
     $options["skin"] = $oldoptions["skin"];
     $options["kiosk"] = "false";
@@ -1556,19 +1625,21 @@ function refactorOptions($oldoptions) {
             // foreach ($thinglist as $key => $pidpos) {
                 // fix the old system that could have an array for idx
                 // discard any position that was saved under that system
+                $pidpos = $thinglist[$key];
                 $customname = "";
                 if ( is_array($pidpos) ) {
-                    $pid = $pidpos[0];
+                    $pid = intval($pidpos[0]);
                     if ( count($pidpos) > 4 ) {
                         $customname = $pidpos[4];
                     }
                 } else {
-                    $pid = $pidpos;
+                    $pid = intval($pidpos);
                 }
                 
-                if ( $idx === intval($pid) ) {
+                if ( $idx == $pid ) {
                     $options["things"][$room][$key] = array($cnt,0,0,1,$customname);
                 }
+                
             }
         }
         
@@ -1754,7 +1825,7 @@ function getOptions($allthings, $options) {
     if ( !array_key_exists("index", $options) ||
          count($options["index"]) <= 10 || 
          !array_key_exists("things", $options) ||
-         count($options["things"]) == 0 ) {
+         count($options["things"]) <= 1 ) {
         
         $updated = true;
         $options = getDefaultOptions($allthings, $options);
@@ -1898,7 +1969,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
 //        }
         $tc.= "<td class=\"thingname\">";
         $tc.= $thingname . "<span class=\"typeopt\">(" . $thetype . ")</span>";
-         $tc.= hidden("i_" .  $thingid, $thingindex);
+        // no longer need to pass this info
+        // $tc.= hidden("i_" .  $thingid, $thingindex);
         $tc.= "</td>";
 
         // loop through all the rooms in proper order
@@ -2055,25 +2127,26 @@ function delThing($bid, $thingtype, $panel, $tile, $options, $allthings) {
 
 // this processes a _POST return from the options page
 // clean up so we only update the room index values
-function processOptions($optarray) {
+function processOptions($optarray, $oldoptions) {
     if (DEBUG || DEBUG4) {
-        // echo "<html><body>";
-        echo "<h2>Debug Print for Options Returned</h2><pre>";
+        echo "<h2>Debug: Posted values</h2><pre>";
         print_r($optarray);
-        echo "</pre>";
-        exit(0);
+        echo "</pre><hr><h2>Old Options</h2><pre>";
+        print_r($oldoptions);
+        echo "</pre><hr>";
     }
     $thingtypes = getTypes();
     
     // get the options - includes legacy support but shouldn't be needed
     // because by the time this funciton is called we should have a valid session setting
-    $oldoptions = readOptions();
-    if ( !$oldoptions ) { $oldoptions = readOptions(true); }
+//    $oldoptions = readOptions();
+//    if ( !$oldoptions ) { $oldoptions = readOptions(true); }
     
     // make an empty options array for saving
     $options = $oldoptions;
-    $options["index"] = array();
+    // $options["index"] = array();
     $options["things"] = array();
+    $roomnum = 0;
     $blanktile = $oldoptions["index"]["blank|b1x1"];
     
     // commented this out because we do it below under the matrix
@@ -2115,8 +2188,10 @@ function processOptions($optarray) {
         else if ( is_array($val) ) {
             $roomname = $key;
             $roominfo = $oldoptions["things"][$roomname][0];
+            $roomnum = $roominfo[0];
+            $customname = $roominfo[4];
             $options["things"][$roomname] = array();
-            $options["things"][$roomname][] = $roominfo;
+            $options["things"][$roomname][] = array($roomnum, 0, 0, 1, $customname);
             
             // first save the existing order of tiles if still there
             // this will preserve user drag and drop positions
@@ -2127,6 +2202,7 @@ function processOptions($optarray) {
             $lastz = 1;
             if ($oldoptions) {
                 $oldthings = $oldoptions["things"][$roomname];
+                array_shift($oldthings);
                 foreach ($oldthings as $arr) {
                     $zindex = 1;
                     $customname = "";
@@ -2170,26 +2246,35 @@ function processOptions($optarray) {
             }
             
         // keys starting with o_ are room names with order as value
-        } else if ( substr($key,0,2)=="o_") {
-            $roomname = substr($key,2);
-            $roominfo  = $options["things"][$roomname][0];
-            $roominfo[0] = intval($val,10);
-            $roominfo[4] = $roomname;
-            $options["things"][$roomname][0] = $roominfo;
+//        } else if ( substr($key,0,2)=="o_") {
+//            $roomname = substr($key,2);
+//            // $roominfo[4] = $val;
+//            $options["things"][$roomname][0] = array($roomnum,0,0,1,$val);
+//            $roomnum++;
         // keys starting with i_ are thing type|id pairs with order as value
-        } else if ( substr($key,0,2)=="i_") {
-            $thingid = substr($key,2);
-            $options["index"][$thingid] = intval($val,10);
+        // no longer need to do this - we just keep the original index list
+        // since the options page cant change that - it only changes the things
+//        } else if ( substr($key,0,2)=="i_") {
+//            $thingid = substr($key,2);
+//            $options["index"][$thingid] = intval($val,10);
         }
     }
         
     // save options
+    if (DEBUG || DEBUG4) {
+        // echo "<html><body>";
+        echo "<h2>Options after processing</h2><pre>";
+        print_r($options);
+        echo "</pre>";
+        exit(0);
+    }
     $options = writeOptions($options);
+    return $options;
 }
 
 // create a page to display information about your configuration
-function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
-    $options = readOptions();  // getOptions($allthings);
+function getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
+    $options = readOptions();
     if ( !$options ) { $options = readOptions(true); }
     
     $tc = "";
@@ -2238,12 +2323,105 @@ function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEnd
               "</td></tr>";
     }
     $tc.= "</table></form>";
+
+    // show the room assignments using same format as options page
+    $tc.= "<h3>Room Assignments Matrix</h3>";
+    $tc.= "<table class=\"headoptions\"><thead>";
+    $tc.= "<tr><th class=\"thingname\">" . "Thing Name (type)" . "</th>";
+   
+    // add columns for edit matrix
+    // completely redone to use things option instead of rooms
+    $thingoptions = $options["things"];
+    $indexoptions = $options["index"];
+    
+    foreach ( $thingoptions as $room => $things ) {
+        $roominfo = $things[0];
+        $roomindex = intval($roominfo[0],10);
+        $roomname = $roominfo[4];
+        if ( $roomname=="" ) { $roomname = $room; }
+
+        // print the header including a hidden item for the info item
+        $tc.= "<th room=\"$room\" class=\"roomname\">$roomname ";
+        $tc.= "</th>";
+    }
+    $tc.= "</tr></thead>";
+    $tc.= "</table>";
+    $tc.= "<div class='scrollvtable'>";
+    $tc.= "<table class=\"roomoptions\">";
+    $tc.= "<tbody>";
+
+    // now print our options matrix
+    $rowcnt = 0;
+    foreach ($allthings as $thingid => $thesensor) {
+        // if this sensor type and id mix is gone, skip this row
+        
+        $thingname = $thesensor["name"];
+        $thetype = $thesensor["type"];
+        $rowcnt++;
+        $rowcnt % 2 == 0 ? $odd = " odd" : $odd = "";
+        $tc.= "<tr type=\"$thetype\" class=\"showrow" . $odd . "\">";
+
+        // add the hidden field with index of all things
+        $arr = $indexoptions[$thingid];
+        if ( is_array($arr) ) {
+            $thingindex = $arr[0];
+        } else {
+            $thingindex = $arr;
+        }
+        $tc.= "<td class=\"thingname\">";
+        $tc.= $thingname . "<span class=\"typeopt\">(" . $thetype . ")</span>";
+        $tc.= "</td>";
+
+        // loop through all the rooms in proper order
+        // add the order to the thingid to use later
+        foreach( $thingoptions as $room => $things ) {
+            // get the name of this room for this column
+            
+            $roominfo = array_shift($things);
+            $roomindex = intval($roominfo[0],10);
+            $roomname = $roominfo[4];
+            if ( $roomname=="" ) { $roomname = $room; }
+                
+            // now check for whether this thing is in this room
+            $tc.= "<td>";
+
+            $ischecked = false;
+            foreach( $things as $arr ) {
+                if ( is_array($arr) ) {
+                    $idx = $arr[0];
+                    $postop = $arr[1];
+                    $posleft = $arr[2];
+                } else {
+                    $idx = $arr;
+                    $postop = 0;
+                    $posleft = 0;
+                }
+                if ( $idx == $thingindex ) {
+                    $ischecked = true;
+                    break;
+                }
+            }
+
+            if ( $ischecked ) {
+                $tc.= "<input type=\"checkbox\" name=\"" . $room . "[]\" value=\"" . $thingindex . "\" checked=\"1\" >";
+            } else {
+                $tc.= "<input type=\"checkbox\" name=\"" . $room . "[]\" value=\"" . $thingindex . "\" >";
+            }
+            $tc.= "</td>";
+        }
+        $tc.= "</tr>";
+    }
+
+    $tc.= "</tbody></table>";
+    $tc.= "</div>";   // vertical scroll
+    
     if (DEBUG || DEBUG5) {
-        $tc.= "<div><b>json dump of each thing</b></div>";
+        $tc.= "<div class='debug'><div><br /><b>json dump of each thing</b></div>";
         foreach ($allthings as $bid => $thing) {
             $tc.= "<div class='jsonid'>" . $bid . "</div>";
             $tc.= "<div class='jsondump'>" . json_encode($thing) . "</div>";
         }
+        $tc.= "</div>";
     }
     return $tc;
 }
@@ -2484,9 +2662,11 @@ function clearAuth() {
             getAuthCode($returnURL, $stweb, $clientId);
             exit(0);
         } else {
-            // if we are skipping OAUTH for ST then lets reload a fresh page
-            $_SESSION["hpcode"] = "operate";
+            // if we are skipping OAUTH for ST
+            // but we must route through our config page to save options to local storage
+            $_SESSION["hpcode"] = "configure";
             header("Location: $returnURL");
+            exit(0);
         }
     } 
 
@@ -2498,19 +2678,25 @@ function clearAuth() {
  * *****************************************************************************
  */    
     
+    if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+    else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+    else { $useajax = false; }
+    
     $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
-    if ( $hpcode==="returncode" || ($hpcode==="external" && $code==="reset") ) {
+    if ( $code && !$useajax ) {
+//    if ( $hpcode==="returncode" || ($hpcode==="external" && $code==="reset") ) {
         $options = readOptions();
-        if ( !$options ) { $options = readOptions(true); }
+        // if ( !$options ) { $options = readOptions(true); }
 
         // check for manual reset flag or for problem with OAUTH flow or options
         if (!$code || !$options || $code==="reset") {
             clearAuth();
             if ( $code==="reset") {
                 $msg = "User requested hard reset...";
+                session_unset();
             } else {
-                $msg = "Something went wrong with your SmartThings OAUTH authentication flow. " . 
-                       "Please check your client_id and client_secret inputs and try again.";
+                $msg = "Something went wrong with your SmartThings authentication flow. " . 
+                       "Please check your client Id and client Secret inputs and try again.";
             }
             $_SESSION["hperror"] = $msg;
             $_SESSION["hpcode"] = "reauth";
@@ -2583,16 +2769,18 @@ function clearAuth() {
             $configauth = $options["config"];
             $hubitatEndpt = $configauth["hubitat_endpt"];
             $hubitatAccess = $configauth["hubitat_access"];
-            
+
+            // when authorized reload things and options with valid set
             unset($_SESSION["allthings"]);
             $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
+            $options= getOptions($allthings, $options);
 
+            // get default set if needed
             if ( !array_key_exists("things", $options) ||
-                    !array_key_exists("index", $options) ||
-                    count($options["things"]) == 0 ||
-                    count($options["index"]) <= 10 ) {
+                 count($options["things"]) <= 1 ||
+                 !array_key_exists("index", $options) ||
+                 count($options["index"]) <= 10 ) {
                 
-                // if a legacy file exists, read it
                 $options = getDefaultOptions($allthings, $options);
                 $options = writeOptions($options);
             }
@@ -2755,6 +2943,10 @@ function clearAuth() {
         $useHubitat = true;
     }
     
+    if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+    else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+    else { $useajax = false; }
+    
     // handle the various cases for hpcode
     // for all cases that should have been handled before getting here
     // we will just default to reauthorizing
@@ -2768,7 +2960,14 @@ function clearAuth() {
     } else if ( $hpcode === "showid") {
         $_SESSION["hpcode"] = "operate";
         $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
-        $tc.= showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings);
+        $tc.= getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings);
+
+    // if user reloads the auth page
+//    } else if ( substr($hpcode,0,5) === "auth-" ) {
+//        // clearAuth();
+//        $hpcode = "auth-" . strval(time());
+//        $_SESSION["hpcode"] = $hpcode;
+//        $tc.= getGreetingPage($returnURL, $hpcode);
         
     } else if ( $hpcode === "reauth" ) {
         clearAuth();
@@ -2791,7 +2990,8 @@ function clearAuth() {
         $_SESSION["hpcode"] = "operate";
         header("Location: $returnURL");
                 
-    } else if ( $hpcode === "operate" || $hpcode === "external" || isset($_POST["options"]) ) {
+    } else if ( $useajax || $hpcode === "operate" || substr($hpcode,0,5) === "auth-" ||
+                $hpcode === "external" || isset($_POST["options"]) ) {
         
         
     /*
@@ -2812,15 +3012,16 @@ function clearAuth() {
      * updated this logic to enable auto calling of any type of id
      * *****************************************************************************
      */
-        $useajax = false;
+//        $useajax = false;
+    
         $swtype = "auto";
         $swid = "";
         $swval = "";
         $swattr = "";
         $subid = "";
         $tileid = "";
-        if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
-        else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+//        if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+//        else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
         if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
         else if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
         if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
@@ -2844,22 +3045,23 @@ function clearAuth() {
 
         // redirect to auth if not valid
         // but don't do that if we are configuring Hubitat
-        if ( !$valid ) {
-            if ( $useajax ) {
-                $msg = "API cannot be used because HousePanel has not been configured or authenticated. " . 
-                       "If you are attempting to use the API from an external program you must " .
-                       "provide st_access & st_endpt for SmartThings or he_access & he_endpt for Hubitat " .
-                       "as input variables or configure HousePanel with fixed authentication values." ;
-                $result = array("status"=>"error", "msg" => $msg);
-                return json_encode($result);
-            } else {
-                $msg = "Something went wrong with your authentication. Please check your inputs and try again";
-                $_SESSION["hperror"] = $msg;
-                $_SESSION["hpcode"] = "reauth";
-                header("Location: $returnURL");
-            }
-            exit(0);
-        }
+//        if ( !$valid ) {
+//            if ( $useajax ) {
+//                $msg = "API cannot be used because HousePanel has not been configured or authenticated. " . 
+//                       "If you are attempting to use the API from an external program you must " .
+//                       "provide st_access & st_endpt for SmartThings or he_access & he_endpt for Hubitat " .
+//                       "as input variables or configure HousePanel with fixed authentication values." ;
+//                $result = array("status"=>"error", "msg" => $msg);
+//                return json_encode($result);
+//            } else {
+//                $msg = "Something went wrong with your authentication. Please check your inputs and try again. " . 
+//                        "useajax = $useajax hpcode = $hpcode";
+//                $_SESSION["hperror"] = $msg;
+//                $_SESSION["hpcode"] = "reauth";
+//                header("Location: $returnURL");
+//            }
+//            exit(0);
+//        }
     
         // take care of auto tile stuff
         $oldoptions = readOptions();
@@ -3008,9 +3210,9 @@ function clearAuth() {
                 case "saveoptions":
                     // if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     if ( isset($_POST["options"]) ) {
-                        $_SESSION["hpcode"] = "operate";
-                        $options = processOptions($_POST);
-                        $options = writeOptions($options);
+                        $_SESSION["hpcode"] = "configure";
+                        $options = readOptions();
+                        processOptions($_POST, $options);
                         header("Location: $returnURL");
                         exit(0);
                     }
@@ -3029,8 +3231,7 @@ function clearAuth() {
                     $_SESSION["hpcode"] = "operate";
                     unset($_SESSION["allthings"]);
                     $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
-                    $options = $swattr;
-                    $options= getOptions($allthings, $options);
+                    $options= getOptions($allthings, $swattr);
                     $result = array("status" => "success", "reload" => "true", "thing" => null, "hpconfig" => $options);
                     echo json_encode($result);
                     break;
@@ -3051,7 +3252,7 @@ function clearAuth() {
                     break;
 
                 case "savefilters":
-                    $_SESSION["hpcode"] = "operate";
+                    $_SESSION["hpcode"] = "configure";
                     $options = $swattr;
                     $options["useroptions"] = $swval;
                     $options = writeOptions($options);
@@ -3077,9 +3278,49 @@ function clearAuth() {
 //                        $options = getDefaultOptions($allthings, $options);
 //                    }
 
-                    writeOptions($swattr);
+                    if ( $swid== 1 && is_array($swattr) ) {
+                        $options = writeOptions($swattr);
+                    } else {
+                        $options = readOptions();
+                        if ( !$options ) { readOptions(true); }
+                    }
                     $result = array("status" => "success", "reload" => "false", 
-                                    "thing" => null, "hpconfig" => $swattr );
+                                    "thing" => null, "hpconfig" => $options );
+                    echo json_encode($result);
+                    break;
+                
+                case "cancelauth":
+                    $_SESSION["hpcode"] = "operate";
+                    $result = array("status" => "success", "reload" => "true", "thing" => null, "hpconfig" => $swattr);
+                    echo json_encode($result);
+                    break;
+                
+                case "readlegacy":
+                    $msg = "Legacy hmoptions.cfg file imported.";
+                    $_SESSION["hperror"] = $msg;
+                    $_SESSION["hpcode"] = "reauth";
+                    $options = readOptions(true);
+                    writeOptions($options);
+                    $result = array("status" => "success", "reload" => "true", 
+                                    "thing" => null, "hpconfig" => $options );
+                    echo json_encode($result);
+                    break;
+                
+                case "writelegacy":
+                    $msg = "Legacy hmoptions.cfg file exported.";
+                    $_SESSION["hperror"] = $msg;
+                    $_SESSION["hpcode"] = "reauth";
+                    $options = $swattr;
+                    if ( $options ) {
+                        $options = writeOptions($options, true);
+                        $status = "success";
+                        $reload = "true";
+                    } else {
+                        $status = "error";
+                        $reload = "false";
+                    }
+                    $result = array("status" => $status, "reload" => $reload, 
+                                    "thing" => null, "hpconfig" => $options );
                     echo json_encode($result);
                     break;
 
@@ -3096,17 +3337,17 @@ function clearAuth() {
  * *****************************************************************************
  */
         unset($_SESSION["hperror"]);
-        $hpcode = "operate";
-        $_SESSION["hpcode"] = "operate";
+        // $hpcode = "operate";
+        // $_SESSION["hpcode"] = "operate";
         
         // get options from session that was set in the init ajax call
         // at this point options is guaranteed to exist with config setup
         // but just in case...
         $options = readOptions();
-            if ( !$options || !array_key_exists("config", $options) ) { 
+        if ( !$options || !array_key_exists("config", $options) || substr($hpcode,0,5)==="auth-" ) { 
             unset($_SESSION["allthings"]);
-            unset($_SESSION["hpconfig"]);
-            $msg = "HousePanel re-authorization is required. Please enter your credentials below.";
+            // unset($_SESSION["hpconfig"]);
+            $msg = "HousePanel authorization is required. Please enter your credentials below.";
             $_SESSION["hperror"] = $msg;
             $hpcode = "auth-" . strval(time());
             $_SESSION["hpcode"] = $hpcode;
@@ -3183,9 +3424,9 @@ function clearAuth() {
         $tc.= '</ul>';
         
         $cnt = 0;
-        $kiosk = strval($options["kiosk"]);
+        $kiosk = $options["kiosk"];
         $kioskmode = ($kiosk == "true" || $kiosk == "yes" || 
-                      $kiosk == "1" || $options["kiosk"]===true );
+                      $kiosk == "1" || $kiosk===true );
 
         // new approach that uses only the things list for room names and order
         // in this new model the first things is a room options paramete
@@ -3243,7 +3484,7 @@ function clearAuth() {
     } else {
         unset($_SESSION["allthings"]);
         unset($_SESSION["hpconfig"]);
-        $msg = "Welcome to HousePanel";
+        $msg = "An unexpected error encountered. Re-authorization is now required...";
         $_SESSION["hperror"] = $msg;
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
