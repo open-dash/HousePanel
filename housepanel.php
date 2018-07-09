@@ -4,6 +4,7 @@
  * author: Ken Washington  (c) 2017
  *
  * Revision History
+ * 1.752      Another minor bugfix to the updates below including comments in auth page
  * 1.751      Bugfix to 1.75 for showing tabs upon fresh load and getOptions fix
  * 1.75       Pulic draft release of major new revisions in 1.73 and 1.74
  * 1.74       Update customtiles on refactor and more code cleanup and comments
@@ -336,7 +337,7 @@ function getEndpoint($access_token, $stweb, $clientId) {
 // screen that greets user and asks for authentication
 // renamed from old authbutton function that just made a button
 // can still be used for that if needed but currently not used
-function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true) {
+function getAuthPage($returnURL, $hpcode, $greeting = true) {
     $tc = "";
     
     if ( $greeting ) {
@@ -361,10 +362,9 @@ function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true
                 "you can use either or both at the same time within the same panel. " . 
                 "To configure HousePanel you will need to have the information below. <br /><br />" .
                 "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
-                "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
-                "This is why HousePanel should not be hosted on a public-facing website " .
-                "unless the site is secure and/or password protected. A locally hosted " . 
-                "website on a Raspberry Pi is the strongly preferred option.</p>";
+                "using a built-in feature of most browsers that support HTML5. Each device can have its own " .
+                "configuration. Anyone with access to that device will be able to control your smart home. " .
+                "By proceeding you are agreeing that you understnad this and accept any risks involved. </p>";
         
         $tc.= "<p>If you elect to use SmartThings, authorization will " .
                 "begin the typical OAUTH process for SmartThings " .
@@ -376,12 +376,6 @@ function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true
                 "starting point. You will likely want to edit the housepanel.css file or ".
                 "use the built-in Tile Editor to customize your panel.</p>";
         
-        $tc.="<p>To authorize Hubitat, you have a few options. The easiest is to " .
-                "first push the authorization tokens to HousePanel from Hubitat " .
-                "before you run this setup to pre-populate the information below. " .
-                "To do this launch your Hubitat app and enter this url where noted. " .
-                "HousePanel url = $returnURL </p>";
-        
         $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
                 "below. You will find the information needed printed " .
                 "in the SmartThings and/or Hubitat log when you install the app. You must have the log " .
@@ -389,6 +383,14 @@ function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true
                 "Please note that if you provide a manual Access Token and Endpoint that you will " .
                 "not be sent through the OAUTH flow process and this screen will only show " .
                 "again if you manually request it.</p>";
+        
+        $tc.="<p>To authorize Hubitat, you have a few options. The easiest is to " .
+                "first push the authorization tokens to HousePanel from Hubitat " .
+                "before you run this setup to pre-populate the information below. " .
+                "To do this launch your Hubitat app and enter this url where noted. " .
+                "HousePanel url = $returnURL <br /><b>*** NOTE ***</b> For now this " .
+                "feature does not work so you will need to enter the Hubitat info " . 
+                "into the fields below. Turn on logging and active the app to see the values. </p>";
         
         $tc.= "<p>If you have trouble authorizing, check to see if your Browser supports HTML5. " .
                 "You should also confirm that your PHP is set up to use cURL. " .
@@ -560,11 +562,13 @@ function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true
         if ( $kiosk ) { $kstr = "checked"; } else { $kstr = ""; }
         $tc.= "<input name=\"kiosk\" width=\"6\" type=\"checkbox\" $kstr/>";
         $tc.= "<label for=\"kiosk\" class=\"startupinp\"> Kiosk Mode? </label>";
+        $tc.= "<div class='warn'>If you select this, users won't be able to modify settings on your panel. " .
+              "To reset this mode, you must enter<br />$returnURL" . "/?uuseajax=reauth</div>";
         $tc.= "</div>"; 
 
         // ------------------ smartthings setup ----------------------------------
         $tc.= "<div class='hubopt'>";
-        if ( $useSmartThings ) { $kstr = "checked"; } else { $kstr = ""; }
+        if ( $useSmartThings && $useSmartThings!=="false" ) { $kstr = "checked"; } else { $kstr = ""; }
         $tc.= "<input id=\"use_st\" name=\"use_st\" width=\"6\" type=\"checkbox\" $kstr/>";
         $tc.= "<label for=\"use_st\" class=\"kioskoption\"> Use SmartThings? </label>";
         $tc.= "</div>"; 
@@ -591,7 +595,7 @@ function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true
         // ------------------ hubitat setup ----------------------------------
         
         $tc.= "<div class='hubopt'>";
-        if ( $useHubitat ) { $kstr = "checked"; } else { $kstr = ""; }
+        if ( $useHubitat && $useHubitat!=="false" ) { $kstr = "checked"; } else { $kstr = ""; }
         $tc.= "<input id=\"use_he\" name=\"use_he\" width=\"6\" type=\"checkbox\" $kstr/>"; 
         $tc.= "<label for=\"use_he\" class=\"kioskoption\"> Use Hubitat? </label>";
         $tc.= "</div>"; 
@@ -2024,8 +2028,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div id='optionspanel' class=\"processoptions\">";
     $tc.= "<input id=\"submitoptions\" class=\"submitbutton\" value=\"Save\" name=\"submitoption\" type=\"button\" />";
     $tc.= "<input id=\"canceloptions\" class=\"submitbutton\" value=\"Cancel\" name=\"canceloption\" type=\"button\" />";
-    // $tc.= "<input id=\"resetoptions\" class=\"submitbutton\" value=\"Reset\" name=\"resetoption\" type=\"button\" />";
-    // $tc.= "<div class=\"formbutton resetbutton\"><a href=\"$retpage\">Cancel</a></div>";
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"resetoption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
@@ -2560,7 +2562,6 @@ function clearAuth() {
      * options          - request to show options page
      * showid           - request to show id page
      */
-    $grabopts = true;
     if ( isset( $_SESSION["hpcode"]) ) {
         $hpcode = $_SESSION["hpcode"];
         if ( !$hpcode ) { $hpcode = "operate"; }
@@ -2613,11 +2614,11 @@ function clearAuth() {
             $userAccess = filter_input(INPUT_POST, "user_access", FILTER_SANITIZE_SPECIAL_CHARS);
             $userEndpt = filter_input(INPUT_POST, "user_endpt", FILTER_SANITIZE_SPECIAL_CHARS);
         } else {
-            $stweb = false;
-            $clientId = false;
-            $clientSecret = false;
-            $userAccess = false;
-            $userEndpt = false;
+            $stweb = "";
+            $clientId = "";
+            $clientSecret = "";
+            $userAccess = "";
+            $userEndpt = "";
         }
 
         // Hubitat info
@@ -2629,10 +2630,10 @@ function clearAuth() {
             $hubitatAccess = filter_input(INPUT_POST, "hubitat_access", FILTER_SANITIZE_SPECIAL_CHARS);
             $hubitatEndpt = filter_input(INPUT_POST, "hubitat_endpt", FILTER_SANITIZE_SPECIAL_CHARS);
         } else {
-            $hubitatHost = false;
-            $hubitatId = false;
-            $hubitatAccess = false;
-            $hubitatEndpt = false;
+            $hubitatHost = "";
+            $hubitatId = "";
+            $hubitatAccess = "";
+            $hubitatEndpt = "";
         }
 
         $configoptions = array(
@@ -2977,13 +2978,13 @@ function clearAuth() {
 //        // clearAuth();
 //        $hpcode = "auth-" . strval(time());
 //        $_SESSION["hpcode"] = $hpcode;
-//        $tc.= getGreetingPage($returnURL, $hpcode);
+//        $tc.= getAuthPage($returnURL, $hpcode);
         
     } else if ( $hpcode === "reauth" ) {
         clearAuth();
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
-        $tc.= getGreetingPage($returnURL, $hpcode, true, $grabopts);
+        $tc.= getAuthPage($returnURL, $hpcode);
                 
     // this is a special page for options matrix
     // by setting the hpcode this way the page will reload itself until submitted
@@ -3365,7 +3366,7 @@ function clearAuth() {
             $_SESSION["hperror"] = $msg;
             $hpcode = "auth-" . strval(time());
             $_SESSION["hpcode"] = $hpcode;
-            $tc = getGreetingPage($returnURL, $hpcode, true, $grabopts);
+            $tc = getAuthPage($returnURL, $hpcode);
             echo htmlHeader($skindir);
             echo $tc;
             echo htmlFooter();
@@ -3502,7 +3503,7 @@ function clearAuth() {
         $_SESSION["hperror"] = $msg;
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
-        $tc.= getGreetingPage($returnURL, $hpcode);
+        $tc.= getAuthPage($returnURL, $hpcode);
     }
 
     // display the dynamically created web site
