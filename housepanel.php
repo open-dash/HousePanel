@@ -4,6 +4,7 @@
  * author: Ken Washington  (c) 2017
  *
  * Revision History
+ * 1.751      Bugfix to 1.75 for showing tabs upon fresh load and getOptions fix
  * 1.75       Pulic draft release of major new revisions in 1.73 and 1.74
  * 1.74       Update customtiles on refactor and more code cleanup and comments
  * 1.73       Major change to store room id in things and replace hmoptions
@@ -86,7 +87,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 100);
-define('HPVERSION', 'Version 1.74');
+define('HPVERSION', 'Version 1.75');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
@@ -335,7 +336,7 @@ function getEndpoint($access_token, $stweb, $clientId) {
 // screen that greets user and asks for authentication
 // renamed from old authbutton function that just made a button
 // can still be used for that if needed but currently not used
-function getGreetingPage($returnURL, $hpcode, $greeting = true) {
+function getGreetingPage($returnURL, $hpcode, $greeting = true, $grabopts = true) {
     $tc = "";
     
     if ( $greeting ) {
@@ -1120,7 +1121,6 @@ function getNewPage(&$cnt, $allthings, $roomname, $roomtitle, $kroom, $things, $
 function getCatalog($allthings, $options) {
     $thingtypes = getTypes();
     sort($thingtypes);
-    // $options = readOptions(); // getOptions($allthings);
     $useroptions = $options["useroptions"];
     $tc = "";
     $tc.= "<div id=\"catalog\">";
@@ -1784,7 +1784,7 @@ function getOptions($allthings, $options) {
                 } else {
                     $idx = $idxarray;
                 }
-                $idx = intval($idx);
+                $idx = intval($idx, 10);
                 $cnt = ($idx > $cnt) ? $idx : $cnt;
             }
             $cnt++;
@@ -1794,22 +1794,25 @@ function getOptions($allthings, $options) {
 
         // set zindex and custom names if not there
         // set positions too if the file is really old
-        if ( array_key_exists("things", $options) ) {
-            $copyopts = $options["things"];
-            foreach ($copyopts as $roomname => $thinglist) {
-                foreach ($thinglist as $n => $idxarray) {
-                    if ( !is_array($idxarray) ) {
-                        $idx = array($idxarray, 0, 0, 1, "");
-                        $options["things"][$roomname][$n] = $idx;
-                        $updated = true;
-                    } else if ( is_array($idxarray) && count($idxarray)==3 ) {
-                        $idx = array($idxarray[0], $idxarray[1], $idxarray[2], 1, "");
-                        $options["things"][$roomname][$n] = $idx;
-                        $updated = true;
-                    }
-                }
-            }
-        }
+//        if ( array_key_exists("things", $options) ) {
+//            $copyopts = $options["things"];
+//            foreach ($copyopts as $roomname => $thinglist) {
+//                foreach ($thinglist as $n => $idxarray) {
+//                    if ( intval($n,10) === 0 ) {
+//                        $options["things"][$roomname][$n]  = array(intval($n,10), 0, 0, 1, $roomname);
+//                    } else {
+//                        if ( !is_array($idxarray) ) {
+//                            $options["things"][$roomname][$n] = array($idxarray, 0, 0, 1, "");
+//                            $updated = true;
+//                        } else if ( is_array($idxarray) && count($idxarray)==3 ) {
+//                            $idx = array(intval($idxarray[0],10), intval($idxarray[1],10), intval($idxarray[2],10), 1, "");
+//                            $options["things"][$roomname][$n] = $idx;
+//                            $updated = true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
         
         // update the index with latest sensor information
         foreach ($allthings as $thingid =>$thesensor) {
@@ -2506,7 +2509,8 @@ function setHubitatConfig() {
     }
     $options["config"] = $configoptions;
     writeOptions($options);
-    return "success";
+    $_SESSION["hpcode"] = "hubitatpush";
+    return "HousePanel config options = " . json_encode($configoptions);
 }
 
 // check whether ssl is used on this server
@@ -2556,6 +2560,7 @@ function clearAuth() {
      * options          - request to show options page
      * showid           - request to show id page
      */
+    $grabopts = true;
     if ( isset( $_SESSION["hpcode"]) ) {
         $hpcode = $_SESSION["hpcode"];
         if ( !$hpcode ) { $hpcode = "operate"; }
@@ -2956,6 +2961,11 @@ function clearAuth() {
     if ( $hpcode === "configure" ) {
         $_SESSION["hpcode"] = "operate";
         $tc.= getConfigPage($options, $returnURL);
+    
+    } else if ( $hpcode === "hubitatpush" ) {
+        $_SESSION["hperror"] = "New auth variables pushed from Hubitat";
+        $_SESSION["hpcode"] = "reauth";
+        $tc.= getConfigPage($options, $returnURL);
         
     } else if ( $hpcode === "showid") {
         $_SESSION["hpcode"] = "operate";
@@ -2973,7 +2983,7 @@ function clearAuth() {
         clearAuth();
         $hpcode = "auth-" . strval(time());
         $_SESSION["hpcode"] = $hpcode;
-        $tc.= getGreetingPage($returnURL, $hpcode);
+        $tc.= getGreetingPage($returnURL, $hpcode, true, $grabopts);
                 
     // this is a special page for options matrix
     // by setting the hpcode this way the page will reload itself until submitted
@@ -3231,6 +3241,8 @@ function clearAuth() {
                     $_SESSION["hpcode"] = "operate";
                     unset($_SESSION["allthings"]);
                     $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
+                    // $options = $swattr;
+                    // $options = writeOptions();
                     $options= getOptions($allthings, $swattr);
                     $result = array("status" => "success", "reload" => "true", "thing" => null, "hpconfig" => $options);
                     echo json_encode($result);
@@ -3282,7 +3294,7 @@ function clearAuth() {
                         $options = writeOptions($swattr);
                     } else {
                         $options = readOptions();
-                        if ( !$options ) { readOptions(true); }
+                        // if ( !$options ) { readOptions(true); }
                     }
                     $result = array("status" => "success", "reload" => "false", 
                                     "thing" => null, "hpconfig" => $options );
@@ -3337,8 +3349,10 @@ function clearAuth() {
  * *****************************************************************************
  */
         unset($_SESSION["hperror"]);
-        // $hpcode = "operate";
-        // $_SESSION["hpcode"] = "operate";
+        if ( $hpcode==="external") { 
+            $hpcode = "operate";
+            $_SESSION["hpcode"] = "operate";
+        }
         
         // get options from session that was set in the init ajax call
         // at this point options is guaranteed to exist with config setup
@@ -3351,7 +3365,7 @@ function clearAuth() {
             $_SESSION["hperror"] = $msg;
             $hpcode = "auth-" . strval(time());
             $_SESSION["hpcode"] = $hpcode;
-            $tc = getGreetingPage($returnURL, $hpcode);
+            $tc = getGreetingPage($returnURL, $hpcode, true, $grabopts);
             echo htmlHeader($skindir);
             echo $tc;
             echo htmlFooter();
