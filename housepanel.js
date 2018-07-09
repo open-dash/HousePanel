@@ -234,8 +234,8 @@ window.addEventListener("load", function(event) {
         // but you can always run a refresh to update the panel manually
         // or you can run it every once in a blue moon too
         // any value less than 5000 (5 sec) will be interpreted as never
-        // allTimerSetup(60000);
-        // allHubitatSetup(5000);
+        allTimerSetup(60000);
+        allHubitatSetup(5000);
 
         cancelDraggable();
         cancelSortable();
@@ -663,11 +663,12 @@ function setupPagemove() {
             var k = 0;
             // get the new list of pages in order
             // fix nasty bug to correct room tab move
-            $("#roomtabs >li.ui-tab").each(function() {
+            $("#roomtabs >li.ui-tabs-tab").each(function() {
                 // changed this to use the class to get the original room name
                 // instead of the text which can be the custom name
-                // var pagename = $(this).text();
-                var pagename = $(this).attr("class");
+                // fix to just get the room name instead of the whole nasty class
+                var classes = $(this).attr("class").split(" ");
+                var pagename = classes[0];
                 pagename = pagename.substring(4);
                 pages[pagename] = k;
                 k++;
@@ -678,6 +679,7 @@ function setupPagemove() {
                 function (presult, pstatus) {
                     if (pstatus==="success" && presult["status"]==="success") {
                         console.log("Reordered page tabs");
+                        console.log(presult);
                         setConfig(presult["hpconfig"]);
                     }
                 }, "json"

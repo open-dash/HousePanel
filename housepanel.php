@@ -1331,7 +1331,7 @@ function setOrder($swid, $swtype, $swval, $roomtitle, $options) {
                 foreach( $swval as $room => $kroom) {
                     $roominfo = $options["things"][$room][0];
                     $roominfo[0] = $kroom;
-                    $options["things"][$room][0] = $newindex;
+                    $options["things"][$room][0] = $roominfo;
                 }
                 $updated = true;
                 break;
