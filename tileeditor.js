@@ -111,7 +111,7 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
 //                on = "."+on;
 //            }
             
-            if ( on && ! $.isNumeric(on) && (on.indexOf(" ") == -1) ) {
+            if ( on && str_type!="weekday" && !$.isNumeric(on) && (on.indexOf(" ") == -1) ) {
                 on = "."+on;
             } else {
                 on = "";
@@ -128,7 +128,7 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             // get the on/off state
             var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
             var on = $(onofftarget).html();
-            if ( on && ! $.isNumeric(on) && (on.indexOf(" ") == -1) ) {
+            if ( on && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
                 on = "";
@@ -166,6 +166,10 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             break;
 	};	
     return target;
+}
+
+function toggleWholeTile(thingindex) {
+    
 }
 
 function toggleTile(target, tile_type, thingindex) {
@@ -251,7 +255,13 @@ function initDialogBinds(str_type, thingindex) {
 //            event.stopPropagation();
         }
     });
-    
+
+    $("#wholetile").on('click', function(event) {
+        alert("Whole tile background not yet implemented...");
+        // toggleTile(event.target, str_type, thingindex, true);
+        event.stopPropagation();
+    });
+
     $("#invertIcon").on("change",function() {
 //        invertImage();
         var strInvert = "filter: invert(1);";
@@ -678,6 +688,7 @@ function editTile(str_type, thingindex, htmlcontent) {
     
     // tileEdit display on the far right side 
     dialog_html += "<div id='tileDisplay' class='tileDisplay'>";
+    dialog_html += "<div class='editInfo'>Click Feature to Style</div>";
     
     // we either use the passed in content or make an Ajax call to get the content
     var jqxhr = null;
@@ -695,6 +706,7 @@ function editTile(str_type, thingindex, htmlcontent) {
             }
         );
     }
+    dialog_html += "<div class='wholetile'><input id='wholetile' value='Whole Tile' type='button'></div>";
     dialog_html += "</div>";
     
     // * DIALOG_END *
@@ -1294,7 +1306,6 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) 
 
 function updateSize(subid, thingindex) {
     var cssRuleTarget = getCssRuleTarget("icon", subid, thingindex);
-    // alert("size target= "+cssRuleTarget);
     if ( $("#autoBgSize").is(":checked") ) {
         addCSSRule(cssRuleTarget, "background-size: auto;");
     } else {

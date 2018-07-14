@@ -636,7 +636,7 @@ function getAuthPage($returnURL, $hpcode, $greeting = true) {
     $tc .= "<input  class=\"authbutton\" value=\"Authorize HousePanel\" name=\"submit1\" type=\"submit\" />";
     if ( $greeting ) {
         $tc.= "<input id=\"readlegacy\" class=\"authbutton\" value=\"Import Legacy\" name=\"readlegacy\" type=\"button\" />";
-        // $tc.= "<input id=\"writelegacy\" class=\"authbutton\" value=\"Export Legacy\" name=\"writelegacy\" type=\"button\" />";
+        $tc.= "<input id=\"writelegacy\" class=\"authbutton\" value=\"Export Legacy\" name=\"writelegacy\" type=\"button\" />";
         $tc.= "<input id=\"cancelauth\" class=\"authbutton\" value=\"Cancel Authorization\" name=\"cancelauth\" type=\"button\" />";
     }
     $tc.= "</div></form>";
@@ -1529,26 +1529,38 @@ function writeOptions($options, $legacy=false) {
 //            $str =  json_encode($options);
 //            $options["config"]= $configoptions;
 //        }
-        $f = fopen("hmoptions.cfg","wb");
-        fwrite($f, cleanupStr($str));
-        fwrite($f, $str);
-        fflush($f);
-        fclose($f);
+        $f = fopen("hmoptions.cfg","w");
+        if ( $f ) {
+            $str1 = cleanupStr($str);
+            fwrite($f, $str1, strlen($str1));
+            fflush($f);
+            fclose($f);
+        }
     }
     return $options;
 }
 
 // make the string easier to look at on a linux machine
 function cleanupStr($str) {
-    $str1 = str_replace(",\"",",\n\"",$str);
-    $str2 = str_replace(":{\"",":{\n\"",$str1);
-    return $str2;
+    // separating object item at end
+    $str1 = str_replace("},\"","},\n\n\"",$str);
+
+    // separating array items
+    $str1 = str_replace("],\"","],\n\n\"",$str1);
+    
+    $str1 = str_replace("\",\"","\",\n\"",$str1);
+    $str1 = str_replace("\"],[\"","\"],\n[\"",$str1);
+    $str1 = str_replace(":[[\"",":[\n[\"",$str1);
+
+    // return before start of each object or array
+    $str1 = str_replace(":{\"",":{\n\"",$str1);
+    return $str1;
 }
 
 // call to write Custom Css Back to customtiles.css
 function writeCustomCss($str) {
     $today = date("F j, Y  g:i a");
-    $file = fopen("customtiles.css","wb");
+    $file = fopen("customtiles.css","w");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
@@ -1556,12 +1568,13 @@ function writeCustomCss($str) {
     $fixstr.= "/* ****** ANY EDITS MADE WILL BE REPLACED ****** */\n";
     $fixstr.= "/* ****** WHENEVER TILE EDITOR IS USED    ****** */\n";
     $fixstr.= "/* ********************************************* */\n";
-    fwrite($file, cleanupStr($fixstr));
+    fwrite($file, $fixstr, strlen($fixstr));
     if ( $str && strlen($str) ) {
-        fwrite($file, cleanupStr($str));
+        $str1 = cleanupStr($str);
+        fwrite($file, $str1, strlen($str1));
     }
     fclose($file);
-    chmod($file, 0777);
+    // chmod($file, 0777);
 }
 
 // read in customtiles ignoring the comments
@@ -2562,11 +2575,15 @@ function clearAuth() {
      * options          - request to show options page
      * showid           - request to show id page
      */
+    
     if ( isset( $_SESSION["hpcode"]) ) {
         $hpcode = $_SESSION["hpcode"];
         if ( !$hpcode ) { $hpcode = "operate"; }
     } else {
-        $hpcode = "external";
+        $hpcode = "configure";
+        $_SESSION["hpcode"] = $hpcode;
+        header("Location: $returnURL");
+        exit(0);
     }
     
     // save authorization for this app for 10 years
@@ -2829,6 +2846,7 @@ function clearAuth() {
         if ( !$hpcode ) { $hpcode = "operate"; }
     } else {
         $hpcode = "external";
+        $_SESSION["hpcode"] = $hpcode;
     }
 
 /*
@@ -3221,9 +3239,9 @@ function clearAuth() {
                 case "saveoptions":
                     // if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
                     if ( isset($_POST["options"]) ) {
-                        $_SESSION["hpcode"] = "configure";
                         $options = readOptions();
                         processOptions($_POST, $options);
+                        $_SESSION["hpcode"] = "configure";
                         header("Location: $returnURL");
                         exit(0);
                     }
@@ -3275,6 +3293,7 @@ function clearAuth() {
 
                 case "savetileedit":
                     writeCustomCss($swval);
+                    $_SESSION["hpcode"] = "configure";
                     $result = array("status" => "success", "reload" => "false", "thing" => $swval, "hpconfig" => $options);
                     echo json_encode($result);
                     break;
@@ -3309,7 +3328,7 @@ function clearAuth() {
                     break;
                 
                 case "readlegacy":
-                    $msg = "Legacy hmoptions.cfg file imported.";
+                    $msg = "Legacy hmoptions.cfg and clientinfo.php files imported.";
                     $_SESSION["hperror"] = $msg;
                     $_SESSION["hpcode"] = "reauth";
                     $options = readOptions(true);
