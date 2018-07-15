@@ -51,8 +51,8 @@ function getOnOff(str_type) {
 function getCssRuleTarget(strSection, str_type, thingindex, useall) {
 
     // get the scope to use
-    var scope = $("#scopeEffect").val();
     if ( useall === undefined ) {
+        var scope = $("#scopeEffect").val();
         if ( scope=== "alltypes") { useall= 1; }
         else if ( scope=== "alltiles") { useall= 2; }
         else { useall = 0; }
@@ -60,15 +60,18 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
         if ( !useall || useall!==1 || useall!==2 ) { useall= 0; }
     }
 
-    if ( thingindex===null || thingindex===undefined ) {
-        thingindex = 1;
-    }
-
     var target = "";
-    // use new logic for reading on/off due to multiple tile types
-    // when writing both states we must determine onoff from type
-    // when writing the active state we get that state from the HTML
+
+    // if a tile isn't specified we default to changing all things
+    if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
+        target = "div.thing";
+
+    // handle special case when whole tile is being requested
+    } else if ( str_type==="wholetile" ) {
+        target = "div.thing.p_" + thingindex;
     
+    // main branch for handling specific cases
+    } else {
 	switch (strSection) {
         case "icon":
         case "icontext":
@@ -165,6 +168,8 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             if ( useall < 1 ) { target+= '.t_'+thingindex; }
             break;
 	};	
+    }
+
     return target;
 }
 
@@ -186,11 +191,15 @@ function toggleTile(target, tile_type, thingindex) {
     if ( onoff && onoff.length > 0 ) {
         for ( var i=0; i < onoff.length; i++ ) {
             var oldsub = onoff[i];
-            if ( $(target).hasClass(oldsub) ) { $(target).removeClass(oldsub); }
+            if ( $(target).hasClass(oldsub) ) { 
+                $(target).removeClass(oldsub); 
+                console.log("Removing attribute (" + oldsub + ") from wysiwyg display for tile: " + tile_type);
+            }
             if ( oldsub === swval ) {
                 newsub = i+1;
                 if ( newsub >= onoff.length ) { newsub= 0; }
                 $(target).html( onoff[newsub] );
+                console.log("Adding attribute (" + onoff[newsub] + ") to wysiwyg display for tile: " + tile_type);
                 break;
             }
         }
@@ -232,9 +241,13 @@ function setupIcons(category, str_type, thingindex) {
 
 
         var subid = $("#subidTarget").html();
-        var strIconTarget = getCssRuleTarget('icon', subid, thingindex);
-        // alert("Clicked on img= "+img+" Category= "+category+" icontarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
-        
+        var strIconTarget;
+        if ( subid==="wholetile" ) {
+            strIconTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else {
+            strIconTarget = getCssRuleTarget('icon', subid, thingindex);
+        }
+        // console.log("Clicked on img= "+img+" Category= "+category+" icontarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
         iconSelected(category, strIconTarget, img, subid, thingindex);
     });
 }
@@ -257,8 +270,8 @@ function initDialogBinds(str_type, thingindex) {
     });
 
     $("#wholetile").on('click', function(event) {
-        alert("Whole tile background not yet implemented...");
-        // toggleTile(event.target, str_type, thingindex, true);
+        // alert("Whole tile background not yet implemented...");
+        initColor(str_type, "wholetile", thingindex);
         event.stopPropagation();
     });
 
@@ -266,7 +279,12 @@ function initDialogBinds(str_type, thingindex) {
 //        invertImage();
         var strInvert = "filter: invert(1);";
         var subid = $("#subidTarget").html();
-        var cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        var cssRuleTarget;
+        if ( subid==="wholetile" ) {
+            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else {
+            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        }
         if($("#invertIcon").is(':checked')){
             // alert(cssRuleTarget);
             addCSSRule(cssRuleTarget, strInvert, true);
@@ -278,7 +296,12 @@ function initDialogBinds(str_type, thingindex) {
         
     $('#noIcon').on('change', function() {
         var subid = $("#subidTarget").html();
-        var cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        var cssRuleTarget;
+        if ( subid==="wholetile" ) {
+            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else {
+            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        }
         var strEffect = getBgEffect();
         if($("#noIcon").is(':checked')){
             // alert(cssRuleTarget);
@@ -728,15 +751,13 @@ function editTile(str_type, thingindex, htmlcontent) {
             },
             // function invoked upon starting the dialog
             function(hook, content) {
-                // alert("Displayed content");
                 // find the first clickable item
-                var subid = setsubid(str_type);
+                // var subid = setsubid(str_type);
                 getIcons(str_type, thingindex);	
-                initColor(str_type, subid, thingindex);
+                // initColor(str_type, subid, thingindex);
+                // now we start with the entire tile selected
+                initColor(str_type, "wholetile", thingindex);
                 initDialogBinds(str_type, thingindex);
-//                var target = $("#wysiwyg div." + str_type + "[subid='" + subid + "']"   );
-//                console.log(" startup target html= " + $(target).html() );
-//                toggleTile(target, subid, thingindex);
                 $("#modalid").draggable();
             }
         );
@@ -816,14 +837,11 @@ function saveTileEdit(str_type, thingindex) {
 
 function cancelTileEdit(str_type, thingindex) {
     resetCSSRules(str_type, thingindex);
-    document.getElementById('customtiles').sheet = savedSheet;
-    
+    // document.getElementById('customtiles').sheet = savedSheet;
     // location.reload(true);
 }
 
 function resetInverted(selector) {
-    //Searching of the selector matching cssRules
-    // var selector = getCssRuleTarget('icon', str_type, thingindex);
     var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
     for (var i=sheet.cssRules.length; i--;) {
         var current_style = sheet.cssRules[i];
@@ -839,94 +857,65 @@ function resetInverted(selector) {
 function initColor(tile_type, str_type, thingindex) {
 
    
-    var target = getCssRuleTarget("icon", str_type, thingindex, 0);
-    var swval = $(target).html();
-    
-    // activate the icon click to use this
-    var onoff = getOnOff(str_type, swval);
-    // $("#onoffTarget").html("");
+    var target;
+    var generic;
     var newonoff = "";
-    if ( onoff && onoff.length > 0 ) {
-        for ( var i=0; i < onoff.length; i++ ) {
-            var oldsub = onoff[i];
-            if ( $(target).html() === oldsub ) {
-//                $("#onoffTarget").html( oldsub );
-                newonoff = oldsub;
-//                alert("oldsub= "+oldsub);
-                break;
+    var caller = "icon";
+
+    // selected background color
+    if ( str_type==="wholetile") {
+        target = getCssRuleTarget("tile", tile_type, thingindex, 0);
+        newonoff = tile_type;
+        caller = "tile";
+    } else {
+        target = getCssRuleTarget("icon", str_type, thingindex, 0);
+        var swval = $(target).html();
+
+        // activate the icon click to use this
+        var onoff = getOnOff(str_type, swval);
+        // $("#onoffTarget").html("");
+        if ( onoff && onoff.length > 0 ) {
+            for ( var i=0; i < onoff.length; i++ ) {
+                var oldsub = onoff[i];
+                if ( $(target).html() === oldsub ) {
+    //                $("#onoffTarget").html( oldsub );
+                    newonoff = oldsub;
+    //                alert("oldsub= "+oldsub);
+                    break;
+                }
             }
         }
     }
-//    alert( "onoff= " + $("#onoffTarget").html() );
+    var icontarget = target;
     
-//    var onoff = getOnOff(str_type, swval);
-//    $("#onoffTarget").html("");
-//    if (tile_type!=="thermostat" && (onoff[0] || onoff[1]) ) {
-//        if ( onoff[0] && $(target).html()===onoff[0] ) {
-//            $("#onoffTarget").html(swval);
-//        } else if ( onoff[1] && swval === onoff[1] ) {
-//            $("#onoffTarget").html(swval);
-//        }
-//    }
-
-    var generic = "none";
-
-    target = getCssRuleTarget("icon", str_type, thingindex, 0);
-    var onstart = $(target).css("background-color");
+    var dh= "";
+    dh += "<button id='editReset' type='button'>Reset</button>";
+    // dh += "<div class='dlgtext'>Item: </div>";
+    dh += "<div id='subidTarget' class='dlgtext'>" + str_type + "</div>";
+    dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
+    
+    var onstart = $(icontarget).css("background-color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-        generic = getCssRuleTarget("icon", str_type, thingindex, 1);
+        if ( str_type==="wholetile") {
+            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
+        } else {
+            generic = getCssRuleTarget("icon", str_type, thingindex, 1);
+        }
         onstart = $(generic).css("background-color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("background-color"); }
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(0,51,204,0.6)"; }
     }
-    // alert("target= " + target+" generic= "+generic+" onstart= "+onstart);
-    console.log("icon target= "+ target+ " color= "+onstart);
+    
+    // alert("icontarget= " + icontarget+" generic= "+generic+" onstart= "+onstart);
+    console.log("icon back target= "+ icontarget+ " color= "+onstart);
     var iconback = '<div class="colorgroup"> \
                   <label for="iconColor">Background Color</label> \
                   <input type="text" id="iconColor" \
-                  caller="icon" target="' + target + '" \
+                  caller="' + caller + '" target="' + icontarget + '" \
                   class="colorset" value="' + onstart + '"> \
                   </div>';
 
-    // icon foreground colors
-    var ictarget = getCssRuleTarget("icontext", str_type, thingindex, 0);
-    var onstart = $(target).css("color");
-    if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-        generic = getCssRuleTarget("icontext", str_type, thingindex, 1);
-        onstart = $(generic).css("color");
-        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
-        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
-    }
-    console.log("icontext target= "+ ictarget+ " color= "+onstart);
-    var iconfore = '<div class="colorgroup"> \
-                  <label for="iconFore">Foreground Color</label> \
-                  <input type="text" id="iconFore" \
-                  caller="icontext" target="' + ictarget + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
-
-    // header background colors
-    target = getCssRuleTarget("head", tile_type, thingindex, 0);
-    var onstart = $(target).css("background-color");
-    console.log("head target= "+ target+ " color= "+onstart);
-    var headback = '<div class="colorgroup"> \
-                  <label for="headBackground">Header Background</label> \
-                  <input type="text" id="headBackground" \
-                  caller="head" target="' + target + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
-
-    // header foreground colors
-    target = getCssRuleTarget("text", tile_type, thingindex, 0);
-    var onstart = $(target).css("color");
-    console.log("text target= "+ target+ " color= "+onstart);
-    var headfore = '<div class="colorgroup"> \
-                  <label for="headFore">Header Foreground</label> \
-                  <input type="text" id="headFore" \
-                  caller="text" target="' + target + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
-
+    // background effect
     var ceffect = "";
     ceffect += "<div class='colorgroup'><label>Background Effect:</label>";
     ceffect += "<select name=\"editEffect\" id=\"editEffect\" class=\"ddlDialog\">";
@@ -937,6 +926,56 @@ function initColor(tile_type, str_type, thingindex) {
     ceffect += "<option value=\"vlight\">Vertical Light</option>";
     ceffect += "</select>";
     ceffect += "</div>";
+
+    // selected foreground color
+    var ictarget;
+    if ( str_type==="wholetile" ) {
+        ictarget = getCssRuleTarget("tile", tile_type, thingindex, 0);
+        caller = "tile";
+    } else {
+        ictarget = getCssRuleTarget("icontext", str_type, thingindex, 0);
+        caller = "icontext";
+    }
+    var onstart = $(ictarget).css("color");
+    if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
+        if ( str_type==="wholetile") {
+            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
+        } else {
+            generic = getCssRuleTarget("icontext", str_type, thingindex, 1);
+        }
+        onstart = $(generic).css("color");
+        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
+        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
+    }
+    console.log("icon text target= "+ ictarget+ " color= "+onstart);
+    var iconfore = '<div class="colorgroup"> \
+                  <label for="iconFore">Foreground Color</label> \
+                  <input type="text" id="iconFore" \
+                  caller="' + caller + '" target="' + ictarget + '" \
+                  class="colorset" value="' + onstart + '"> \
+                  </div>';
+
+    // header background colors
+    target = getCssRuleTarget("head", tile_type, thingindex, 0);
+    var onstart = $(target).css("background-color");
+    console.log("head back target= "+ target+ " color= "+onstart);
+    var headback = '<div class="colorgroup"> \
+                  <label for="headBackground">Header Background</label> \
+                  <input type="text" id="headBackground" \
+                  caller="head" target="' + target + '" \
+                  class="colorset" value="' + onstart + '"> \
+                  </div>';
+
+    // header foreground colors
+    target = getCssRuleTarget("text", tile_type, thingindex, 0);
+    var onstart = $(target).css("color");
+    console.log("head text target= "+ target+ " color= "+onstart);
+    var headfore = '<div class="colorgroup"> \
+                  <label for="headFore">Header Foreground</label> \
+                  <input type="text" id="headFore" \
+                  caller="text" target="' + target + '" \
+                  class="colorset" value="' + onstart + '"> \
+                  </div>';
 
     // font size (returns px not pt)
     // get the default font
@@ -999,12 +1038,6 @@ function initColor(tile_type, str_type, thingindex) {
     align+= '<input id="alignright" type="radio" name="align" value="right"><label for="alignright">Right</label>';
     align += "</div></div>";
 
-    var dh= "";
-    dh += "<button id='editReset' type='button'>Reset</button>";
-    // dh += "<div class='dlgtext'>Item: </div>";
-    dh += "<div id='subidTarget' class='dlgtext'>" + str_type + "</div>";
-    dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
-
     // insert the color blocks
     $("#colorpicker").html(dh + iconback + ceffect + iconfore + headback + headfore + fe + align);
 
@@ -1013,7 +1046,7 @@ function initColor(tile_type, str_type, thingindex) {
         var strCaller = $(this).attr("caller");
         // alert("caller= "+strCaller);
         var startColor = $(this).val();
-        // var startTarget = $(this).attr("target");
+        var startTarget = $(this).attr("target");
         $(this).minicolors({
             control: "hue",
             position: "bottom left",
@@ -1022,7 +1055,7 @@ function initColor(tile_type, str_type, thingindex) {
             opacity: true,
             format: 'rgb',
             change: function(strColor) {
-                updateColor(strCaller, tile_type, thingindex, strColor);
+                updateColor(strCaller, startTarget, tile_type, thingindex, strColor);
             }
         });
     });
@@ -1038,15 +1071,20 @@ function initColor(tile_type, str_type, thingindex) {
     $("#editEffect").on('change', function (event) {
         var editEffect = getBgEffect( $(this).val() );
         var subid = $("#subidTarget").html();
-        var target = getCssRuleTarget('icon', subid, thingindex);
-        var priorEffect = "background-image: " + $(target).css("background-image");
+        var cssRuleTarget;
+        if ( subid==="wholetile" ) {
+            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else {
+            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        }
+        var priorEffect = "background-image: " + $(cssRuleTarget).css("background-image");
         var idx = priorEffect.indexOf(", linear-gradient");
         if ( idx !== -1 ) {
             priorEffect = priorEffect.substring(0,idx);
         }
         editEffect = priorEffect + editEffect;
         // alert("Changing effect to: "+editEffect);
-        addCSSRule(target, editEffect);
+        addCSSRule(cssRuleTarget, editEffect);
         event.stopPropagation;
     });
 
@@ -1109,10 +1147,10 @@ function initColor(tile_type, str_type, thingindex) {
         addCSSRule(target, fontstr);
         event.stopPropagation;
     });
+
     
-    var cssRuleTarget = getCssRuleTarget('icon', str_type, thingindex);
-    console.log ( "target= " + cssRuleTarget + " css= " + $(cssRuleTarget).css("filter") );
-    if ( $(cssRuleTarget).css("filter") && $(cssRuleTarget).css("filter").startsWith("invert") ) {
+    console.log ( "target= " + icontarget + " css= " + $(icontarget).css("filter") );
+    if ( $(icontarget).css("filter") && $(icontarget).css("filter").startsWith("invert") ) {
         $("#invertIcon").prop("checked",true);
     } else {
         $("#invertIcon").prop("checked",false);
@@ -1121,16 +1159,19 @@ function initColor(tile_type, str_type, thingindex) {
 }
 
 // main routine that sets the color of items
-function updateColor(strCaller, str_type, thingindex, strColor) {
+function updateColor(strCaller, cssRuleTarget, str_type, thingindex, strColor) {
+    
+    
     if ( strCaller === "icon" ||  strCaller === "icontext") {
         str_type = $("#subidTarget").html();
     }
-    var cssRuleTarget;
     console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+
+//    var cssRuleTarget;
     switch (strCaller) {
         case 'text':
-                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
+//                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
                 addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
 //                $(cssRuleTarget).css( "color: " + strColor + ";" );
                 break;
@@ -1142,33 +1183,38 @@ function updateColor(strCaller, str_type, thingindex, strColor) {
                 var sliderTarget= cssRuleTarget + " .ui-slider-handle.ui-state-default";
                 console.log("caller= "+strCaller+" rule= "+sliderTarget+" str_type= "+str_type);
                 addCSSRule(sliderTarget, "background-color: " + strColor + ";");		
-//                $(sliderTarget).css( "background-color: " + strColor + ";" );
                 sliderTarget = cssRuleTarget + " .ui-slider-horizontal.ui-widget-content";
                 console.log("caller= "+strCaller+" rule= "+sliderTarget+" str_type= "+str_type);
                 addCSSRule(sliderTarget, "background-color: " + strColor + ";");		
-//                $(sliderTarget).css( "background-color: " + strColor + ";" );
             } else {
-                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
+//                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
                 addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
 //                $(cssRuleTarget).css( "color: " + strColor + ";" );
             }
             break;
             
         case "icon":
-            if ( str_type ==="level" ) {
-                cssRuleTarget = getCssRuleTarget("overlay", str_type, thingindex);
-            } else {
-                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-            }
-            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+//            if ( str_type ==="level" ) {
+//                cssRuleTarget = getCssRuleTarget("overlay", str_type, thingindex);
+//            } else {
+//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
+//            }
+//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+            addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
+//            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
+            break;
+            
+        case "tile":
+//            cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
+//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
             addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
 //            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
             break;
             
         default:
-            cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+//            cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
+//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
             addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
 //            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
             break;
@@ -1235,6 +1281,7 @@ function getIcons(str_type, thingindex) {
                     iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
                     if(iconCategory === iCategory) {
                         var iconPath = val.substr(1 + val.indexOf('|'));
+                        iconPath = encodeURI(iconPath);
                         icons+='<div>';
                         icons+='<img class="icon" src="' + iconPath + '"></div>';
                     }

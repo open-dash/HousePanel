@@ -41,7 +41,8 @@ foreach ($dirlist as $filename) {
         $froot = $parts['basename'];
         if ( in_array($ext, $allowed) ) {
             $tc.= '<div class="cat Local_Storage">';
-            $tc.= "<img src='$icondir" . $filename . "' class=\"icon\" title=\"$froot\" />";
+            $fullname = $icondir . rawurlencode($filename);
+            $tc.= "<img src=\"$fullname\" class=\"icon\" title=\"$froot\" />";
             $tc.= "</div>";
         }
     }

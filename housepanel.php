@@ -1433,8 +1433,12 @@ function readOptions($legacy=false) {
                     $k++;
                 }
                 unset( $options["rooms"] );
+//                echo("<pre>");
+//                print_r($options["things"]);
+//                echo("</pre>");
+//                exit(0);
             }
-
+            
             $serialnew = $_SESSION["hpconfig"];
             $oldoptions = json_decode($serialnew,true);
             if (array_key_exists("config", $oldoptions)) {
@@ -1455,7 +1459,7 @@ function readOptions($legacy=false) {
                 $hubitatEndpt = $configoptions["hubitat_endpt"];
             }
         }
-
+            
         if (file_exists("clientinfo.php")) {
             include_once "clientinfo.php";
             if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
@@ -1500,7 +1504,7 @@ function readOptions($legacy=false) {
 
         // just save options to session
         // user must request an export to update the legacy file format
-        $options = writeOptions($options);
+        // $options = writeOptions($options);
         
     } else if ( isset($_SESSION["hpconfig"]) ) {
         $serialnew = $_SESSION["hpconfig"];
@@ -1537,6 +1541,67 @@ function writeOptions($options, $legacy=false) {
             fclose($f);
         }
     }
+    return $options;
+}
+
+function writeCookies($use_st, $st_access, $st_endpt, $use_he, $he_access, $he_endpt) {
+
+    // expire cookies in 10 years
+    $expiry = time()+3650*24*3600;
+
+    $autharray = array($st_access, $st_endpt, $he_access, $he_endpt);
+    
+    // fix up options if legacy type
+    if ( array_key_exists("skin", $options) ) {
+        $configoptions["skin"] = $options["skin"];
+        unset($options["skin"]);
+    }
+    
+    if ( array_key_exists("kiosk", $options) ) {
+        $configoptions["kiosk"] = $options["kiosk"];
+        unset($options["kiosk"]);
+    }
+    
+    $configoptions["time"] = HPVERSION . " @ " . strval(time());
+    $options["config"] = $configoptions;
+    
+    // save the config in a cookie
+    $configcookie =  json_encode($configoptions);
+    setcookie("hp_config", $configcookie, $expiry, "/");
+
+//    // save the user filters in a cookie0
+//    $useroptions = $options["useroptions"];
+//    $usercookie =  json_encode($configoptions);
+//    setcookie("hp_useroptions", $usercookie, $expiry, "/");
+//
+//    // gather and save index
+//    $indexoptions = $options["index"];
+//    $alltypes = getTypes();
+//    foreach ($alltypes as $thetype) {
+//        $typeoptions = array();
+//        foreach ($indexoptions as $idx => $val) {
+//            $str = explode("|", $idx);
+//            if ( $str[0]===$thetype ) {
+//                $idxval = $str[1];
+//                $typeoptions[$idxval] = $val;
+//            }
+//        }
+//        
+//        // if there are items then save the cookie
+//        if ( count($typeoptions) ) {
+//            $indexcookie = json_encode($typeoptions);
+//            setcookie("hp_index_" . $thetype, $indexcookie, $expiry, "/");
+//        }
+//    }
+//
+//    $thingoptions = $options["things"];
+//    foreach ($thingoptions as $room => $things) {
+//        if ( count($things) ) {
+//            $thingcookie = json_encode($things);
+//            setcookie("hp_things_" . $room, $thingcookie, $expiry, "/");
+//        }
+//    }
+    
     return $options;
 }
 
