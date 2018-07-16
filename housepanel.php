@@ -708,7 +708,7 @@ function processName($thingname, $thingtype) {
 // this function reflects whatever you put in the maketile routine
 // it must be an existing video file of type mp4
 function returnVideo($vidname) {
-    $v= "<video width=\"369\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
+    $v= "<video width=\"auto\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
     return $v;
 }
 

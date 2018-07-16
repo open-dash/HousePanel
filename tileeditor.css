@@ -28,6 +28,18 @@ div.tileDialog {
     display: none;
 }
 
+div.wholetile {
+    text-align: center;
+    margin-top: 10px;
+    padding: 5px;
+}
+
+input[type="button"]#wholetile {
+    padding: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .tileDisplay {
     display: inline-block;
     width: auto;  
@@ -128,6 +140,14 @@ div.colorgroup.font {
 div.editSection_input label {
     margin-left: 0px;
     margin-right: 5px;
+    font-size: 11pt;
+    color: white;
+}
+
+div.editInfo {
+    margin-left: 2px;
+    margin-right: 2px;
+    margin-bottom: 10px;
     font-size: 11pt;
     color: white;
 }

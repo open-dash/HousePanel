@@ -1573,7 +1573,8 @@ div.switch.yard.power {
     position: relative; top: -48px;
 }*/
 div.video-thing {
-    width: 369px;
+    width: 300px;
+    height: 150px;
 }
 div.thingname.video {
     display: none;
