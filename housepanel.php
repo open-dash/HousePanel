@@ -1357,7 +1357,7 @@ function cleanupStr($str) {
 // call to write Custom Css Back to customtiles.css
 function writeCustomCss($str) {
     $today = date("F j, Y  g:i a");
-    $file = fopen("customtiles.css","wb");
+    $file = fopen("customtiles.css","w");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
@@ -1365,20 +1365,43 @@ function writeCustomCss($str) {
     $fixstr.= "/* ****** ANY EDITS MADE WILL BE REPLACED ****** */\n";
     $fixstr.= "/* ****** WHENEVER TILE EDITOR IS USED    ****** */\n";
     $fixstr.= "/* ********************************************* */\n";
-    fwrite($file, cleanupStr($fixstr));
+    fwrite($file, $fixstr, strlen($fixstr));
     if ( $str && strlen($str) ) {
-        fwrite($file, cleanupStr($str));
+        $str1 = cleanupStr($str);
+        fwrite($file, $str1, strlen($str1));
     }
     fclose($file);
     chmod($file, 0777);
 }
 
+// read in customtiles ignoring the comments
+function readCustomCss() {
+    $file = fopen("customtiles.css","rb");
+    $contents = "";
+
+    if ( $file ) {
+        while (!feof($file)) {
+            $line = fgets($file, 8192);
+            if ( substr($line, 0, 2)!=="/*" && substr($line, 0, 2)!=="//" ) {
+                $line = trim($line);
+                if ( $line ) {
+                    $contents.= $line . "\n";
+                }
+            }
+        }
+    }
+    return $contents;
+}
+
 function refactorOptions($allthings) {
 // new routine that renumbers all the things in your options file from 1
-// it will make the new customtiles.css no longer valid so only use once
-// before you customize things
-// // NOTE: this also resets all the custom tile positions to relative zero
-// TODO: refactor the customtiles.css file as well by reading and writing it
+// NOTE: this also affects the custom tile settings
+//       refactor now also modifies customtiles.css by reading and writing it
+
+    // load in custom css strings
+    $customcss = readCustomCss();
+    $updatecss = false;
+        
    
     $thingtypes = getTypes();
     $cnt = 0;
@@ -1397,9 +1420,9 @@ function refactorOptions($allthings) {
         // fix the old system that could have an array for idx
         // discard any position that was saved under that system
         if ( is_array($idxarr) ) {
-            $idx = $idxarr[0];
+            $idx = intval($idxarr[0]);
         } else {
-            $idx = $idxarr;
+            $idx = intval($idxarr);
         }
         
         foreach ($oldoptions["things"] as $room => $thinglist) {
@@ -1407,30 +1430,19 @@ function refactorOptions($allthings) {
                 $zindex = 1;
                 $customname = "";
                 if ( is_array($pidpos) ) {
-                    $pid = $pidpos[0];
-                    $postop = $pidpos[1];
-                    $posleft = $pidpos[2];
+                    $pid = intval($pidpos[0]);
+                    $postop = intval($pidpos[1]);
+                    $posleft = intval($pidpos[2]);
                     if ( count($pidpos) > 4 ) {
-                        $zindex = $pidpos[3];
+                        $zindex = intval($pidpos[3]);
                         $customname = $pidpos[4];
                     }
                 } else {
-                    $pid = $pidpos;
+                    $pid = intval($pidpos);
                     $postop = 0;
                     $posleft = 0;
                 }
                 if ( $idx == $pid ) {
-//                    $dup = false;
-//                    foreach ( $oldoptions["things"][$room] as $olditem) {
-//                        if ( ( is_array($olditem) && $olditem[0]===$pid ) ||
-//                             ( !is_array($olditem) && $olditem == $pid ) ) {
-//                            $dup = true;
-//                            break;
-//                        }       
-//                    }
-//                    if ( !$dup ) {
-//                        $options["things"][$room][$key] = array($cnt,$postop,$posleft);
-//                    }
 
 //  use the commented code below if you want to preserve any user movements
 //  otherwise a refactor call resets all tiles to their baseeline position  
@@ -1439,10 +1451,24 @@ function refactorOptions($allthings) {
                 }
             }
         }
-        $options["index"][$thingid] = $cnt;
+        
+        // replace all instances of the old "idx" with the new "cnt" in customtiles
+        if ( $customcss && $idx!==$cnt ) {
+            $customcss = str_replace("p_$idx", "p_$cnt", $customcss);
+            $customcss = str_replace("v_$idx", "v_$cnt", $customcss);
+            $customcss = str_replace("t_$idx", "t_$cnt", $customcss);
+            $updatecss = true;
+        }
+        
+        $checkthingid = explode("|", $thingid);
+        if ( count($checkthingid)===2 && strlen($checkthingid[0]) > 1 && strlen($checkthingid[1]) > 1 ) {
+            $options["index"][$thingid] = $cnt;
+        }
     }
-    $options["kiosk"] = "false";
     writeOptions($options);
+    if ( $updatecss ) {
+        writeCustomCss($customcss);
+    }
     
 }
 
