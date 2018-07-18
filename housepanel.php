@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more
  * 1.72       Timezone bug fix and merge into master
  * 1.71       Bug fixes and draft page edit commented out until fixed
  * 1.7        New authentication approach for easier setup and major code cleanup
@@ -98,7 +99,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.72');
+define('HPVERSION', 'Version 1.73');
 define('APPNAME', 'House Panel ' . HPVERSION);
 
 // developer debug options
@@ -750,7 +751,9 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
             $weathername = $thingname . "<br />" . $thingvalue["city"];
         }
         $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span><span class=\"customname m_$kindex\">$customname</span></div>";
+        $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
+        // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
+        $tc.= "</div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingname, "name");
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["city"], "city");
         $tc.= "<div>";
@@ -793,7 +796,9 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         $thingpr = $thingname;
         $vidname = $thingvalue["url"];
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $thingpr . "</span><span class=\"customname m_$kindex\">$customname</span></div>";
+        $tc.= "<span class=\"original n_$kindex\">" . $thingpr . "</span>";
+        // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
+        $tc.= "</div>";
 
         $tkey = "name";
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
@@ -810,14 +815,21 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         $tc.= "</div>";
         
     } else {
+        
 
-        if (strlen($thingname) > 56 ) {
-            $thingpr = substr($thingname,0,56) . " ...";
+        if ( $customname ) { 
+            $thingpr = $customname; 
+        }
+        else if (strlen($thingname) > 132 ) {
+            $thingpr = substr($thingname,0,132) . " ...";
         } else {
             $thingpr = $thingname;
         }
+        
         $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span><span class=\"customname m_$kindex\">$customname</span></div>";
+        $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";;
+        // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
+        $tc.= "</div>";
 	
         // create a thing in a HTML page using special tags so javascript can manipulate it
         // multiple classes provided. One is the type of thing. "on" and "off" provided for state
@@ -2805,6 +2817,32 @@ function is_ssl() {
                 break;
             
             case "savetileedit":
+                // grab the new tile name and set all tiles with matching id
+                $newname = $swattr;
+                $options = readOptions();
+                $thingoptions = $options["things"];
+                $updated = false;
+                foreach ($thingoptions as $room => $things) {
+                    foreach ($things as $k => $tiles) {
+                        // handle legacy files
+                        if ( !is_array($tiles) ) {
+                            $tiles = array($tiles, 0, 0, 1, "");
+                        } else if ( count($tiles) < 4 ) {
+                            $tiles[3] = 1;
+                            $tiles[4] = "";
+                            $options["things"][$room][$k] = $tiles;
+                            $updated = true;
+                        }
+                        if ( intval($tiles[0]) === intval($tileid) ) {
+                            $tiles[4] = $newname;
+                            $options["things"][$room][$k] = $tiles;
+                            $updated = true;
+                        }
+                    }
+                }
+                if ( $updated ) {
+                    writeOptions($options);
+                }
                 writeCustomCss($swval);
                 echo $swval;
                 break;

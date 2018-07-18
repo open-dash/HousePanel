@@ -65,6 +65,9 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
     // if a tile isn't specified we default to changing all things
     if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
         target = "div.thing";
+        if ( str_type!=="wholetype" && useall!==2 ) {
+            target+= "." + str_type + "-thing";
+        }
 
     // handle special case when whole tile is being requested
     } else if ( str_type==="wholetile" ) {
@@ -329,7 +332,6 @@ function initDialogBinds(str_type, thingindex) {
             $("#editName").prop("disabled", true);
         } else {
             removeCSSRule(cssRuleTarget, "display:");
-            // addCSSRule(cssRuleTarget, "display: inline-block;");
             $("#editName").prop("disabled", false);
         }
         event.stopPropagation;
@@ -343,15 +345,19 @@ function initDialogBinds(str_type, thingindex) {
     }
 //    console.log ("csstarget = " + cssRuleTarget + " txt= " + csstext);
     
-//    $("#editName").on('input', function (event) {
-//        var target1 = "span.n_"+thingindex;
-//        var target2 = "div.customname.m_"+thingindex+"::after";
-//        addCSSRule(target1, "color: rgba(0,0,0,0.01);");
-//        var newname = $("#editName").val();
-//        // alert(newname);
-//        addCSSRule(target2, "content: " + newname + ";" );
-//        // event.stopPropagation;
-//    });
+    $("#editName").on('input', function (event) {
+        var target1 = "#wysiwyg span.original.n_"+thingindex;
+        // var target2 = "div.customname.m_"+thingindex+"::after";
+        // addCSSRule(target1, "display: none");
+        var newsize = parseInt( $("#tileWidth").val() );
+        var rule = "width: " + newsize.toString() + "px;";
+        addCSSRule(target1, rule);
+
+        var newname = $("#editName").val();
+        $(target1).html(newname);
+        // addCSSRule(target2, "content: " + newname + ";" );
+        // event.stopPropagation;
+    });
 
     $("#iconSrc").on('change', function (event) {
         getIcons(str_type, thingindex);	
@@ -367,14 +373,15 @@ function initDialogBinds(str_type, thingindex) {
 
     $("#autoBgSize").on('change', function(event) {
         var subid = $("#subidTarget").html();
-        updateSize(subid, thingindex);
        
         if ( $("#autoBgSize").is(":checked") ) {
             $("#bgSize").prop("disabled", true);
+            updateSize(subid, thingindex);
         } else {
             $("#bgSize").prop("disabled", false);
             if ( $("#bgSize").val()==="0" || $("#bgSize").val()===0 ) {
                 $("#bgSize").val("80");
+                updateSize(subid, thingindex);
             }
         }
         event.stopPropagation;
@@ -386,15 +393,7 @@ function initDialogBinds(str_type, thingindex) {
         event.stopPropagation;
     });
 
-    // set overall tile width and header and overlay for all subitems
-    $("#tileWidth").on('input', function(event) {
-        var newsize = parseInt( $("#tileWidth").val() );
-        var rule = "width: " + newsize.toString() + "px;";
-        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
-        event.stopPropagation;
-    });
-
-    // set overall tile width and header and overlay for all subitems
+    // set overall tile height
     $("#tileHeight").on('input', function(event) {
         var newsize = parseInt( $("#tileHeight").val() );
         var rule = "height: " + newsize.toString() + "px;";
@@ -403,22 +402,19 @@ function initDialogBinds(str_type, thingindex) {
     });
 
     // set overall tile width and header and overlay for all subitems
-    $("#editHeight").on('input', function(event) {
-        var newsize = parseInt( $("#editHeight").val() );
-        var subid = $("#subidTarget").html();
-        var target = getCssRuleTarget('icontext', subid, thingindex);
-        var rule = "height: " + newsize.toString() + "px;";
-        addCSSRule(target, rule);
-        event.stopPropagation;
-    });
-
-    // set overall tile width and header and overlay for all subitems
-    $("#editWidth").on('input', function(event) {
-        var newsize = parseInt( $("#editWidth").val() );
-        var subid = $("#subidTarget").html();
-        var target = getCssRuleTarget('icontext', subid, thingindex);
+    $("#tileWidth").on('input', function(event) {
+        var newsize = parseInt( $("#tileWidth").val() );
         var rule = "width: " + newsize.toString() + "px;";
-        addCSSRule(target, rule);
+        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget("text", str_type, thingindex), rule);
+        
+        // alert(str_type);
+        if ( str_type === "thermostat" ) {
+            var midsize = newsize - 64;
+            rule = "width: " + midsize.toString() + "px;";
+            addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.heat-val", rule);
+            addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.cool-val", rule);
+        }
         event.stopPropagation;
     });
 
@@ -434,15 +430,25 @@ function initDialogBinds(str_type, thingindex) {
     
     $("#autoTileWidth").on('change', function(event) {
         var rule;
+        var midrule;
         if($("#autoTileWidth").is(':checked')) {
             rule = "width: auto;";
+            midrule = "width: 72px;";
             $("#tileWidth").prop("disabled", true);
         } else {
             var newsize = parseInt( $("#tileWidth").val() );
             rule = "width: " + newsize.toString() + "px;";
             $("#tileWidth").prop("disabled", false);
+            var midsize = newsize - 64;
+            midrule = "width: " + midsize.toString() + "px;";
         }
         addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
+        // addCSSRule(getCssRuleTarget("text", str_type, thingindex), rule);
+        
+        if ( str_type === "thermostat" ) {
+            addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.heat-val", midrule);
+            addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.cool-val", midrule);
+        }
         event.stopPropagation;
     });
 
@@ -461,6 +467,30 @@ function initDialogBinds(str_type, thingindex) {
         event.stopPropagation;
     });
 
+    // set overall tile width and header and overlay for all subitems
+    $("#editHeight").on('input', function(event) {
+        var newsize = parseInt( $("#editHeight").val() );
+        var subid = $("#subidTarget").html();
+        if ( subid !== "wholetile" ) {
+            var target = getCssRuleTarget('icontext', subid, thingindex);
+            var rule = "height: " + newsize.toString() + "px;";
+            addCSSRule(target, rule);
+        }
+        event.stopPropagation;
+    });
+
+    // set overall tile width and header and overlay for all subitems
+    $("#editWidth").on('input', function(event) {
+        var newsize = parseInt( $("#editWidth").val() );
+        var subid = $("#subidTarget").html();
+        if ( subid !== "wholetile" ) {
+            var target = getCssRuleTarget('icontext', subid, thingindex);
+            var rule = "width: " + newsize.toString() + "px;";
+            addCSSRule(target, rule);
+        }
+        event.stopPropagation;
+    });
+
     // set the item height
     $("#autoHeight").on('change', function(event) {
         var subid = $("#subidTarget").html();
@@ -473,8 +503,6 @@ function initDialogBinds(str_type, thingindex) {
                 rule = "height: auto;";
             }
             $("#editHeight").prop("disabled", true);
-            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
         } else {
             var newsize = parseInt( $("#editHeight").val() );
             // special handling for default temperature circles
@@ -485,6 +513,8 @@ function initDialogBinds(str_type, thingindex) {
                 newsize = newsize.toString() + "px;";
             }
             rule = "height: " + newsize;
+        }
+        if ( subid !== "wholetile" ) {
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
             addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
         }
@@ -503,8 +533,6 @@ function initDialogBinds(str_type, thingindex) {
                 rule = "width: 92%; padding-left: 4%; padding-right: 4%;";
             }
             $("#editWidth").prop("disabled", true);
-            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-            addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
        } else {
             var newsize = parseInt( $("#editWidth").val() );
             $("#editWidth").prop("disabled", false);
@@ -512,11 +540,13 @@ function initDialogBinds(str_type, thingindex) {
                 rule = "width: 92%; padding-left: 4%; padding-right: 4%;";
             } else {
                 newsize = newsize.toString() + "px;";
-                rule = "width: " + newsize;
+                rule = "width: " + newsize + " padding-left: 0; padding-right: 0;";
             }
+       }
+        if ( subid !== "wholetile" ) {
             addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
             addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
-       }
+        }
         event.stopPropagation;
     });
 
@@ -530,7 +560,13 @@ function initDialogBinds(str_type, thingindex) {
             newsize = newsize.toString() + "px;";
         }
         var rule = "padding-top: " + newsize;
-        addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+        if ( subid === "wholetile" ) {
+            var tile_type = $("#onoffTarget").html();
+            rule = "background-position-y: " + newsize;
+            addCSSRule(getCssRuleTarget('tile', tile_type, thingindex), rule);
+        } else {
+            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+        }
         event.stopPropagation;
     });
 
@@ -543,8 +579,14 @@ function initDialogBinds(str_type, thingindex) {
         } else {
             newsize = newsize.toString() + "px;";
         }
-        var rule = "padding-bottom: " + newsize;
-        addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+        var rule = "padding-left: " + newsize;
+        if ( subid === "wholetile" ) {
+            var tile_type = $("#onoffTarget").html();
+            rule = "background-position-x: " + newsize;
+            addCSSRule(getCssRuleTarget('tile', tile_type, thingindex), rule);
+        } else {
+            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
+        }
         event.stopPropagation;
     });
     
@@ -580,7 +622,7 @@ function effectspicker(str_type, thingindex) {
     var name = $(target).html();
 
     // Title changes and options
-	dh += "<div class='colorgroup'><label>Title:</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
+	dh += "<div class='colorgroup'><label>Title (blank = reset):</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
 	dh += "<div class='editSection_input'><input type='checkbox' id='noHead'><label class=\"iconChecks\" for=\"noHead\">No Header?</label></div>";
 	dh += "<div class='editSection_input'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
         
@@ -678,10 +720,10 @@ function sizepicker(str_type, thingindex) {
     if ( !ptop || ptop==="NaN" ) { ptop = 0; }
     if ( !pbot || pbot==="NaN" ) { pbot = 0; }
     dh += "<div class='editSection_input'>";
-    dh += "<label for='topPadding'>Top gap:</label>\t";
+    dh += "<label for='topPadding'>Top Padding:</label>\t";
     dh += "<input size='4' type=\"number\" min='0' max='100' step='5' id=\"topPadding\" value=\"" + ptop + "\"/>";
     dh += "</div>";    dh += "<div class='editSection_input'>";
-    dh += "<label for='botPadding'>Bottom gap:</label>\t";
+    dh += "<label for='botPadding'>Left Padding:</label>\t";
     dh += "<input size='4' type=\"number\" min='0' max='100' step='5' id=\"botPadding\" value=\"" + pbot + "\"/>";
     dh += "</div>";
     
@@ -755,7 +797,8 @@ function editTile(str_type, thingindex, htmlcontent) {
                 var clk = $(ui).attr("name");
                 // alert("clk = "+clk);
                 if ( clk==="okay" ) {
-                    saveTileEdit();
+                    var newname = $("#editName").val();
+                    saveTileEdit(str_type, thingindex, newname);
                 } else if ( clk==="cancel" ) {
                     cancelTileEdit(str_type, thingindex);
                 }
@@ -814,7 +857,7 @@ function setsubid(str_type) {
     return subid;
 }
 
-function saveTileEdit(str_type, thingindex) {
+function saveTileEdit(str_type, thingindex, newname) {
     var returnURL;
     try {
         returnURL = $("input[name='returnURL']").val();
@@ -835,7 +878,7 @@ function saveTileEdit(str_type, thingindex) {
     
     // post changes to save them in a custom css file
     $.post(returnURL, 
-        {useajax: "savetileedit", id: "0", type: str_type, value: sheetContents, attr: thingindex},
+        {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
                 console.log("POST success"); // Custom CSS saved:\n"+ presult );
@@ -1352,7 +1395,7 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) 
     var imgurl = "background-image: url(" + imagePath + ")";
     addCSSRule(cssRuleTarget, imgurl + strEffect + ";");
 
-    // updateSize(str_type, thingindex);
+    updateSize(str_type, thingindex);
 //
 //    if ( $("#invertIcon").is(':checked') ) {
 //        addCSSRule(cssRuleTarget, "filter: invert(1);");
@@ -1363,20 +1406,23 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) 
 }
 
 function updateSize(subid, thingindex) {
-    var cssRuleTarget = getCssRuleTarget("icon", subid, thingindex);
+    var cssRuleTarget;
+    if ( subid==="wholetile" ) {
+        var tile_type = $("#onoffTarget").html();
+        cssRuleTarget = getCssRuleTarget("tile", tile_type, thingindex);
+    } else {
+        cssRuleTarget = getCssRuleTarget("icon", subid, thingindex);
+    }
     if ( $("#autoBgSize").is(":checked") ) {
         addCSSRule(cssRuleTarget, "background-size: auto;");
     } else {
         var iconsize = $("#bgSize").val();
-        if ( iconsize===0 || iconsize==="0" ) {
-            addCSSRule(cssRuleTarget, "background-size: auto;");
-        } else if ( ! $.isNumeric(iconsize)  ) {
-            addCSSRule(cssRuleTarget, "background-size: " + iconsize + ";");
-        } else {
-            var newsize = parseInt( iconsize );
-            var rule = newsize.toString() + "px;";
-            addCSSRule(cssRuleTarget, "background-size: " + rule);
+        var newsize = parseInt( iconsize );
+        if ( iconsize <= 0 ) {
+            iconsize = 120;
         }
+        var rule = newsize.toString() + "px;";
+        addCSSRule(cssRuleTarget, "background-size: " + rule);
     }
 }
 
