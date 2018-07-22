@@ -431,7 +431,7 @@ function authButton($sname, $returl, $hpcode, $greeting = false) {
 
         // set defaults here for fresh installs
         $rewrite = true;
-        $timezone = "America/Detroit";
+        $timezone = ""; // date_default_timezone_get();
         $useSmartThings = true;
         $stweb = "https://graph.api.smartthings.com";
         $clientId = "";
@@ -490,7 +490,9 @@ function authButton($sname, $returl, $hpcode, $greeting = false) {
         if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
         if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecret = CLIENT_SECRET; }
         if ( defined("ST_WEB") && ST_WEB ) { $stweb = ST_WEB; }
-        if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
+        
+        // overwrite timezone only if user left it blank
+        if ( !$timezone && defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
 
         if ( $stweb && $stweb!="hubitat" &&  $stweb!="hubitatonly" ) {
             $useSmartThings = true;
@@ -709,7 +711,7 @@ function processName($thingname, $thingtype) {
 // this function reflects whatever you put in the maketile routine
 // it must be an existing video file of type mp4
 function returnVideo($vidname) {
-    $v= "<video width=\"auto\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
+    $v= "<video height=\"150px\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
     return $v;
 }
 
@@ -1110,6 +1112,11 @@ function getCatalog($allthings) {
 
 function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid= "") {
 
+    $options = readOptions();
+    $configoptions = $options["config"];
+    $tz = $configoptions["timezone"];
+    date_default_timezone_set($tz);
+    
     $host = $url . "/" . $path;
     $weekday = date("l");
     $dateofmonth = date("M d, Y");
@@ -1138,7 +1145,7 @@ function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $s
 
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $options= readOptions();
+            // $options= readOptions();
             
             if ( $swtype=="all" ) {
                 $respvals = array();
@@ -1171,6 +1178,11 @@ function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $s
 function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid="") {
     
     // intercept clock things to return updated date and time
+    $options = readOptions();
+    $configoptions = $options["config"];
+    $tz = $configoptions["timezone"];
+    date_default_timezone_set($tz);
+        
     $host = $url . "/" . $path;
     $weekday = date("l");
     $dateofmonth = date("M d, Y");
@@ -1200,7 +1212,7 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
         // we just don't update the session for a web browser
         if ( isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
-            $options= readOptions();
+            // $options= readOptions();
             
         // update session with new status and pick out all if needed
             if ( $swtype=="all" ) {

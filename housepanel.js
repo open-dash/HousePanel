@@ -199,7 +199,7 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     }
     modalcontent = modalcontent + "</div>";
     
-    // console.log(modalcontent);
+    // console.log("modalcontent = " + modalcontent);
     modalhook.prepend(modalcontent);
     modalStatus = 1;
     

@@ -315,8 +315,9 @@ table.headoptions {
     height: 40px;
 }
 table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
-    border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
-    background-color: #3a5795;    color:#ffffff;
+    border-bottom: 5px solid rgba(0, 0, 80, 1);    
+    background-color: #3a5795;    
+    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
 }
@@ -1435,12 +1436,8 @@ div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
 div.lock.minCodeLength, div.lock.codeLength,
 div.thingname.blank, div.thingname.clock,
-div.thingname.image, div.thingname.routine, 
-div.thermostat.name, div.switch.name, div.contact.name, div.motion.name,
-div.switchlevel.name, div.momentary.name, div.routine.name,
-div.lock.name, div.light.name, div.door.name, div.bulb.name, div.mode.name,
-div.valve.name, div.water.name, div.piston.name, div.thermostat.name, div.temperature.name,
-div.music.name, div.blank.name, div.image.name, div.presence.name, div.illuminance.name {
+div.thingname.image, div.thingname.routine
+ {
     display:none;
 }
 
@@ -1572,8 +1569,8 @@ div.frame.forecast {
 div.switch.yard.power {
     position: relative; top: -48px;
 }*/
-div.video-thing {
-    width: 300px;
+div.thing.video-thing {
+    width: auto;
     height: 150px;
 }
 div.thingname.video {
@@ -1596,7 +1593,8 @@ div.overlay.battery {
 }
 div.overlay.name {
     position: absolute;
-    display: none;
+    display: block;
+    color: rgba(255, 255, 255, 0.01);
 }
 
 div.ovCaption {
@@ -1697,6 +1695,7 @@ div.lock-thing div.overlay.name {
     border: none;
     background: none;
     left: 2px;
+    color: rgba(255, 255, 255, 1);
 }
 
 div.overlay.name div.lock.name {
