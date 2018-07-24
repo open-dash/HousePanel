@@ -190,10 +190,6 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
     return target;
 }
 
-function toggleWholeTile(thingindex) {
-    
-}
-
 function toggleTile(target, tile_type, thingindex) {
     var swval = $(target).html();
     var str_type = $(target).attr("subid");
@@ -256,8 +252,8 @@ function initDialogBinds(str_type, thingindex) {
         if ( $(event.target).attr("subid") ) {
             toggleTile(event.target, str_type, thingindex);
             event.stopPropagation();
-        } else if ( $(event.target).hasClass("thingname") ) {
-            initColor(str_type, "wholetile", thingindex);
+        } else if ( $(event.target).hasClass("thingname") || $(event.target).hasClass("original")  ) {
+            initColor(str_type, "head", thingindex);
             event.stopPropagation();
         }
     });
@@ -307,28 +303,6 @@ function initDialogBinds(str_type, thingindex) {
             }
         }
     });
-        
-    $('#noName').on('change', function() {
-        var cssRuleTarget = getCssRuleTarget('icon', 'name', thingindex);
-        if($("#noName").is(':checked')){
-            addCSSRule(cssRuleTarget, "display: none;");
-            addCSSRule(cssRuleTarget, "position: absolute;");
-        } else {
-            // alert("removing... " + cssRuleTarget);
-            removeCSSRule("div.overlay.name", thingindex, "display:", 2);
-            // removeCSSRule(cssRuleTarget, thingindex, "display:");
-            addCSSRule(cssRuleTarget, "display: block;");
-        }
-    });
-    
-    // set the original noname setting
-    var cssRuleTarget = getCssRuleTarget('subid', 'name', thingindex);
-    var csstext = $(cssRuleTarget).css("display");
-    if ( csstext === "none" ) {
-        $("#noName").prop("checked", true);
-    } else {
-        $("#noName").prop("checked", false);
-    }
 	
     $('#noHead').on('change', function(event) {
         var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
@@ -412,7 +386,7 @@ function initDialogBinds(str_type, thingindex) {
         var newsize = parseInt( $("#tileWidth").val() );
         var rule = "width: " + newsize.toString() + "px;";
         addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
-        addCSSRule(getCssRuleTarget("text", str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget("head", str_type, thingindex), rule);
         
         // alert(str_type);
         if ( str_type === "thermostat" ) {
@@ -449,7 +423,6 @@ function initDialogBinds(str_type, thingindex) {
             midrule = "width: " + midsize.toString() + "px;";
         }
         addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
-        // addCSSRule(getCssRuleTarget("text", str_type, thingindex), rule);
         
         if ( str_type === "thermostat" ) {
             addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.heat-val", midrule);
@@ -629,9 +602,8 @@ function effectspicker(str_type, thingindex) {
 
     // Title changes and options
 	dh += "<div class='colorgroup'><label>Title (blank = reset):</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
-	dh += "<div class='editSection_input'><input type='checkbox' id='noHead'><label class=\"iconChecks\" for=\"noHead\">No Header?</label></div>";
-	dh += "<div class='editSection_input'><input type='checkbox' id='noName'><label class=\"iconChecks\" for=\"noName\">No Name?</label></div>";
-	dh += "<div class='editSection_input'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
+	// dh += "<div class='editSection_input'><input type='checkbox' id='noHead'><label class=\"iconChecks\" for=\"noHead\">No Header?</label></div>";
+	// dh += "<div class='editSection_input'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
         
 	//Effects
 	dh += "<div class='colorgroup'><label>Effect Scope:</label>";
@@ -777,7 +749,7 @@ function editTile(str_type, thingindex, htmlcontent) {
     
     // tileEdit display on the far right side 
     dialog_html += "<div id='tileDisplay' class='tileDisplay'>";
-    dialog_html += "<div class='editInfo'>Click Feature to Style</div>";
+    dialog_html += "<div class='editInfo'>Click to Select or Change State</div>";
     
     // we either use the passed in content or make an Ajax call to get the content
     var jqxhr = null;
@@ -795,7 +767,8 @@ function editTile(str_type, thingindex, htmlcontent) {
             }
         );
     }
-    dialog_html += "<div class='wholetile'><input id='wholetile' value='Whole Tile' type='button'></div>";
+    // dialog_html += "<div class='wholetile'><input id='wholetile' value='Whole Tile' type='button'></div>";
+    dialog_html += "<div id='subsection'></div>";
     dialog_html += "</div>";
     
     // * DIALOG_END *
@@ -839,17 +812,31 @@ function editTile(str_type, thingindex, htmlcontent) {
         dodisplay();
     }
         
-    var idsubs = "";
+    // get list of all the subs this tile supports
+    var subcontent = "";
+    subcontent += "<br><div class='editInfo'>Select Feature:</div>";
+    subcontent += "<select id='subidselect' name='subselect'>";
+    subcontent += "<option value='wholetile' selected>Whole Tile</option>";
+    subcontent += "<option value='head'>Head Title</option>";
+    // var idsubs = "";
     var subid;
     $("#wysiwyg div.overlay").each(function(index) {
         var classes = $(this).attr("class");
         var words = classes.split(" ", 3);
         subid = words[1];
         if ( subid ) {
-            idsubs = idsubs + subid + "  " ; 
+            // idsubs = idsubs + subid + "  " ; 
+            subcontent += "<option value='" + subid + "'>" + subid + "</option>";
         }
     });
-    console.log("classes: " + idsubs);
+    // console.log("classes: " + idsubs);
+    subcontent += "</select>";
+    $("#subsection").html(subcontent);
+    $("#subidselect").on('change', function(event) {
+        var subid = $(event.target).val();
+        initColor(str_type, subid, thingindex);
+        event.stopPropagation();
+    });
 
 }
 
@@ -944,20 +931,33 @@ function resetInverted(selector) {
 
 // add all the color selectors to the colorpicker div
 function initColor(tile_type, str_type, thingindex) {
-
-   
+  
     var target;
     var generic;
-    var newonoff = "";
-    var caller = "icon";
+    var newonoff;
+    var caller;
+    var onstart;
+    var ictarget;
 
     // selected background color
     if ( str_type==="wholetile") {
         target = getCssRuleTarget("tile", tile_type, thingindex, 0);
+        ictarget = target;
+        generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
         newonoff = tile_type;
         caller = "tile";
+    } else if ( str_type==="head") {
+        target = getCssRuleTarget("head", tile_type, thingindex, 0);
+        ictarget = target;
+        generic = getCssRuleTarget("head", tile_type, thingindex, 1);
+        newonoff = "";
+        caller = "head";
     } else {
         target = getCssRuleTarget("icon", str_type, thingindex, 0);
+        generic = getCssRuleTarget("icon", tile_type, thingindex, 1);
+        ictarget = target;
+        caller = "icon";
+        newonoff = "";
         var swval = $(target).html();
 
         // activate the icon click to use this
@@ -1002,20 +1002,20 @@ function initColor(tile_type, str_type, thingindex) {
     dh += "<div id='subidTarget' class='dlgtext'>" + str_type + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
 
-    var onstart = $(icontarget).css("background-color");
+    onstart = $(icontarget).css("background-color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-        if ( str_type==="wholetile") {
-            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
-        } else {
-            generic = getCssRuleTarget("icon", str_type, thingindex, 1);
-        }
+//        if ( str_type==="wholetile") {
+//            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
+//        } else {
+//            generic = getCssRuleTarget("icon", str_type, thingindex, 1);
+//        }
         onstart = $(generic).css("background-color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("background-color"); }
-        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(0,51,204,0.6)"; }
+        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(0, 0, 0, 1)"; }
     }
     
     // alert("icontarget= " + icontarget+" generic= "+generic+" onstart= "+onstart);
-    console.log("icon back target= "+ icontarget+ " color= "+onstart);
+    console.log("target= "+ icontarget+ " initial background-color= "+onstart);
     var iconback = '<div class="colorgroup"> \
                   <label for="iconColor">Background Color</label> \
                   <input type="text" id="iconColor" \
@@ -1027,7 +1027,8 @@ function initColor(tile_type, str_type, thingindex) {
     var oneffect = $(icontarget).css("background-image");
     var dirright = false;
     var isdark = false;
-    var iseffect = oneffect.indexOf("linear-gradient");
+    var iseffect = -1;
+    if ( oneffect ) { iseffect= oneffect.indexOf("linear-gradient"); }
     if ( iseffect !== -1 ) {
         iseffect = true;
         dirright = ( oneffect.indexOf("to right") !== -1 );
@@ -1065,27 +1066,23 @@ function initColor(tile_type, str_type, thingindex) {
     ceffect += "</div>";
 
     // selected foreground color
-    var ictarget;
     if ( str_type==="wholetile" ) {
-        ictarget = getCssRuleTarget("tile", tile_type, thingindex, 0);
         caller = "tile";
     } else {
-        ictarget = getCssRuleTarget("icontext", str_type, thingindex, 0);
-        // ictarget = "div." + tile_type + "-thing " + ictarget;
         caller = "icontext";
     }
     var onstart = $(ictarget).css("color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-        if ( str_type==="wholetile") {
-            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
-        } else {
-            generic = getCssRuleTarget("icontext", str_type, thingindex, 1);
-        }
+//        if ( str_type==="wholetile") {
+//            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
+//        } else {
+//            generic = getCssRuleTarget("icontext", str_type, thingindex, 1);
+//        }
         onstart = $(generic).css("color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
     }
-    console.log("icon text target= "+ ictarget+ " color= "+onstart);
+    console.log("target= "+ ictarget+ " initial color= "+onstart);
     var iconfore = '<div class="colorgroup"> \
                   <label for="iconFore">Text Font Color</label> \
                   <input type="text" id="iconFore" \
@@ -1094,26 +1091,26 @@ function initColor(tile_type, str_type, thingindex) {
                   </div>';
 
     // header background colors
-    target = getCssRuleTarget("head", tile_type, thingindex, 0);
-    var onstart = $(target).css("background-color");
-    console.log("head back target= "+ target+ " color= "+onstart);
-    var headback = '<div class="colorgroup"> \
-                  <label for="headBackground">Header Background</label> \
-                  <input type="text" id="headBackground" \
-                  caller="head" target="' + target + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
-
-    // header foreground colors
-    target = getCssRuleTarget("text", tile_type, thingindex, 0);
-    var onstart = $(target).css("color");
-    console.log("head text target= "+ target+ " color= "+onstart);
-    var headfore = '<div class="colorgroup"> \
-                  <label for="headFore">Header Foreground</label> \
-                  <input type="text" id="headFore" \
-                  caller="text" target="' + target + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
+//    target = getCssRuleTarget("head", tile_type, thingindex, 0);
+//    var onstart = $(target).css("background-color");
+//    console.log("head back target= "+ target+ " color= "+onstart);
+//    var headback = '<div class="colorgroup"> \
+//                  <label for="headBackground">Header Background</label> \
+//                  <input type="text" id="headBackground" \
+//                  caller="head" target="' + target + '" \
+//                  class="colorset" value="' + onstart + '"> \
+//                  </div>';
+//
+//    // header foreground colors
+//    target = getCssRuleTarget("head", tile_type, thingindex, 0);
+//    var onstart = $(target).css("color");
+//    console.log("head text target= "+ target+ " color= "+onstart);
+//    var headfore = '<div class="colorgroup"> \
+//                  <label for="headFore">Header Foreground</label> \
+//                  <input type="text" id="headFore" \
+//                  caller="head" target="' + target + '" \
+//                  class="colorset" value="' + onstart + '"> \
+//                  </div>';
 
     // font size (returns px not pt)
     // get the default font
@@ -1175,9 +1172,19 @@ function initColor(tile_type, str_type, thingindex) {
     align+= '<input id="aligncenter" type="radio" name="align" value="center" checked><label for="aligncenter">Center</label>';
     align+= '<input id="alignright" type="radio" name="align" value="right"><label for="alignright">Right</label>';
     align += "</div></div>";
+    
+    var ishidden = "";
+    ishidden += "<div class='editSection_input autochk'>";
+    ishidden += "<input type='checkbox' id='isHidden' target='" + target + "'>";
+    ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div>";
+
+    var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
 
     // insert the color blocks
-    $("#colorpicker").html(dh + iconback + ceffect + headback + headfore + iconfore + fe + align);
+    // $("#colorpicker").html(dh + iconback + ceffect + headback + headfore + iconfore + fe + align);
+    $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted);
+
+
 
     // turn on minicolor for each one
     $('#colorpicker .colorset').each( function() {
@@ -1288,6 +1295,21 @@ function initColor(tile_type, str_type, thingindex) {
         addCSSRule(cssRuleTarget, fontstr);
         event.stopPropagation;
     });
+	
+    // determine hiding of element
+    $("#isHidden").off('change');
+    $("#isHidden").on('change', function(event) {
+        var strCaller = $($(event.target)).attr("target");
+        var ischecked = $(event.target).prop("checked");
+        if ( ischecked  ){
+            addCSSRule("div.overlay."+str_type, "display: none;", true);
+            addCSSRule(strCaller, "display: none;", true);
+        } else {
+            addCSSRule("div.overlay."+str_type, "display: block;", true);
+            addCSSRule(strCaller, "display: block;", true);
+        }
+        event.stopPropagation;
+    });	
 
     // set the initial invert check box
     if ( $(icontarget).css("filter") && $(icontarget).css("filter").startsWith("invert") ) {
@@ -1302,6 +1324,15 @@ function initColor(tile_type, str_type, thingindex) {
         $("#noIcon").prop("checked", true);
     } else {
         $("#noIcon").prop("checked", false);
+    }
+    
+    // set initial hidden status
+    var ish1= $(icontarget).css("display");
+    var ish2= $("div.overlay."+str_type).css("display");
+    if ( ish1 === "none" || ish2 === "none") {
+        $("#isHidden").prop("checked", true);
+    } else {
+        $("#isHidden").prop("checked", false);
     }
     
 }
@@ -1515,7 +1546,7 @@ function updateSize(subid, thingindex) {
     if ( $("#autoBgSize").is(":checked") ) {
         $("#bgSize").prop("disabled", true);
         addCSSRule(cssRuleTarget, "background-size: auto;");
-        addCSSRule(cssRuleTarget, "height: auto;");
+        // addCSSRule(cssRuleTarget, "height: auto;");
     } else {
         $("#bgSize").prop("disabled", false);
         var iconsize = $("#bgSize").val();
@@ -1525,7 +1556,7 @@ function updateSize(subid, thingindex) {
         }
         var rule = newsize.toString() + "px;";
         addCSSRule(cssRuleTarget, "background-size: " + rule);
-        addCSSRule(cssRuleTarget, "height: " + rule);
+        // addCSSRule(cssRuleTarget, "height: " + rule);
     }
 }
 

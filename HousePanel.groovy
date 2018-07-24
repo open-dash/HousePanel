@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 07/24/2018 - fix bug in lock opening and closing with motion detection
  * 06/11/2018 - added mobile option to enable or disable pistons and fix debugs
  * 06/10/2018 - changed icons to amazon web services location for https
  * 04/18/2018 - Bugfix curtemp in Thermostat, thanks to @kembod for finding this
@@ -1240,14 +1241,26 @@ def setLock(swid, cmd, swattr) {
     def resp = false
     def newsw
     def item  = mylocks.find {it.id == swid }
+    
+    log.debug "Performing setLock command with cmd = ${cmd} and swattr = ${swattr}"
     if (item) {
-        if (cmd!="lock" && cmd!="unlock") {
-            cmd = item.currentLock=="locked" ? "unlock" : "lock"
-        }
-        if (cmd=="unlock") {
+        if (cmd=="toggle") {
+            newsw = item.currentLock=="locked" ? "unlock" : "lock"
+            if ( newsw=="lock" ) {
+               item.lock()
+            } else {
+               item.unlock()
+            }
+        } else if ( cmd=="unknown" ) {
+            newsw = item.currentLock
+    	    log.debug "Ignoring unknown status..."
+        } else if ( cmd=="move" ) {
+            newsw = item.currentLock
+    	    log.debug "Ignoring move command for lock..."
+        } else if (cmd=="unlock") {
             item.unlock()
             newsw = "unlocked"
-        } else {
+        } else if (cmd=="lock") {
             item.lock()
             newsw = "locked"
         }
@@ -1256,7 +1269,6 @@ def setLock(swid, cmd, swattr) {
     return resp
 
 }
-
 def setValve(swid, cmd, swattr) {
     def resp = false
     def newsw

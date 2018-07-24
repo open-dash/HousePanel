@@ -698,7 +698,8 @@ div.door.closed, div.contact.door.closed {
     cursor: pointer;
 }
 /* hide the contact part of garage doors that include an embedded contact sensor */
-div.door-thing div.overlay.contact, div.garage.door.contact {
+/*div.door-thing div.overlay.contact, div.garage.door.contact {*/
+div.garage.door.contact {
     display: none;
 }
 div.contact.window.open {
@@ -1296,12 +1297,12 @@ div.thing.blank-thing:hover {
 
 /* clock styling */
 div.thing.clock-thing {
-    height: 148px;
+    height: 150px;
     width: 246px;
 }
 div.clock.weekday {
-    margin-top: 10px;
-    margin-bottom: 2px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 div.clock.time {
     font-size: 36pt;

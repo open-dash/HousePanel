@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 07/24/2018 - fix bug in lock opening and closing with motion detection
  * 06/21/2018 - Automatic push of Hubitat settings to HP server
  * 06/16/2018 - Sync important bug fixes from SmartThings version
  * 06/16/2018 - Add cloud and local options and auto configuration
@@ -1235,14 +1236,26 @@ def setLock(swid, cmd, swattr) {
     def resp = false
     def newsw
     def item  = mylocks.find {it.id == swid }
+    
+    log.debug "Performing setLock command with cmd = ${cmd} and swattr = ${swattr}"
     if (item) {
-        if (cmd!="lock" && cmd!="unlock") {
-            cmd = item.currentLock=="locked" ? "unlock" : "lock"
-        }
-        if (cmd=="unlock") {
+        if (cmd=="toggle") {
+            newsw = item.currentLock=="locked" ? "unlock" : "lock"
+            if ( newsw=="lock" ) {
+               item.lock()
+            } else {
+               item.unlock()
+            }
+        } else if ( cmd=="unknown" ) {
+            newsw = item.currentLock
+    	    log.debug "Ignoring unknown status..."
+        } else if ( cmd=="move" ) {
+            newsw = item.currentLock
+    	    log.debug "Ignoring move command for lock..."
+        } else if (cmd=="unlock") {
             item.unlock()
             newsw = "unlocked"
-        } else {
+        } else if (cmd=="lock") {
             item.lock()
             newsw = "locked"
         }
