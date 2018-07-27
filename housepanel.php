@@ -294,14 +294,14 @@ function getAuthCode($returl, $stweb, $clientId)
 }
 
 // return access token from SmartThings oauth flow
-function getAccessToken($returl, $code) {
+function getAccessToken($returl, $code, $stweb, $clientId, $clientSecret) {
 
-    $host = ST_WEB . "/oauth/token";
+    $host = $stweb . "/oauth/token";
     $ctype = "application/x-www-form-urlencoded";
     $headertype = array('Content-Type: ' . $ctype);
     
-    $nvpreq = "grant_type=authorization_code&code=" . urlencode($code) . "&client_id=" . urlencode(CLIENT_ID) .
-                         "&client_secret=" . urlencode(CLIENT_SECRET) . "&scope=app" . "&redirect_uri=" . $returl;
+    $nvpreq = "grant_type=authorization_code&code=" . urlencode($code) . "&client_id=" . urlencode($clientId) .
+                         "&client_secret=" . urlencode($clientSecret) . "&scope=app" . "&redirect_uri=" . $returl;
     
     $response = curl_call($host, $headertype, $nvpreq, "POST");
 
@@ -318,9 +318,9 @@ function getAccessToken($returl, $code) {
 
 // returns an array of the first endpoint and the sitename
 // this only works if the clientid within theendpoint matches our auth version
-function getEndpoint($access_token) {
+function getEndpoint($access_token, $stweb, $clientId) {
 
-    $host = ST_WEB . "/api/smartapps/endpoints";
+    $host = $stweb . "/api/smartapps/endpoints";
     $headertype = array("Authorization: Bearer " . $access_token);
     $response = curl_call($host, $headertype);
 
@@ -328,7 +328,7 @@ function getEndpoint($access_token) {
     $sitename = "";
     if ($response && is_array($response)) {
 	    $endclientid = $response[0]["oauthClient"]["clientId"];
-	    if ($endclientid == CLIENT_ID) {
+	    if ($endclientid == $clientId) {
                 $endpt = $response[0]["uri"];
                 $sitename = $response[0]["location"]["name"];
 	    }
@@ -1802,7 +1802,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         if ( $thetype=="video") {
             $tc.= "<td class=\"thingname\">";
         } else {
-            $tc.= "<td class=\"thingname clickable\" onclick=\"editTile('$str_type', '$thingindex', '')\">";
+            $pnames = processName($thingname, $thetype);
+            $subtype = $pnames[1];
+            $class = "thing " . $thetype . "-thing $subtype p_" . $thingindex;
+            $tc.= "<td class=\"thingname clickable\" onclick=\"editTile('$thetype', '$thingindex', '$class', '')\">";
         }
         $tc.= $thingname . "<span class=\"typeopt\">(" . $thetype . ")</span>";
         $tc.= hidden("i_" .  $thingid, $thingindex);
@@ -2092,6 +2095,11 @@ function processOptions($optarray) {
 
 function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
     $options = readOptions();  // getOptions($allthings);
+    $configoptions = $options["config"];
+    $stweb = $configoptions["st_web"];
+    $clientId = $configoptions["client_id"];
+    $clientSecret = $configoptions["client_secret"];
+    
     $tc = "";
     $tc.= "<h3>HousePanel Information Display</h3>";
     $tc.= "<div class='returninfo'><a href=\"$returnURL\">Return to HousePanel</a></div><br />";
@@ -2100,6 +2108,9 @@ function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEnd
     $tc.= "<div>Sitename = $sitename </div>";
     $tc.= "<div>Skin directory = $skindir </div>";
     $tc.= "<div>Site url = $returnURL </div><br />";
+    $tc.= "<div>SmartThings API URL = $stweb </div>";
+    $tc.= "<div>SmartThings Client ID = $clientId </div>";
+    $tc.= "<div>SmartThings Client Secret = $clientSecret </div>";
     $tc.= "<div>SmartThings AccessToken = $access_token </div>";
     $tc.= "<div>SmartThings Endpoint = $endpt </div>";
     $tc.= "<div>Hubitat AccessToken = " . $hubitatAccess . "</div>";
@@ -2391,6 +2402,10 @@ function is_ssl() {
  * *****************************************************************************
  */
     $skindir = $options["skin"];
+    $configoptions = $options["config"];
+    $stweb = $configoptions["st_web"];
+    $clientId = $configoptions["client_id"];
+    $clientSecret = $configoptions["client_secret"];
 
 /* 
  * *****************************************************************************
@@ -2399,6 +2414,7 @@ function is_ssl() {
  */    
     $code = filter_input(INPUT_GET, "code", FILTER_SANITIZE_SPECIAL_CHARS);
     if ( $code ) {
+        
         // unset session to force re-read of things since they could have changed
         unset($_SESSION["allthings"]);
 
@@ -2416,11 +2432,13 @@ function is_ssl() {
         }
 
         // make call to get the token
-        $token = getAccessToken($returnURL, $code);
+        $token = getAccessToken($returnURL, $code, $stweb, $clientId, $clientSecret);
+//        echo "token = $token code = $code stweb = $stweb clientId = $clientId  secret = $clientSecret";
+//        exit(0);
 
         // get the endpoint if the token is valid
         if ($token) {
-            $endptinfo = getEndpoint($token, $clientId);
+            $endptinfo = getEndpoint($token, $stweb, $clientId);
             $endpt = $endptinfo[0];
             $sitename = $endptinfo[1];
 
@@ -2444,6 +2462,14 @@ function is_ssl() {
                 // setcookie("confighousepanel", json_encode($configoptions), $expiry, "/", $serverName);
             }
 
+        } else {
+            $hpcode = time();
+            $_SESSION["hpcode"] = $hpcode;
+            $authpage= authButton("SmartHome", $returnURL, $hpcode, true);
+
+            echo htmlHeader($skindir);
+            echo $authpage;
+            echo htmlFooter();
         }
 
         if (DEBUG || DEBUG2) {

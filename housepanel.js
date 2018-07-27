@@ -860,10 +860,11 @@ function addEditLink() {
         var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");
         var strhtml = $(thing).html();
+        var thingclass = $(thing).attr("class");
         
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
-        editTile(str_type, tile, strhtml);
+        editTile(str_type, tile, thingclass, strhtml);
     });
     
     $("div.dellink").on("click",function(evt) {

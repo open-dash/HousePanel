@@ -472,12 +472,26 @@ input.resetbutton, input.submitbutton {
 div.restoretabs.hidden, div.thing.hidden.catalog-thing {
     display: none;
 }
-.smallbutton {
+div.filteroption div.smallbutton {
     padding: 4px;
     height: 0.8em;
     width: 60px;
     display: inline-block;
-    font-size: 11pt;
+    font-size: 12pt;
+    background-color: #cccccc;
+    border-left: solid 2px gray;
+    border-top: solid 2px gray;
+    border-right: solid 3px black;
+    border-bottom: solid 3px black;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    cursor: pointer;
+}
+
+div.filteroption div.smallbutton:hover {
+    background-color: black;
+    color: white;
 }
 
 div.modalbox {
@@ -490,6 +504,14 @@ div.modalbox {
     position: absolute; 
     z-index: 9999;
 }
+
+td.thingname.clickable:hover {
+    cursor: pointer;
+    background-color: blue;
+    font-style: normal;
+    color: white;
+}
+
 div.modalbuttons {
     margin-top: 5px;
 }

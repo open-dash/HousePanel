@@ -123,7 +123,8 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
 //                on = "."+on;
 //            }
             
-            if ( on && str_type!=="name" && str_type!=="weekday" && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
+            if ( on && str_type!=="name" && str_type!=="weekday" && str_type!=="color" &&
+                    !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
                 on = "";
@@ -140,7 +141,8 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             // get the on/off state
             var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
             var on = $(onofftarget).html();
-            if ( on && str_type!=="name" && str_type!=="weekday" && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
+            if ( on && str_type!=="name" && str_type!=="weekday" && str_type!=="color" && 
+                    !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
                 on = "";
@@ -729,7 +731,7 @@ function colorpicker(str_type, thingindex) {
 }
 
 // popup dialog box now uses createModal
-function editTile(str_type, thingindex, htmlcontent) {  
+function editTile(str_type, thingindex, thingclass, htmlcontent) {  
 
     // save the sheet upon entry for cancel handling
     savedSheet = document.getElementById('customtiles').sheet;
@@ -754,10 +756,11 @@ function editTile(str_type, thingindex, htmlcontent) {
     // we either use the passed in content or make an Ajax call to get the content
     var jqxhr = null;
     if ( htmlcontent ) {
-        dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing p_" + thingindex+"\" id='wysiwyg'>" + htmlcontent + "</div>";
+        // dialog_html += "<div class=\"thing " + str_type + "-thing p_" + thingindex+"\" id='wysiwyg'>" + htmlcontent + "</div>";
+        dialog_html += "<div class=\"" + thingclass + "\" id='wysiwyg'>" + htmlcontent + "</div>";
     } else {
         // put placeholder and populate after Ajax finishes retrieving true wysiwyg content
-        dialog_html += "<div class=\"thing " + str_type + " " + str_type + "-thing p_"+thingindex+"\" id='wysiwyg'></div>";
+        dialog_html += "<div class=\"thing " + str_type + "-thing p_"+thingindex+"\" id='wysiwyg'></div>";
         jqxhr = $.post("housepanel.php", 
             {useajax: "wysiwyg", id: '', type: '', tile: thingindex, value: '', attr: ''},
             function (presult, pstatus) {
@@ -826,7 +829,10 @@ function editTile(str_type, thingindex, htmlcontent) {
         subid = words[1];
         if ( subid ) {
             // idsubs = idsubs + subid + "  " ; 
-            subcontent += "<option value='" + subid + "'>" + subid + "</option>";
+            // limit selectable sub to exclude color since that is special
+            if ( subid!=="color" ) {
+                subcontent += "<option value='" + subid + "'>" + subid + "</option>";
+            }
         }
     });
     // console.log("classes: " + idsubs);
