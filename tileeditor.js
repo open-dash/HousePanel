@@ -123,7 +123,7 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
 //                on = "."+on;
 //            }
             
-            if ( on && str_type!=="name" && str_type!=="weekday" && str_type!=="color" &&
+            if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" &&
                     !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
@@ -141,7 +141,7 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
             // get the on/off state
             var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
             var on = $(onofftarget).html();
-            if ( on && str_type!=="name" && str_type!=="weekday" && str_type!=="color" && 
+            if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" && 
                     !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
@@ -194,11 +194,11 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
 
 function toggleTile(target, tile_type, thingindex) {
     var swval = $(target).html();
-    var str_type = $(target).attr("subid");
-//    alert("tile type= "+tile_type+" subid= "+str_type);
+    var subid = $(target).attr("subid");
+    // alert("tile type= "+tile_type+" subid= "+subid);
     
     // activate the icon click to use this
-    var onoff = getOnOff(str_type, swval);
+    var onoff = getOnOff(subid, swval);
     var newsub = 0;
     if ( onoff && onoff.length > 0 ) {
         for ( var i=0; i < onoff.length; i++ ) {
@@ -218,8 +218,8 @@ function toggleTile(target, tile_type, thingindex) {
         $(target).addClass( onoff[newsub] );
     }
                 
-    initColor(tile_type, str_type, thingindex);
-
+    initColor(tile_type, subid, thingindex);
+    loadSubSelect(tile_type, subid, thingindex);
 };
 
 // activate ability to click on icons
@@ -253,11 +253,14 @@ function initDialogBinds(str_type, thingindex) {
         // if ( $(event.target).attr("id") &&  $(event.target).attr("subid") ) {
         if ( $(event.target).attr("subid") ) {
             toggleTile(event.target, str_type, thingindex);
-            event.stopPropagation();
         } else if ( $(event.target).hasClass("thingname") || $(event.target).hasClass("original")  ) {
             initColor(str_type, "head", thingindex);
-            event.stopPropagation();
+            loadSubSelect(str_type, "head", thingindex);
+        } else {
+            initColor(str_type, "wholetile", thingindex);
+            loadSubSelect(str_type, "wholetile", thingindex);
         }
+        event.stopPropagation();
     });
 
     $("#wholetile").on('click', function(event) {
@@ -778,6 +781,7 @@ function editTile(str_type, thingindex, thingclass, htmlcontent) {
     dialog_html += "</div>";
     
     // create a function to display the tile
+    var firstsub = setsubid(str_type);
     var dodisplay = function() {
         var pos = {top: 100, left: 200};
         createModal( dialog_html, "body", true, pos, 
@@ -795,9 +799,8 @@ function editTile(str_type, thingindex, thingclass, htmlcontent) {
             // function invoked upon starting the dialog
             function(hook, content) {
                 // find the first clickable item
-                var subid = setsubid(str_type);
                 getIcons(str_type, thingindex);	
-                initColor(str_type, subid, thingindex);
+                initColor(str_type, firstsub, thingindex);
                 // we could start with the entire tile selected
                 // initColor(str_type, "wholetile", thingindex);
                 initDialogBinds(str_type, thingindex);
@@ -810,40 +813,76 @@ function editTile(str_type, thingindex, thingclass, htmlcontent) {
         jqxhr.done(function() {
             dodisplay();
             $("#wysiwyg").html(htmlcontent);
+            loadSubSelect(str_type, firstsub, thingindex);
         });
     } else {
         dodisplay();
+        loadSubSelect(str_type, firstsub, thingindex);
     }
+
+}
+
+function loadSubSelect(str_type, firstsub, thingindex) {
         
     // get list of all the subs this tile supports
     var subcontent = "";
     subcontent += "<br><div class='editInfo'>Select Feature:</div>";
     subcontent += "<select id='subidselect' name='subselect'>";
-    subcontent += "<option value='wholetile' selected>Whole Tile</option>";
-    subcontent += "<option value='head'>Head Title</option>";
+    
+    if ( firstsub === "wholetile" ) {
+        subcontent += "<option value='wholetile' selected>Whole Tile</option>";
+    } else {
+        subcontent += "<option value='wholetile'>Whole Tile</option>";
+    }
+    
+    if ( firstsub === "head" ) {
+        subcontent += "<option value='head' selected>Head Title</option>";
+    } else {
+        subcontent += "<option value='head'>Head Title</option>";
+    }
     // var idsubs = "";
     var subid;
+    // var firstsub = setsubid(str_type);
+
     $("#wysiwyg div.overlay").each(function(index) {
         var classes = $(this).attr("class");
         var words = classes.split(" ", 3);
         subid = words[1];
         if ( subid ) {
-            // idsubs = idsubs + subid + "  " ; 
+            // handle music controls
+            if ( subid==="music-controls" ) {
+                var that = $(this);
+                that.children().each(function() {
+                   var musicsub = $(this).attr("subid");
+                    subcontent += "<option value='" + musicsub +"'";
+                    if ( musicsub === firstsub ) {
+                        subcontent += " selected";
+                    }
+                    subcontent += ">" + musicsub + "</option>";;
+                });
+            }
+            
             // limit selectable sub to exclude color since that is special
-            if ( subid!=="color" ) {
-                subcontent += "<option value='" + subid + "'>" + subid + "</option>";
+            else if ( subid!=="color" ) {
+                subcontent += "<option value='" + subid +"'";
+                if ( subid === firstsub ) {
+                    subcontent += " selected";
+                }
+                subcontent += ">" + subid + "</option>";;
             }
         }
     });
     // console.log("classes: " + idsubs);
     subcontent += "</select>";
+    // console.log("subcontent = " + subcontent);
     $("#subsection").html(subcontent);
+    $("#subidselect").off('change');
     $("#subidselect").on('change', function(event) {
         var subid = $(event.target).val();
         initColor(str_type, subid, thingindex);
         event.stopPropagation();
     });
-
+    
 }
 
 function setsubid(str_type) {
@@ -997,9 +1036,14 @@ function initColor(tile_type, str_type, thingindex) {
     }
     iconsize = parseInt(iconsize, 10);
     if ( isNaN(iconsize) || iconsize <= 0 ) { 
-        iconsize = 80; 
-        if ( str_type === "wholetile" ) { iconsize = 150; }
+        iconsize = $(generic).css("background-size");
+        if ( isNaN(iconsize) || iconsize <= 0 ) { 
+            iconsize = 80; 
+            if ( str_type === "wholetile" ) { iconsize = 150; }
+        }
+        if ( str_type.startsWith("music") ) { iconsize = 40; }
     }
+    // alert("generic = " + generic + " iconsize = " + iconsize);
     $("#bgSize").val(iconsize);
 
     var dh= "";
@@ -1527,8 +1571,8 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) 
     addCSSRule(cssRuleTarget, imgurl + strEffect + ";");
 
     // set new icons to default size of 80
-    $("#bgSize").val(80);
-    $("#bgSize").prop("disabled", false);
+    // $("#bgSize").val(80);
+    // $("#bgSize").prop("disabled", false);
     $("#autoBgSize").prop("checked", false);
     updateSize(str_type, thingindex);
 //
@@ -1559,6 +1603,9 @@ function updateSize(subid, thingindex) {
         var newsize = parseInt( iconsize );
         if ( iconsize <= 0 ) {
             iconsize = 80;
+            if ( subid.startsWith("music") ) {
+                iconsize = 40;
+            }
         }
         var rule = newsize.toString() + "px;";
         addCSSRule(cssRuleTarget, "background-size: " + rule);

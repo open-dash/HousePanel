@@ -157,7 +157,7 @@ function getMaxZindex() {
     dragZindex = 2;
     $("div.panel div.thing").each( function() {
         var zindex = $(this).css("z-index");
-        if ( zindex ) {
+        if ( zindex && zindex < 9999 ) {
             zindex = parseInt(zindex);
             if ( zindex > dragZindex ) { dragZindex = zindex; }
         }

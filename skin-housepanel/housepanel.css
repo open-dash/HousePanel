@@ -502,7 +502,7 @@ div.modalbox {
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
     position: absolute; 
-    z-index: 9999;
+    z-index: 99999;
 }
 
 td.thingname.clickable:hover {
@@ -988,28 +988,31 @@ div.music-controls {
     cursor: pointer;
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
-    background-image: url("media/Media-Player-Buttons.png");
+    /*background-image: url("media/Media-Player-Buttons.png");*/
     color: rgba(255, 255, 255, 0.01);
-    background-size: auto;
+    background-size: 38px;
     display: inline-block;
     background-repeat: no-repeat;
     height:38px; 
     width: 32px;
-    background-position: -160px -4px;
+    /*background-position: -160px -4px;*/
     margin-top: 5px;
     /*position: absolute;*/
 }
 div.music-pause {
-    background-position: -64px -4px;
+    background-image: url("media/pause.png");
 }
 div.music-stop {
-    background-position: -128px -4px;
+    background-image: url("media/stop.png");
 }
 div.music-play {
-    background-position: -96px -4px;
+    background-image: url("media/play.png");
+}
+div.music-previous {
+    background-image: url("media/prev.png");
 }
 div.music-next {
-    background-position: -32px -4px;
+    background-image: url("media/next.png");
 }
 
 /* make thermostat height auto */
@@ -1374,10 +1377,10 @@ div.shm.state.away {
 div.shm.state.off {
     background-image: url('icons/security-green.png');
 }
-div.mode.name {
+div.mode-thing div.name {
     font-size: 12pt;    margin-top: 30px;
 }
-div.mode.sitename {
+div.mode-thing div.sitename {
     margin-top: 45px;
 }
 
@@ -1593,15 +1596,11 @@ div.switch.yard.power {
     position: relative; top: -48px;
 }*/
 div.thing.video-thing {
-    width: auto;
-    height: 150px;
+    width: 246px;
+    height: 147px;
 }
 div.thingname.video {
     display: none;
-}
-/* this makes a fixed music size but long names will get cut off */
-div.music.track {
-    height: 48px;
 }
 
 div.overlay.battery {
@@ -1874,7 +1873,6 @@ div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
 
 div.other-thing div.switch {
     height: 20px;
-    padding-top: 4px;
     background-color: rgba(50, 50, 50, 1);
 }
 
@@ -1908,6 +1906,7 @@ div.other-thing.lg div.overlay.name
 div.other.switch {
     background-image: none;
     height: auto;
+    width: auto;
     font-size: 11pt;
     color: rgba(255, 255, 255, 1);
 }

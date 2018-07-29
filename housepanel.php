@@ -663,8 +663,9 @@ function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
 
         // add 4 generic iFrame tiles
         $forecast = "<iframe width=\"490\" height=\"230\" src=\"forecast.html\" frameborder=\"0\"></iframe>";
+        $accuweather = "<iframe width=\"490\" height=\"200\" src=\"forecast_accu.html\" frameborder=\"0\"></iframe>";
         $allthings["frame|frame1"] = array("id" => "frame1", "name" => "Weather Forecast", "value" => array("name"=>"Weather Forecast", "frame"=>"$forecast","status"=>"stop"), "type" => "frame");
-        $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Frame 2", "value" => array("name"=>"Frame 2", "frame"=>"","status"=>"stop"), "type" => "frame");
+        $allthings["frame|frame2"] = array("id" => "frame2", "name" => "Accu Weather", "value" => array("name"=>"Accu Weather", "frame"=>"$accuweather","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame3"] = array("id" => "frame3", "name" => "Frame 3", "value" => array("name"=>"Frame 3", "frame"=>"","status"=>"stop"), "type" => "frame");
         $allthings["frame|frame4"] = array("id" => "frame4", "name" => "Frame 4", "value" => array("name"=>"Frame 4", "frame"=>"","status"=>"stop"), "type" => "frame");
         
@@ -711,7 +712,7 @@ function processName($thingname, $thingtype) {
 // this function reflects whatever you put in the maketile routine
 // it must be an existing video file of type mp4
 function returnVideo($vidname) {
-    $v= "<video height=\"150px\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
+    $v= "<video width=\"240px\" height=\"147px\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
     return $v;
 }
 
@@ -947,6 +948,9 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
         if ( $tkey == "level" || $tkey=="colorTemperature" ) {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" value=\"$tval\" title=\"$tkey\" class=\"" . $thingtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . "</div>";
+        } else if ( $thingtype==="other" && substr($tval,0,7)==="number_" ) {
+            $numval = substr($tkey,8);
+            $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . $numval . "</div>";
         } else {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
         }
