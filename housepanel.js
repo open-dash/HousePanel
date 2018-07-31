@@ -1226,7 +1226,9 @@ function updateTile(aid, presult) {
         if ($(targetid) && value) {
             var oldvalue = $(targetid).html();
             var oldclass = $(targetid).attr("class");
-            // alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
+//            if ( key==="text") {
+//                alert(" aid="+aid+" key="+key+" targetid="+targetid+" value="+value+" oldvalue="+oldvalue+" oldclass= "+oldclass);
+//            }
 
             // remove the old class type and replace it if they are both
             // single word text fields like open/closed/on/off
@@ -1260,6 +1262,7 @@ function updateTile(aid, presult) {
                 $(targetid).html(value);
 //                setupColors();
             } else if ( oldclass && oldvalue && value &&
+                     key!=="name" &&
                      $.isNumeric(value)===false && 
                      $.isNumeric(oldvalue)===false &&
                      oldclass.indexOf(oldvalue)>=0 ) {
@@ -1269,7 +1272,7 @@ function updateTile(aid, presult) {
             }
 
                 // update the content 
-                if (oldvalue && value) {
+                if (oldvalue || value) {
                     $(targetid).html(value);
                 }
             }
@@ -1448,7 +1451,7 @@ function updateMode() {
 function updAll(trigger, aid, bid, thetype, pvalue) {
 
     // update trigger tile first
-    // alert("aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
+    // alert("trigger= "+trigger+" aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
     if ( trigger !== "slider") {
         updateTile(aid, pvalue);
     }

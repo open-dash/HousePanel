@@ -19,6 +19,7 @@
  * 
  *
  * Revision History
+ * 1.74       Add 8 custom tiles, zindex bugfix, and more tile editor updates
  * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more
  * 1.72       Timezone bug fix and merge into master
  * 1.71       Bug fixes and draft page edit commented out until fixed
@@ -99,7 +100,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.73');
+define('HPVERSION', 'Version 1.74');
 define('APPNAME', 'House Panel ' . HPVERSION);
 
 // developer debug options
@@ -634,9 +635,9 @@ function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
     }
     
     // if a prior call failed then we need to reset the session and reload
-    // the 9 is because by default we always have 9 things
-    // which are 1 clock, 4 frames, and 4 videos
-    if (count($allthings) <= 9 ) {
+    // the 10 is because by default we always have 10 things
+    // which are 1 clock, 4 frames, 4 videos and 8 custom
+    if (count($allthings) <= 17 ) {
         session_unset();
         $allthings = array();
         
@@ -679,6 +680,12 @@ function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
         $allthings["video|vid2"] = array("id" => "vid2", "name" => "Video 2", "value" => array("name"=>"Video 2", "url"=>"media/arlovideo2.mp4"), "type" => "video");
         $allthings["video|vid3"] = array("id" => "vid3", "name" => "Video 3", "value" => array("name"=>"Video 3", "url"=>"media/arlovideo.mp4"), "type" => "video");
         $allthings["video|vid4"] = array("id" => "vid4", "name" => "Video 4", "value" => array("name"=>"Video 4", "url"=>"media/arlovideo2.mp4"), "type" => "video");
+        
+        // add 8 custom ad-hoc tiles
+        for ($i=1; $i<9; $i++ ) {
+            $customid = "custom_" . strval($i);
+            $allthings["custom|$customid"] = array("id" => $customid, "name" => "Custom " . strval($i), "value" => array("name"=>"Custom " . strval($i), "post"=>"", "text"=>""), "type" => "custom");
+        }
         
         $_SESSION["allthings"] = $allthings;
     }
@@ -1196,11 +1203,65 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     if ($swtype==="clock") {
         $response = $todaydate;
-    } else if ($swtype=="video") {
+    } else if ($swtype==="video") {
         // instead of doing this it is safer to put it in a crontab
         // exec("python getarlo.py");
         $videodata = returnVideo($swval);
         $response = array("url" => $videodata);
+    } else if ($swtype==="custom") {
+        
+        // each custom tile can have any number of lines defined in the hmoptions.cfg file
+        // or it can make any number of web REST API calls using GET or POST
+        // returning the result to the content of the tiles in the "post" field
+        // the text field will remain blank for REST API calls
+        // three parameters are passed for each call: type, url, params
+        // the type must be either GET, POST, or PUT
+        // the url is the REST API url or it can be a text message
+        // params is a query string passed to the GET or POST call in standard format
+        // such as "val=1&opt=2&info=myinfo"
+        $postkey = "post_" . $swid;
+        $response = array();
+        $response["post"] = "";
+        $response["text"] = "";
+        if (array_key_exists($postkey, $options)) {
+            $lines = $options[$postkey];
+            foreach ($lines as $msgs) {
+                $calltype = strtoupper($msgs[0]);
+                $posturl = $msgs[1];
+                $params = $msgs[2];
+                if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
+                     substr(strtolower($posturl),0,4)==="http" ) {
+                    $webresponse = curl_call($posturl, FALSE, $params, $calltype);
+                    if (is_array($webresponse)) {
+                        $response["post"] .= json_encode($webresponse);
+                    } else {
+                        $response["post"] .= $webresponse;
+                    }
+                } else {
+                    if ( strlen($response["post"]) && strlen($posturl) ) {
+                        $response["post"].= "<br />";
+                    }
+                    if ( strlen($response["text"]) && strlen($params) ) {
+                        $response["text"].= "<br />";
+                    }
+                    $response["post"].= $posturl;
+                    $response["text"].= $params;
+                }
+            }
+        } else {
+            $response["post"] = "$swid tile not configured";
+            $response["text"] = "";
+        }
+        if ( isset($_SESSION["allthings"]) ) {
+            $allthings = $_SESSION["allthings"];
+            $idx = $swtype . "|" . $swid;
+            if ( isset($allthings[$idx]) && $swtype===$allthings[$idx]["type"] ) {
+                $newval = array_merge($allthings[$idx]["value"], $response);
+                $allthings[$idx]["value"] = $newval;
+            }
+            $_SESSION["allthings"] = $allthings;
+        }
+        
     } else {
             
         $headertype = array("Authorization: Bearer " . $access_token);
@@ -1690,7 +1751,7 @@ function getTypes() {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "shm", "piston", "other",
-                        "clock","blank","image","frame","video");
+                        "clock","blank","image","frame","video","custom");
     return $thingtypes;
 }
 
@@ -1729,7 +1790,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= hidden("returnURL", $retpage);
-    $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skindir\"/></div>";
+    $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skindir\"/></div>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
     $kstr = $kioskoptions=="true" ? "checked" : "";
@@ -1809,7 +1870,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
             $pnames = processName($thingname, $thetype);
             $subtype = $pnames[1];
             $class = "thing " . $thetype . "-thing $subtype p_" . $thingindex;
-            $tc.= "<td class=\"thingname clickable\" onclick=\"editTile('$thetype', '$thingindex', '$class', '')\">";
+            
+            // disable clickable names since this is now tile specific on the edit page
+            // $tc.= "<td class=\"thingname clickable\" onclick=\"editTile('$thetype', '$thingindex', '$class', '')\">";
+            $tc.= "<td class=\"thingname\">";
         }
         $tc.= $thingname . "<span class=\"typeopt\">(" . $thetype . ")</span>";
         $tc.= hidden("i_" .  $thingid, $thingindex);
@@ -1927,7 +1991,7 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     $thing = makeThing($cnt, $tilenum, $thesensor, $panel, $ypos, $xpos, $zindex, "");
     
     // add it to our system
-    $options["things"][$panel][] = array($tilenum, $ypos, $xpos, $zpos, "");
+    $options["things"][$panel][] = array($tilenum, $ypos, $xpos, $zindex, "");
     writeOptions($options);
     
     return $thing;

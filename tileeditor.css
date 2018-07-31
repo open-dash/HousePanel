@@ -116,11 +116,9 @@ div.colorgroup.font {
 #editEffect {
     margin-left: 0px;
 }
-.iconlist {
+#iconList img.icon {
     position: relative;
     display: inline-block;
-}
-.icon {
     float: left;
     margin: 2px;
     margin-bottom: 5px;
@@ -128,7 +126,7 @@ div.colorgroup.font {
     width: auto;
     object-fit: contain;
 }
-.icon:hover {
+#iconList img.icon:hover {
 	position: relative;
 	box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70);
 	-moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70);

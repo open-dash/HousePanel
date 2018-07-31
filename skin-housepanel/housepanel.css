@@ -1453,6 +1453,19 @@ div.bulb.color, div.light.color {
     z-index: 9999;
 }
 
+div.custom-thing {
+    height: 150px;
+    width: 120px;
+}
+div.custom.post {
+    height: 80px;
+    color: rgba(255, 255, 255, 1);
+}
+div.custom.text {
+    height: 30px;
+    color: rgba(255, 255, 255, 1);
+}
+
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
