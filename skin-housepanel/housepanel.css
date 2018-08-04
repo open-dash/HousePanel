@@ -1510,6 +1510,32 @@ div.dellink {
     background-color: rgba(255, 0, 0, 1);
     right: 0px;
 }
+div.editpage, div.delpage, div.addpage {
+    border: 2px solid white; 
+    color: rgba(255, 255, 255, 1);
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    position: absolute; 
+    z-index: 501; 
+    top: 5px;
+    cursor: pointer;
+}
+div.editpage {
+    background-color: rgba(0, 102, 102, 1);
+    left: 0px;
+}
+div.delpage {
+    background-color: rgba(255, 0, 0, 1);
+    right: 0px;
+}
+div.addpage {
+    font-size: 14px;
+    padding: 2px;
+    border-radius: 0;
+    width: 40px; height: 24px;
+    background-color: rgba(0, 102, 102, 1);
+    right: 2px;
+}
 
 /* Example custom settings from Ken's home */
 /* you should remove these since they will likely do nothing */

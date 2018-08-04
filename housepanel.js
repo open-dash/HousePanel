@@ -456,6 +456,7 @@ function setupPagemove() {
                 pages[pagename] = k;
                 k++;
             });
+            // console.log("reordered rooms: " + pages);
             $.post(returnURL, 
                 {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
             );
@@ -472,12 +473,15 @@ function setupSortable() {
         delay: 50,
         grid: [1, 1],
         stop: function(event, ui) {
-            var tile = $(ui.item).attr("tile");
+            // var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
             var things = [];
             $("div.thing[panel="+roomtitle+"]").each(function(){
-                things.push($(this).attr("tile"));
+                var tilename = $(this).find("span").text();
+                var tile = $(this).attr("tile");
+                things.push([tile, tilename]);
             });
+            console.log("reordered tiles: " + things);
             $.post(returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
             );
@@ -558,8 +562,8 @@ function setupDraggable() {
                 var bid = $(thing).attr("bid");
                 var tile = $(thing).attr("tile");
                 var thingtype = $(thing).attr("type");
-                // var thingname = $(thing).find(".thingname").text();
-                var thingname = $("span.orignal.n_"+tile).html();
+                var thingname = $(thing).find(".thingname").text();
+                // var thingname = $("span.orignal.n_"+tile).html();
 
                 // handle new tile creation
                 if ( thing.hasClass("catalog-thing") ) {
@@ -567,7 +571,8 @@ function setupDraggable() {
                     // because the thing in the catalog doesn't have a panel attr
                     $("li.ui-tabs-tab").each(function() {
                         if ( $(this).hasClass("ui-tabs-active") ) {
-                            var panel = $(this).text();
+                            var clickid = $(this).attr("aria-labelledby");
+                            var panel = $("#"+clickid).text();
                             var lastthing = $("div.panel-"+panel+" div.thing").last();
                             var pos = {left: 400, top: 100};
                             createModal("Add: "+ thingname + " of Type: "+thingtype+" to Room: "+panel+"?<br />Are you sure?","body", true, pos, function(ui, content) {
@@ -586,7 +591,7 @@ function setupDraggable() {
                                         {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
                                         function (presult, pstatus) {
                                             if (pstatus==="success") {
-                                                console.log( "Added " + thingname + " of type " + thingtype + " to room " + panel + " thing= "+ presult );
+                                                console.log( "Added " + thingname + " of type " + thingtype + " and bid= " + bid + " to room " + panel + " thing= "+ presult );
                                                 lastthing.after(presult);
                                                 var newthing = lastthing.next();
                                                 dragZindex = dragZindex + 1;
@@ -852,6 +857,18 @@ function addEditLink() {
        $(this).append(editdiv).append(deldiv);
     });
     
+    // add links to edit page tabs
+    $("#roomtabs li.ui-tab").each(function() {
+       var roomname = $(this).children("a").text();
+       var editdiv = "<div class=\"editpage\" roomnum=" + $(this).attr("roomnum") + " roomname=\""+roomname+"\"> </div>";
+       var deldiv = "<div class=\"delpage\" roomnum=" + $(this).attr("roomnum") + " roomname=\""+roomname+"\"> </div>";
+       $(this).append(editdiv).append(deldiv);
+    })
+    
+    // add link to add a new page
+    var editdiv = "<div class=\"addpage\" roomnum=\"new\">Add</div>";
+    $("#roomtabs").append(editdiv);
+    
     // show the skin 
     $("div.skinoption").show();
     
@@ -878,7 +895,7 @@ function addEditLink() {
 
         createModal("Remove: "+ tilename + " of type: "+str_type+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
-            if ( clk=="okay" ) {
+            if ( clk==="okay" ) {
                 // remove it from the system
                 // alert("Removing thing = " + tilename);
                 $.post(returnURL, 
@@ -896,7 +913,111 @@ function addEditLink() {
         });
         
     });
+    
+    $("#roomtabs div.delpage").off("click");
+    $("#roomtabs div.delpage").on("click",function(evt) {
+        var roomnum = $(evt.target).attr("roomnum");
+        var roomname = $(evt.target).attr("roomname");
+        var clickid = $(evt.target).parent().attr("aria-labelledby");
+        var pos = {top: 100, left: 10};
+        createModal("Remove Room #" + roomnum + " with Name: " + roomname +" from HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
+            var clk = $(ui).attr("name");
+            if ( clk==="okay" ) {
+                // remove it from the system
+                // alert("Removing thing = " + tilename);
+                $.post(returnURL, 
+                    {useajax: "pagedelete", id: roomnum, type: "none", value: roomname, attr: "none"},
+                    function (presult, pstatus) {
+                        console.log("ajax call: status = " + pstatus + " result = "+presult);
+                        if (pstatus==="success" && presult==="success") {
+                            console.log( "Removed Page #" + roomnum + " Page name: "+ roomname );
+                            // remove it visually
+                            $("li[roomnum="+roomnum+"]").remove();
+                            
+                            // fix default tab if it is on our deleted page
+                            var defaultTab = getCookie( 'defaultTab' );
+                            if ( defaultTab === clickid ) {
+                                defaultTab = $("#roomtabs").children().first().attr("aria-labelledby");
+                                setCookie('defaultTab', defaultTab, 30);
+                            }
+                        }
+                    }
+                );
+            }
+        });
+        
+    });
+    
+    $("#roomtabs div.editpage").off("click");
+    $("#roomtabs div.editpage").on("click",function(evt) {
+        var roomnum = $(evt.target).attr("roomnum");
+        var roomname = $(evt.target).attr("roomname");
+        var clickid = $(evt.target).parent().attr("aria-labelledby");
+        var parent = $("#"+clickid);
+        editPage(roomnum, roomname, parent);
+    });
+    
+   
+    $("#roomtabs div.addpage").off("click");
+    $("#roomtabs div.addpage").on("click",function(evt) {
+        var clickid = $(evt.target).attr("aria-labelledby");
+        var pos = {top: 100, left: 10};
+        createModal("Add New Room to HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
+            var clk = $(ui).attr("name");
+            if ( clk==="okay" ) {
+                $.post(returnURL, 
+                    {useajax: "pageadd", id: "none", type: "none", value: "none", attr: "none"},
+                    function (presult, pstatus) {
+                        console.log("ajax call: status = " + pstatus + " result = "+presult);
+                        if ( pstatus==="success" && !presult.startsWith("error") ) {
+                            location.reload(true);
+                        }
+                    }
+                );
+            }
+        });
+        
+    });    
+    
 }
+
+function editPage(roomnum, roomname, parent) {
+
+    var dialog_html = "<div id='pageDialog' class='tileDialog'>";
+    dialog_html+= "<div>Editing Page #" + roomnum + " with Name: " + roomname + "</div>";
+    dialog_html+= "<div class='colorgroup'><label>Page name:</label>";
+    dialog_html+= "<input name=\"pageName\" id=\"pageName\" class=\"ddlDialog\" value=\"" + roomname +"\"></div>";
+    dialog_html+= "</div>";
+
+    // create a function to display the tile
+    var dodisplay = function() {
+        var pos = {top: 100, left: 200};
+        createModal( dialog_html, "body", true, pos, 
+            // function invoked upon leaving the dialog
+            function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk==="okay" ) {
+                    var newname = $("#pageName").val();
+                    parent.html(newname);
+                    $.post(returnURL, 
+                        {useajax: "pageedit", id: roomnum, type: "none", value: newname, attr: "none"},
+                        function (presult, pstatus) {
+                            console.log("ajax call: status = " + pstatus + " result = "+presult);
+                            if ( pstatus==="success" && !presult.startsWith("error") ) {
+                                // location.reload(true);
+                                console.log(presult);
+                            }
+                        }
+                    );
+                }
+            }
+        );
+    };
+    
+    dodisplay();
+
+}
+
 
 function delEditLink() {
 //    $("div.editlink").off("click");
@@ -904,6 +1025,12 @@ function delEditLink() {
        $(this).remove();
     });
     $("div.dellink").each(function() {
+       $(this).remove();
+    });
+    $("div.editpage").each(function() {
+       $(this).remove();
+    });
+    $("div.delpage").each(function() {
        $(this).remove();
     });
     // hide the skin and 
@@ -1257,10 +1384,14 @@ function updateTile(aid, presult) {
 //                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
                 value = false;
+                oldvalue = false;
             } else if ( key=="color") {
 //                alert("updating color: "+value);
                 $(targetid).html(value);
 //                setupColors();
+            // special case for numbers for KuKu Harmony things
+            } else if ( key.startsWith("_number_") && value.startsWith("number_") ) {
+                value = value.substring(7);
             } else if ( oldclass && oldvalue && value &&
                      key!=="name" &&
                      $.isNumeric(value)===false && 

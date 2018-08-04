@@ -1,24 +1,13 @@
 <?php
 /*
  * House Panel web service PHP application for SmartThings
- * author: Ken Washington  (c) 2017
+ * author: Ken Washington  (c) 2017, 2018
  *
- * Must be paired with the housepanel.groovy SmartApp on the SmartThings side
- * and the CLIENT_ID and CLIENT_SECRET must match what is specified here
- * to do this you must enable OAUTH2 in the SmartApp panel within SmartThings
- * 
- * You must store your CLIENT_ID and CLIENT_SECRET information in
- * a file called clientinfo.php saved to the same directory as this file
- * it should look as follows but with real data as opposed to the fake data
- * in the file that is provided in the repository
-
- * To complete the install save all files on your server
- * and you should be good to go. An options file named hmoptions.cfg 
- * will be generated when the app first runs and each time any options change
- * your web server must have write privileges enabled for this to work
- * 
+ * Must be paired with housepanel.groovy on the SmartThings or Hubitat side
+ * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.75       Page name editing, addition, and removal function and reorder bug fixes
  * 1.74       Add 8 custom tiles, zindex bugfix, and more tile editor updates
  * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more
  * 1.72       Timezone bug fix and merge into master
@@ -100,7 +89,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.74');
+define('HPVERSION', 'Version 1.75');
 define('APPNAME', 'House Panel ' . HPVERSION);
 
 // developer debug options
@@ -339,7 +328,7 @@ function getEndpoint($access_token, $stweb, $clientId) {
 }
 
 // screen that greets user and asks for authentication
-function authButton($sname, $returl, $hpcode, $greeting = false) {
+function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     $tc = "";
     
     if ( $greeting ) {
@@ -355,18 +344,23 @@ function authButton($sname, $returl, $hpcode, $greeting = false) {
         $tc.="<p>You are seeing this because you either requested a re-authentication " .
                 "or you have not yet authorized " .
                 "HousePanel to access SmartThings or Hubitat. With HousePanel " .
-                "you can use either or both at the same time within the same panel. " . 
+                "you can use either or both at the same time. " . 
                 "To configure HousePanel you will need to have the information below. <br /><br />" .
                 "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
                 "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
-                "This is why HousePanel should not be hosted on a public-facing website " .
+                "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
                 "unless the site is secure and/or password protected. A locally hosted " . 
                 "website on a Raspberry Pi is the strongly preferred option.</p>";
         
-        $tc.= "<p>If you elect to use SmartThings authorization will " .
+        $tc.= "<p>If you elect to use SmartThings, the Authorize button below will " .
                 "begin the typical OAUTH process for SmartThings " .
                 "by taking you to the SmartThings site where you log in and then select your hub " .
                 "and the devices you want HousePanel to show and/or control. " .
+                "Please note that if you provide a manual Access Token and Endpoint you will " .
+                "not be sent through the OAUTH flow process and this screen will only show " .
+                "again if you manually request it. </p>";
+        
+        $tc.= "<p>" .
                 "After authorization you will be redirected back to HousePanel. " .
                 "where you can then configure your things on the tabbed pages. " .
                 "A default configuration will be attempted but that is only a " . 
@@ -379,21 +373,26 @@ function authButton($sname, $returl, $hpcode, $greeting = false) {
                 "To do this launch your Hubitat app and enter this url where noted. " .
                 "HousePanel url = $returl </p>";
         
-        $tc.= "<p>You also have the option of manually specifying your Access Tokens in " .
+        $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
                 "below or in the optional clientinfo.php file. You will find the information needed printed " .
                 "in the SmartThings and/or Hubitat log when you install the app. You must have the log " .
-                "window open when you are installing to view this information. " . 
-                "Please note that if you provide a manual Access Token and Endpoint that you will " .
-                "not be sent through the OAUTH flow process and this screen will only show " .
-                "again if you manually request it.</p>";
+                "window open when you are installing to view this information. </p>";
         
-        $tc.= "<p>If you have trouble after authorizing, check your file permissions " .
+        $tc.= "<p>If you have trouble authorizing, check your file permissions " .
                 "to ensure you can write to the home directory where HousePanel is installed. " .
                 "You should also confirm that your PHP is set up to use cURL. " .
                 "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
                 "(opens in a new window or tab)</p>";
         
         $tc.= "</div>";
+
+    $tc.= '<br /><h4>Donations appreciated for HousePanel support and continued improvement, but none required to proceed.</h4>
+        <br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+        <input type="hidden" name="cmd" value="_s-xclick">
+        <input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+        <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+        </form></div>';
     }
     
     $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
@@ -1233,7 +1232,8 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
                      substr(strtolower($posturl),0,4)==="http" ) {
                     $webresponse = curl_call($posturl, FALSE, $params, $calltype);
                     if (is_array($webresponse)) {
-                        $response["post"] .= json_encode($webresponse);
+                        //$webresponse = json_encode(json_encode($webresponse, JSON_HEX_QUOT));
+                        $response["post"] .= "<pre>" . print_r($webresponse,true) . "</pre>";
                     } else {
                         $response["post"] .= $webresponse;
                     }
@@ -1320,7 +1320,11 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
         // now update either the page or the tiles based on type
         switch($swtype) {
             case "rooms":
-                $options["rooms"] = $swval;
+                // $options["rooms"] = $swval;
+                $options["rooms"] = array();
+                foreach( $swval as $roomname => $roomid) {
+                    $options["rooms"][$roomname] = intval($roomid);
+                }
                 $updated = true;
                 break;
 
@@ -1328,8 +1332,10 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
                 if (key_exists($swattr, $options["rooms"])) {
     //                $options["things"][$swattr] = $swval;
                     $options["things"][$swattr] = array();
-                    foreach( $swval as $val) {
-                        $options["things"][$swattr][] = array(intval($val, 10),0,0);
+                    foreach( $swval as $valarr) {
+                        $val = intval($valarr[0],10);
+                        $vname = $valarr[1];
+                        $options["things"][$swattr][] = array($val,0,0,1,$vname);
                     }
     //              $updated = print_r($swval,true);
                     $updated = true;
@@ -1484,13 +1490,15 @@ function refactorOptions($allthings) {
     $cnt = 0;
     $oldoptions = readOptions();
     // $options = $oldoptions;
-    $options = array();
-    $options["rooms"] = $oldoptions["rooms"];
+    $options = $oldoptions;
     $options["useroptions"] = $thingtypes;
-    $options["things"] = $oldoptions["things"];
-    $options["skin"] = $oldoptions["skin"];
-    $options["kiosk"] = $oldoptions["kiosk"];
-    $options["config"] = $oldoptions["config"];
+    $options["things"] = array();
+    $options["index"] = array();
+//    $options["rooms"] = $oldoptions["rooms"];
+//    $options["things"] = $oldoptions["things"];
+//    $options["skin"] = $oldoptions["skin"];
+//    $options["kiosk"] = $oldoptions["kiosk"];
+//    $options["config"] = $oldoptions["config"];
 
     foreach ($oldoptions["index"] as $thingid => $idxarr) {
         $cnt++;
@@ -1823,9 +1831,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // $tc.= "<th class=\"customedit\">" . "Edit" . "</th>";
     // $tc.= "<th class=\"customname\">" . "Display Name" . "</th>";     
     // list the room names in the proper order
-    for ($k=0; $k < count($roomoptions); $k++) {
+    // for ($k=0; $k < count($roomoptions); $k++) {
+    foreach ($roomoptions as $roomname => $k) {
         // search for a room name index for this column
-        $roomname = array_search($k, $roomoptions);
+        // $roomname = array_search($k, $roomoptions);
         if ( $roomname ) {
             $tc.= "<th class=\"roomname\">$roomname ";
             $tc.= hidden("o_" . $roomname, $k);
@@ -1930,13 +1939,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<input class=\"resetbutton\" value=\"Reset\" name=\"canceloption\" type=\"reset\" />";
     $tc.= "</div>";
     $tc.= "</form>";
-    
-//    if ($sitename) {
-//        $hpcode = time();
-//        $_SESSION["hpcode"] = $hpcode;
-//        $tc.= authButton($sitename, $retpage, $hpcode, false);
-//    }
-    // $tc.= "<dialog id=\"edit_Tile\"></dialog>";
     $tc.= "</div>";
 
     return $tc;
@@ -2028,6 +2030,53 @@ function delThing($bid, $thingtype, $panel, $tile) {
         }
     }
     return $retcode;
+}
+
+function delPage($pagenum, $pagename) {
+    
+    $pagenum = intval($pagenum);
+    $options = readOptions();
+    $retcode = "error $pagenum = $pagename";
+
+    // check if room exists and number matches
+    if ( array_key_exists($pagename, $options["rooms"]) &&
+         intval($options["rooms"][$pagename]) === $pagenum &&
+         array_key_exists($pagename, $options["things"]) ) {
+
+        unset( $options["rooms"][$pagename] );
+        unset( $options["things"][$pagename] );
+        
+        $retcode = "success";
+        writeOptions($options);
+    } else {
+        $retcode .= " = " . $options["rooms"][$pagename];
+    }
+    return $retcode;
+}
+
+function addPage() {
+    
+    $pagenum = 0;
+    $options = readOptions();
+    foreach ($options["rooms"] as $roomname => $roomnum ) {
+        $roomnum = intval($roomnum);
+        $pagenum = $roomnum > $pagenum ? $roomnum : $pagenum;
+    }
+    $pagenum++;
+
+    $clockid = $options["index"]["clock|clockdigital"];
+    $newname = "Newroom1";
+    $num = 1;
+    while ( array_key_exists($newname, $options["rooms"]) ) {
+        $num++;
+        $newname = "Newroom" . strval($num);
+    }
+    $options["rooms"][$newname] = $pagenum;
+    $options["things"][$newname] = array();
+    $options["things"][$newname][] = array($clockid, 0, 0, 1, "");
+    writeOptions($options);
+    
+    return $newname;
 }
 
 // this processes a _POST return from the options page
@@ -2161,7 +2210,7 @@ function processOptions($optarray) {
     // header("Location: $retpage");
 }
 
-function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
+function getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings) {
     $options = readOptions();  // getOptions($allthings);
     $configoptions = $options["config"];
     $stweb = $configoptions["st_web"];
@@ -2233,33 +2282,28 @@ function showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEnd
     return $tc;
 }
 
-function getEditPage($options, $returnURL, $allthings, $sitename) {
+function editPage($pagenum, $pagename) {
     
-    $tc = "";
-    $pages = $options["rooms"];
-    $tc.= "<h2>Page Editor for $sitename</h2>";
-    $tc.= putdiv("Number of pages: " . count($pages), "normal" );
     
-    // list all the rooms and their index values
-    // include a button to remove that row done in ajax
-    $row = 0;
-    $tc.= "<div>";
-    foreach ($pages as $roomname => $idx) {
-        $tc.= "<div  id=\"pg_" . $row . "\" class=\"editpage\">";
-        $tc.= "<input class=\"pagename\" value=\"" . $roomname . "\" />";
-        $tc.= "<input size='3' type='number' class=\"pageindex\" value=\"" . $idx . "\" />";
-        $tc.= "<button id=\"dp_" . $row . "\" class='delpage' value=\"Delete Room\" />";
-        $tc.= "</div>";
-        $row++;
+    $options = readOptions();
+
+    $oldname = array_search($pagenum, $options["rooms"]);
+    if ( $oldname && $pagename ) {
+        $retcode = "success";
+        $roomthings = $options["things"][$oldname];
+        unset( $options["rooms"][$oldname] );
+        unset( $options["things"][$oldname] );
+        $options["rooms"][$pagename] = $pagenum;
+        $options["things"][$pagename] = $roomthings;
+        $prooms = $options["rooms"];
+        asort($prooms);
+        $options["rooms"] = $prooms;
+        writeOptions($options);
+    } else {
+        $retcode = "error - page not found";
     }
     
-    // add a button to add a room to the end of the list here
-    // in ajax we will insert a blank room row here when pushed
-    $tc.= "<button id=\"addpage\" class='addpage' value=\"Add Room\" />";
-
-    // end the room list
-    $tc.= "</div>";
-    return $tc;
+    return $retcode;
 }
 
 function setHubitatConfig() {
@@ -2347,7 +2391,6 @@ function is_ssl() {
  * Check whether we are returning from a new user login
  * this can set Hubitat codes or start a SmartThings auth flow
  * or it can do both depending on user selections
- * look at the logic in the authbutton function near the top
  * the $hpcode is a security measure that assures we are returning from this web session
  * *****************************************************************************
  */
@@ -2433,7 +2476,7 @@ function is_ssl() {
         // setcookie("confighousepanel", "", $expirz, "/", $serverName);
         $hpcode = time();
         $_SESSION["hpcode"] = $hpcode;
-        $authpage= authButton("SmartHome", $returnURL, $hpcode, true);
+        $authpage= getAuthPage("SmartHome", $returnURL, $hpcode, true);
                 
         echo htmlHeader($skindir);
         echo $authpage;
@@ -2462,7 +2505,7 @@ function is_ssl() {
             // setcookie("confighousepanel", "", $expirz, "/", $serverName);
             $hpcode = time();
             $_SESSION["hpcode"] = $hpcode;
-            $authpage= authButton("SmartHome", $returnURL, $hpcode, true);
+            $authpage= getAuthPage("SmartHome", $returnURL, $hpcode, true);
 
             echo htmlHeader($skindir);
             echo $authpage;
@@ -2500,7 +2543,7 @@ function is_ssl() {
             // setcookie("confighousepanel", "", $expirz, "/", $serverName);
             $hpcode = time();
             $_SESSION["hpcode"] = $hpcode;
-            $authpage= authButton("SmartHome", $returnURL, $hpcode, true);
+            $authpage= getAuthPage("SmartHome", $returnURL, $hpcode, true);
             echo htmlHeader($skindir);
             echo $authpage;
             echo htmlFooter();
@@ -2541,7 +2584,7 @@ function is_ssl() {
         } else {
             $hpcode = time();
             $_SESSION["hpcode"] = $hpcode;
-            $authpage= authButton("SmartHome", $returnURL, $hpcode, true);
+            $authpage= getAuthPage("SmartHome", $returnURL, $hpcode, true);
 
             echo htmlHeader($skindir);
             echo $authpage;
@@ -2690,7 +2733,7 @@ function is_ssl() {
         print_r($configoptions);
         exit(0);
         
-        $tc.= authButton("SmartHome", $returnURL, $hpcode, true);
+        $tc.= getAuthPage("SmartHome", $returnURL, $hpcode, true);
     }
 /*
  * *****************************************************************************
@@ -2845,10 +2888,36 @@ function is_ssl() {
             
             // remove tile from drag / drop
             case "dragdelete":
-                if ( $swid && $swtype && $swval && swattr ) {
+                if ( $swid && $swtype && $swval && $swattr ) {
                     $retcode = delThing($swid, $swtype, $swval, $swattr);
                 } else {
-                    $retcode = "error";
+                    $retcode = "error - invalid parameters for tile delete function";
+                }
+                echo $retcode;
+                break;
+            
+            // remove tile from drag / drop
+            case "pagedelete":
+                if ( $swid && $swval ) {
+                    $retcode = delPage($swid, $swval);
+                } else {
+                    $retcode = "error - invalid parameters for pagedelete function";
+                }
+                echo $retcode;
+                break;
+            
+            // add a new page
+            case "pageadd":
+                $retcode = addPage();
+                echo $retcode;
+                break;
+            
+            // modify name of an existing page
+            case "pageedit":
+                if ( $swid && $swval ) {
+                    $retcode = editPage($swid, $swval);
+                } else {
+                    $retcode = "error - invalid parameters for tile delete function";
                 }
                 echo $retcode;
                 break;
@@ -2867,52 +2936,6 @@ function is_ssl() {
                 echo htmlHeader($skindir);
                 echo $optpage;
                 echo htmlFooter();
-                break;
-                
-            case "editpage":
-                $options= readOptions(); // getOptions($allthings);
-                $oldoptions = $options;
-                $options["rooms"] = array();
-                $options["things"] = array();
-                $blanktile = $oldoptions["index"]["blank|b1x1"];
-                $good = false;
-                foreach ( $_POST as $key => $val ) {
-                    if ( substr($key,0,3) == "id-" ) {
-                        $oldid = substr($key,3);
-                        $roomkey = "rn-" . $oldid;
-                        if ( isset( $_POST[$roomkey]) ) {
-                            $newroom = $_POST[$roomkey];
-                            // TODO - check for valid and duplicate room numbers
-                        } else {
-                            $newroom = false;
-                        }
-                        $oldroom = array_search($oldid, $oldoptions["rooms"]);
-                        
-                        if ( $newroom && $oldroom ) {
-                            $options["rooms"][$newroom] = $val;
-                            $options["things"][$newroom] = $oldoptions["things"][$oldroom];
-                            $good = true;
-                        } else if ( $newroom ) {
-                            $options["rooms"][$newroom] = $val;
-                            $options["things"][$newroom] = array();
-                            $options["things"][$newroom][] = array($blanktile,0,0,1,"");
-                            $good = true;
-                        }
-                    } 
-                }
-                if ( $good ) {
-                    writeOptions($options);
-                    $tc = print_r($_POST, true);
-                    $tc.= "<br /><hr><br />";
-                    $tc.= print_r($options, true);
-                    echo htmlHeader($skindir);
-                    echo $tc;
-                    echo htmlFooter();
-                }
-                
-                // reload the page
-                header("Location: $returnURL");
-                exit(0);
                 break;
         
             case "refactor":
@@ -2935,7 +2958,7 @@ function is_ssl() {
                 // setcookie("confighousepanel", "", $expirz, "/", $serverName);
                 $hpcode = time();
                 $_SESSION["hpcode"] = $hpcode;
-                $tc= authButton("SmartHome", $returnURL, $hpcode, true);
+                $tc= getAuthPage("SmartHome", $returnURL, $hpcode, true);
                 echo htmlHeader($skindir);
                 echo $tc;
                 echo htmlFooter();
@@ -2944,7 +2967,7 @@ function is_ssl() {
             // an Ajax option to display all the ID value for use in Python and EventGhost
             case "showid":
                 $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
-                $tc = showInfo($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings);
+                $tc = getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitatEndpt, $sitename, $skindir, $allthings);
                 echo htmlHeader();
                 echo $tc;
                 echo htmlFooter();
@@ -3054,13 +3077,14 @@ function is_ssl() {
         $tc.= '<div id="dragregion">';
         
         $tc.= '<div id="tabs"><ul id="roomtabs">';
-        for ($k=0; $k< count($roomoptions); $k++) {
+        // show all room with whatever index number assuming unique
+        foreach ($roomoptions as $room => $k) {
             
             // get name of the room in this column
-            $room = array_search($k, $roomoptions);
+            // $room = array_search($k, $roomoptions);
             
             // use the list of things in this room
-            if ($room !== FALSE) {
+            if ($room) {
                 $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
             }
         }
