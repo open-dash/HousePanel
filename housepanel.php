@@ -677,8 +677,8 @@ function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
         // the other two are just copies so they can be styled differently
         $allthings["video|vid1"] = array("id" => "vid1", "name" => "Video 1", "value" => array("name"=>"Video 1", "url"=>"media/arlovideo.mp4"), "type" => "video");
         $allthings["video|vid2"] = array("id" => "vid2", "name" => "Video 2", "value" => array("name"=>"Video 2", "url"=>"media/arlovideo2.mp4"), "type" => "video");
-        $allthings["video|vid3"] = array("id" => "vid3", "name" => "Video 3", "value" => array("name"=>"Video 3", "url"=>"media/arlovideo.mp4"), "type" => "video");
-        $allthings["video|vid4"] = array("id" => "vid4", "name" => "Video 4", "value" => array("name"=>"Video 4", "url"=>"media/arlovideo2.mp4"), "type" => "video");
+        $allthings["video|vid3"] = array("id" => "vid3", "name" => "Video 3", "value" => array("name"=>"Video 3", "url"=>"media/arlovideo3.mp4"), "type" => "video");
+        $allthings["video|vid4"] = array("id" => "vid4", "name" => "Video 4", "value" => array("name"=>"Video 4", "url"=>"media/arlovideo4.mp4"), "type" => "video");
         
         // add 8 custom ad-hoc tiles
         for ($i=1; $i<9; $i++ ) {
