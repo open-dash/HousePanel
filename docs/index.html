@@ -242,8 +242,8 @@ installed into your Hubitate IDE on your local LAN.
 <ul>SmartThings - HousePanel.groovy</ul>
 Unfortunately I was not able to get the SmartThings IDE option to work with my account
 so you will have to install this manually. 
-First, go to the Open-Dash GitHub account at 
-<a href="https://github.com/open-dash/HousePanel">https://github.com/open-dash/HousePanel</a>
+First, go to the HousePanel GitHub account at 
+<a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
 and open the HousePanel.groovy file.
 
 With this file open click on the "raw" icon in the upper right corner.
@@ -276,8 +276,8 @@ next step when you are configuring your web server.
 HousePanel now supports Hubitat with or without SmartThings. If you are
 a Hubitat user, you will need to install the HousePanelHubitat.groovy
 file into the app section of the Hubitat webpage API. To do this,
-go to the Open-Dash GitHub account at 
-<a href="https://github.com/open-dash/HousePanel">https://github.com/open-dash/HousePanel</a>
+go to the HousePanel GitHub account at 
+<a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
 and open the HousePanelHubitat.groovy file. With this file open click 
 on the "raw" icon in the upper right corner.
 This will open a window showing just the "raw" lines of code. Copy the entire file
@@ -302,7 +302,7 @@ In this step you will install the PHP application by copying the
 files from the following GitHub into a directory of your choice:
 <blockquote>
     <pre>
-    <a href="https://github.com/open-dash/HousePanel">https://github.com/open-dash/HousePanel</a>
+    <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
     </pre>
 </blockquote>
 A typical place would be in its own directory called /housepanel. Be sure 
@@ -419,7 +419,7 @@ and complete that step:<br/><br/>
     <li>and/or... HousePanelHubitat.groovy installed in your Hubitat IDE with OAUTH2 optionally activated
     <li>either... clientinfo.php file includes your CLIENT_ID, CLIENT_SECRET, and ST_WEB for SmartThings
     <li>and/or... clientinfo.php file includes HUBITAT_HOST, HUBITAT_ID, and HUBITAT_ACCESS_TOKEN for Hubitat
-    <li>open-dash/HousePanel files uploaded to its own directory on your web server
+    <li>kewashi/HousePanel files uploaded to its own directory on your web server
     <li>the directory above configured to read/write using "chmod 777 yourdirectory"
     <li>Web browser with javascrpt and cookies enabled
 </ul><br/>
@@ -509,7 +509,6 @@ time you run you will see the same default configuration. If all goes well
 HousePanel will then render the page and display it to you. It will look
 something like:<br/><br/>
 
-<div><img src="/open-dash/HousePanel/blob/master/docs/kitchen.png?raw=true"></div>
 <div><img src="kitchen.png"></div>
 
 If you are curious how HousePanel decides what thing to put in which room by
@@ -579,10 +578,9 @@ to reorder your rooms. The new room location will be permanent on this server.
 Deeper customization involves adding or removing things to your rooms. To do
 this scroll to the bottom of the page and click on the Options button
 in the lower left corner of the page. This will load a page with a
-two-dimensional matrix of all your things and all you rooms that looks
+two-dimensional matrix of all your things and all your rooms that looks
 like this:<br/><br/>
 
-<div><img src="/open-dash/HousePanel/blob/master/docs/options.png?raw=true"></div>
 <div><img src="options.png"></div>
 
 Everywhere you see a check mark, that means the thing of that "row" will
@@ -601,19 +599,34 @@ just for my thermostats. The following section explains how to do that.
 
 <h1>Customizing HousePanel</h1>
 
-<h2>Styline Things Using TileEdit</h2>
-Thanks to some amazing work done by @nitwit in the SmartThings community
-HousePanel can now be edited from the Options page by clicking on the Edit button
-for some tiles. For these tiles this action will bring up a self-explanatory
-dialog box that will allow users to select the on or off icon for that tile
-as well as the background color and text formatting. There is even a gradient
-background feature to add some flair to your tiles. The icon can be selected from
-your local subdirectory or it can be taken from the standard Smartthings library.
-We think you will enjoy tinkering with this feature. If you are more of a power
+<h2>Styling Things Using TileEdit</h2>
+Some amazing work done by @nitwit in the SmartThings community inspired the
+development of a robust tile editor in HousePanel that can be used to modify
+the look of just about every element of every tile. To use the editor, select
+"Edit" mode in the radio buttons near the bottom of the page. Each tile will then
+show a green Edit link and a red Delete link. The Edit link will open the editor.
+The tile editor is a somewhat self-explanatory
+dialog box that will allow users to select items to style. You can click on any
+item in the tile or you can select the item from the drop down list.
+Some items are hidden and can only be selected from the drop down list. For those
+items you can select them and then unhide them and style them however you like.
+The icon background will style the entire tile. So if you want an imaage background
+on a tile, select "whole tile" and then pick the image you want. 
+The on or off state of some tiles can be toggled by clicking on the main icon. Some
+tiles have multi-state icons such as thermostats. Each click rotates to the next state.
+
+There is even a gradient background feature to add some flair to your tiles. 
+The icon can be selected from
+your local subdirectory or it can be taken from the a library of standard Android icons.
+There is also a directory called "media" where you can load any custom images. By
+default this directory contains a number of interesting backgrounds you can use.
+
+I think you will enjoy tinkering with this feature. If you are more of a power
 user and want to fully control your own destiny, keep reading for how one would
 style the page using custom written CSS. One other thing is worth noting -- if you use
-this feature HP will create a file named "customtiles.css" containing the styling
-information selected in the dialog box. This file should not be edited directly.
+the tile editor feature, HousePanel will create a file named "customtiles.css" containing the styling
+information specified. This file should not be edited directly. You can save this file
+and create a library of profiles for later use. There are lots of options here.
 If you want to customize your setup, you should make those custom edits in
 the housepanel.css file in your skins directory following the instructions below.
 
