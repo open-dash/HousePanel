@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.76       Multiple ST hub support
  * 1.75       Page name editing, addition, and removal function and reorder bug fixes
  * 1.74       Add 8 custom tiles, zindex bugfix, and more tile editor updates
  * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more
@@ -229,7 +230,7 @@ function curl_call($host, $headertype=FALSE, $nvpstr=FALSE, $calltype="GET")
 }
 
 // return all SmartThings devices in one call
-function getSmartThingsDevices($edited, $hubhost, $path, $access_token) {
+function getSmartThingsDevices($hubnum, $edited, $hubhost, $path, $access_token) {
 
     $host = $hubhost . "/" . $path;
     $headertype = array("Authorization: Bearer " . $access_token);
@@ -244,7 +245,8 @@ function getSmartThingsDevices($edited, $hubhost, $path, $access_token) {
             
             // make a unique index for this thing based on id and type
             $idx = $thetype . "|" . $id;
-            $edited[$idx] = array("id" => $id, "name" => $content["name"], "value" => $content["value"], "type" => $thetype);
+            $edited[$idx] = array("id" => $id, "name" => $content["name"], "hub" => $hubhum,
+                                  "value" => $content["value"], "type" => $thetype);
         }
     }
     return $edited;
@@ -627,7 +629,8 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
 // rewrite this to use our new groovy code to get all things
 // this should be considerably faster
 // updated to now include 4 video tiles and make both hub calls consistent
-function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
+// endpt and access_token are now arrays supporting multiple hubs
+function getAllThings($endpts, $access_tokens, $hubitatendpt, $hubitataccess) {
     $allthings = array();
     if ( isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
@@ -640,11 +643,14 @@ function getAllThings($endpt, $access_token, $hubitatendpt, $hubitataccess) {
         session_unset();
         $allthings = array();
         
-        // skip this if hubitat only
-        if ( $endpt && $access_token && $access_token!=="hubitatonly" ) {
-            $allthings = getSmartThingsDevices($allthings, $endpt, "getallthings", $access_token);
+        for ($i=0; $i < count($endpts); $i++) {
+            // skip this if hubitat only
+            $endpt = $endpts[$i];
+            $access_token = $access_tokens[$i];
+            if ( $endpt && $access_token && $access_token!=="hubitatonly" ) {
+                $allthings = getSmartThingsDevices($i, $allthings, $endpt, "getallthings", $access_token);
+            }
         }
-        
         // obtain the hubitat devices
         if ( $hubitatendpt && $hubitataccess) {
             $allthings = getHubitatDevices($allthings, $hubitatendpt, "getallthings", $hubitataccess);
@@ -2855,7 +2861,7 @@ function is_ssl() {
         
             case "wysiwyg":
                 $idx = $swtype . "|" . $swid;
-                $allthings = getAllThings($endpt, $access_token, $hubitatEndpt, $hubitatAccess);
+                $allthings = getAllThings($endpts, $access_tokens, $hubitatEndpt, $hubitatAccess);
                 $thesensor = $allthings[$idx];
                 echo makeThing(0, $tileid, $thesensor, "Options");
                 break;
