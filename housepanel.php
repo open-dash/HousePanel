@@ -363,7 +363,7 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         $tc.="<p>You are seeing this because you either requested a re-authentication " .
                 "or you have not yet authorized " .
                 "HousePanel to access SmartThings or Hubitat. With HousePanel " .
-                "you can use either or both at the same time. " . 
+                "you can any number and combination of both hub types at the same time. " . 
                 "To configure HousePanel you will need to have the information below. <br /><br />" .
                 "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
                 "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
@@ -371,26 +371,19 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
                 "unless the site is secure and/or password protected. A locally hosted " . 
                 "website on a Raspberry Pi is the strongly preferred option.</p>";
         
-        $tc.= "<p>If you elect to use SmartThings, the Authorize button below will " .
-                "begin the typical OAUTH process for SmartThings " .
-                "by taking you to the SmartThings site where you log in and then select your hub " .
+        $tc.= "<p>The Authorize button below will " .
+                "begin the typical OAUTH process for SmartThings or Hubitat" .
+                "by taking you to the site where you log in and then select your hub " .
                 "and the devices you want HousePanel to show and/or control. " .
                 "Please note that if you provide a manual Access Token and Endpoint you will " .
                 "not be sent through the OAUTH flow process and this screen will only show " .
                 "again if you manually request it. </p>";
         
-        $tc.= "<p>" .
-                "After authorization you will be redirected back to HousePanel. " .
+        $tc.= "<p>After authorization you will be redirected back to HousePanel. " .
                 "where you can then configure your things on the tabbed pages. " .
                 "A default configuration will be attempted but that is only a " . 
                 "starting point. You will likely want to edit the housepanel.css file or ".
                 "use the built-in Tile Editor to customize your panel.</p>";
-        
-        $tc.="<p>To authorize Hubitat, you have a few options. The easiest is to " .
-                "first push the authorization tokens to HousePanel from Hubitat " .
-                "before you run this setup to pre-populate the information below. " .
-                "To do this launch your Hubitat app and enter this url where noted. " .
-                "HousePanel url = $returl </p>";
         
         $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
                 "below or in the optional clientinfo.php file. You will find the information needed printed " .
@@ -423,71 +416,76 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     // but only if the hmoptions file is not current
     $options = readOptions();
     $rewrite = false;
+    if ( ! $options ) {
+        $options = array();
+        $rewrite = true;
+    }
     
-    if ( $options && array_key_exists("config", $options) ) {
+    if ( array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
         $timezone = $configoptions["timezone"];
-        $useSmartThings = $configoptions["use_st"];
-        $stweb = $configoptions["st_web"];
-        $clientId = $configoptions["client_id"];
-        $clientSecret = $configoptions["client_secret"];
-        $userAccess = $configoptions["user_access"];
-        $userEndpt = $configoptions["user_endpt"];
-        $userSitename = $configoptions["user_sitename"];
-        $useHubitat = $configoptions["use_he"];
-        $hubitatHost = $configoptions["hubitat_host"];
-        $hubitatId = $configoptions["hubitat_id"];
-        $hubitatAccess = $configoptions["hubitat_access"];
-        $hubitatEndpt = $configoptions["hubitat_endpt"];
-        
-        // set default end point if not defined
-        if ( !$hubitatEndpt ) {
-            $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
+        if ( array_key_exists("skin", $options) ) {
+            $skin = $options["skin"];
+            $rewrite = true;
+            unset($options["skin"]);
+        } else if ( array_key_exists("skin", $configoptions) ) {
+            $skin = $configoptions["skin"];
+        } else {
+            $skin = "skin-housepanel";
             $rewrite = true;
         }
-    } else {
-        if ( ! $options ) {
-            $options = array();
+
+        if ( array_key_exists("kiosk", $options) ) {
+            $kiosk = strval($options["kiosk"]);
+        } else if ( array_key_exists("kiosk", $configoptions) ) {
+            $kiosk = strval($configoptions["kiosk"]);
+        } else {
+            $kiosk = false;
+            $rewrite = true;
         }
-
-        // set defaults here for fresh installs
-        $rewrite = true;
-        $timezone = ""; // date_default_timezone_get();
-        $useSmartThings = true;
-        $stweb = "https://graph.api.smartthings.com";
-        $clientId = "";
-        $clientSecret = "";
-        $userAccess = "";
-        $userEndpt = "";
-        $userSitename = "SmartHome";
-
-        $useHubitat = false;
-        $hubitatHost = "192.168.11.26";
-        $hubitatId = 0;
-        $hubitatAccess = "";
-        $hubitatEndpt = "";
-    }
-    
-    if ( $options && array_key_exists("skin", $options) ) {
-        $skin = $options["skin"];
-    } else {
-        $skin = "skin-housepanel";
-        $rewrite = true;
-    }
-    
-    if ( $options && array_key_exists("kiosk", $options) ) {
-        $kiosk = strval($options["kiosk"]);
-        if ( $kiosk == "true" || $kiosk=="yes" || $kiosk=="1" ) {
+        if ( $kiosk === "true" || $kiosk==="yes" || $kiosk==="1" ) {
             $kiosk = true;
         } else {
             $kiosk = false;
         }
+    
+        $hubTypes = $configoptions["hubtypes"];
+        $hubHosts = $configoptions["hubhosts"];
+        $clientIds = $configoptions["clientids"];
+        $clientSecrets = $configoptions["clientsecrets"];
+        $userAccesses = $configoptions["useraccesses"];
+        $userEndpts = $configoptions["userendpts"];
+        $hubNames = $configoptions["hubnames"];
+        $hubIds = $configoptions["hubids"];
+        $hubAccesses = $configoptions["hubaccesses"];
+        $hubEndpts = $configoptions["hubendpts"];
+        
+        // set defaults
+        foreach ($hubtypes as $i => $hubtype) {
+            if ( $hubtype==="Hubitat" && $hubEndpts[$i]==="" ) {
+                $hubEndpts[$i] = $hubHosts[$i] . "/apps/api/" . $hubIds[$i];
+                $rewrite = true;
+            }
+        }
     } else {
-        $kiosk = false;
+
+        // set defaults here for fresh installs
         $rewrite = true;
+        $timezone = ""; // date_default_timezone_get();
+        
+        $hubTypes = array("SmartThings");
+        $hubHosts = array("https://graph.api.smartthings.com");
+        $clientIds = array("");
+        $clientSecrets = array("");
+        $userAccesses = array("");
+        $userEndpts = array("");
+        $hubNames = array("SmartThings Home");
+        $hubIds = array(0);
+        $hubAccesses = array("");
+        $hubEndpts = array("");
     }
     
-    if ( $options && array_key_exists("time", $options) ) {
+    if ( array_key_exists("time", $options) ) {
         $time = $options["time"];
         $info = explode(" @ ", $time);
         $version = $info[0];
@@ -502,35 +500,43 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         $version = "Pre Version 1.7";
     }
 
-    
     // try to gather defaults from the clientinfo file
     // this is only here for backward compatibility purposes
     // there is no need for this file any more
     if (file_exists("clientinfo.php")) {
         include "clientinfo.php";
-        if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientId = CLIENT_ID; }
-        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecret = CLIENT_SECRET; }
-        if ( defined("ST_WEB") && ST_WEB ) { $stweb = ST_WEB; }
+        if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientIds[0] = CLIENT_ID; }
+        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecrets[0] = CLIENT_SECRET; }
+        if ( defined("ST_WEB") && ST_WEB ) { 
+            $hubHosts[0] = ST_WEB; 
+            if ( ST_WEB==="hubitat" &&  ST_WEB==="hubitatonly" ) {
+                $hubTypes[0] = "Disabled";
+            } else {
+                $hubTypes[0] = "SmartThings";
+            }
+        }
         
         // overwrite timezone only if user left it blank
         if ( !$timezone && defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
 
-        if ( $stweb && $stweb!="hubitat" &&  $stweb!="hubitatonly" ) {
-            $useSmartThings = true;
-        } else {
-            $useSmartThings = false;
+
+        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccesses[0] = USER_ACCESS_TOKEN; }
+        if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpts[0] = USER_ENDPT; }
+        if ( defined("USER_SITENAME") && USER_SITENAME ) { $hubNames[0] = USER_SITENAME; }
+
+        if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { 
+            $hubHosts[1] = HUBITAT_HOST; 
         }
-
-        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccess = USER_ACCESS_TOKEN; }
-        if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpt = USER_ENDPT; }
-        if ( defined("USER_SITENAME") && USER_SITENAME ) { $userSitename = USER_SITENAME; }
-
-        if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { $hubitatHost = HUBITAT_HOST; }
-        if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubitatId = HUBITAT_ID; }
-        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubitatAccess = HUBITAT_ACCESS_TOKEN; }
-        if ( $hubitatHost && $hubitatId ) {
-            $hubitatEndpt = $hubitatHost . "/apps/api/" . $hubitatId;
-            $useHubitat = true;
+        if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubIds[1] = HUBITAT_ID; }
+        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubAccesses[1] = HUBITAT_ACCESS_TOKEN; }
+        if ( $hubHosts[1] && $hubIds[1] ) {
+            $hubEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
+            $hubTypes[1] = "Hubitat";
+            $hubNames[1] = "Hubitat Home";
+            $clientIds[1] = "";
+            $clientSecrets[1] = "";
+            $userAccesses[1] = "";
+            $userEndpts[1] = "";
         }
         $rewrite = true;
     }
