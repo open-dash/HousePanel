@@ -1,12 +1,13 @@
 <?php
 /*
- * House Panel web service PHP application for SmartThings
+ * House Panel application for SmartThings and Hubitat
  * author: Ken Washington  (c) 2017, 2018
  *
  * Must be paired with housepanel.groovy on the SmartThings or Hubitat side
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.76       Misc cleanup for first production release
  * 1.75       Page name editing, addition, and removal function and reorder bug fixes
  * 1.74       Add 8 custom tiles, zindex bugfix, and more tile editor updates
  * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more
@@ -39,7 +40,6 @@
  *              -- this was done in the js file by calling refreshTile
  *            Fix default size for switch tiles with power meter and level
  *              -- by default will be larger but power can be disabled in CSS
- * 
  * 1.41       Added filters on the Options page
  *            Numerous bug fixes including default Kiosk set to false
  *            Automatically add newly identified things to rooms per base logic
@@ -60,7 +60,6 @@
  * 1.2        Cleaned up the Groovy file and streamlined a few things
  *            Added smoke, illuminance, and doors (for Garages)
  *            Reorganized categories to be more logical when selecting things
- * 
  * 1.1 beta   Added cool piston graph for Webcore tiles 
  *            Added png icons for browser and Apple products
  *            Show all fields supported - some hidden via CSS
@@ -89,8 +88,8 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.75');
-define('APPNAME', 'House Panel ' . HPVERSION);
+define('HPVERSION', 'Version 1.76');
+define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
@@ -100,6 +99,7 @@ define('DEBUG2', false); // authentication flow debug
 define('DEBUG3', false); // room display debug - show all things
 define('DEBUG4', false); // options processing debug
 define('DEBUG5', false); // debug print included in output table
+define("DONATE", true);  // turn on or off the donate button
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -107,9 +107,10 @@ error_reporting(E_ERROR);
 // header and footer
 function htmlHeader($skindir="skin-housepanel") {
     $tc = '<!DOCTYPE html>';
-    // $tc = '<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">';
     $tc.= '<html><head><title>House Panel</title>';
     $tc.= '<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">';
+    
+    // specify icon and color for windows machines
     $tc.= '<meta name="msapplication-TileColor" content="#2b5797">';
     $tc.= '<meta name="msapplication-TileImage" content="media/mstile-144x144.png">';
     
@@ -139,25 +140,30 @@ function htmlHeader($skindir="skin-housepanel") {
     if (!$skindir) {
         $skindir = "skin-housepanel";
     }
-    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css\">";
+    $csshash = md5_file($skindir . "/housepanel.css");
+    $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skindir/housepanel.css?v=" . $csshash . "\">";
     
     // if this theme has a helper js then load it
     if ( file_exists( $skindir . "/housepanel-theme.js") ) {
-        $tc.= "<script type=\"text/javascript\" src=\"$skindir/housepanel-theme.js\"></script>";
+        $helperhash = md5_file($skindir . "/housepanel-theme.js");
+        $tc.= "<script type=\"text/javascript\" src=\"$skindir/housepanel-theme.js?v=" . $helperhash . "\"></script>";
     }
 	
     //load cutomization helpers
-    $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js\"></script>";
-    $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css\"/>";	
+    $tejshash = md5_file($skindir . "/tileeditor.js");
+    $tecsshash = md5_file($skindir . "/tileeditor.css");
+    $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js?v=" . $tejshash . "\"></script>";
+    $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css?v=" . $tecsshash . "\">";	
 
     // load the custom tile sheet if it exists - changed this to put in root
     // so now custom tiles apply to all skins
     // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("customtiles.css")) {
-        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css?v=". time() ."\">";
-        // $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css" ."\">";
+        $customhash = md5_file("customtiles.css");
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css?v=". $customhash ."\">";
     }
-    $tc.= '<script type="text/javascript" src="housepanel.js"></script>';  
+    $jshash = md5_file("housepanel.js");
+    $tc.= '<script type="text/javascript" src="housepanel.js?v=' . $jshash . '"></script>';  
 
     // begin creating the main page
     $tc.= '</head><body>';
@@ -386,13 +392,15 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         
         $tc.= "</div>";
 
-    $tc.= '<br /><h4>Donations appreciated for HousePanel support and continued improvement, but none required to proceed.</h4>
-        <br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-        <input type="hidden" name="cmd" value="_s-xclick">
-        <input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
-        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-        <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
-        </form></div>';
+        if ( defined("DONATE") && DONATE===true ) {
+            $tc.= '<br /><h4>Donations appreciated for HousePanel support and continued improvement, but none required to proceed.</h4>
+                <br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+                <input type="hidden" name="cmd" value="_s-xclick">
+                <input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
+                <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+                <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+                </form></div>';
+        }
     }
     
     $tc.= "<form class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
@@ -2221,13 +2229,14 @@ function getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitat
     $tc.= "<h3>HousePanel Information Display</h3>";
     $tc.= "<div class='returninfo'><a href=\"$returnURL\">Return to HousePanel</a></div><br />";
 
-    $tc.= '<br /><br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
-</form></div>';
-
+    if ( defined("DONATE") && DONATE===true ) {
+        $tc.= '<br /><br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+            <input type="hidden" name="cmd" value="_s-xclick">
+            <input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
+            <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+            <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+            </form></div>';
+    }
     
     $tc.= "<div class=\"infopage\">";
     $tc.= "<div>Sitename = $sitename </div>";
@@ -2284,9 +2293,7 @@ function getInfoPage($returnURL, $access_token, $endpt, $hubitatAccess, $hubitat
 
 function editPage($pagenum, $pagename) {
     
-    
     $options = readOptions();
-
     $oldname = array_search($pagenum, $options["rooms"]);
     if ( $oldname && $pagename ) {
         $retcode = "success";
@@ -2302,7 +2309,6 @@ function editPage($pagenum, $pagename) {
     } else {
         $retcode = "error - page not found";
     }
-    
     return $retcode;
 }
 

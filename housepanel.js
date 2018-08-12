@@ -10,6 +10,12 @@ var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 var dragZindex = 1;
 
+// set this global variable to true to disable actions
+// I use this for testing the look and feel on a public hosting location
+// this way the app can be installed but won't control my home
+// end-users are welcome to use this but it is intended for development only
+var disablepub = true;
+
 Number.prototype.pad = function(size) {
     var s = String(this);
     while (s.length < (size || 2)) {s = "0" + s;}
@@ -63,7 +69,9 @@ window.addEventListener("load", function(event) {
     $("div.skinoption").hide();
 
     // setup page clicks
-    setupPage();
+    if ( !disablepub ) {
+        setupPage();
+    }
     
     // disable return key
     $("form.options").keypress(function(e) {
@@ -104,8 +112,11 @@ window.addEventListener("load", function(event) {
     // but you can always run a refresh to update the panel manually
     // or you can run it every once in a blue moon too
     // any value less than 5000 (5 sec) will be interpreted as never
-    allTimerSetup(60000);
-    allHubitatSetup(5000);
+    
+    if ( !disablepub ) {
+        allTimerSetup(60000);
+        allHubitatSetup(5000);
+    }
 
     cancelDraggable();
     cancelSortable();
@@ -1673,11 +1684,6 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
 // setup trigger for clicking on the action portion of this thing
 // this used to be done by page but now it is done by sensor type
 function setupPage(trigger) {
-   
-    // alert("setting up " + trigger);
-    // var actionid = "div." + trigger;
-
-    // $(actionid).click(function() {
     $("div.overlay > div").off("click.tileactions");
     $("div.overlay > div").on("click.tileactions", function() {
         
@@ -1701,7 +1707,6 @@ function setupPage(trigger) {
         var ajaxcall = "doaction";
         if ( bid.startsWith("h_") ) {
             ajaxcall = "dohubitat";
-            // bid = bid.substring(2);
         }
 
         var thevalue;
@@ -1718,9 +1723,6 @@ function setupPage(trigger) {
         } else {
             thevalue = $(targetid).html();
         }
-
-//        alert('aid= ' + aid +' bid= ' + bid + ' targetid= '+targetid+ ' subid= ' + subid + ' type= ' + thetype + ' class= ['+theclass+'] value= '+thevalue);
-//        return;
 
         // turn momentary items on or off temporarily
         if (thetype==="momentary" || thetype==="piston") {
@@ -1753,10 +1755,6 @@ function setupPage(trigger) {
                         updateMode();
                     }
                 });
-//        } else if (thetype==="switch" || thetype==="lock" || thetype==="switchlevel" ||
-//                   thetype==="thermostat" || thetype==="music" || thetype==="bulb" ) {
-        // now we invoke action for everything
-        // within the groovy code if action isn't relevant then nothing happens
         } else if ( thetype==="video" ) {
             if ( subid === "url" ) {
                 console.log("Replaying latest embedded video: " + thevalue);
@@ -1767,7 +1765,6 @@ function setupPage(trigger) {
         } else if ( thetype==="weather") {
             console.log("Weather tiles have no actions...");
         } else {
-//            alert("id= "+bid+" type= "+thetype+" value= "+thevalue+" class="+theclass);
             console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid},

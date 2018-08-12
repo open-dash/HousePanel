@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 08/11/2018 - miscellaneous code cleanup
  * 07/24/2018 - fix bug in lock opening and closing with motion detection
  * 06/11/2018 - added mobile option to enable or disable pistons and fix debugs
  * 06/10/2018 - changed icons to amazon web services location for https
@@ -32,7 +33,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.5.beta.rev.1" }
+public static String version() { return "v1.76" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -73,12 +74,10 @@ preferences {
     	input "mywaters", "capability.waterSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Water Sensors"
     	input "myvalves", "capability.valve", hideWhenEmpty: true, multiple: true, required: false, title: "Sprinklers"
     }
-    section ("Other Sensors (duplicates allowed)...") {
+    section ("Other Sensors and Options") {
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
-    }
-    section(mobileOnly: true, "Options") {
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
     }
 }
@@ -383,8 +382,6 @@ def getThings(resp, things, thingtype) {
 // This retrieves and returns all things
 // used up front or whenever we need to re-read all things
 def getAllThings() {
-    def incpistons = state.usepistons
-
     def resp = []
     resp = getSwitches(resp)
     resp = getDimmers(resp)
@@ -412,7 +409,7 @@ def getAllThings() {
     resp = getImages(resp)
 
     // optionally include pistons based on user option
-    if (incpistons) {
+    if (state.usepistons) {
         resp = getPistons(resp)
     }
     return resp
@@ -656,8 +653,9 @@ def autoType(swid) {
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
     else if ( swid=="m1x1" || swid=="m1x2" || swid=="m2x1" || swid=="m2x2" ) { swtype= "mode" }
+    else if ( swid=="b1x1" || swid=="b1x2" || swid=="b2x1" || swid=="b2x2" ) { swtype= "blank" }
+    else if ( swid=="img1" || swid=="img2" || swid=="img3" || swid=="img4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
-
     else { swtype = "" }
     return swtype
 }
@@ -739,10 +737,8 @@ def doAction() {
       case "piston" :
          if ( state.usepistons ) {
              webCoRE_execute(swid)
-             // set the result to piston information (could be false)
              cmdresult = getPiston(swid)
          }
-         // log.debug "Executed webCoRE piston: $cmdresult"
          break;
       
       case "routine" :
