@@ -7,7 +7,15 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.77       More bug fixes
+ *             - fix accidental delete of icons in hubitat version
+ *             - incorporate initial width and height values in tile editor
  * 1.76       Misc cleanup for first production release
+ *             - fixed piston graphic in tileeditor
+ *             - fix music tile status to include stop state in tileeditor
+ *             - added ?v=hash to js and css files to force reload upon change
+ *             - removed old comments and dead code
+ * 
  * 1.75       Page name editing, addition, and removal function and reorder bug fixes
  * 1.74       Add 8 custom tiles, zindex bugfix, and more tile editor updates
  * 1.73       Updated tile editor to include whole tile backgrounds, custom names, and more

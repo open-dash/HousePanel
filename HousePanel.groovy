@@ -33,7 +33,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.76" }
+public static String version() { return "v1.77" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",

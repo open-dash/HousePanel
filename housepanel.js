@@ -14,7 +14,7 @@ var dragZindex = 1;
 // I use this for testing the look and feel on a public hosting location
 // this way the app can be installed but won't control my home
 // end-users are welcome to use this but it is intended for development only
-var disablepub = true;
+var disablepub = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -46,8 +46,9 @@ function getCookie(cname) {
     return "";
 }
 
-window.addEventListener("load", function(event) {
-
+// window.addEventListener("load", function(event) {
+// $(window).on("load", function(event) {
+$(document).ready(function() {
     // set the global return URL value
     try {
         returnURL = $("input[name='returnURL']").val();
@@ -591,7 +592,6 @@ function setupDraggable() {
                                 if ( clk==="okay" ) {
                                     // add it to the system
                                     // the ajax call must return a valid "div" block for the dragged new thing
-
                                     // get the last thing in the current room
                                     // var lastthing = $("div.panel-"+panel+" div.thing").last();
                                     var cnt = $("div.panel div.thing").last().attr("id");
@@ -611,45 +611,6 @@ function setupDraggable() {
                                                 setupPage();
                                                 setupSliders();
                                                 setupColors();
-
-                                                // activate the controls on the dropped tile
-                                                // no longer need to do this by type
-//                                                if ( thingtype=="switch" || thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="light" ) {
-//                                                    setupPage("switch.on");
-//                                                    setupPage("switch.off");
-//                                                }
-//                                                if ( thingtype=="momentary" ) {
-//                                                    setupPage("momentary");
-//                                                }
-//                                                if ( thingtype=="piston" ) {
-//                                                    setupPage("piston.pistonName");
-//                                                }
-//                                                if ( thingtype=="door" ) {
-//                                                    setupPage("door.open");
-//                                                    setupPage("door.closed");
-//                                                }
-//                                                if ( thingtype=="lock" ) {
-//                                                    setupPage("lock.locked");
-//                                                    setupPage("lock.unlocked");
-//                                                }
-//                                                if ( thingtype=="switchlevel" || thingtype=="bulb" || thingtype=="music" ) {
-//                                                    setupSliders();
-//                                                }
-//                                                if ( thingtype=="bulb" ) {
-//                                                    setupColors();
-//                                                }
-//                                                if ( thingtype==="music" ) {
-//                                                    var triggers = ["musicmute","musicstatus","music-previous","music-pause","music-play","music-stop","music-next"];
-//                                                    triggers.forEach(function(item) {
-//                                                        setupPage(item);
-//                                                    });
-//                                                }
-//                                                if ( thingtype==="thermostat" ) {
-//                                                    var triggers = ["heat-dn","heat-up","cool-dn","cool-up","thermomode","thermofan"];
-//                                                    triggers.forEach(function(item) {
-//                                                        setupPage(item);
-//                                                    });
-//                                                }
                                             }
                                         }
                                     );
@@ -680,8 +641,6 @@ function setupDraggable() {
                     dragthing["zindex"] = startPos.zindex;
                     $(thing).css( {"z-index": startPos.zindex.toString()} );
                     
-                    // alert("Stopped drag: z-index= " + startPos.zindex.toString() );
-
                     // now post back to housepanel to save the position
                     // also send the dragthing object to get panel name and tile pid index
                     if ( ! $("#catalog").hasClass("ui-droppable-hover") ) {

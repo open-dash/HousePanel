@@ -34,7 +34,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.76" }
+public static String version() { return "v1.77" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -42,6 +42,9 @@ definition(
     author: "Kenneth Washington",
     description: "Tap here to install ${handle()} ${version()} - a highly customizable tablet smart app. ",
     category: "Convenience",
+    iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
+    iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
+    iconX3Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon3x.png",
     oauth: [displayName: "kewashi house panel", displayLink: ""])
 
 
@@ -50,7 +53,8 @@ preferences {
         paragraph "The HousePanel url is the full url address where your HousePanel application is installed. " +
                   "This is typically a rPi device on the same network subnet as the Hubitat HUB. \n" +
                   "HousePanel uses this to push the access token and hub id to your server instead of requiring " +
-                  "user manual configuration; however, you can always still configure HousePanel manually. "
+                  "user manual configuration; however, you can always still configure HousePanel manually. " +
+                  "(By the way, I know this isn't the usual auth process. That will come soon)"
         input (name: "hpurl", type: "text", title: "HousePanel url", defaultValue: "http://192.168.11.20/smartthings/housepanel.php", required: true, multiple: false )
         paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true all calls to HousePanel will be through the Cloud endpoint. " +
@@ -91,7 +95,7 @@ preferences {
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
 //    	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons (must have a local WebCore installed)?", required: false, defaultValue: false)
     }
 }
 
@@ -1507,22 +1511,6 @@ def setRoutine(swid, cmd, swattr) {
 /*                                                                       */
 /*  You should have received a copy of the GNU General Public License    */
 /*  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
-/*************************************************************************/
-/*  Initialize the connector in your initialize() method using           */
-/*     webCoRE_init()                                                    */
-/*  Optionally, pass the string name of a method to call when a piston   */
-/*  is executed:                                                         */
-/*     webCoRE_init('pistonExecutedMethod')                              */
-/*************************************************************************/
-/*  List all available pistons by using one of the following:            */
-/*     webCoRE_list() - returns the list of id/name pairs                */
-/*     webCoRE_list('id') - returns the list of piston IDs               */
-/*     webCoRE_list('name') - returns the list of piston names           */
-/*************************************************************************/
-/*  Execute a piston by using the following:                             */
-/*     webCoRE_execute(pistonIdOrName)                                   */
-/*  The execute method accepts either an id or the name of a             */
-/*  piston, previously retrieved by webCoRE_list()                       */
 /*************************************************************************/
 private webCoRE_handle(){return'webCoRE'}
 private webCoRE_init(pistonExecutedCbk)
