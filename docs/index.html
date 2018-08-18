@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018</i><br/>
-<i>Version 1.75 as of August 7, 2018</i>
+<i>Version 1.77 as of August 15, 2018</i>
 </p>
 </div>
 
@@ -523,15 +523,15 @@ keywords to your liking; however, end users will have other ways of moving
 things around and renaming rooms. We'll also discuss how to add or delete
 rooms in a later section by editing the hmoptions.cfg file directly.
 
-<blockquote><pre>
-        Kitchen:   "kitchen|sink|pantry|dinette|clock|mode" ,
-        Family:    "family|mud|fireplace|casual|thermostat|weather",
-        Living:    "living|dining|entry|front door|foyer",
-        Office:    "office|computer|desk|work",
-        Bedrooms:  "bedroom|kid|bathroom|closet|master|guest",
-        Outside:   "garage|yard|outside|porch|patio|driveway",
-        Music:     "sonos|music|tv|television|alexa|stereo|bose|samsung"
-</pre></blockquote>
+<table>
+    <tr><td>Kitchen:</td><td>   "kitchen|sink|pantry|dinette|clock|mode" </td></tr>
+    <tr><td>Family:</td><td>    "family|mud|fireplace|casual|thermostat|weather"</td></tr>
+    <tr><td>Living:</td><td>    "living|dining|entry|front door|foyer"</td></tr>
+    <tr><td>Office:</td><td>    "office|computer|desk|work"</td></tr>
+    <tr><td>Bedrooms:</td><td>  "bedroom|kid|bathroom|closet|master|guest"</td></tr>
+    <tr><td>Outside:</td><td>   "garage|yard|outside|porch|patio|driveway"</td></tr>
+    <tr><td>Music:</td><td>     "sonos|music|tv|television|alexa|stereo|bose|samsung"</td></tr>
+</table>
 
 <h1>Using HousePanel</h1>
 Your default HP page should look something like the image in the prior
@@ -546,45 +546,61 @@ telling HP to show that tab that was previously created.<br/><br/>
 <h2>Turning Things On and Off</h2>
 While on any page, you can click or tap on any thing tile to change its state.
 For example, clicking on "Kitchen Light" will turn the light off if it is
-on, and will turn it on if it is off. If you click on a closed door, it will open.
-However, not all things support state changes from HP. Door and motion sensors
+on, and will turn it on if it is off. If you click on a closed garage door, it will open.
+However, not all things support state changes from HP.  Contacts and motion sensors
 for example are display only tiles so clicking on them will do nothing. Same
 for the clock and blank tiles. Tiles that support mode changes include switch,
-dimmers, doors, mode, routines, thermostats, and music tiles. 
+bulbs, lights, dimmers, garage doors, mode, routines, thermostats, and music tiles. 
 If you are using a computer, the cursor will change to a pointer when
 you hover over thing tiles that can be clicked on to change state. Other
 thing tiles will remain an arrow icon.<br/><br/>
 
-Dimmer, thermostat and music tiles have multiple controls that can 
+Some tiles such as thermostat and music tiles have multiple controls that can 
 be individually controlled by clicking on them. 
 For example, each thermostat has a heater and an AC control
 and each one has up and down arrows that can be clicked on to adjust
 the temperature setting. On music tiles, play, pause, skip, and stop 
-can also be clicke on. On dimmer tiles you change the intensity 
-of the light by clicking on the up or down arrows. When you do this
+can also be clicked on. On dimmer tiles you change the intensity 
+of the light by moving the slider. When you do this
 the light will always come if it is off.
 
-<h2>Moving Things and Rooms Around</h2>
+<h2>Edit Mode: Moving Tiles Around</h2>
 One of the most exciting features of HousePanel is the ability to highly
 customize its look and feel. The first level of customization involves
-simply moving existing tiles around on a page. To do this, click and hold
-down any tile and then move it. It will move with you. Release it and it will
-permanently be relocated to that spot. <strong>Note: this will only be permanent
-if your hmoptions.cfg file is read/write</strong>. You can apply this same
-maneuver to page tabs. Simple click and hold a tab and move it left or right
+simply moving existing tiles around on a page. To do this, you need to enter
+edit mode using the Edit radio button on the bottom right corner of the screen.
+When you are in this mode, tiles can be moved around freely on the page. <br/><br/>
+
+The other things you can do in Edit mode include adding new things by dragging and dropping
+them from the things library, deleting things, or editing things. If you select
+delete, you will be prompted to confirm. Upon confirmation the tile will be
+removed from the room being displayed. If you select Edit the Tile Editor will launch.
+Use of the tile editor is documented elsewhere. <strong>Note: Changes made in
+Edit mode will only be permanent if your hmoptions.cfg file is read/write</strong>. 
+
+<h2>Reorder Mode: Changing Order of Rooms and Tiles</h2>
+You can apply select Reorder mode to enable the reordering of tiles and rooms.
+The main difference of this mode is things are automatically snapped into
+place in this mode based on the order. This is also the only mode that
+allows room tabs to be moved around into a different order. To do this,
+simply click and hold a tab and move it left or right
 to reorder your rooms. The new room location will be permanent on this server.
 
 <h2>Adding or Removing Things from Rooms</h2>
-Deeper customization involves adding or removing things to your rooms. To do
-this scroll to the bottom of the page and click on the Options button
-in the lower left corner of the page. This will load a page with a
+Deeper customization involves adding or removing things to your rooms. 
+One way to do this is to use Edit mode described above. An easier way to make
+multiple changes to multiple rooms at the same time is to use the Options page.
+This page is launched using the Options button found at the bottom left of the page.
+Clicking this button will load a page with a
 two-dimensional matrix of all your things and all your rooms that looks
 like this:<br/><br/>
 
 <div><img src="options.png"></div>
 
-Everywhere you see a check mark, that means the thing of that "row" will
-be shown in the room of that "column". You can add or remove a check
+Everywhere you see a check mark means the thing of that "row" will
+be shown in the room of that "column". If you have a large number of things
+you can filter showing things by type by clicking on the check boxes on
+the top of this page. You can add or remove a check
 mark in any room for any thing. Duplicates are allowed. For example, at one
 extreme, if you want all things to show in all rooms, you would just
 check all of the boxes. This wouldn't make any sense but hopefully this
