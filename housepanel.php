@@ -417,11 +417,14 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     // but only if the hmoptions file is not current
     $options = readOptions();
     $rewrite = false;
+    
+    // first check for existence of options file
     if ( ! $options ) {
         $options = array();
         $rewrite = true;
     }
     
+    // check for some type of config setup
     if ( array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
         $timezone = $configoptions["timezone"];
@@ -465,23 +468,74 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         ) {
             $hubTypes = array();
             $hubHosts = array();
+            $clientIds = array();
+            $clientSecrets = array();
+            $userAccesses = array("");
+            $userEndpts = array();
+            $hubNames = array();
+            $hubIds = array();
+            $hubAccesses = array();
+            $hubEndpts = array();
+            
+            // check for a smartthings hub
             if ( $configoptions["use_st"] ) {
                 $hubTypes[] = "SmartThings";
                 $hubHosts[] = $configoptions["st_web"];
                 $clientIds[] = $configoptions["client_id"];
                 $clientSecrets[] = $configoptions["client_secret"];
+                if ( array_key_exists("user_access", $configoptions) &&
+                     array_key_exists("user_endpt", $configoptions) ) {
+                    $userAccesses[] = $configoptions["user_access"];
+                    $userEndpts[] = $configoptions["user_endpt"];
+                    $hubAccesses[] = $configoptions["user_access"];
+                    $hubEndpts[] = $configoptions["user_endpt"];
+                } else {
+                    $userAccesses[] = "";
+                    $userEndpts[] = "";
+                    $hubAccesses[] = "";
+                    $hubEndpts[] = "";
+                }
+                if ( array_key_exists("user_sitename", $configoptions) ) {
+                    $hubNames[] = $configoptions["user_sitename"];
+                } else {
+                    $hubNames[] = "SmartThings Homs";
+                }
+                $hubIds[] = 0;
             }
+            
+            // check for a hubitat hub
             if ( $configoptions["use_he"] ) {
                 $hubTypes[] = "Hubitat";
                 $hubHosts[] = $configoptions["hubitat_host"];
+                $clientIds[] = "";
+                $clientSecrets[] = "";
+                if ( array_key_exists("hubitat_access", $configoptions) &&
+                     array_key_exists("hubitat_id", $configoptions) ) {
+                    $userAccesses[] = $configoptions["hubitat_access"];
+                    $hubAccesses[] = $configoptions["hubitat_access"];
+                    $hubIds[] = $configoptions["hubitat_id"];
+                } else {
+                    $userAccesses[] = "";
+                    $hubAccesses[] = "";
+                    $hubIds[] = 100;
+                    $configoptions["hubitat_id"] = 100;
+                }
+                if ( array_key_exists("hubitat_endpt", $configoptions) ) {
+                    $userEndpts[] = $configoptions["hubitat_endpt"];
+                    $hubEndpts[] = $configoptions["hubitat_endpt"];
+                } else {
+                    $defendpt = $configoptions["hubitat_host"] . "/apps/api/" . $configoptions["hubitat_id"];
+                    $userEndpts[] = $defendpt;
+                    $hubEndpts[] = $defendpt;
+                }
+                if ( array_key_exists("user_sitename", $configoptions) ) {
+                    $hubNames[] = $configoptions["user_sitename"];
+                } else {
+                    $hubNames[] = "Hubitat Home";
+                }
             }
-            $userAccesses = $configoptions["useraccesses"];
-            $userEndpts = $configoptions["userendpts"];
-            $hubNames = $configoptions["hubnames"];
-            $hubIds = $configoptions["hubids"];
-            $hubAccesses = $configoptions["hubaccesses"];
-            $hubEndpts = $configoptions["hubendpts"];
-            
+        
+        // otherwise it must be a new multihub setup
         } else {
             $hubTypes = $configoptions["hubtypes"];
             $hubHosts = $configoptions["hubhosts"];
@@ -494,7 +548,9 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
             $hubAccesses = $configoptions["hubaccesses"];
             $hubEndpts = $configoptions["hubendpts"];
         
-            // set defaults
+            // set defaults for Hubitat endpoints
+            // this shouldn't be needed with our new OAUTH flow
+            // but I kept it here just in case
             foreach ($hubtypes as $i => $hubtype) {
                 if ( $hubtype==="Hubitat" && $hubEndpts[$i]==="" ) {
                     $hubEndpts[$i] = $hubHosts[$i] . "/apps/api/" . $hubIds[$i];
@@ -504,20 +560,22 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         }
     } else {
 
-        // set defaults here for fresh installs
+        // set default to not have any hub
+        // HousePanel now works without any hub for custom tiles only
+        // This is useful for triggering Stringify flows with custom tiles
         $rewrite = true;
         $timezone = ""; // date_default_timezone_get();
         
-        $hubTypes = array("SmartThings");
-        $hubHosts = array("https://graph.api.smartthings.com");
-        $clientIds = array("");
-        $clientSecrets = array("");
+        $hubTypes = array();
+        $hubHosts = array();
+        $clientIds = array();
+        $clientSecrets = array();
         $userAccesses = array("");
-        $userEndpts = array("");
-        $hubNames = array("SmartThings Home");
-        $hubIds = array(0);
-        $hubAccesses = array("");
-        $hubEndpts = array("");
+        $userEndpts = array();
+        $hubNames = array();
+        $hubIds = array();
+        $hubAccesses = array();
+        $hubEndpts = array();
     }
     
     if ( array_key_exists("time", $options) ) {
@@ -538,40 +596,58 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     // try to gather defaults from the clientinfo file
     // this is only here for backward compatibility purposes
     // there is no need for this file any more
+    // if it is here then two hubs will be created by default
+    // the first one will be smartthings the second hubitat
+    // the first one will be disabled if a hubitat only install is requested
     if (file_exists("clientinfo.php")) {
         include "clientinfo.php";
+        $hubTypes = array("SmartThings","Hubitat");
+        $hubHosts = array("https://graph.api.smartthings.com","192.168.1.100");
+        $clientIds = array("", "");
+        $clientSecrets = array("","");
+        $userAccesses = array("","");
+        $userEndpts = array("","");
+        $hubNames = array("SmartThings Home", "Hubitat Home");
+        $hubIds = array(0, 100);
+        $hubAccesses = array("", "");
+        $hubEndpts = array("", "");
+        
         if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientIds[0] = CLIENT_ID; }
         if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecrets[0] = CLIENT_SECRET; }
         if ( defined("ST_WEB") && ST_WEB ) { 
             $hubHosts[0] = ST_WEB; 
-            if ( ST_WEB==="hubitat" &&  ST_WEB==="hubitatonly" ) {
+            if ( ST_WEB==="hubitat" ||  ST_WEB==="hubitatonly" ) {
                 $hubTypes[0] = "Disabled";
-            } else {
-                $hubTypes[0] = "SmartThings";
             }
         }
         
         // overwrite timezone only if user left it blank
         if ( !$timezone && defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
-
-
-        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { $userAccesses[0] = USER_ACCESS_TOKEN; }
-        if ( defined("USER_ENDPT") && USER_ENDPT) { $userEndpts[0] = USER_ENDPT; }
-        if ( defined("USER_SITENAME") && USER_SITENAME ) { $hubNames[0] = USER_SITENAME; }
-
+        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { 
+            $userAccesses[0] = USER_ACCESS_TOKEN; 
+            $hubAccesses[0] = USER_ACCESS_TOKEN;
+        }
+        if ( defined("USER_ENDPT") && USER_ENDPT) { 
+            $userEndpts[0] = USER_ENDPT; 
+            $hubEndpts[0] = USER_ENDPT; 
+        }
+        if ( defined("USER_SITENAME") && USER_SITENAME ) { 
+            $hubNames[0] = USER_SITENAME; 
+            $hubNames[1] = USER_SITENAME; 
+        }
         if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { 
             $hubHosts[1] = HUBITAT_HOST; 
         }
-        if ( defined("HUBITAT_ID") && HUBITAT_ID ) { $hubIds[1] = HUBITAT_ID; }
-        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) { $hubAccesses[1] = HUBITAT_ACCESS_TOKEN; }
+        if ( defined("HUBITAT_ID") && HUBITAT_ID ) {
+            $hubIds[1] = HUBITAT_ID;
+        }
+        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) {
+            $userAccesses[1] = HUBITAT_ACCESS_TOKEN; 
+            $hubAccesses[1] = HUBITAT_ACCESS_TOKEN;
+        }
         if ( $hubHosts[1] && $hubIds[1] ) {
             $hubEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
-            $hubTypes[1] = "Hubitat";
-            $hubNames[1] = "Hubitat Home";
-            $clientIds[1] = "";
-            $clientSecrets[1] = "";
-            $userAccesses[1] = "";
-            $userEndpts[1] = "";
+            $userEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
         }
         $rewrite = true;
     }
@@ -580,22 +656,21 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     if ( $rewrite ) {
         $configoptions = array(
             "timezone" => $timezone,
-            "user_sitename" => $userSitename,
-            "use_st" => $useSmartThings,
-            "st_web" => $stweb,
-            "client_id" => $clientId, 
-            "client_secret" => $clientSecret,
-            "user_access" => $userAccess,
-            "user_endpt" => $userEndpt,
-            "use_he" => $useHubitat,
-            "hubitat_host" => $hubitatHost, 
-            "hubitat_id" => $hubitatId,
-            "hubitat_access" => $hubitatAccess,
-            "hubitat_endpt" => $hubitatEndpt
+            "skin" => $skin,
+            "kiosk" => $kiosk,
+            "hubTypes" => $hubTypes,
+            "hubHosts" => $hubHosts,
+            "clientIds" => $clientIds, 
+            "clientSecrets" => $clientSecrets,
+            "userAccesses" => $userAccesses,
+            "userEndpts" => $userEndpts,
+            "hubNames" => $hubNames,
+            "hubIds" => $hubIds,
+            "hubAccesses" => $hubAccesses,
+            "hubEndpts" => $hubEndpts
         );
+        
         $options["config"] = $configoptions;
-        $options["skin"] = $skin;
-        $options["kiosk"] = $kiosk;
         writeOptions($options);
     }
     
@@ -609,9 +684,6 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         $tc.= "<div><label class=\"startupinp\">Timezone: </label>";
         $tc.= "<input name=\"timezone\" width=\"20\" type=\"text\" value=\"$timezone\"/></div>"; 
         
-        $tc.= "<div><label class=\"startupinp\">Site Name: </label>";
-        $tc.= "<input name=\"user_sitename\" width=\"40\" type=\"text\" value=\"$userSitename\"/></div>"; 
-        
         $tc.= "<div><label class=\"startupinp\">Skin Directory: </label>";
         $tc.= "<input class=\"startupinp\" name=\"skindir\" width=\"80\" type=\"text\" value=\"$skin\"/></div>"; 
 
@@ -620,67 +692,53 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         $tc.= "<input name=\"use_kiosk\" width=\"6\" type=\"checkbox\" $kstr/>";
         $tc.= "<label for=\"use_kiosk\" class=\"startupinp\"> Kiosk Mode? </label>";
         $tc.= "</div>"; 
-
-        // ------------------ smartthings setup ----------------------------------
-        $tc.= "<div class='hubopt'>";
-        if ( $useSmartThings ) { $kstr = "checked"; } else { $kstr = ""; }
-        $tc.= "<input id=\"use_st\" name=\"use_st\" width=\"6\" type=\"checkbox\" $kstr/>";
-        $tc.= "<label for=\"use_st\" class=\"kioskoption\"> Use SmartThings? </label>";
-        $tc.= "</div>"; 
-
-        $tc.= "<div id=\"smartsetup\" class=\"hubtype\">";
-
-        $tc.= "<div><label class=\"startupinp\">SmartThings API Url: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"st_web\" width=\"80\" type=\"text\" value=\"$stweb\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Client ID: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"client_id\" width=\"80\" type=\"text\" value=\"$clientId\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Client Secret: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"client_secret\" width=\"80\" type=\"text\" value=\"$clientSecret\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Fixed Access Token: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"user_access\" width=\"80\" type=\"text\" value=\"$userAccess\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Fixed Endpoint: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"user_endpt\" width=\"80\" type=\"text\" value=\"$userEndpt\"/></div>"; 
         
-        $tc.= "</div>";
+        foreach ($hubTypes as $i => $hubType) {
 
-        // ------------------ hubitat setup ----------------------------------
+            // ------------------ smartthings setup ----------------------------------
+            $tc.= "<div class='hubopt'>";
+            if ( $useSmartThings ) { $kstr = "checked"; } else { $kstr = ""; }
+            $tc.= "<input id=\"use_st_$i\" name=\"use_st[]\" width=\"6\" type=\"checkbox\" $kstr/>";
+            $tc.= "<label for=\"use_st_$i\" class=\"kioskoption\"> Use this $hubType hub? </label>";
+            $tc.= "</div>"; 
+
+            $tc.= "<div id=\"smartsetup_$i\" class=\"hubtype\">";
+
+            $tc.= "<div><label class=\"startupinp\">Hub Type: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"hubTypes[]\" width=\"80\" type=\"text\" value=\"" . $hubTypes[$i] . "\"/></div>"; 
+
+            $tc.= "<div><label class=\"startupinp\">$hubType API Url: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"hubHosts[]\" width=\"80\" type=\"text\" value=\"" . $hubHosts[$i] . "\"/></div>"; 
+
+            $tc.= "<div><label class=\"startupinp\">Client ID: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"clientIds[]\" width=\"80\" type=\"text\" value=\"" . $clientIds[$i] . "\"/></div>"; 
+
+            $tc.= "<div><label class=\"startupinp\">Client Secret: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"clientSecrets[]\" width=\"80\" type=\"text\" value=\"" . $clientSecrets[$i] . "\"/></div>"; 
+
+            $tc.= "<div><label class=\"startupinp\">Fixed Access Token: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"userAccesses[]\" width=\"80\" type=\"text\" value=\"" . $userAccesses[$i] . "\"/></div>"; 
+
+            $tc.= "<div><label class=\"startupinp\">Fixed Endpoint: </label>";
+            $tc.= "<input class=\"startupinp\" name=\"userEndpts[]\" width=\"80\" type=\"text\" value=\"" . $userEndpts[$i] . "\"/></div>"; 
         
-        $tc.= "<div class='hubopt'>";
-        if ( $useHubitat ) { $kstr = "checked"; } else { $kstr = ""; }
-        $tc.= "<input id=\"use_he\" name=\"use_he\" width=\"6\" type=\"checkbox\" $kstr/>"; 
-        $tc.= "<label for=\"use_he\" class=\"kioskoption\"> Use Hubitat? </label>";
-        $tc.= "</div>"; 
+            $tc.= "<div><label class=\"startupinp\">Hub Name (blank=default): </label>";
+            $tc.= "<input class=\"startupinp\" name=\"hubNames[]\" width=\"80\" type=\"text\" value=\"" . $hubNames[$i] . "\"/></div>"; 
 
-        $tc.= "<div id=\"hubitatsetup\" class=\"hubtype\">";
-        
-        $tc.= "<div><label class=\"startupinp\">Hubitat Hub IP: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubitat_host\" width=\"24\" type=\"text\" value=\"$hubitatHost\"/></div>"; 
+            if ( $hubType==="Hubitat") {
+                $tc.= "<div><label class=\"startupinp\">Hub ID: </label>";
+                $tc.= "<input class=\"startupinp\" name=\"hubitat_id\" width=\"10\" type=\"text\" value=\"" . $hubIds[$i] . "\"/></div>"; 
+            }
 
-        $tc.= "<div><label class=\"startupinp\">Hubitat ID: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubitat_id\" width=\"10\" type=\"text\" value=\"$hubitatId\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Hubitat Access Token: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubitat_access\" width=\"80\" type=\"text\" value=\"$hubitatAccess\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp\">Hubitat Endpoint: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubitat_endpt\" width=\"80\" type=\"text\" value=\"$hubitatEndpt\"/></div>"; 
-        $tc.= "</div>";
-                
-        $tc.= "</div>";
-        
+            $tc.= "</div>";
+        }
         $tc.= "<div id=\"authmessage\"></div>";
-        
     }
 
     // if no greeting, this just restarts the SmartThings authorization flow
     $tc.= hidden("doauthorize", $hpcode);
     
     $tc.= "<div class=\"sitebutton\">";
-    if ( !$greeting ) { $tc.= "<span class=\"sitename\">$userSitename</span>"; }
     $tc .= "<input  class=\"authbutton\" value=\"Authorize HousePanel\" name=\"submit1\" type=\"submit\" />";
     $tc.= "</div></form>";
     return $tc;
@@ -2463,8 +2521,9 @@ function is_ssl() {
          isset($_SESSION["hpcode"]) && 
          intval($_POST["doauthorize"]) === intval($_SESSION["hpcode"]) ) {
 
+        $nubnum = filter_input(INPUT_POST, "hubnum", FILTER_SANITIZE_SPECIAL_CHARS);
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
-        $userSitename = filter_input(INPUT_POST, "user_sitename", FILTER_SANITIZE_SPECIAL_CHARS);
+        $hubname = filter_input(INPUT_POST, "hubNames[]", FILTER_SANITIZE_SPECIAL_CHARS);
         $skindir = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
 
         $kiosk = false;
