@@ -423,7 +423,6 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     }
     
     if ( array_key_exists("config", $options) ) {
-        
         $configoptions = $options["config"];
         $timezone = $configoptions["timezone"];
         
