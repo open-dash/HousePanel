@@ -363,8 +363,8 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         $tc.="<p>You are seeing this because you either requested a re-authentication " .
                 "or you have not yet authorized " .
                 "HousePanel to access SmartThings or Hubitat. With HousePanel " .
-                "you can any number and combination of both hub types at the same time. " . 
-                "To configure HousePanel you will need to have the information below. <br /><br />" .
+                "you can use any number and combination of both hub types at the same time. " . 
+                "To configure HousePanel you will need to have the information below for at least one hub. <br /><br />" .
                 "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
                 "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
                 "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
@@ -381,17 +381,18 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         
         $tc.= "<p>After authorization you will be redirected back to HousePanel. " .
                 "where you can then configure your things on the tabbed pages. " .
-                "A default configuration will be attempted but that is only a " . 
+                "A default configuration will be attempted only when your first hub is added. That is only a " . 
                 "starting point. You will likely want to edit the housepanel.css file or ".
                 "use the built-in Tile Editor to customize your panel.</p>";
         
         $tc.= "<p>You also have the option of manually specifying your Access Tokens " .
                 "below or in the optional clientinfo.php file. You will find the information needed printed " .
                 "in the SmartThings and/or Hubitat log when you install the app. You must have the log " .
-                "window open when you are installing to view this information. </p>";
+                "window open when you are installing to view this information. This information " .
+                "is also available after you have HousePanel running on the Show Info page.</p>";
         
         $tc.= "<p>If you have trouble authorizing, check your file permissions " .
-                "to ensure you can write to the home directory where HousePanel is installed. " .
+                "to ensure that you can write to the home directory where HousePanel is installed. " .
                 "You should also confirm that your PHP is set up to use cURL. " .
                 "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
                 "(opens in a new window or tab)</p>";
@@ -422,8 +423,11 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
     }
     
     if ( array_key_exists("config", $options) ) {
+        
         $configoptions = $options["config"];
         $timezone = $configoptions["timezone"];
+        
+        // fix any legacy settings to put skin in the config section
         if ( array_key_exists("skin", $options) ) {
             $skin = $options["skin"];
             $rewrite = true;
@@ -434,13 +438,16 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
             $skin = "skin-housepanel";
             $rewrite = true;
         }
-
+        
+        // fix any legacy settings to put kiosk in the config section
         if ( array_key_exists("kiosk", $options) ) {
             $kiosk = strval($options["kiosk"]);
+            $rewrite = true;
+            unset($options["kiosk"]);
         } else if ( array_key_exists("kiosk", $configoptions) ) {
             $kiosk = strval($configoptions["kiosk"]);
         } else {
-            $kiosk = false;
+            $kiosk = "false";
             $rewrite = true;
         }
         if ( $kiosk === "true" || $kiosk==="yes" || $kiosk==="1" ) {
@@ -448,23 +455,52 @@ function getAuthPage($sname, $returl, $hpcode, $greeting = false) {
         } else {
             $kiosk = false;
         }
-    
-        $hubTypes = $configoptions["hubtypes"];
-        $hubHosts = $configoptions["hubhosts"];
-        $clientIds = $configoptions["clientids"];
-        $clientSecrets = $configoptions["clientsecrets"];
-        $userAccesses = $configoptions["useraccesses"];
-        $userEndpts = $configoptions["userendpts"];
-        $hubNames = $configoptions["hubnames"];
-        $hubIds = $configoptions["hubids"];
-        $hubAccesses = $configoptions["hubaccesses"];
-        $hubEndpts = $configoptions["hubendpts"];
         
-        // set defaults
-        foreach ($hubtypes as $i => $hubtype) {
-            if ( $hubtype==="Hubitat" && $hubEndpts[$i]==="" ) {
-                $hubEndpts[$i] = $hubHosts[$i] . "/apps/api/" . $hubIds[$i];
-                $rewrite = true;
+        // handle legacy hmoptions files that have the old setup without arrays
+        if ( array_key_exists("use_st", $configoptions) &&
+             array_key_exists("st_web", $configoptions) &&
+             array_key_exists("client_id", $configoptions) &&
+             array_key_exists("client_secret", $configoptions) &&
+             array_key_exists("use_he", $configoptions) &&
+             array_key_exists("hubitat_host", $configoptions) 
+        ) {
+            $hubTypes = array();
+            $hubHosts = array();
+            if ( $configoptions["use_st"] ) {
+                $hubTypes[] = "SmartThings";
+                $hubHosts[] = $configoptions["st_web"];
+                $clientIds[] = $configoptions["client_id"];
+                $clientSecrets[] = $configoptions["client_secret"];
+            }
+            if ( $configoptions["use_he"] ) {
+                $hubTypes[] = "Hubitat";
+                $hubHosts[] = $configoptions["hubitat_host"];
+            }
+            $userAccesses = $configoptions["useraccesses"];
+            $userEndpts = $configoptions["userendpts"];
+            $hubNames = $configoptions["hubnames"];
+            $hubIds = $configoptions["hubids"];
+            $hubAccesses = $configoptions["hubaccesses"];
+            $hubEndpts = $configoptions["hubendpts"];
+            
+        } else {
+            $hubTypes = $configoptions["hubtypes"];
+            $hubHosts = $configoptions["hubhosts"];
+            $clientIds = $configoptions["clientids"];
+            $clientSecrets = $configoptions["clientsecrets"];
+            $userAccesses = $configoptions["useraccesses"];
+            $userEndpts = $configoptions["userendpts"];
+            $hubNames = $configoptions["hubnames"];
+            $hubIds = $configoptions["hubids"];
+            $hubAccesses = $configoptions["hubaccesses"];
+            $hubEndpts = $configoptions["hubendpts"];
+        
+            // set defaults
+            foreach ($hubtypes as $i => $hubtype) {
+                if ( $hubtype==="Hubitat" && $hubEndpts[$i]==="" ) {
+                    $hubEndpts[$i] = $hubHosts[$i] . "/apps/api/" . $hubIds[$i];
+                    $rewrite = true;
+                }
             }
         }
     } else {
