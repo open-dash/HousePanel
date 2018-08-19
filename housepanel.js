@@ -14,7 +14,9 @@ var dragZindex = 1;
 // I use this for testing the look and feel on a public hosting location
 // this way the app can be installed but won't control my home
 // end-users are welcome to use this but it is intended for development only
+// use the timers options to turn off polling
 var disablepub = false;
+var disabletimers = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -114,7 +116,7 @@ $(document).ready(function() {
     // or you can run it every once in a blue moon too
     // any value less than 5000 (5 sec) will be interpreted as never
     
-    if ( !disablepub ) {
+    if ( !disabletimers ) {
         allTimerSetup(60000);
         allHubitatSetup(5000);
     }

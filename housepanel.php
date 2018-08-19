@@ -7,6 +7,9 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.78       More bug fixes
+ *            - fix icon setting on some servers by removing backslashes
+ *            - added separate option for timers and action disable
  * 1.77       More bug fixes
  *             - fix accidental delete of icons in hubitat version
  *             - incorporate initial width and height values in tile editor
@@ -96,7 +99,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.76');
+define('HPVERSION', 'Version 1.78');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
@@ -1456,7 +1459,7 @@ function cleanupStr($str) {
 // call to write Custom Css Back to customtiles.css
 function writeCustomCss($str) {
     $today = date("F j, Y  g:i a");
-    $file = fopen("customtiles.css","w");
+    $file = fopen("customtiles.css","wb");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
@@ -1466,8 +1469,9 @@ function writeCustomCss($str) {
     $fixstr.= "/* ********************************************* */\n";
     fwrite($file, $fixstr, strlen($fixstr));
     if ( $str && strlen($str) ) {
-        $str1 = cleanupStr($str);
-        fwrite($file, $str1, strlen($str1));
+        // fix addition of backslashes before quotes on some servers
+        $str3 = str_replace("\\\"","\"",$str);
+        fwrite($file, $str3);
     }
     fclose($file);
     chmod($file, 0777);
