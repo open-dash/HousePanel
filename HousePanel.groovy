@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 08/20/2018 - fix another bug in lock that caused render to fail upon toggle
  * 08/11/2018 - miscellaneous code cleanup
  * 07/24/2018 - fix bug in lock opening and closing with motion detection
  * 06/11/2018 - added mobile option to enable or disable pistons and fix debugs
@@ -1241,8 +1242,8 @@ def setLock(swid, cmd, swattr) {
     log.debug "Performing setLock command with cmd = ${cmd} and swattr = ${swattr}"
     if (item) {
         if (cmd=="toggle") {
-            newsw = item.currentLock=="locked" ? "unlock" : "lock"
-            if ( newsw=="lock" ) {
+            newsw = item.currentLock=="locked" ? "unlocked" : "locked"
+            if ( newsw=="locked" ) {
                item.lock()
             } else {
                item.unlock()
