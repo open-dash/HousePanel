@@ -7,6 +7,9 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.78       Activate multiple things for API calls using comma separated lists
+ *            to use this you must have useajax=doaction or useajax=dohubitat
+ *            and list all the things to control in the API call with commas separating
  * 1.77       More bug fixes
  *             - fix accidental delete of icons in hubitat version
  *             - incorporate initial width and height values in tile editor
@@ -888,7 +891,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
             }
 				
         } else {
-            $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, "value", $subtype);
+            $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue, $thingtype, $subtype);
         }
     }
     $tc.= "</div>";
@@ -2739,7 +2742,8 @@ function is_ssl() {
         $hpcode = time();
         $_SESSION["hpcode"] = $hpcode;
         
-        echo $hpcode . "<br>";
+        echo "Invalid hmoptions.cfg file <br>";
+        echo "code = $hpcode <br>";
         echo "utoken = " . $userAccess . "<br>";
         echo "uendpt = " . $userEndpt . "<br>";
         echo "token = " . $access_token . "<br>";
@@ -2783,24 +2787,78 @@ function is_ssl() {
     
     // take care of auto tile stuff
     // skip this if we are configuring hubitat
+    $multicall = false;
     if ( $valid && $useajax != "confighubitat" ) {
         $oldoptions = readOptions();
         if ( $swid=="" && $tileid && $oldoptions ) {
-            $idx = array_search($tileid, $oldoptions["index"]);
-            $k = strpos($idx,"|");
-            $swtype = substr($idx, 0, $k);
-            $swid = substr($idx, $k+1);
+            
+            // check for a tile array for multiple calls
+            $len = strlen($tileid)-1;
+            if ( ($useajax==="doaction" || $useajax==="dohubitat") &&
+                 strpos($tileid,",")!==false ) {
+                $multicall = true;
+                $tilearray = explode(",",$tileid);
+                $valsave = $swval;
+                $attrsave = $swattr;
+                $subidsave = $subid;
+                $swid = array();
+                $swtype = array();
+                $swval = array();
+                $swattr = array();
+                $subid = array();
+                foreach($tilearray as $atile) {
+                    $idx = array_search($atile, $oldoptions["index"]);
+                    $k = strpos($idx,"|");
+                    $swtype[] = substr($idx, 0, $k);
+                    $swid[] = substr($idx, $k+1);
+                    $swval[] = $valsave;
+                    $swattr[] = $attrsave;
+                    $subid[] = $subidsave;
+                }
+//                print_r($swid);
+//                exit(0);
+                
+            } else {
+                $idx = array_search($tileid, $oldoptions["index"]);
+                $k = strpos($idx,"|");
+                $swtype = substr($idx, 0, $k);
+                $swid = substr($idx, $k+1);
+            }
         }
 
         // fix up useajax for hubitat
-        if ( (substr($swid,0,2) == "h_") && $useajax=="doquery" ) {
+        if ( (substr($swid,0,2) === "h_") && $useajax==="doquery" ) {
             $useajax = "queryhubitat";
         } else if ( (substr($swid,0,2) == "h_") && $useajax=="doaction" ) {
             $useajax = "dohubitat";
         }
+        
+        if ( !$multicall &&
+             ($useajax==="doaction" || $useajax==="dohubitat") &&
+             strpos($swid,",")!==false ) {
+            $multicall = true;
+            // $multitiles = substr($swid,1,$len-2);
+            $tilearray = explode(",",$swid);
+            $typesave = $swtype;
+            $valsave = $swval;
+            $attrsave = $swattr;
+            $subidsave = $subid;
+            $swid = array();
+            $swtype = array();
+            $swval = array();
+            $swattr = array();
+            $subid = array();
+            foreach($tilearray as $atile) {
+                $swid[] = $atile;
+                $swtype[] = $typesave;
+                $swval[] = $valsave;
+                $swattr[] = $attrsave;
+                $subid[] = $subidsave;
+            }
+        }
 
         // handle special non-groovy based tile types
-        if ( $swtype=="auto" && $swid) {
+        if ( $swtype==="auto" && $swid) {
             if ( substr($swid,0,5)=="clock") {
                 $swtype = "clock";
             } else if ( substr($swid,0,3)=="vid") {
@@ -2811,7 +2869,7 @@ function is_ssl() {
         }
 
         // set tileid from options if it isn't provided
-        if ( $tileid=="" && $swid && $swtype!="auto" && $oldoptions && $oldoptions["index"] ) {
+        if ( !$multicall && $tileid==="" && $swid && $swtype!="auto" && $oldoptions && $oldoptions["index"] ) {
             $idx = $swtype . "|" . $swid;
             if ( array_key_exists($idx, $oldoptions["index"]) ) { 
                 $tileid = $oldoptions["index"][$idx]; 
@@ -2829,13 +2887,29 @@ function is_ssl() {
     // this allows the Hubitat hub to send its config via a post
     // to this server for auto configuration assuming it is reachable
     if ( $useajax && ($valid || $useajax=="confighubitat") ) {
-        $nothing = array();
+        $nothing = json_encode(array());
         switch ($useajax) {
             case "doaction":
-                if ( $endpt=="hubitatonly") {
-                    echo doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid, $swtype, $swval, $swattr, $subid);
+                if ( $endpt==="hubitatonly") {
+                    if ( $multicall ) {
+                        $result = "";
+                        for ($i= 0; $i < count($swid); $i++) {
+                            $result.= doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i]);
+                        }
+                        echo $result;
+                    } else {
+                        echo doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid, $swtype, $swval, $swattr, $subid);
+                    }
                 } else if ( $endpt ) {
-                    echo doAction($endpt, "doaction", $access_token, $swid, $swtype, $swval, $swattr, $subid);
+                    if ( $multicall ) {
+                        $result = "";
+                        for ($i= 0; $i < count($swid); $i++) {
+                            $result.= doAction($endpt, "doaction", $access_token, $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i]);
+                        }
+                        echo $result;
+                    } else {
+                        echo doAction($endpt, "doaction", $access_token, $swid, $swtype, $swval, $swattr, $subid);
+                    }
                 } else {
                     echo $nothing;
                 }
@@ -2843,14 +2917,22 @@ function is_ssl() {
 
             case "dohubitat":
                 if ( $hubitatEndpt && $hubitatAccess) {
-                    echo doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid, $swtype, $swval, $swattr, $subid);
+                    if ( $multicall ) {
+                        $result = "";
+                        for ($i= 0; $i < count($swid); $i++) {
+                            $result.= doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i]);
+                        }
+                        echo $result;
+                    } else {
+                        echo doHubitat($hubitatEndpt, "doaction", $hubitatAccess, $swid, $swtype, $swval, $swattr, $subid);
+                    }
                 } else {
                     echo $nothing;
                 }
                 break;
         
             case "doquery":
-                if ( $endpt=="hubitatonly") {
+                if ( $endpt==="hubitatonly") {
                     echo doHubitat($hubitatEndpt, "doquery", $hubitatAccess, $swid, $swtype);
                 } else if ( $endpt ) {
                     echo doAction($endpt, "doquery", $access_token, $swid, $swtype);
