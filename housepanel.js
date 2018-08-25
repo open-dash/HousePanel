@@ -814,6 +814,17 @@ function setupButtons() {
     $("#controlpanel").on("click","div.restoretabs",function(evt){
         toggleTabs();
     });
+    
+    $("#cancelauth").click(function(evt) {
+        $.post(returnURL, 
+            {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: "none"},
+            function (presult, pstatus) {
+                if (pstatus==="success" && presult==="success") {
+                    window.location.href = returnURL;
+                }
+            }
+        );
+    });
 
 //    $("div.panel").on("click",function(evt){
 //        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
