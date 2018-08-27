@@ -370,7 +370,7 @@ function tsk($timezone, $skin, $kiosk) {
 }
 
 // screen that greets user and asks for authentication
-function getAuthPage($returl, $hpcode) {
+function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc = "";
     
     $tc .= "<h2>" . APPNAME . "</h2>";
@@ -724,6 +724,11 @@ function getAuthPage($returl, $hpcode) {
 
         // ------------------ general settings ----------------------------------
         $tc.= tsk($timezone, $skin, $kiosk);
+
+        if ( $hubset!==null && $newthings!==null && is_array($newthings) && intval($hubset)===intval($i) ) {
+            $numnewthings = count($newthings);
+            $tc.= "<div><label class=\"startupinp\">Number things read: $numnewthings </label></div>";
+        }
     
         $tc.= "<div class='hubopt'>";
         $tc.= "<input id=\"use_st_$i\" name=\"use_st\" width=\"6\" type=\"checkbox\" checked/>";
@@ -2706,6 +2711,17 @@ function is_ssl() {
                 // *** IMPT *** if this file write fails, HP will not work properly
                 $options["config"] = $configoptions;
                 writeOptions($options);
+                
+                // update allthings
+                $newthings = getDevices(array(), $hubnum, $hubType, $hubHost, $token, $endpt, $clientId, $clientSecret);
+                $hpcode = time();
+                $_SESSION["hpcode"] = $hpcode;
+                unset($_SESSION["HP_hubnum"]);
+                $authpage= getAuthPage($returnURL, $hpcode, $hubnum, $newthings);
+                echo htmlHeader($skin);
+                echo $authpage;
+                echo htmlFooter();
+                exit(0);
             }
 
         // otherwise we have an error, so show the auth page again
@@ -2718,6 +2734,7 @@ function is_ssl() {
             echo htmlHeader($skin);
             echo $authpage;
             echo htmlFooter();
+            exit(0);
         }
 
         if (DEBUG || DEBUG2) {
