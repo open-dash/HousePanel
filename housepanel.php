@@ -479,6 +479,7 @@ function getAuthPage($returl, $hpcode) {
         }
         
         // handle legacy hmoptions files that have the old setup without arrays
+        // this will only work once - the first time used
         if ( array_key_exists("use_st", $configoptions) &&
              array_key_exists("st_web", $configoptions) &&
              array_key_exists("client_id", $configoptions) &&
@@ -539,7 +540,6 @@ function getAuthPage($returl, $hpcode) {
                     $userAccesses[] = "";
                     $hubAccesses[] = "";
                     $hubIds[] = 100;
-                    $configoptions["hubitat_id"] = 100;
                 }
                 if ( array_key_exists("hubitat_endpt", $configoptions) ) {
                     $userEndpts[] = $configoptions["hubitat_endpt"];
@@ -585,7 +585,7 @@ function getAuthPage($returl, $hpcode) {
         // HousePanel now works without any hub for custom tiles only
         // This is useful for triggering Stringify flows with custom tiles
         $rewrite = true;
-        $timezone = ""; // date_default_timezone_get();
+        $timezone = date_default_timezone_get();
         
         $hubTypes = array();
         $hubHosts = array();
@@ -642,8 +642,7 @@ function getAuthPage($returl, $hpcode) {
             }
         }
         
-        // overwrite timezone only if user left it blank
-        if ( !$timezone && defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
+        if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
         if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { 
             $userAccesses[0] = USER_ACCESS_TOKEN; 
             $hubAccesses[0] = USER_ACCESS_TOKEN;
@@ -654,10 +653,14 @@ function getAuthPage($returl, $hpcode) {
         }
         if ( defined("USER_SITENAME") && USER_SITENAME ) { 
             $hubNames[0] = USER_SITENAME; 
-            $hubNames[1] = USER_SITENAME; 
         }
         if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { 
             $hubHosts[1] = HUBITAT_HOST; 
+            if ( defined("USER_SITENAME") && USER_SITENAME ) { 
+                $hubNames[1] = USER_SITENAME; 
+            } else {
+                $hubNames[1] = "Hubitat Home"; 
+            }
         }
         if ( defined("HUBITAT_ID") && HUBITAT_ID ) {
             $hubIds[1] = HUBITAT_ID;
@@ -667,8 +670,8 @@ function getAuthPage($returl, $hpcode) {
             $hubAccesses[1] = HUBITAT_ACCESS_TOKEN;
         }
         if ( $hubHosts[1] && $hubIds[1] ) {
-            $hubEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
             $userEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
+            $hubEndpts[1] = $userEndpts[1];
         }
         $rewrite = true;
     }
@@ -696,8 +699,22 @@ function getAuthPage($returl, $hpcode) {
     }
     
     $tc.= hidden("returnURL", $returl);
+    
     $tc.= "<div class=\"greetingopts\">";
     $tc.= "<div><span class=\"startupinp\">Last update: $lastedit</span></div>";
+    
+	$tc.= "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
+    foreach ($hubTypes as $i => $hubType) {
+        $hubName = $hubNames[$i];
+        if ($i === $defaulthub) {
+            $hubselected = "selected";
+        } else {
+            $hubselected = "";
+        }
+        $tc.= "<option value=\"pickhub\" $hubselected>Hub #$i ($hubName)</option>";
+    }
+	$tc.= "</select>";
+    
 
     foreach ($hubTypes as $i => $hubType) {
     
@@ -866,6 +883,7 @@ function returnVideo($vidname) {
 // the primary tile generation function
 // all tiles on screen are created using this call
 // some special cases are handled such as clocks, weather, and video tiles
+// updated to include hub number in each thing
 function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $zindex=1, $customname="") {
 // rewritten to use thing numbers as primary keys
     
@@ -876,17 +894,24 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
     }
     $thingvalue = $thesensor["value"];
     $thingtype = $thesensor["type"];
+    if ( array_key_exists("hubnum", $thesensor) ) {
+        $hubnum = intval($thesensor["hubnum"]);
+    } else {
+        $hubnum = 0;
+    }
 
     $pnames = processName($thesensor["name"], $thingtype);
     $thingname = $pnames[0];
     $subtype = $pnames[1];
+    $postop= intval($postop);
+    $posleft = intval($posleft);
     
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
     //             so one must now use the id to get the value of "i" to find elements
-    $tc=  "<div id=\"t-$i\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
-    $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing$subtype p_$kindex\" "; 
-    if ($postop!=0 && $posleft!=0) {
+    $tc=  "<div id=\"t-$i\" hub=\"$hubnum\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
+    $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing $subtype p_$kindex\" "; 
+    if ($postop!==0 && $posleft!==0) {
         $tc.= "style=\"position: relative; left: $posleft" . "px" . "; top: $postop" . "px" . "; z-index: $zindex" . ";\"";
     }
     $tc.= ">";
@@ -900,7 +925,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         } else {
             $weathername = $thingname . "<br />" . $thingvalue["city"];
         }
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        $tc.= "<div aid=\"$i\" title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
         // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
         $tc.= "</div>";
@@ -945,7 +970,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
     } else if ( $thingtype === "video") {
         $thingpr = $thingname;
         $vidname = $thingvalue["url"];
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $thingpr . "</span>";
         // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
         $tc.= "</div>";
@@ -976,7 +1001,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
             $thingpr = $thingname;
         }
         
-        $tc.= "<div aid=\"$i\"  title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";;
         // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
         $tc.= "</div>";
@@ -1322,7 +1347,7 @@ function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $s
     
 }
 
-function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid="") {
+function doAction($endpt, $path, $access_token, $swid, $swtype, $swval="", $swattr="", $subid="") {
     
     // intercept clock things to return updated date and time
     $options = readOptions();
@@ -1330,13 +1355,17 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     $tz = $configoptions["timezone"];
     date_default_timezone_set($tz);
         
-    $host = $url . "/" . $path;
-    $weekday = date("l");
-    $dateofmonth = date("M d, Y");
-    $timeofday = date("g:i a");
-    $timezone = date("T");
-    $clockname = "Digital Clock";
-    $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    $host = $endpt . "/" . $path;
+    
+    if ( $swtype==="clock" || $swtype==="all") {
+        $weekday = date("l");
+        $dateofmonth = date("M d, Y");
+        $timeofday = date("g:i a");
+        $timezone = date("T");
+        $clockname = "Digital Clock";
+        $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+    }
+    
     if ($swtype==="clock") {
         $response = $todaydate;
     } else if ($swtype==="video") {
@@ -1402,10 +1431,11 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     } else {
             
         $headertype = array("Authorization: Bearer " . $access_token);
-        $nvpreq = "client_secret=" . urlencode(CLIENT_SECRET) . 
-                  "&scope=app&client_id=" . urlencode(CLIENT_ID) .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
+        $nvpreq = "scope=app" .
+                  "&swid=" . urlencode($swid) . 
+                  "&swattr=" . urlencode($swattr) . 
+                  "&swvalue=" . urlencode($swval) . 
+                  "&swtype=" . urlencode($swtype);
         if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
         $response = curl_call($host, $headertype, $nvpreq, "POST");
 
@@ -1426,7 +1456,7 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
                     $respvals[$tileid] = $thing;
                 }
                 $tileid = $options["index"]["clock|clockdigital"];
-                $clockthing = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock");
+                $clockthing = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock", "hubnum" => 0);
                 $respvals[$tileid] = $clockthing;
                 $allthings["clock|clockdigital"] = $clockthing;
 
@@ -1447,7 +1477,7 @@ function doAction($url, $path, $access_token, $swid, $swtype, $swval="none", $sw
     return json_encode($response);
 }
 
-function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $retpage) {
+function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
     $updated = false;
     $result = "none";
     $options = readOptions();
@@ -1499,7 +1529,7 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $siten
     return $result;
 }
 
-function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL) {
+function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
     $updated = false;
     $options = readOptions();
     
@@ -1863,9 +1893,11 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
     $indexoptions = $options["index"];
-    $skin = $options["configoptions"]["skin"];
-    $kioskoptions = $options["configoptions"]["kiosk"];
     $useroptions = $options["useroptions"];
+    $configoptions = $options["config"];
+    $skin = $configoptions["skin"];
+    $kioskoptions = $configoptions["kiosk"];
+    $hubTypes = $configoptions["hubTypes"];
     
     $tc = "";
     
@@ -1901,6 +1933,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<br /><br />";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name (type)" . "</th>";
+    $tc.= "<th class=\"roomname\">Hub Type</th>";
    
     // add columns for custom titles & icons
     // $tc.= "<th class=\"customedit\">" . "Edit" . "</th>";
@@ -1933,12 +1966,15 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         
         $thingname = $thesensor["name"];
         $thetype = $thesensor["type"];
+        $hubnum = intval($thesensor["hubnum"]);
+        if ( $hubnum===false ) { $hubnum = 0; }
+        $hubType = $hubTypes[$hubnum];
         if (in_array($thetype, $useroptions)) {
             $rowcnt++;
             $rowcnt % 2 == 0 ? $odd = " odd" : $odd = "";
-            $tc.= "<tr type=\"$thetype\" class=\"showrow" . $odd . "\">";
+            $tc.= "<tr type=\"$thetype\" class=\"$hubType showrow" . $odd . "\">";
         } else {
-            $tc.= "<tr type=\"$thetype\" class=\"hiderow\">";
+            $tc.= "<tr type=\"$thetype\" class=\"$hubType hiderow\">";
         }
 
         // add the hidden field with index of all things
@@ -1962,6 +1998,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $tc.= $thingname . "<span class=\"typeopt\">(" . $thetype . ")</span>";
         $tc.= hidden("i_" .  $thingid, $thingindex);
         $tc.= "</td>";
+        
+        $tc.="<td class=\"hubtype\">$hubType</td>";
 
         // loop through all the rooms in proper order
         // add the order to the thingid to use later
@@ -2541,7 +2579,13 @@ function is_ssl() {
         unset( $options["timezone"] );
         unset( $options["skin"] );
         unset( $options["kiosk"] );
-
+        
+//        echo "userAccess = $userAccess userEndpt = $userEndpt <br>";
+//        echo "<pre>";
+//        print_r($options);
+//        echo "</pre>";
+//        exit(0);
+        
         // save options for now
         writeOptions($options);
 
@@ -2736,6 +2780,7 @@ function is_ssl() {
             if ( $hubType==="SmartThings" ) {
                 $access_token = $hubAccesses[$i];
                 $endpt = $hubEndpts[$i];
+                $hubnum = $i;
                 $valid = true;
                 break;
             } else if ( $hubType==="Hubitat" ) {
@@ -2743,6 +2788,7 @@ function is_ssl() {
                 $hubitatAccess = $access_token;
                 $endpt = $hubEndpts[$i];
                 $hubitatEndpt = $endpt;
+                $hubnum = $i;
                 $valid = true;
                 break;
             }
@@ -2765,26 +2811,32 @@ function is_ssl() {
     if ( isset($_POST["st_access"]) && isset($_POST["st_endpt"]) ) {
         $access_token = $_POST["st_access"];
         $endpt = $_POST["st_endpt"];
+        $hubnum = false;
     }
     else if ( isset($_GET["st_access"]) && isset($_GET["st_endpt"]) ) {
         $access_token = $_GET["st_access"];
         $endpt = $_GET["st_endpt"];
+        $hubnum = false;
     }
     else if ( isset($_POST["he_access"]) && isset($_POST["he_endpt"]) ) {
         $hubitatAccess = $_POST["he_access"];
         $hubitatEndpt = $_POST["he_endpt"];
+        $hubnum = false;
     }
     else if ( isset($_GET["he_access"]) && isset($_GET["he_endpt"]) ) {
         $hubitatAccess = $_GET["he_access"];
         $hubitatEndpt = $_GET["he_endpt"];
+        $hubnum = false;
     }
     else if ( isset($_POST["hmtoken"]) && isset($_POST["hmendpoint"]) ) {
         $access_token = $_POST["hmtoken"];
         $endpt = $_POST["hmendpoint"];
+        $hubnum = false;
     }
     else if ( isset($_GET["hmtoken"]) && isset($_GET["hmendpoint"]) ) {
         $access_token = $_GET["hmtoken"];
         $endpt = $_GET["hmendpoint"];
+        $hubnum = false;
     }
     
 /*
@@ -2840,7 +2892,7 @@ function is_ssl() {
         }
 
         // fix up useajax for hubitat if that hub has been defined
-        if ( (substr($swid,0,2) === "h_") && $hubitatAccess && $hubitatEndpt ) {
+        if ( (substr($swid,0,2) === "h_") && hubnum===false && $hubitatAccess && $hubitatEndpt ) {
             $access_token = $hubitatAccess;
             $endpt = $hubitatEndpt;
         } 
@@ -2848,14 +2900,14 @@ function is_ssl() {
         // fix up old use of dohubitat since all calls are now doaction
         if ( $useajax==="dohubitat" ) {
             $useajax = "doaction";
-            if ( $hubitatAccess && $hubitatEndpt ) {
+            if ( $hubnum===false && $hubitatAccess && $hubitatEndpt ) {
                 $access_token = $hubitatAccess;
                 $endpt = $hubitatEndpt;
             }
         }
         if ( $useajax==="queryhubitat" ) {
             $useajax = "doquery";
-            if ( $hubitatAccess && $hubitatEndpt ) {
+            if ( $hubnum===false && $hubitatAccess && $hubitatEndpt ) {
                 $access_token = $hubitatAccess;
                 $endpt = $hubitatEndpt;
             }
@@ -2883,6 +2935,9 @@ function is_ssl() {
         if ( $hubnum!==false && $hubnum!==null && $hubnum < count($hubHosts) ) {
             $access_token = $hubHosts[$hubnum];
             $endpt = $hubEndpts[$hubnum];
+            $clientId = $clientIds[$hubnum];
+            $clientSecret = $clientSecrets[$hubnum];
+            $hubType = $hubTypes[$hubnum];
         }
 
         // set tileid from options if it isn't provided
@@ -2901,7 +2956,7 @@ function is_ssl() {
     // this block returns control to caller immediately
     // it can either show a webpage or return a block of json data to js file
     if ( $useajax && $valid ) {
-        $nothing = array();
+        $nothing = json_encode(array());
         switch ($useajax) {
             case "doaction":
                 if ( $access_token && $endpt ) {
@@ -2927,18 +2982,18 @@ function is_ssl() {
                 break;
         
             case "pageorder":
-                echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
+                echo setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr);
                 break;
                 
             // grab the values and store them in a cookie using json format
-            case "confighubitat":
-                $result = setHubitatConfig();
-                echo $result;
-                break;
+//            case "confighubitat":
+//                $result = setHubitatConfig();
+//                echo $result;
+//                break;
         
             // implement free form drag drap capability
             case "dragdrop":
-                echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr, $sitename, $returnURL);
+                echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr);
                 break;
         
             // make new tile from drag / drop
