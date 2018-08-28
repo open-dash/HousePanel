@@ -1479,6 +1479,8 @@ function doAction($endpt, $path, $access_token, $swid, $swtype, $swval="", $swat
         }
     }
     
+    // use the commented code to show the codes upon return
+    // return json_encode(array_merge($response,array("access_token" => $access_token, "endpt" => $endpt)));
     return json_encode($response);
 }
 
@@ -2208,7 +2210,7 @@ function processOptions($optarray) {
     }
     $thingtypes = getTypes();
     $oldoptions = readOptions();
-    $skin = $oldoptions["configoptions"]["skin"];
+    $skin = $oldoptions["config"]["skin"];
     
     // make an empty options array for saving
     $options = $oldoptions;
@@ -2236,14 +2238,14 @@ function processOptions($optarray) {
         
         // set skin
         if ($key=="skin") {
-            $options["configoptions"]["skin"] = $val;
+            $options["config"]["skin"] = $val;
             $skin = $val;
         }
         else if ( $key=="kiosk") {
             if ( $val ) {
-                $options["configoptions"]["kiosk"] = "true";
+                $options["config"]["kiosk"] = "true";
             } else {
-                $options["configoptions"]["kiosk"] = "false";
+                $options["config"]["kiosk"] = "false";
             }
 //            $options["kiosk"] = strtolower($val);
         }
@@ -2950,8 +2952,10 @@ function is_ssl() {
         // this will typically be true for GUI invoked calls to the api
         // to tell the api which hub to use for the request
         if ( $hubnum!==false && $hubnum!==null && $hubnum < count($hubHosts) ) {
-            $access_token = $hubHosts[$hubnum];
+            $access_token = $hubAccesses[$hubnum];
             $endpt = $hubEndpts[$hubnum];
+            $hubHost = $hubHosts[$hubnum];
+            $hubEndpt = $hubEndpts[$hubnum];
             $clientId = $clientIds[$hubnum];
             $clientSecret = $clientSecrets[$hubnum];
             $hubType = $hubTypes[$hubnum];
