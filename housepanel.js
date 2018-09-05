@@ -1455,7 +1455,7 @@ function allTimerSetup(timerval) {
                                 aid = aid.substring(2);
                                 var tileid = $(this).attr("tile");
                                 var bid = $(this).attr("bid");
-                                if ( !bid.startsWith("h_") ) { // && tileid in presult ) {
+                                if ( bid!=="clockanalog" && !bid.startsWith("h_") ) { // && tileid in presult ) {
                                     var thevalue;
                                     try {
                                         thevalue = presult[tileid];
@@ -1515,7 +1515,7 @@ function allHubitatSetup(timerval) {
                                 aid = aid.substring(2);
                                 var tileid = $(this).attr("tile");
                                 var bid = $(this).attr("bid");
-                                if ( bid.startsWith("h_") ) {
+                                if ( bid!=="clockanalog" && bid.startsWith("h_") ) {
                                     var thevalue;
                                     try {
                                         thevalue = presult[tileid];

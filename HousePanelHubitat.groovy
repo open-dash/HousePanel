@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 09/03/2018 - updated to work with multihub
  * 08/11/2018 - added pistons and other cleanup
  * 07/24/2018 - fix bug in lock opening and closing with motion detection
  * 06/21/2018 - Automatic push of Hubitat settings to HP server
@@ -50,20 +51,20 @@ definition(
 
 preferences {
     section("Hubitat Configuration") {
-        paragraph "The HousePanel url is the full url address where your HousePanel application is installed. " +
-                  "This is typically a rPi device on the same network subnet as the Hubitat HUB. \n" +
-                  "HousePanel uses this to push the access token and hub id to your server instead of requiring " +
-                  "user manual configuration; however, you can always still configure HousePanel manually. " +
-                  "(By the way, I know this isn't the usual auth process. That will come soon)"
-        input (name: "hpurl", type: "text", title: "HousePanel url", defaultValue: "http://192.168.11.20/smartthings/housepanel.php", required: true, multiple: false )
+//        paragraph "The HousePanel url is the full url address where your HousePanel application is installed. " +
+//                  "This is typically a rPi device on the same network subnet as the Hubitat HUB. \n" +
+//                  "HousePanel uses this to push the access token and hub id to your server instead of requiring " +
+//                  "user manual configuration; however, you can always still configure HousePanel manually. " +
+//                  "(By the way, I know this isn't the usual auth process. That will come soon)"
+//         input (name: "hpurl", type: "text", title: "HousePanel url", defaultValue: "http://192.168.11.20/smartthings/housepanel.php", required: true, multiple: false )
         paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true all calls to HousePanel will be through the Cloud endpoint. " +
                   "Actions and updates will be slower than local installations."
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true)
-        paragraph "Set this to True if you do not have a SmartThings hub. This will make the Hubitat " +
-                  "installation return blanks and images that are usual done on the Smartthings side. \n" +
-                  "This will also make the app bypass any SmartThings authentication step attempts."
-        input (name: "hubitatonly", type: "bool", title: "use Hubitat only?", defaultValue: false, required: true)
+//        paragraph "Set this to True if you do not have a SmartThings hub. This will make the Hubitat " +
+//                  "installation return blanks and images that are usual done on the Smartthings side. \n" +
+//                  "This will also make the app bypass any SmartThings authentication step attempts."
+        // input (name: "hubitatonly", type: "bool", title: "use Hubitat only?", defaultValue: false, required: true)
     }
     section("Lights and Switches...") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
@@ -137,66 +138,71 @@ def configureHub() {
     state.hubitatOnly = hubitatonly
     if ( ! state.accessToken ) {
     	createAccessToken(); 
-	    log.debug "Creating new accessToken ..."
-        log.debug "You can optionally specify app.id and accessToken in the clientinfo.php file,"
-        log.debug "but this is no longer required when using the default authentication process"
+	log.debug "Creating new accessToken ..."
+        // log.debug "You can optionally specify app.id and accessToken in the clientinfo.php file,"
+        // log.debug "but this is no longer required when using the default authentication process"
     }
     
     // get the cloud and local access points
-    def hubip = location.hubs[0].getDataValue("localIP")
+    def hubip;
     def endpt
     if ( cloudcalls ) {
-        endpt = "${getApiServerUrl()}/${hubUID}/apps/${app.id}/"
-        log.debug "Cloud installation was requested and is reflected in the endpt below"
+        hubip = "https://oauth.cloud.hubitat.com";
+        endpt = "${hubip}/${hubUID}/apps/${app.id}/"
+        log.debug "Cloud installation was requested and is reflected in the hubip and endpt above"
     } else {
+        hubip = location.hubs[0].getDataValue("localIP")
         endpt = "${hubip}/apps/api/${app.id}/"
     }
 
     // send debug info to log for manual setup option
-    log.debug "This information is being sent to your HousePanel web app at ${hpurl}"
-    log.debug "HousePanel url = ${hpurl}"
+//    log.debug "This information is being sent to your HousePanel web app at ${hpurl}"
+//    log.debug "HousePanel url = ${hpurl}"
     log.debug "Hubitat IP = ${hubip}"
-    log.debug "app.id = ${app.id}"
+    log.debug "Hub ID = ${app.id}"
     log.debug "accessToken = ${state.accessToken}"
     log.debug "Hubitat endpt = ${endpt}"
-    log.debug "Hubitat only? = ${state.hubitatOnly}"
+    // log.debug "Hubitat only? = ${state.hubitatOnly}"
 
     // push these variables to our HousePanel server
     // this can be local or somewhere out on the Internet
     // we don't need the hubip and id but we send it anyway
     // what we really need is the accesstoken and endpt
-    def cmds = [
-        useajax: "confighubitat",
-        id: "hubitat",
-        type: "none",
-        value: [
-            hubip: hubip, 
-            hubitatid: app.id,
-            accesstoken: state.accessToken,
-            endpt: endpt,
-            hubitatonly: state.hubitatOnly
-        ]
-    ]
-
-    def params = [
-        uri: "${hpurl}",
-        requestContentType: "application/x-www-form-urlencoded",
-        query: cmds
-    ]
-
-    try {
-        httpGet(params) { resp ->
-            def msg = ""
-            if (resp?.status == 200) {
-                msg = "Success"
-            } else {
-                msg = "Failure: ${resp?.status}"
-            }
-            log.debug "response: ${msg} (${resp.data})"
-        }
-    } catch (e) {
-        log.debug "Something went wrong: $e"
-    }
+    
+    // disabled this code since we now do this correctly
+    
+//    def cmds = [
+//        useajax: "confighubitat",
+//        id: "hubitat",
+//        type: "none",
+//        value: [
+//            hubip: hubip, 
+//            hubitatid: app.id,
+//            accesstoken: state.accessToken,
+//            endpt: endpt,
+//            hubitatonly: state.hubitatOnly
+//        ]
+//    ]
+//
+//    def params = [
+//        uri: "${hpurl}",
+//        requestContentType: "application/x-www-form-urlencoded",
+//        query: cmds
+//    ]
+//
+//    try {
+//        httpGet(params) { resp ->
+//            def msg = ""
+//            if (resp?.status == 200) {
+//                msg = "Success"
+//            } else {
+//                msg = "Failure: ${resp?.status}"
+//            }
+//            log.debug "response: ${msg} (${resp.data})"
+//        }
+//    } catch (e) {
+//        log.debug "Something went wrong: $e"
+//    }
 }
 
 def getSwitch(swid, item=null) {

@@ -7,7 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
- * 1.79       Multiple ST hub support
+ * 1.792      Updated but still beta update to multiple ST and HE hub support
+ * 1.791      Multiple ST hub support and Analog Clock
  * 1.78       More bug fixes
  *            - fix icon setting on some servers by removing backslashes
  *            - added separate option for timers and action disable
@@ -145,8 +146,12 @@ function htmlHeader($skin="skin-housepanel") {
     $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
     // minicolors library
-    $tc.= "<script src=\"jquery.minicolors.min.js\"></script>";
-    $tc.= "<link rel=\"stylesheet\" href=\"jquery.minicolors.css\">";
+    $tc.= '<script src="jquery.minicolors.min.js"></script>';
+    $tc.= '<link rel="stylesheet" href="jquery.minicolors.css">';
+
+    // analog clock support
+    $tc.= '<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->';
+    $tc.= '<script type="text/javascript" src="coolclock.js"></script>';
     
     // load custom .css and the main script file
     if (!$skin) {
@@ -154,12 +159,6 @@ function htmlHeader($skin="skin-housepanel") {
     }
     $csshash = md5_file($skin . "/housepanel.css");
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skin/housepanel.css?v=" . $csshash . "\">";
-    
-    // if this theme has a helper js then load it
-    if ( file_exists( $skin . "/housepanel-theme.js") ) {
-        $helperhash = md5_file($skin . "/housepanel-theme.js");
-        $tc.= "<script type=\"text/javascript\" src=\"$skin/housepanel-theme.js?v=" . $helperhash . "\"></script>";
-    }
 	
     //load cutomization helpers
     $tejshash = md5_file($skin . "/tileeditor.js");
@@ -176,6 +175,12 @@ function htmlHeader($skin="skin-housepanel") {
     }
     $jshash = md5_file("housepanel.js");
     $tc.= '<script type="text/javascript" src="housepanel.js?v=' . $jshash . '"></script>';  
+    
+    // if this theme has a helper js then load it
+    if ( file_exists( $skin . "/housepanel-theme.js") ) {
+        $helperhash = md5_file($skin . "/housepanel-theme.js");
+        $tc.= "<script type=\"text/javascript\" src=\"$skin/housepanel-theme.js?v=" . $helperhash . "\"></script>";
+    }
 
     // begin creating the main page
     $tc.= '</head><body>';
@@ -247,8 +252,8 @@ function curl_call($host, $headertype=FALSE, $nvpstr=FALSE, $calltype="GET")
 }
 
 // return all devices in one call
-//       getDevices($allthings, $i, $hubType, $hubHosts[$i], $hubAccesses[$i], $hubEndpts[$i], $clientIds[$i], $clientSecrets[$i]);
-function getDevices($allthings, $hubnum, $hubType, $hubHost, $hubAccess, $hubEndpt, $clientId, $clientSecret) {
+// TODO: Implement logic to read Wink and Vera hub allthings
+function getDevices($allthings, $hubnum, $hubType, $hubAccess, $hubEndpt, $clientId, $clientSecret) {
 
     // we now always get all things at once
     $host = $hubEndpt . "/getallthings";
@@ -266,6 +271,8 @@ function getDevices($allthings, $hubnum, $hubType, $hubHost, $hubAccess, $hubEnd
                 $id = "h_" . $content["id"];
             } else if ( $hubType==="Wink") {
                 $id = "w_" . $content["id"];
+            } else if ( $hubType==="Vera") {
+                $id = "v_" . $content["id"];
             } else {
                 $id = $content["id"];
             }
@@ -285,6 +292,7 @@ function getDevices($allthings, $hubnum, $hubType, $hubHost, $hubAccess, $hubEnd
 // this does a redirect back here with results
 // this is the first step of the oauth flow
 // the new logic works for both SmartThings and Hubitat
+// TODO: Implement logic to obtain Wink and Vera auth codes
 function getAuthCode($returl, $stweb, $clientId, $hubType) {
     $nvpreq="response_type=code&client_id=" . urlencode($clientId) . "&scope=app&redirect_uri=" . urlencode($returl);
     $location = $stweb . "/oauth/authorize?" . $nvpreq;
@@ -293,6 +301,7 @@ function getAuthCode($returl, $stweb, $clientId, $hubType) {
 
 // return access token from oauth flow
 // this should work for both SmartThings and HousePanel
+// TODO: Implement logic to read Wink and Vera hub access tokens
 function getAccessToken($returl, $code, $stweb, $clientId, $clientSecret, $hubType) {
 
     $host = $stweb . "/oauth/token";
@@ -317,6 +326,7 @@ function getAccessToken($returl, $code, $stweb, $clientId, $clientSecret, $hubTy
 
 // returns an array of the first endpoint and the sitename
 // this only works if the clientid within theendpoint matches our auth version
+// TODO: Implement logic to read Wink and Vera hub end points
 function getEndpoint($access_token, $stweb, $clientId, $hubType) {
 
     if ( $hubType==="SmartThings" ) {
@@ -383,10 +393,10 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc.= "<p><strong>Welcome to HousePanel</strong></p>";
 
     $tc.="<p>You are seeing this because you either requested a re-authentication " .
-            "or you have not yet authorized " .
-            "HousePanel to access SmartThings or Hubitat. With HousePanel " .
-            "you can use any number and combination of both hub types at the same time. " . 
-            "To configure HousePanel you will need to have the information below for at least one hub. <br /><br />" .
+            "or you have not yet authorized a valid SmartThings or Hubitat hub for" .
+            "HousePanel to access your smart home devices. With HousePanel " .
+            "you can use any number and combination of hub types at the same time. " . 
+            "To configure HousePanel you should have detailed information about at least one hub. <br /><br />" .
             "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
             "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
             "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
@@ -398,8 +408,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "by taking you to the site where you log in and then select your hub " .
             "and the devices you want HousePanel to show and/or control. " .
             "Please note that if you provide a manual Access Token and Endpoint you will " .
-            "not be sent through the OAUTH flow process and this screen will only show " .
-            "again if you manually request it. </p>";
+            "not be sent through the OAUTH flow process. </p>";
 
     $tc.= "<p>After authorization you will be redirected back to HousePanel. " .
             "where you can then configure your things on the tabbed pages. " .
@@ -477,104 +486,97 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         } else {
             $kiosk = false;
         }
+
+        // make an empty new hub for adding new ones
+        $newhub = array("hubType"=>"SmartThings", "hubHost"=>"", "clientId"=>"", "clientSecret"=>"",
+                        "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>1,
+                        "hubAccess"=>"", "hubEndpt"=>"");
         
         // handle legacy hmoptions files that have the old setup without arrays
         // this will only work once - the first time used
         if ( array_key_exists("use_st", $configoptions) &&
              array_key_exists("st_web", $configoptions) &&
              array_key_exists("client_id", $configoptions) &&
-             array_key_exists("client_secret", $configoptions) &&
-             array_key_exists("use_he", $configoptions) &&
-             array_key_exists("hubitat_host", $configoptions) 
-        ) {
-            $hubTypes = array();
-            $hubHosts = array();
-            $clientIds = array();
-            $clientSecrets = array();
-            $userAccesses = array("");
-            $userEndpts = array();
-            $hubNames = array();
-            $hubIds = array();
-            $hubAccesses = array();
-            $hubEndpts = array();
+             array_key_exists("client_secret", $configoptions) ) 
+        { 
+            $hubs = array();
             $legacy = true;
+            $rewrite = true;
             
             // check for a smartthings hub
             if ( $configoptions["use_st"] ) {
-                $hubTypes[] = "SmartThings";
-                $hubHosts[] = $configoptions["st_web"];
-                $clientIds[] = $configoptions["client_id"];
-                $clientSecrets[] = $configoptions["client_secret"];
                 if ( array_key_exists("user_access", $configoptions) &&
                      array_key_exists("user_endpt", $configoptions) ) {
-                    $userAccesses[] = $configoptions["user_access"];
-                    $userEndpts[] = $configoptions["user_endpt"];
-                    $hubAccesses[] = $configoptions["user_access"];
-                    $hubEndpts[] = $configoptions["user_endpt"];
+                    $userAccess = $configoptions["user_access"];
+                    $userEndpt = $configoptions["user_endpt"];
+                    $hubAccess = $configoptions["user_access"];
+                    $hubEndpt = $configoptions["user_endpt"];
                 } else {
-                    $userAccesses[] = "";
-                    $userEndpts[] = "";
-                    $hubAccesses[] = "";
-                    $hubEndpts[] = "";
+                    $userAccess = "";
+                    $userEndpt = "";
+                    $hubAccess = "";
+                    $hubEndpt = "";
                 }
                 if ( array_key_exists("user_sitename", $configoptions) ) {
-                    $hubNames[] = $configoptions["user_sitename"];
+                    $hubName = $configoptions["user_sitename"];
                 } else {
-                    $hubNames[] = "SmartThings Homs";
+                    $hubName = "SmartThings Homs";
                 }
-                $hubIds[] = 0;
+                $sthub = array("hubType"=>"SmartThings", 
+                    "hubHost"=>$configoptions["st_web"], 
+                    "clientId"=>$configoptions["client_id"], 
+                    "clientSecret"=>$configoptions["client_secret"],
+                    "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
+                    "hubName"=>$hubName, "hubId"=>0,
+                    "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+                $hubs[] = $sthub;
             }
             
             // check for a hubitat hub
-            if ( $configoptions["use_he"] ) {
-                $hubTypes[] = "Hubitat";
-                $hubHosts[] = $configoptions["hubitat_host"];
-                $clientIds[] = "";
-                $clientSecrets[] = "";
+            if ( array_key_exists("use_he", $configoptions) && $configoptions["use_he"] ) {
                 if ( array_key_exists("hubitat_access", $configoptions) &&
                      array_key_exists("hubitat_id", $configoptions) ) {
-                    $userAccesses[] = $configoptions["hubitat_access"];
-                    $hubAccesses[] = $configoptions["hubitat_access"];
-                    $hubIds[] = $configoptions["hubitat_id"];
+                    $userAccess = $configoptions["hubitat_access"];
+                    $hubAccess = $configoptions["hubitat_access"];
+                    $hubId = $configoptions["hubitat_id"];
                 } else {
-                    $userAccesses[] = "";
-                    $hubAccesses[] = "";
-                    $hubIds[] = 100;
+                    $userAccess = "";
+                    $hubAccess = "";
+                    $hubId = 100;
                 }
                 if ( array_key_exists("hubitat_endpt", $configoptions) ) {
-                    $userEndpts[] = $configoptions["hubitat_endpt"];
-                    $hubEndpts[] = $configoptions["hubitat_endpt"];
+                    $userEndpt = $configoptions["hubitat_endpt"];
+                    $hubEndpt = $configoptions["hubitat_endpt"];
                 } else {
-                    $defendpt = $configoptions["hubitat_host"] . "/apps/api/" . $configoptions["hubitat_id"];
-                    $userEndpts[] = $defendpt;
-                    $hubEndpts[] = $defendpt;
+                    $defendpt = $configoptions["hubitat_host"] . "/apps/api/" . $hubId;
+                    $userEndpt = $defendpt;
+                    $hubEndpt = $defendpt;
                 }
                 if ( array_key_exists("user_sitename", $configoptions) ) {
-                    $hubNames[] = $configoptions["user_sitename"];
+                    $hubName = $configoptions["user_sitename"];
                 } else {
-                    $hubNames[] = "Hubitat Home";
+                    $hubName = "Hubitat Home";
                 }
+                $hehub = array("hubType"=>"Hubitat", 
+                    "hubHost"=>$configoptions["hubitat_host"], 
+                    "clientId"=>"", 
+                    "clientSecret"=>"",
+                    "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
+                    "hubName"=>$hubName, "hubId"=>$hubId,
+                    "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+                $hubs[] = $hehub;
             }
         
         // otherwise it must be a new multihub setup
         } else {
-            $hubTypes = $configoptions["hubTypes"];
-            $hubHosts = $configoptions["hubHosts"];
-            $clientIds = $configoptions["clientIds"];
-            $clientSecrets = $configoptions["clientSecrets"];
-            $userAccesses = $configoptions["userAccesses"];
-            $userEndpts = $configoptions["userEndpts"];
-            $hubNames = $configoptions["hubNames"];
-            $hubIds = $configoptions["hubIds"];
-            $hubAccesses = $configoptions["hubAccesses"];
-            $hubEndpts = $configoptions["hubEndpts"];
+            $hubs = $configoptions["hubs"];
         
             // set defaults for Hubitat endpoints
             // this shouldn't be needed with our new OAUTH flow
             // but I kept it here just in case
-            foreach ($hubtypes as $i => $hubtype) {
-                if ( $hubtype==="Hubitat" && $hubEndpts[$i]==="" ) {
-                    $hubEndpts[$i] = $hubHosts[$i] . "/apps/api/" . $hubIds[$i];
+            foreach ($hubs as $hub) {
+                if ( $hub["hubType"]==="Hubitat" && $hub["hubEndpt"]==="" ) {
+                    $hub["hubEndpt"] = $hub["hubHost"] . "/apps/api/" . $hub["hubId"];
                     $rewrite = true;
                 }
             }
@@ -587,16 +589,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $rewrite = true;
         $timezone = date_default_timezone_get();
         
-        $hubTypes = array();
-        $hubHosts = array();
-        $clientIds = array();
-        $clientSecrets = array();
-        $userAccesses = array("");
-        $userEndpts = array();
-        $hubNames = array();
-        $hubIds = array();
-        $hubAccesses = array();
-        $hubEndpts = array();
+        $hubs = array();
     }
     
     if ( array_key_exists("time", $options) ) {
@@ -622,56 +615,96 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // the first one will be disabled if a hubitat only install is requested
     if ( $legacy && file_exists("clientinfo.php")) {
         include "clientinfo.php";
-        $hubTypes = array("SmartThings","Hubitat");
-        $hubHosts = array("https://graph.api.smartthings.com","https://oauth.cloud.hubitat.com");
-        $clientIds = array("", "");
-        $clientSecrets = array("","");
-        $userAccesses = array("","");
-        $userEndpts = array("","");
-        $hubNames = array("SmartThings Home", "Hubitat Home");
-        $hubIds = array(0, 100);
-        $hubAccesses = array("", "");
-        $hubEndpts = array("", "");
-        
-        if ( defined("CLIENT_ID") && CLIENT_ID ) { $clientIds[0] = CLIENT_ID; }
-        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { $clientSecrets[0] = CLIENT_SECRET; }
-        if ( defined("ST_WEB") && ST_WEB ) { 
-            $hubHosts[0] = ST_WEB; 
-            if ( ST_WEB==="hubitat" ||  ST_WEB==="hubitatonly" ) {
-                $hubTypes[0] = "Disabled";
-            }
+                
+        if ( defined("CLIENT_ID") && CLIENT_ID ) { 
+            $clientId = CLIENT_ID; 
+        } else {
+            $clientId = "";
         }
-        
+        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { 
+            $clientSecret = CLIENT_SECRET; 
+        } else {
+            $clientSecret = "";
+        }
+        $hubType = "SmartThings";
+        $hubId = 0;
+        if ( defined("ST_WEB") && ST_WEB ) { 
+            $hubHost = ST_WEB; 
+            if ( ST_WEB==="hubitat" ||  ST_WEB==="hubitatonly" ) {
+                $hubType = "Disabled";
+            }
+        } else {
+            $hubHost = "https://graph.api.smartthings.com";
+        }
         if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
         if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { 
-            $userAccesses[0] = USER_ACCESS_TOKEN; 
-            $hubAccesses[0] = USER_ACCESS_TOKEN;
+            $userAccess = USER_ACCESS_TOKEN; 
+            $hubAccess = USER_ACCESS_TOKEN;
+        } else {
+            $userAccess = ""; 
+            $hubAccess = "";
         }
         if ( defined("USER_ENDPT") && USER_ENDPT) { 
-            $userEndpts[0] = USER_ENDPT; 
-            $hubEndpts[0] = USER_ENDPT; 
+            $userEndpt = USER_ENDPT; 
+            $hubEndpt = USER_ENDPT; 
+        } else {
+            $userEndpt = ""; 
+            $hubEndpt = ""; 
         }
         if ( defined("USER_SITENAME") && USER_SITENAME ) { 
-            $hubNames[0] = USER_SITENAME; 
+            $hubName = USER_SITENAME; 
+        } else {
+            $hubName = "SmartThings Home";
         }
+        $sthub = array("hubType"=>$hubType, 
+            "hubHost"=>$hubHost, 
+            "clientId"=>$clientId, 
+            "clientSecret"=>$clientSecret,
+            "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
+            "hubName"=>$hubName, "hubId"=>$hubId,
+            "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+            
+        if ( count($hubs)>=1 && $hubs[0]["hubType"]==="SmartThings") {
+            $hubs[0] = $sthub;
+        } else {
+            $hubs[] = $sthub;
+        }
+        
         if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { 
-            $hubHosts[1] = HUBITAT_HOST; 
-            if ( defined("USER_SITENAME") && USER_SITENAME ) { 
-                $hubNames[1] = USER_SITENAME; 
+            $hubHost = HUBITAT_HOST; 
+            $hubType = "Hubitat";
+            if ( defined("HUBITAT_ID") && HUBITAT_ID ) {
+                $hubId = HUBITAT_ID;
             } else {
-                $hubNames[1] = "Hubitat Home"; 
+                $hubId = 100;
             }
-        }
-        if ( defined("HUBITAT_ID") && HUBITAT_ID ) {
-            $hubIds[1] = HUBITAT_ID;
-        }
-        if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) {
-            $userAccesses[1] = HUBITAT_ACCESS_TOKEN; 
-            $hubAccesses[1] = HUBITAT_ACCESS_TOKEN;
-        }
-        if ( $hubHosts[1] && $hubIds[1] ) {
-            $userEndpts[1] = $hubHosts[1] . "/apps/api/" . $hubIds[1];
-            $hubEndpts[1] = $userEndpts[1];
+            if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) {
+                $userAccess = HUBITAT_ACCESS_TOKEN; 
+                $hubAccess = HUBITAT_ACCESS_TOKEN;
+            } else {
+                $userAccess = ""; 
+                $hubAccess = "";
+            }
+            if ( $hubHost && $hubId ) {
+                $userEndpt = $hubHost . "/apps/api/" . $hubId;
+                $hubEndpt = $userEndpt;
+            } else {
+                $userEndpt = "";
+                $hubEndpt = "";
+            }
+            $hehub = array("hubType"=>$hubType, 
+                "hubHost"=>$hubHost, 
+                "clientId"=>$clientId, 
+                "clientSecret"=>$clientSecret,
+                "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
+                "hubName"=>$hubName, "hubId"=>$hubId,
+                "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+            
+            if ( count($hubs)>=2 && $hubs[1]["hubType"]==="Hubitat") {
+                $hubs[1] = $hehub;
+            } else {
+                $hubs[] = $hehub;
+            }
         }
         $rewrite = true;
     }
@@ -682,42 +715,42 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
-            "hubTypes" => $hubTypes,
-            "hubHosts" => $hubHosts,
-            "clientIds" => $clientIds, 
-            "clientSecrets" => $clientSecrets,
-            "userAccesses" => $userAccesses,
-            "userEndpts" => $userEndpts,
-            "hubNames" => $hubNames,
-            "hubIds" => $hubIds,
-            "hubAccesses" => $hubAccesses,
-            "hubEndpts" => $hubEndpts
+            "hubs" => $hubs
         );
         
         $options["config"] = $configoptions;
         writeOptions($options);
     }
+        
+    // add a new blank hub at the end for adding new ones
+    $hubs[] = $newhub;
     
     $tc.= hidden("returnURL", $returl);
     
     $tc.= "<div class=\"greetingopts\">";
     $tc.= "<div><span class=\"startupinp\">Last update: $lastedit</span></div>";
     
-	$tc.= "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
-    foreach ($hubTypes as $i => $hubType) {
-        $hubName = $hubNames[$i];
+    $tc.= "<p class=\"hubopt\">Authorize which hub? (or add a new one)</p>";
+    $tc.= "<select name=\"pickhub\" id=\"pickhub\" class=\"startupinp\">";
+    foreach ($hubs as $i => $hub) {
+        $hubName = $hub["hubName"];
+        $hubType = $hub["hubType"];
         if ($i === $defaulthub) {
             $hubselected = "selected";
         } else {
             $hubselected = "";
         }
-        $tc.= "<option value=\"pickhub\" $hubselected>Hub #$i ($hubName)</option>";
+        $tc.= "<option value=\"$i\" $hubselected>Hub #$i ($hubType)</option>";
     }
-	$tc.= "</select>";
-    
+    $newhubnum = count($hubs);
+    $tc.= "<option value=\"$newhubnum\">New Hub</option>";
+    $tc.= "</select>";
 
-    foreach ($hubTypes as $i => $hubType) {
-    
+    foreach ($hubs as $i => $hub) {
+
+        $hubType = $hub["hubType"];
+        $tc.="<div id=\"auth_hub_$i\" class='auth_hub'>";
+        
         $tc.= "<form id=\"hubform_$i\" hubnum=\"$i\" class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
         $tc.= hidden("doauthorize", $hpcode);
         $tc.= hidden("hubnum", $i);
@@ -736,32 +769,42 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "</div>"; 
 
         $tc.= "<div id=\"smartsetup_$i\" class=\"hubtype\">";
-        $tc.= "<p class=\"hubopt\">Hub #" . $i . "</p>";
+        $tc.= "<p class=\"hubopt\">Hub #" . $i . " Name: $hubName</p>";
 
         // TODO: change this to a dropdown list
         $tc.= "<div><label class=\"startupinp\">Hub Type: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubType\" width=\"80\" type=\"text\" value=\"" . $hubTypes[$i] . "\"/></div>"; 
+        $tc.= "<select name=\"hubType\" id=\"hubType\" class=\"startupinp\">";
+        $st_select = $he_select = $w_select = $v_select = "";
+        if ( $hubType==="SmartThings" ) { $st_select = "selected"; }
+        if ( $hubType==="Hubitat" ) { $he_select = "selected"; }
+        if ( $hubType==="Wink" ) { $w_select = "selected"; }
+        if ( $hubType==="Vera" ) { $v_select = "selected"; }
+        $tc.= "<option value=\"SmartThings\" $st_select>SmartThings</option>";
+        $tc.= "<option value=\"Hubitat\" $he_select>Hubitat</option>";
+        $tc.= "<option value=\"Wink\" $w_select>Wink</option>";
+        $tc.= "<option value=\"Vera\" $v_select>Vera</option>";
+        $tc.= "</select>";
 
-        $tc.= "<div><label class=\"startupinp\">$hubType API Url: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubHost\" width=\"80\" type=\"text\" value=\"" . $hubHosts[$i] . "\"/></div>"; 
+        $tc.= "<div><label class=\"startupinp\">API Url: </label>";
+        $tc.= "<input class=\"startupinp\" name=\"hubHost\" width=\"80\" type=\"text\" value=\"" . $hub["hubHost"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Client ID: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"clientId\" width=\"80\" type=\"text\" value=\"" . $clientIds[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"clientId\" width=\"80\" type=\"text\" value=\"" . $hub["clientId"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Client Secret: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"clientSecret\" width=\"80\" type=\"text\" value=\"" . $clientSecrets[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"clientSecret\" width=\"80\" type=\"text\" value=\"" . $hub["clientSecret"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Fixed Access Token: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $userAccesses[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $hub["userAccess"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Fixed Endpoint: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $userEndpts[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $hub["userEndpt"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Hub Name: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubName\" width=\"80\" type=\"text\" value=\"" . $hubNames[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"hubName\" width=\"80\" type=\"text\" value=\"" . $hub["hubName"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Hub ID: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hubIds[$i] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hub["hubId"] . "\"/></div>"; 
         
         $tc.= "<div class=\"sitebutton\">";
         $tc .= "<input  class=\"authbutton\" value=\"Authorize Hub #$i\" type=\"submit\" />";
@@ -784,15 +827,24 @@ function getAllThings($configoptions) {
         $allthings = $_SESSION["allthings"];
     }
     
-    // add clock tile if not there
+    // add digital clock tile if not there
     if ( !array_key_exists("clock|clockdigital", $allthings) ) {
         $clockname = "Digital Clock";
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
         $timeofday = date("g:i a");
         $timezone = date("T");
-        $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-        $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock");
+        $clockskin = "";
+        $dclock = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone, "skin" => $clockskin);
+        $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => $clockname, "value" => $dclock, "type" => "clock");
+    }
+    // add analog clock tile if not there
+    if ( !array_key_exists("clock|clockanalog", $allthings) ) {
+        $clockname = "Analog Clock";
+        // $clockskin = "CoolClock:classic";
+        $clockskin = "CoolClock:swissRail";
+        $aclock = array("name" => $clockname, "skin" => $clockskin);
+        $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => $clockname, "value" => $aclock, "type" => "clock");
     }
 
     // add generic frame tiles if not there
@@ -831,17 +883,15 @@ function getAllThings($configoptions) {
     }
 
     // loop through all the hubs and add anything that is new
-    $hubTypes = $configoptions["hubTypes"];
-    $hubHosts = $configoptions["hubHosts"];
-    $clientIds = $configoptions["clientIds"];
-    $clientSecrets = $configoptions["clientSecrets"];
-    $hubAccesses = $configoptions["hubAccesses"];
-    $hubEndpts = $configoptions["hubEndpts"];
-    foreach( $hubTypes as $i => $hubType) {
-        if ( $hubEndpts[$i] && $hubAccesses[$i] ) {
-//            echo "hub $i type= " . $hubType . " host= " . $hubHosts[$i] . " access= " . $hubAccesses[$i] . 
-//                    " endpt= " . $hubEndpts[$i] . " clientid= " . $clientIds[$i] . " secret= " . $clientSecrets[$i] . "<br>";
-            $allthings = getDevices($allthings, $i, $hubType, $hubHosts[$i], $hubAccesses[$i], $hubEndpts[$i], $clientIds[$i], $clientSecrets[$i]);
+    $hubs = $configoptions["hubs"];
+    foreach( $hubs as $i => $hub) {
+        $hubType = $hub["hubType"];
+        $clientId = $hub["clientId"];
+        $clientSecret = $hub["clientSecret"];
+        $access_token = $hub["hubAccess"];
+        $endpt = $hub["hubEndpt"];
+        if ( $endpt && $access_token ) {
+            $allthings = getDevices($allthings, $i, $hubType, $access_token, $endpt, $clientId, $clientSecret);
         }
     }
 //    echo "<pre>";
@@ -1085,6 +1135,14 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
         $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
         $tc.= "</div>";
+    
+    // process analog clocks signalled by use of a skin with a valid name other than digital
+    } else if ( $thingtype==="clock" && $tkey==="skin" && $tval && $tval!=="digital" ) {
+        $tc.= "<div class=\"overlay $tkey v_$kindex\">";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"Analog Clock\" class=\"" . $thingtype . $subtype . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" .
+              "<canvas id=\"clock_$kindex\" class=\"$tval\"></canvas>" . 
+              "</div>";
+        $tc.= "</div>";
     } else {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates from adding details
@@ -1287,71 +1345,6 @@ function getCatalog($allthings) {
     return $tc;
 }
 
-function doHubitat($url, $path, $access_token, $swid, $swtype, $swval="none", $swattr="none", $subid= "") {
-
-    $options = readOptions();
-    $configoptions = $options["config"];
-    $tz = $configoptions["timezone"];
-    date_default_timezone_set($tz);
-    
-    $host = $url . "/" . $path;
-    $weekday = date("l");
-    $dateofmonth = date("M d, Y");
-    $timeofday = date("g:i a");
-    $timezone = date("T");
-    $clockname = "Digital Clock";
-    $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
-    
-    // intercept clock things to return updated date and time
-    if ($swtype==="clock") {
-        $response = $todaydate;
-    } else if ($swtype=="video") {
-        // instead of doing this it is safer to put it in a crontab
-        // exec("python getarlo.py");
-        $videodata = returnVideo($swval);
-        $response = array("url" => $videodata);
-    } else {
-        if ( substr($swid,0,2) === "h_" ) { $swid = substr($swid,2); }
-
-        $headertype = array("Authorization: Bearer " . $access_token);
-        $nvpreq = "access_token=" . $access_token .
-                  "&swid=" . urlencode($swid) . "&swattr=" . urlencode($swattr) . 
-                  "&swvalue=" . urlencode($swval) . "&swtype=" . urlencode($swtype);
-        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
-        $response = curl_call($host, $headertype, $nvpreq, "POST");
-
-        if ( isset($_SESSION["allthings"]) ) {
-            $allthings = $_SESSION["allthings"];
-            // $options= readOptions();
-            
-            if ( $swtype=="all" ) {
-                $respvals = array();
-                foreach($response as $thing) {
-                    $idx = $thing["type"] . "|h_" . $thing["id"];
-                    $allthings[$idx] = $thing;
-                    $tileid = $options["index"][$idx];
-                    $respvals[$tileid] = $thing;
-                }
-                $tileid = $options["index"]["clock|clockdigital"];
-                $clockthing = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock");
-                $respvals[$tileid] = $clockthing;
-                $allthings["clock|clockdigital"] = $clockthing;
-                $response = $respvals;
-            } else {
-                $idx = $swtype . "|h_" . $swid;
-                if ( isset($allthings[$idx]) && $swtype==$allthings[$idx]["type"] ) {
-                    $newval = array_merge($allthings[$idx]["value"], $response);
-                    $allthings[$idx]["value"] = $newval;
-                }
-            }
-            $_SESSION["allthings"] = $allthings;
-        }
-    }
-    
-    return json_encode($response);
-    
-}
-
 function doAction($endpt, $path, $access_token, $swid, $swtype, $swval="", $swattr="", $subid="") {
     
     // intercept clock things to return updated date and time
@@ -1363,16 +1356,23 @@ function doAction($endpt, $path, $access_token, $swid, $swtype, $swval="", $swat
     $host = $endpt . "/" . $path;
     
     if ( $swtype==="clock" || $swtype==="all") {
+        $dclockname = "Digital Clock";
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
         $timeofday = date("g:i a");
         $timezone = date("T");
-        $clockname = "Digital Clock";
-        $todaydate = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
+        $dclock = array("name" => $dclockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone, "skin" => "");
+
+        $aclockname = "Analog Clock";
+        // $clockskin = "CoolClock:classic";
+        $clockskin = "CoolClock:swissRail";
+        $aclock = array("name" => $aclockname, "skin" => $clockskin);
     }
     
-    if ($swtype==="clock") {
-        $response = $todaydate;
+    if ($swtype==="clock" && $swid==="clockdigital") {
+        $response = $dclock;
+    } else if ($swtype==="clock" && $swid==="clockanalog") {
+        $response = $aclock;
     } else if ($swtype==="video") {
         // instead of doing this it is safer to put it in a crontab
         // exec("python getarlo.py");
@@ -1460,10 +1460,18 @@ function doAction($endpt, $path, $access_token, $swid, $swtype, $swval="", $swat
                     $tileid = $options["index"][$idx];
                     $respvals[$tileid] = $thing;
                 }
-                $tileid = $options["index"]["clock|clockdigital"];
-                $clockthing = array("id" => "clockdigital", "name" => $clockname, "value" => $todaydate, "type" => "clock", "hubnum" => 0);
-                $respvals[$tileid] = $clockthing;
-                $allthings["clock|clockdigital"] = $clockthing;
+                $dtileid = $options["index"]["clock|clockdigital"];
+                if ( $dtileid ) {
+                    $dclockthing = array("id" => "clockdigital", "name" => $dclockname, "value" => $dclock, "type" => "clock", "hubnum" => 0);
+                    $respvals[$dtileid] = $dclockthing;
+                    $allthings["clock|clockdigital"] = $dclockthing;
+                }
+                $atileid = $options["index"]["clock|clockanalog"];
+                if ( $atileid ) {
+                    $aclockthing = array("id" => "clockanalog", "name" => $aclockname, "value" => $aclock, "type" => "clock", "hubnum" => 0);
+                    $respvals[$atileid] = $aclockthing;
+                    $allthings["clock|clockanalog"] = $aclockthing;
+                }
 
                 // for all types return a different type of array
                 // handle in the javascript in allTimerSetup
@@ -2512,14 +2520,28 @@ function is_ssl() {
  * the $hpcode is a security measure that assures we are returning from this web session
  * *****************************************************************************
  */
+//    echo "hpcode = " . $_SESSION["hpcode"] . "<br /><pre>";
+//    print_r($_POST);
+//    echo "</pre>";
+//    exit(0);
+    
+    if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
+    else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+    else { $useajax = false; }
+    
+    if ( $useajax==="cancelauth" ) { 
+        unset($_SESSION["hpcode"]);
+        echo "success";
+        exit(0);
+    }
     
     if ( isset($_POST["doauthorize"]) && 
          isset($_SESSION["hpcode"]) && 
-         intval($_POST["doauthorize"]) == intval($_SESSION["hpcode"]) ) {
+         intval($_POST["doauthorize"]) <= intval($_SESSION["hpcode"]) ) {
 
         // get hub number and limit to 9 and ensure we have a number
         $hubnum = intval(filter_input(INPUT_POST, "hubnum", FILTER_SANITIZE_SPECIAL_CHARS));
-        if ( !is_numeric($hubnum) || !is_nan($hubnum) || $hubnum>9 ) { $hubnum = 0; }
+        if ( !is_numeric($hubnum) || is_nan($hubnum) || $hubnum>9 || $hubnum<0 ) { $hubnum = 0; }
         
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -2540,45 +2562,68 @@ function is_ssl() {
         // read the prior options
         $options = readOptions();
         $configoptions = $options["config"];
+        $hubs = array();
 
-        // get the array of hubs
-        $hubTypes = $configoptions["hubTypes"];
-        $hubHosts = $configoptions["hubHosts"];
-        $clientIds = $configoptions["clientIds"];
-        $clientSecrets = $configoptions["clientSecrets"];
-        $userAccesses = $configoptions["userAccesses"];
-        $userEndpts = $configoptions["userEndpts"];
-        $hubNames = $configoptions["hubNames"];
-        $hubIds = $configoptions["hubIds"];
-        $hubAccesses = $configoptions["hubAccesses"];
-        $hubEndpts = $configoptions["hubEndpts"];
+        // get the array of hubs if old style
+        if (  array_key_exists("hubTypes", $configoptions) &&
+              array_key_exists("hubHosts", $configoptions) &&
+              array_key_exists("clientIds", $configoptions) &&
+              array_key_exists("clientSecrets", $configoptions)    ) {
+            $hubTypes = $configoptions["hubTypes"];
+            $hubHosts = $configoptions["hubHosts"];
+            $clientIds = $configoptions["clientIds"];
+            $clientSecrets = $configoptions["clientSecrets"];
+            $userAccesses = $configoptions["userAccesses"];
+            $userEndpts = $configoptions["userEndpts"];
+            $hubNames = $configoptions["hubNames"];
+            $hubIds = $configoptions["hubIds"];
+            $hubAccesses = $configoptions["hubAccesses"];
+            $hubEndpts = $configoptions["hubEndpts"];
+            for ($i=0; $i< count($hubTypes); $i++) {
+                $hub = array();
+                $hub["hubType"] = $hubTypes[$i];
+                $hub["hubHost"] = $hubTypes[$i];
+                $hub["clientId"] = $clientIds[$i];
+                $hub["clientSecret"] = $clientSecrets[$i];
+                $hub["userAccess"] = $userAcesses[$i];
+                $hub["userEndpt"] = $userEndpts[$i];
+                $hub["hubName"] = $hubNames[$i];
+                $hub["hubAccess"] = $hubAccesses[$i];
+                $hub["hubEndpt"] = $hubEndpts[$i];
+                $hubs[] = $hub;
+            }
+        } else if (array_key_exists("hubs", $configoptions)) {
+            $hubs = $configoptions["hubs"];
+        }
 
-        $hubTypes[$hubnum] = $hubType;
-        $hubHosts[$hubnum] = $hubHost;
-        $clientIds[$hubnum] = $clientId;
-        $clientSecrets[$hubnum] = $clientSecret;
-        $userAccesses[$hubnum] = $userAccess;
-        $userEndpts[$hubnum] = $userEndpt;
-        $hubNames[$hubnum] = $hubName;
-        $hubIds[$hubnum] = $hubId;
-        $hubAccesses[$hubnum] = $hubAccess;
-        $hubEndpts[$hubnum] = $hubEndpt;
+        // now load the new data
+        $hub = array();
+        $hub["hubType"] = $hubType;
+        $hub["hubHost"] = $hubHost;
+        $hub["clientId"] = $clientId;
+        $hub["clientSecret"] = $clientSecret;
+        $hub["userAccess"] = $userAccess;
+        $hub["userEndpt"] = $userEndpt;
+        $hub["hubName"] = $hubName;
+        $hub["hubId"] = $hubId;
+        $hub["hubAccess"] = $hubAccess;
+        $hub["hubEndpt"] = $hubEndpt;
+
+        // make sure we have continuous hub numbers
+        if ( $hubnum > count($hubs) ) {
+            $hubnum = count($hubs);
+        }
+        
+
+        // save the hubs
+        $hubs[$hubnum] = $hub;
         
         // update with this hub's information including the generic settings
         $configoptions = array(
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
-            "hubTypes" => $hubTypes,
-            "hubHosts" => $hubHosts,
-            "clientIds" => $clientIds, 
-            "clientSecrets" => $clientSecrets,
-            "userAccesses" => $userAccesses,
-            "userEndpts" => $userEndpts,
-            "hubNames" => $hubNames,
-            "hubIds" => $hubIds,
-            "hubAccesses" => $hubAccesses,
-            "hubEndpts" => $hubEndpts
+            "hubs" => $hubs
         );
         $options["config"] = $configoptions;
 
@@ -2587,7 +2632,10 @@ function is_ssl() {
         unset( $options["skin"] );
         unset( $options["kiosk"] );
         
-//        echo "userAccess = $userAccess userEndpt = $userEndpt <br>";
+//        echo "hubnum = $hubnum <br><pre>";
+//        print_r($hub);
+//        echo "</pre>";
+//        echo "<br>userAccess = $userAccess userEndpt = $userEndpt <br>";
 //        echo "<pre>";
 //        print_r($options);
 //        echo "</pre>";
@@ -2610,7 +2658,9 @@ function is_ssl() {
     } 
     
     // repeat auth page if the security check fails
-    else if ( $_POST["doauthorize"] ) {
+    // or if we get a redoauth signal then also present auth page
+    else if ( $_POST["doauthorize"] || 
+             ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="redoauth" ) ) {
         $hpcode = time();
         $_SESSION["hpcode"] = $hpcode;
         unset($_SESSION["HP_hubnum"]);
@@ -2621,10 +2671,6 @@ function is_ssl() {
         echo htmlFooter();
         exit(0);
     }
-    
-    if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
-    else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
-    else { $useajax = false; }
     
     // read the options file
     $options = readOptions();
@@ -2638,14 +2684,9 @@ function is_ssl() {
         // otherwise return an auth page
         } else {
             unset($_SESSION["allthings"]);
-            unset($_SESSION["HP_hubnum"]);
-            $hpcode = time();
-            $_SESSION["hpcode"] = $hpcode;
-            $authpage= getAuthPage($returnURL, $hpcode);
-
-            echo htmlHeader($skin);
-            echo $authpage;
-            echo htmlFooter();
+            $_SESSION["hpcode"] = "redoauth";
+            header("Location: $returnURL");
+            exit(0);
         }
         exit(0);
     }
@@ -2671,28 +2712,25 @@ function is_ssl() {
         unset($_SESSION["allthings"]);
 
         // check for manual reset flag for debugging purposes
-        if ($code=="reset" || $code=="reauth") {
+        if ($code==="reset" || $code==="reauth" || $code==="redoauth") {
             unset($_SESSION["allthings"]);
-            // setcookie("confighousepanel", "", $expirz, "/", $serverName);
-            $hpcode = time();
-            $_SESSION["hpcode"] = $hpcode;
-            $authpage= getAuthPage($returnURL, $hpcode);
-            echo htmlHeader($skin);
-            echo $authpage;
-            echo htmlFooter();
+            $_SESSION["hpcode"] = "redoauth";
+            header("Location: $returnURL");
             exit(0);
         }
         
         // get hub number and retrieve the required parameters
         $hubnum = $_SESSION["HP_hubnum"];
-        $hubType = $configoptions["hubTypes"][$hubnum];
-        $hubHost = $configoptions["hubHosts"][$hubnum];
-        $clientId = $configoptions["clientIds"][$hubnum];
-        $clientSecret = $configoptions["clientSecrets"][$hubnum];
+        $hubs = $configoptions["hubs"];
+        $hub = $hubs[$hubnum];
+        $hubType = $hub["hubType"];
+        $hubHost = $hub["hubHost"];
+        $clientId = $hub["clientId"];
+        $clientSecret = $hub["clientSecret"];
 
         // make call to get the token
         $token = getAccessToken($returnURL, $code, $hubHost, $clientId, $clientSecret, $hubType);
-//        echo "token = $token code = $code stweb = $stweb clientId = $clientId  secret = $clientSecret";
+//        echo "token = $token code = $code hubHost = $hubHost clientId = $clientId  secret = $clientSecret";
 //        exit(0);
 
         // get the endpoint if the token is valid
@@ -2705,9 +2743,11 @@ function is_ssl() {
             // save auth info in hmoptions file
             // *** IMPT *** this is the info needed to allow HP to read things
             if ($endpt) {
-                $configoptions["hubAccesses"][$hubnum] = $token;
-                $configoptions["hubEndpts"][$hubnum] = $endpt;
-                $configoptions["hubNames"][$hubnum] = $sitename;
+                $hub["hubAccess"] = $token;
+                $hub["hubEndpt"] = $endpt;
+                $hub["hubName"] = $sitename;
+                $hubs[$hubnum] = $hub;
+                $configoptions["hubs"] = $hubs;
                 
                 // update file
                 // *** IMPT *** if this file write fails, HP will not work properly
@@ -2727,15 +2767,10 @@ function is_ssl() {
             }
 
         // otherwise we have an error, so show the auth page again
+        // use the session method to avoid repeating the code GET variable
         } else {
-            $hpcode = time();
-            $_SESSION["hpcode"] = $hpcode;
-            unset($_SESSION["HP_hubnum"]);
-            $authpage= getAuthPage($returnURL, $hpcode);
-
-            echo htmlHeader($skin);
-            echo $authpage;
-            echo htmlFooter();
+            $_SESSION["hpcode"] = "redoauth";
+            header("Location: $returnURL");
             exit(0);
         }
 
@@ -2775,17 +2810,10 @@ function is_ssl() {
  * *****************************************************************************
  */
     $tc = "";
-    $hubTypes = $configoptions["hubTypes"];
-    $hubHosts = $configoptions["hubHosts"];
-    $clientIds = $configoptions["clientIds"];
-    $clientSecrets = $configoptions["clientSecrets"];
-    $hubNames = $configoptions["hubNames"];
-    $hubIds = $configoptions["hubIds"];
-    $hubAccesses = $configoptions["hubAccesses"];
-    $hubEndpts = $configoptions["hubEndpts"];
 
     // see if there is at least one valid hub
     // the first valid hub will be the default hub used for API calls
+    $hubs = $configoptions["hubs"];
     $valid = false;
     $access_token = false;
     $endpt = false;
@@ -2793,35 +2821,27 @@ function is_ssl() {
     $hubitatEndpt = false;
     $hubnum = false;
     $sitename = "Smart Home";
-    foreach ( $hubTypes as $i => $hubType ) {
-        if ( $hubAccesses[$i] && $hubEndpts[$i] ) {
-            $sitename = $hubNames[$i];
-            if ( $hubType==="SmartThings" ) {
-                $access_token = $hubAccesses[$i];
-                $endpt = $hubEndpts[$i];
-                $hubnum = $i;
-                $valid = true;
-                break;
-            } else if ( $hubType==="Hubitat" ) {
-                $access_token = $hubAccesses[$i];
+    foreach ( $hubs as $i => $hub ) {
+        $hubType = $hub["hubType"];
+        $hubHost = $hub["hubHost"];
+        $clientId = $hub["clientId"];
+        $clientSecret = $hub["clientSecret"];
+        $sitename = $hub["hubName"];
+        $access_token = $hub["hubAccess"];
+        $endpt = $hub["hubEndpt"];
+        if ( $access_token && $endpt ) {
+            $hubnum = $i;
+            $valid = true;
+            if ( $hubType === "Hubitat" ) {
                 $hubitatAccess = $access_token;
-                $endpt = $hubEndpts[$i];
                 $hubitatEndpt = $endpt;
-                $hubnum = $i;
-                $valid = true;
-                break;
             }
         }
     }
     
     if ( !$valid ) {
-        $hpcode = time();
-        $_SESSION["hpcode"] = $hpcode;
-        $authpage= getAuthPage($returnURL, $hpcode);
-
-        echo htmlHeader($skin);
-        echo $authpage;
-        echo htmlFooter();
+        $_SESSION["hpcode"] = "redoauth";
+        header("Location: $returnURL");
         exit(0);
     }
 
@@ -2951,14 +2971,15 @@ function is_ssl() {
         // if the hub number is given then use that hub
         // this will typically be true for GUI invoked calls to the api
         // to tell the api which hub to use for the request
-        if ( $hubnum!==false && $hubnum!==null && $hubnum < count($hubHosts) ) {
-            $access_token = $hubAccesses[$hubnum];
-            $endpt = $hubEndpts[$hubnum];
-            $hubHost = $hubHosts[$hubnum];
-            $hubEndpt = $hubEndpts[$hubnum];
-            $clientId = $clientIds[$hubnum];
-            $clientSecret = $clientSecrets[$hubnum];
-            $hubType = $hubTypes[$hubnum];
+        if ( $hubnum!==false && $hubnum!==null && $hubnum < count($hubs) ) {
+            $hub = $hubs[$hubnum];
+            $access_token = $hub["hubAccess"];
+            $endpt = $hub["hubEndpt"];
+            $hubHost = $hub["hubHost"];
+            $hubEndpt = $hub["hubEndpt"];
+            $clientId = $hub["clientId"];
+            $clientSecret = $hub["clientSecret"];
+            $hubType = $hub["hubType"];
         }
 
         // set tileid from options if it isn't provided
@@ -2976,7 +2997,7 @@ function is_ssl() {
  */
     // this block returns control to caller immediately
     // it can either show a webpage or return a block of json data to js file
-    if ( $useajax && $valid ) {
+    if ( $useajax ) {
         $nothing = json_encode(array());
         switch ($useajax) {
             case "doaction":
@@ -3164,7 +3185,7 @@ function is_ssl() {
                 break;
                 
             case "cancelauth":
-                // unset($_SESSION["hpcode"]);
+                unset($_SESSION["hpcode"]);
                 echo "success";
                 break;
                 
