@@ -748,7 +748,7 @@ function colorpicker(str_type, thingindex) {
 }
 
 // popup dialog box now uses createModal
-function editTile(str_type, thingindex, thingclass, htmlcontent) {  
+function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {  
 
     // save the sheet upon entry for cancel handling
     savedSheet = document.getElementById('customtiles').sheet;
@@ -757,7 +757,8 @@ function editTile(str_type, thingindex, thingclass, htmlcontent) {
     var dialog_html = "<div id='tileDialog' class='tileDialog'>";
 	
     // header
-    dialog_html += "<div id='editheader'>Editing Tile #" + thingindex + " of Type: " + str_type + "</div>";
+    dialog_html += "<div id='editheader'>Editing Tile #" + thingindex + 
+                   " of Type: " + str_type + " From hub #" + hubnum + "</div>";
 
     // option on the left side - colors and options
     dialog_html += colorpicker(str_type, thingindex);

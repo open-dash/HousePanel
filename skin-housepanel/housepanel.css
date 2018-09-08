@@ -30,16 +30,24 @@ div.greetingopts {
 }
 div.greetingopts div {
     margin-top: 6px;
+    margin-bottom: 10px;
 }
 div.greetingopts div.hubopt {
-    margin-top: 15px;
-    width: 220px;
-    border-bottom: 2px solid blue;
+    margin-top: 20px; margin-bottom: 20px;
+    width: 1020px;
+    border-bottom: 2px solid black;
 }
 
 label.startupinp {
-    font-style: italic;
     font-weight: bold;
+    font-size: 12pt;
+    margin-left: 5px;
+}
+
+div.authhub {
+    border: 2px solid black;
+    background-color: rgba(240, 240, 220, 1);
+    width: 1020px;
 }
 
 div.maintable {
@@ -61,11 +69,23 @@ h1, h2, h3 {
     margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
 }
 
-input.startupinp {
-    width: 700px;
+
+input.startupinp, select.startupinp {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12pt;
+    border-top: #cccccc solid 3px;
+    border-left: #cccccc solid 3px;
+    border-right: black solid 3px;
+    border-bottom: black solid 3px;
+    width: 800px;
     position: absolute;
-    left: 170px;
+    left: 220px;
     display: inline-block;
+}
+
+select.startupinp {
+    width: 200px;
 }
 
 div#tabs, div#controlpanel {
@@ -130,8 +150,13 @@ ul.ui-tabs-nav {
   color: black;
   font-size: 12pt;
 }
-.debug, .error {
+.error {
   background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
+}
+.debug {
+  background-color: #006666;  
+  color: #ffffcc;  
+  font-size: 11pt;
 }
 .hidden, ul.ul-tabs-nav.hidden {
     display: none;
@@ -1324,6 +1349,9 @@ div.thing.blank-thing:hover {
 div.thing.clock-thing {
     height: 150px;
     width: 246px;
+}
+div.thing.clock-thing.analog {
+    background-color: white;
 }
 div.clock.weekday {
     margin-top: 0px;
