@@ -748,7 +748,7 @@ function colorpicker(str_type, thingindex) {
 }
 
 // popup dialog box now uses createModal
-function editTile(str_type, thingindex, thingclass, htmlcontent) {  
+function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {  
 
     // save the sheet upon entry for cancel handling
     savedSheet = document.getElementById('customtiles').sheet;
@@ -757,7 +757,8 @@ function editTile(str_type, thingindex, thingclass, htmlcontent) {
     var dialog_html = "<div id='tileDialog' class='tileDialog'>";
 	
     // header
-    dialog_html += "<div id='editheader'>Editing Tile #" + thingindex + " of Type: " + str_type + "</div>";
+    dialog_html += "<div id='editheader'>Editing Tile #" + thingindex + 
+                   " of Type: " + str_type + " From hub #" + hubnum + "</div>";
 
     // option on the left side - colors and options
     dialog_html += colorpicker(str_type, thingindex);
@@ -1620,28 +1621,15 @@ function getBgEffect(effect) {
 
 // main routine that sets the icon of things
 function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) {
-
-    // get scope
-//    var scope = $("#scopeEffect").val();
-//    alert("Icon set to scope= " + scope);
-    
-    console.log("Setting icon: category= " + category + " target= "+cssRuleTarget+" icon= " + imagePath + " type= "+str_type+" index= "+thingindex);
     $("#noIcon").prop('checked', false);
-    
     var strEffect = getBgEffect();
-    var imgurl = "background-image: url(" + imagePath + ")";
+    var imgurl = 'background-image: url("' + imagePath + '")';
+    console.log("Setting icon: category= " + category + " target= " + cssRuleTarget + " icon= " + imagePath + " type= " + str_type + " index= " + thingindex + " rule= " + imgurl);
     addCSSRule(cssRuleTarget, imgurl + strEffect + ";");
 
-    // set new icons to default size of 80
+    // set new icons to default size
     $("#autoBgSize").prop("checked", false);
     updateSize(str_type, thingindex);
-//
-//    if ( $("#invertIcon").is(':checked') ) {
-//        addCSSRule(cssRuleTarget, "filter: invert(1);");
-//        addCSSRule(cssRuleTarget, "-webkit-filter: invert(1);");
-//    } else {
-//        resetInverted(cssRuleTarget);
-//    }
 }
 
 function updateSize(subid, thingindex) {

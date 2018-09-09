@@ -1,20 +1,17 @@
 // jquery functions to do Ajax on housepanel.php
-// old style setup of tabs to support maximum browsers
-var popupStatus = 0;
-var popupCell = null;
-var popupSave = "";
-var popupRoom = "";
-var popupVal = 0;
 var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 var dragZindex = 1;
+var pagename = "main";
 
 // set this global variable to true to disable actions
 // I use this for testing the look and feel on a public hosting location
 // this way the app can be installed but won't control my home
 // end-users are welcome to use this but it is intended for development only
+// use the timers options to turn off polling
 var disablepub = false;
+var disabletimers = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -56,6 +53,12 @@ $(document).ready(function() {
         returnURL = "housepanel.php";
     }
     
+    try {
+        pagename = $("input[name='pagename']").val();
+    } catch(e) {
+        pagename = "main";
+    }
+    
     $( "#tabs" ).tabs();
     
     // get default tab from cookie
@@ -70,28 +73,19 @@ $(document).ready(function() {
     $("div.skinoption").hide();
 
     // setup page clicks
-    if ( !disablepub ) {
+    if ( pagename==="main" && !disablepub ) {
         setupPage();
     }
     
     // disable return key
     $("form.options").keypress(function(e) {
-        if ( e.keyCode===13  && popupStatus===1){
-            processPopup();
+        if ( e.keyCode===13  ){
             return false;
-        }
-        else if (e.keyCode===13) {
-            return false;
-        } else if ( e.keyCode===27 && popupStatus===1 ){
-            disablePopup();
         }
     });
     
     getMaxZindex();
     
-    // set up popup editing - disabled because it is broken
-    // setupPopup();
-        
     // set up option box clicks
     setupFilters();
     
@@ -99,29 +93,38 @@ $(document).ready(function() {
     
     setupSaveButton();
     
-    setupSliders();
-    
-    // setup click on a page
-    // this appears to be painfully slow so disable
-    setupTabclick();
-    
-    setupColors();
-    
-    // invoke the new timer that updates everything at once
-    // disable these if you want to minimize cloud web traffic
-    // if you do this manual controls will not be reflected in panel
-    // but you can always run a refresh to update the panel manually
-    // or you can run it every once in a blue moon too
-    // any value less than 5000 (5 sec) will be interpreted as never
-    
-    if ( !disablepub ) {
-        allTimerSetup(60000);
-        allHubitatSetup(5000);
-    }
+    if ( pagename==="main" ) {
+        setupSliders();
 
-    cancelDraggable();
-    cancelSortable();
-    cancelPagemove();
+        // setup click on a page
+        // this appears to be painfully slow so disable
+        setupTabclick();
+
+        setupColors();
+
+        // invoke the new timer that updates everything at once
+        // disable these if you want to minimize cloud web traffic
+        // if you do this manual controls will not be reflected in panel
+        // but you can always run a refresh to update the panel manually
+        // or you can run it every once in a blue moon too
+        // any value less than 5000 (5 sec) will be interpreted as never
+        // note - with multihub we now use hub type to set the timer
+
+        if ( !disabletimers ) {
+            var hubstr = $("input[name='allHubs']").val();
+            try {
+                var hubs = JSON.parse(hubstr);
+                timerSetup(hubs);
+            } catch(e) {
+                console.log ("Couldn't find any hubs");
+                console.log ("hub raw str = " + hubstr);
+            }
+        }
+
+        cancelDraggable();
+        cancelSortable();
+        cancelPagemove();
+    }
 
 });
 
@@ -279,19 +282,20 @@ function setupColors() {
                 var aid = that.attr("aid");
                 var tile = '#t-'+aid;
                 var bid = $(tile).attr("bid");
+                var hubnum = $(tile).attr("hub");
                 var bidupd = bid;
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
                 if ( bid.startsWith("h_") ) {
-                    ajaxcall = "dohubitat";
+                    // ajaxcall = "dohubitat";
                     bid = bid.substring(2);
                 }
 //                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color"},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubnum: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
-                                updAll("color",aid,bidupd,thetype,presult);
+                                updAll("color",aid,bidupd,thetype,hubnum,presult);
                             }
                        }, "json"
                 );
@@ -315,12 +319,13 @@ function setupSliders() {
             var aid = thing.attr("aid");
             var tile = '#t-'+aid;
             var bid = $(tile).attr("bid");
+            var hubnum = $(tile).attr("hub");
             var bidupd = bid;
             var ajaxcall = "doaction";
             var subid = thing.attr("subid");
             var thevalue = parseInt(ui.value);
             if ( bid.startsWith("h_") ) {
-                ajaxcall = "dohubitat";
+                // ajaxcall = "dohubitat";
                 bid = bid.substring(2);
             }
             var thetype = $(tile).attr("type");
@@ -329,17 +334,17 @@ function setupSliders() {
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                                updAll("slider",aid,bidupd,thetype,presult);
+                                updAll(subid,aid,bidupd,thetype,hubnum,presult);
                             }
                        }, "json"
                 );
             } else {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -373,20 +378,21 @@ function setupSliders() {
             var aid = thing.attr("aid");
             var tile = '#t-'+aid;
             var bid = $(tile).attr("bid");
+            var hubnum = $(tile).attr("hub");
             var bidupd = bid;
             var ajaxcall = "doaction";
             if ( bid.startsWith("h_") ) {
-                ajaxcall = "dohubitat";
+                // ajaxcall = "dohubitat";
                 bid = bid.substring(2);
             }
             var thetype = $(tile).attr("type");
             
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature" },
+                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubnum: hubnum },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                            updAll("slider",aid,bidupd,thetype,presult);
+                            updAll("slider",aid,bidupd,thetype,hubnum,presult);
                         }
                    }, "json"
             );
@@ -812,10 +818,33 @@ function setupButtons() {
     $("#controlpanel").on("click","div.restoretabs",function(evt){
         toggleTabs();
     });
+    
+    if ( pagename==="auth" ) {
 
-//    $("div.panel").on("click",function(evt){
-//        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
-//    });
+        $("#pickhub").on('change',function(event) {
+            var hubnum = $(this).val();
+            var target = "#authhub_" + hubnum;
+            $("div.authhub").each(function() {
+                if ( !$(this).hasClass("hidden") ) {
+                    $(this).addClass("hidden");
+                }
+            });
+            $(target).removeClass("hidden");
+        });
+
+        $("#cancelauth").click(function(evt) {
+            $.post(returnURL, 
+                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: "none"},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult==="success") {
+                        window.location.href = returnURL;
+                    }
+                }
+            );
+        });
+    
+    }
+
 }
 
 function addEditLink() {
@@ -848,10 +877,11 @@ function addEditLink() {
         var tile = $(thing).attr("tile");
         var strhtml = $(thing).html();
         var thingclass = $(thing).attr("class");
+        var hubnum = $(thing).attr("hub");
         
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
-        editTile(str_type, tile, thingclass, strhtml);
+        editTile(str_type, tile, thingclass, hubnum, strhtml);
     });
     
     $("div.dellink").on("click",function(evt) {
@@ -860,10 +890,11 @@ function addEditLink() {
         var tile = $(thing).attr("tile");
         var bid = $(thing).attr("bid");
         var panel = $(thing).attr("panel");
+        var hubnum = $(thing).attr("hub");
         var tilename = $("span.original.n_"+tile).html();
         var pos = {top: 100, left: 10};
 
-        createModal("Remove: "+ tilename + " of type: "+str_type+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("Remove: "+ tilename + " of type: "+str_type+" from hub #" + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 // remove it from the system
@@ -1153,82 +1184,6 @@ function setupFilters() {
     });
 }
 
-function setupPopup() {
-        //Click out event!
-    $("table.roomoptions").click(function(){
-        processPopup();
-    });
-    
-    // add code to disable when click anywhere but the cell
-    $("div.maintable").click(function(e) {
-        if ( e.target.id !== "trueincell" && popupStatus==1) {
-            disablePopup();
-        }
-            // alert ( e.target.id );
-    });
-    
-    
-    // Press Escape or Return event!
-    // fix long-standing bug
-    $(document).keypress(function(e){
-        if ( e.keyCode===13  && popupStatus===1){
-            processPopup();
-        } else if ( e.keyCode===27 && popupStatus===1 ){
-            disablePopup();
-        }
-    });
-
-    // disable input in our dynamic form item
-    $("#trueincell").keypress(function(e) {
-        if ( e.keyCode===27 && popupStatus==1 ){
-            disablePopup();
-        }
-    });
-    
-    $("#trueincell").focus().blur(function() {
-        processPopup();
-    });
-    
-//    $("table.headoptions th.roomname").each(function() {
-//        // bind click events to incell editing
-//        $(this).css({
-//            "cursor": "pointer"
-//        });
-//        $(this).on("click", "th.roomname", jeditTableCell);
-    $("table.headoptions").on("click", "th.roomname", function() {
-        if ($(this).html().startsWith("<input id")) { return true; }
-
-        // if another popup is active, process it
-        if (popupStatus === 1) {
-            processPopup();
-        }
-
-        var roomval = $(this).children().first().attr("value");
-        var roomname = $(this).text().trim();
-
-        //do a real in-cell edit - save global parameters
-        // cellclicked = that;
-        popupStatus = 1;
-        popupSave = $(this).html();
-        popupCell = this;
-        popupVal = parseInt(roomval);
-        popupRoom = roomname;
-
-        // change the content to an input box
-        var thesize = roomname.length + 2;
-
-        // save anything after the pure text
-        // var savedhidden = $(that).html().substring(thesize);
-
-//         if (thesize < maxlen+1) thesize = maxlen+1;
-        var oldhidden = ""; // '<input type="hidden" name="o_' + roomname + '" value="' + popupVal + '" />';
-        $(this).html('<input id="trueincell" type="text" size="'+ thesize + '" value="' + roomname+'" />' + oldhidden);
-        return false;
-        
-    });
-       
-}
-
 function toggleTabs() {
     var hidestatus = $("#restoretabs");
     if ( $("#roomtabs").hasClass("hidden") ) {
@@ -1238,44 +1193,6 @@ function toggleTabs() {
         $("#roomtabs").addClass("hidden");
         if ( hidestatus ) hidestatus.html("Show Tabs");
     }
-}
-
-function processPopup( ) {
-    // processEdit( ineditvalue );
-    // $(cellclicked).empty().html( ineditvalue );
-    // alert("ineditvalue = " + ineditvalue);
-//    alert("processing... popupStatus = " + popupStatus);
-
-    if (popupStatus==1) {
-        // put the new text on the screen
-        var thenewval = $("#trueincell").val();
-//        alert("Changing room name from: " + popupRoom + " to: "+thenewval);
-        
-        // clean the user provided room name to ensure it doesnt have crap in it
-        //TODO
-        
-        var newhidden = '<input type="hidden" name="o_' + thenewval + '" value="' + popupVal + '" />';
-        $(popupCell).html( thenewval + newhidden );
-//        
-        // replace the room name in the entire options table column
-        $('table.roomoptions td > input[name="'+popupRoom+'\[\]"]').each(function() {
-            // var tileval = parseInt($(this).attr("value"));
-            $(this).attr("name",thenewval + '[]');
-        });
-        //       
-    }
-
-    popupStatus = 0;
-}
-
-function disablePopup(){
-//    alert("disabling... popupStatus = " + popupStatus + " popupSave = " + popupSave);
-    
-    //disables popup only if it is enabled
-    if( popupStatus==1 && popupSave){
-        $(popupCell).html(popupSave);
-    }
-    popupStatus = 0;
 }
 
 function strObject(o, level) {
@@ -1316,6 +1233,8 @@ function fixTrack(tval) {
 function updateTile(aid, presult) {
 
     // do something for each tile item returned by ajax call
+    var isclock = false;
+    
     $.each( presult, function( key, value ) {
         var targetid = '#a-'+aid+'-'+key;
 
@@ -1332,11 +1251,11 @@ function updateTile(aid, presult) {
             // this avoids putting names of songs into classes
             // also only do this if the old class was there in the first place
             // also handle special case of battery and music elements
-            if ( key=="battery") {
+            if ( key==="battery") {
                 var powmod = parseInt(value);
                 powmod = powmod - (powmod % 10);
                 value = "<div style=\"width: " + powmod.toString() + "%\" class=\"ovbLevel L" + powmod.toString() + "\"></div>";
-            } else if ( key=="track") {
+            } else if ( key==="track") {
                 value = fixTrack(value);
             }
             // handle weather icons
@@ -1350,18 +1269,21 @@ function updateTile(aid, presult) {
                 }
 //                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
 //                value += "<br />" + iconstr;
-            } else if ( (key == "level" || key == "colorTemperature") && $(targetid).slider ) {
+            } else if ( (key === "level" || key === "colorTemperature") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
                 value = false;
                 oldvalue = false;
-            } else if ( key=="color") {
+            } else if ( key==="color") {
 //                alert("updating color: "+value);
                 $(targetid).html(value);
 //                setupColors();
             // special case for numbers for KuKu Harmony things
             } else if ( key.startsWith("_number_") && value.startsWith("number_") ) {
                 value = value.substring(7);
+            } else if ( key === "skin" && value.startsWith("CoolClock") ) {
+                value = '<canvas id="clock_' + aid + '" class="' + value + '"></canvas>';
+                isclock = true;
             } else if ( oldclass && oldvalue && value &&
                      key!=="name" &&
                      $.isNumeric(value)===false && 
@@ -1378,18 +1300,22 @@ function updateTile(aid, presult) {
                 }
             }
     });
+    
+    if ( isclock ) {
+        CoolClock.findAndCreateClocks();
+    }
 }
 
 // this differs from updateTile by calling ST to get the latest data first
 // it then calls the updateTile function to update each subitem in the tile
-function refreshTile(aid, bid, thetype) {
+function refreshTile(aid, bid, thetype, hubnum) {
     var ajaxcall = "doquery";
     if ( bid.startsWith("h_") ) {
-        ajaxcall = "queryhubitat";
+        // ajaxcall = "queryhubitat";
         bid = bid.substring(2);
     }
     $.post(returnURL, 
-        {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none"},
+        {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubnum: hubnum},
         function (presult, pstatus) {
             if (pstatus==="success" && presult!==undefined ) {
                 updateTile(aid, presult);
@@ -1410,136 +1336,91 @@ function setupTabclick() {
     });
 }
 
-function allTimerSetup(timerval) {
+function timerSetup(hubs) {
 
-    // define the timer callback function to update all tiles every 60 seconds
-    // var timerval = 15000;
-    if ( !timerval || timerval < 5000 ) { return; }
-    var updarray = ["all",timerval];
-    updarray.myMethod = function() {
-        // skip if not in operation mode or if inside a modal dialog box
-        if ( priorOpmode !== "Operate" || modalStatus ) { 
-            console.log ("Timer skipped: opmode= "+priorOpmode+" modalStatus= "+modalStatus);
-            return; 
+    // loop through every hub
+    $.each(hubs, function (hubnum, hub) {
+
+        var hubType = hub.hubType;
+        var token = hub.hubAccess;
+        var timerval = 60000;
+        if ( hubType==="Hubitat" ) {
+            timerval = 5000;
         }
-        var that = this;
-        var err;
-        
-        // console.log ( "Posting SmartThings update..." );
-        try {
-            $.post(returnURL, 
-                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none"},
-                function (presult, pstatus) {
-                    if (pstatus==="success" && presult!==undefined ) {
-                        // console.log("Success polling [" + returnURL + "]. SmartThings returned "+ Object.keys(presult).length+ " items");
+        console.log("hub #" + hubnum + " timer = " + timerval + " hub = " + strObject(hub));
 
-                        // go through all tiles and update
-                        try {
-                        $('div.panel div.thing').each(function() {
-                            var aid = $(this).attr("id");
-                            // skip the edit in place tile
-                            if ( aid.startsWith("t-") ) {
-                                aid = aid.substring(2);
-                                var tileid = $(this).attr("tile");
-                                var bid = $(this).attr("bid");
-                                if ( !bid.startsWith("h_") ) { // && tileid in presult ) {
-                                    var thevalue;
-                                    try {
-                                        thevalue = presult[tileid];
-                                    } catch (err) {
-                                        tileid = parseInt(tileid, 10);
+        var updarray = ["all", timerval, hubnum, token];
+        updarray.myMethod = function() {
+
+            var that = this;
+            var err;
+
+            // skip if not in operation mode or if inside a modal dialog box
+            if ( priorOpmode !== "Operate" || modalStatus  || !token) { 
+                console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+                return; 
+            }
+
+            try {
+                $.post(returnURL, 
+                    {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
+                    function (presult, pstatus) {
+                        if (pstatus==="success" && presult!==undefined ) {
+                            // console.log("Success polling hub #" + that[2] + ". Returned "+ Object.keys(presult).length+ " items: " + strObject(presult));
+
+                            // go through all tiles and update
+                            try {
+                            $('div.panel div.thing').each(function() {
+                                var aid = $(this).attr("id");
+                                // skip the edit in place tile
+                                if ( aid.startsWith("t-") ) {
+                                    aid = aid.substring(2);
+                                    var tileid = $(this).attr("tile");
+                                    var bid = $(this).attr("bid");
+                                    if ( bid!=="clockanalog" ) {
+                                        var thevalue;
                                         try {
                                             thevalue = presult[tileid];
-                                        } catch (err) {}
+                                        } catch (err) {
+                                            tileid = parseInt(tileid, 10);
+                                            try {
+                                                thevalue = presult[tileid];
+                                            } catch (err) {}
+                                        }
+                                        // handle both direct values and bundled values
+                                        if ( thevalue && thevalue.hasOwnProperty("value") ) {
+                                            thevalue = thevalue.value;
+                                        }
+                                        if ( thevalue ) { updateTile(aid,thevalue); }
                                     }
-                                    // handle both direct values and bundled values
-                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
-                                        thevalue = thevalue.value;
-                                    }
-                                    // if ( tileid=="201" ) { alert("updating tile " + tileid + " ... value = "+ strObject(thevalue)); }
-                                    if ( thevalue ) { updateTile(aid,thevalue); }
                                 }
-                            }
-                        });
-                        } catch (err) { console.error("Polling error", err.message); }
-                    }
-                }, "json"
-            );
-        } catch(err) {
-            console.error ("Polling error", err.message);
-        }
+                            });
+                            } catch (err) { console.error("Polling error", err.message); }
+                        }
+                    }, "json"
+                );
+            } catch(err) {
+                console.error ("Polling error", err.message);
+            }
+
+            // repeat the method above indefinitely
+            setTimeout(function() {updarray.myMethod();}, this[1]);
+        };
+
+        // wait before doing first one
+        setTimeout(function() {updarray.myMethod();}, timerval);
         
-        // repeat the method above indefinitely
-        setTimeout(function() {updarray.myMethod();}, this[1]);
-    };
-
-    // wait before doing first one
-    setTimeout(function() {updarray.myMethod();}, timerval);
-}
-
-function allHubitatSetup(timerval) {
-
-    // define the timer callback function to update all Hubitat tiles every 5 seconds
-    // var timerval = 5000;
-    if ( !timerval || timerval < 5000 ) { return; }
-    var hubarray = ["all",timerval];
-    hubarray.myMethod = function() {
-        // skip if not in operation mode or if inside a modal dialog box
-        if ( priorOpmode !== "Operate" || modalStatus ) { return; }
-        var that = this;
-        try {
-            $.post(returnURL, 
-                {useajax: "queryhubitat", id: that[0], type: that[0], value: "none", attr: "none"},
-                function (presult, pstatus) {
-                    if (pstatus==="success" && presult!==undefined && presult ) {
-//                        console.log("Success polling [" + returnURL + "]. Hubitat returned "+ Object.keys(presult).length+ " items");
-
-                        // go through all tiles and update
-                        $('div.panel div.thing').each(function() {
-                            var aid = $(this).attr("id");
-                            // skip the edit in place tiles
-                            if ( aid.startsWith("t-") ) {
-                                aid = aid.substring(2);
-                                var tileid = $(this).attr("tile");
-                                var bid = $(this).attr("bid");
-                                if ( bid.startsWith("h_") ) {
-                                    var thevalue;
-                                    try {
-                                        thevalue = presult[tileid];
-                                    } catch (err) {
-                                        tileid = parseInt(tileid, 10);
-                                        try {
-                                            thevalue = presult[tileid];
-                                        } catch (err) {}
-                                    }
-                                    // handle both direct values and bundled values
-                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
-                                        thevalue = thevalue.value;
-                                    }
-                                    if ( thevalue ) { updateTile(aid,thevalue); }
-                                }
-                            }
-
-                        });
-                    }
-                }, "json"
-            );
-        } catch (e) { }
-
-        // repeat the method above indefinitely
-        setTimeout(function() {hubarray.myMethod();}, this[1]);
-    };
-
-    // wait before doing first one
-    setTimeout(function() {hubarray.myMethod();}, timerval);
+    });
+    
 }
 
 function updateMode() {
     $('div.thing.mode-thing').each(function() {
         var otheraid = $(this).attr("id").substring(2);
         var rbid = $(this).attr("bid");
+        var hubnum = $(this).attr("hub");
         setTimeout(function() {
-            refreshTile(otheraid, rbid, "mode");
+            refreshTile(otheraid, rbid, "mode", hubnum);
         }, 2000);
     });
 }
@@ -1549,7 +1430,7 @@ function updateMode() {
 // but we also update similar things that are impacted by this click
 // that way we don't need to wait for the timers to kick in to update
 // the visual items that people will expect to see right away
-function updAll(trigger, aid, bid, thetype, pvalue) {
+function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
 
     // update trigger tile first
     // alert("trigger= "+trigger+" aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
@@ -1560,14 +1441,14 @@ function updAll(trigger, aid, bid, thetype, pvalue) {
     // for music tiles, wait few seconds and refresh again to get new info
     if (thetype==="music") {
         setTimeout(function() {
-            refreshTile(aid, bid, thetype);
+            refreshTile(aid, bid, thetype, hubnum);
         }, 3000);
     }
     
     // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
         setTimeout(function() {
-            refreshTile(aid, bid, thetype);
+            refreshTile(aid, bid, thetype, hubnum);
         }, 15000);
     }
         
@@ -1660,13 +1541,14 @@ function setupPage(trigger) {
         var bid = $(tile).attr("bid");
         var bidupd = bid;
         var thetype = $(tile).attr("type");
+        var hubnum = $(tile).attr("hub");
         var targetid = '#a-'+aid+'-'+subid;
         
         // set the action differently for Hubitat
         var ajaxcall = "doaction";
-        if ( bid.startsWith("h_") ) {
-            ajaxcall = "dohubitat";
-        }
+//        if ( bid.startsWith("h_") ) {
+//            ajaxcall = "dohubitat";
+//        }
 
         var thevalue;
         // for switches and locks set the command to toggle
@@ -1694,7 +1576,7 @@ function setupPage(trigger) {
                 this[0].html(this[2]);
             };
             $.post(returnURL, 
-                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid, hubnum: hubnum},
                 function(presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -1724,18 +1606,19 @@ function setupPage(trigger) {
         } else if ( thetype==="weather") {
             console.log("Weather tiles have no actions...");
         } else {
-            console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
+            console.log(ajaxcall + ": id= "+bid+" hub= " + hubnum + " type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid},
+                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid, hubnum: hubnum},
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
+                            // alert(bid);
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
                                     console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                                    updAll(subid,aid,bidupd,thetype,presult);
+                                    updAll(subid,aid,bidupd,thetype,hubnum,presult);
                                 } else {
-                                    console.log( ajaxcall + " POST returned nothing to update ");
+                                    console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                                 }
                             } catch (e) { }
                         }
