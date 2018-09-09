@@ -20,7 +20,7 @@
  * 09/03/2018 - updated to work with multihub
  * 08/11/2018 - added pistons and other cleanup
  * 07/24/2018 - fix bug in lock opening and closing with motion detection
- * 06/21/2018 - Automatic push of Hubitat settings to HP server
+ * 06/21/2018 - Auto`matic push of Hubitat settings to HP server
  * 06/16/2018 - Sync important bug fixes from SmartThings version
  * 06/16/2018 - Add cloud and local options and auto configuration
  * 06/15/2018 - Port over updates from ST side; icon change other cleanup
@@ -35,7 +35,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.77" }
+public static String version() { return "v1.793" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -58,13 +58,11 @@ preferences {
 //                  "(By the way, I know this isn't the usual auth process. That will come soon)"
 //         input (name: "hpurl", type: "text", title: "HousePanel url", defaultValue: "http://192.168.11.20/smartthings/housepanel.php", required: true, multiple: false )
         paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
-                  "When this is true all calls to HousePanel will be through the Cloud endpoint. " +
-                  "Actions and updates will be slower than local installations."
+                  "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
+                  "actions will be slower than local installations."
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true)
-//        paragraph "Set this to True if you do not have a SmartThings hub. This will make the Hubitat " +
-//                  "installation return blanks and images that are usual done on the Smartthings side. \n" +
-//                  "This will also make the app bypass any SmartThings authentication step attempts."
-        // input (name: "hubitatonly", type: "bool", title: "use Hubitat only?", defaultValue: false, required: true)
+        paragraph "Enable this to use Pistons. You must have WebCore installed locally for this to work (Beta)."
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
     }
     section("Lights and Switches...") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
@@ -96,7 +94,6 @@ preferences {
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
 //    	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons (must have a local WebCore installed)?", required: false, defaultValue: false)
     }
 }
 
@@ -135,12 +132,9 @@ def initialize() {
 }
 
 def configureHub() {
-    state.hubitatOnly = hubitatonly
     if ( ! state.accessToken ) {
     	createAccessToken(); 
 	log.debug "Creating new accessToken ..."
-        // log.debug "You can optionally specify app.id and accessToken in the clientinfo.php file,"
-        // log.debug "but this is no longer required when using the default authentication process"
     }
     
     // get the cloud and local access points
@@ -155,9 +149,7 @@ def configureHub() {
         endpt = "${hubip}/apps/api/${app.id}/"
     }
 
-    // send debug info to log for manual setup option
-//    log.debug "This information is being sent to your HousePanel web app at ${hpurl}"
-//    log.debug "HousePanel url = ${hpurl}"
+    log.debug "Use this information on the Auth page of House Panel."
     log.debug "Hubitat IP = ${hubip}"
     log.debug "Hub ID = ${app.id}"
     log.debug "accessToken = ${state.accessToken}"
@@ -473,13 +465,11 @@ def getAllThings() {
     resp = getIlluminances(resp)
     resp = getValves(resp)
     resp = getWaters(resp)
+    resp = getMusics(resp)
     resp = getSmokes(resp)
     resp = getOthers(resp)
-
-    if ( state.hubitatOnly ) {
-        resp = getBlanks(resp)
-        resp = getImages(resp)
-    }
+    resp = getBlanks(resp)
+    resp = getImages(resp)
 
     // optionally include pistons based on user option
     if (state.usepistons) {
@@ -501,7 +491,7 @@ def getModes(resp) {
 }
 
 def getBlanks(resp) {
-    def vals = ["b1x1","b1x2","b2x1","b2x2"]
+    def vals = ["h1x1","h1x2","h2x1","h2x2"]
     def val
     vals.each {
         val = getBlank(it)
@@ -511,7 +501,7 @@ def getBlanks(resp) {
 }
 
 def getImages(resp) {
-    def vals = ["img1","img2","img3","img4"]
+    def vals = ["himg1","himg2","himg3","himg4"]
     def val
     vals.each {
         val = getImage(it)
@@ -652,7 +642,7 @@ def getOthers(resp) {
 }
 
 def autoType(swid) {
-	def swtype
+    def swtype
     if ( mydimmers?.find {it.id == swid } ) { swtype= "switchlevel" }
     else if ( mymomentaries?.find {it.id == swid } ) { swtype= "momentary" }
     else if ( mylights?.find {it.id == swid } ) { swtype= "light" }

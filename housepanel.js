@@ -3,6 +3,7 @@ var modalStatus = 0;
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 var dragZindex = 1;
+var pagename = "main";
 
 // set this global variable to true to disable actions
 // I use this for testing the look and feel on a public hosting location
@@ -52,6 +53,12 @@ $(document).ready(function() {
         returnURL = "housepanel.php";
     }
     
+    try {
+        pagename = $("input[name='pagename']").val();
+    } catch(e) {
+        pagename = "main";
+    }
+    
     $( "#tabs" ).tabs();
     
     // get default tab from cookie
@@ -66,7 +73,7 @@ $(document).ready(function() {
     $("div.skinoption").hide();
 
     // setup page clicks
-    if ( !disablepub ) {
+    if ( pagename==="main" && !disablepub ) {
         setupPage();
     }
     
@@ -86,36 +93,38 @@ $(document).ready(function() {
     
     setupSaveButton();
     
-    setupSliders();
-    
-    // setup click on a page
-    // this appears to be painfully slow so disable
-    setupTabclick();
-    
-    setupColors();
-    
-    // invoke the new timer that updates everything at once
-    // disable these if you want to minimize cloud web traffic
-    // if you do this manual controls will not be reflected in panel
-    // but you can always run a refresh to update the panel manually
-    // or you can run it every once in a blue moon too
-    // any value less than 5000 (5 sec) will be interpreted as never
-    // note - with multihub we now use hub type to set the timer
-    
-    if ( !disabletimers ) {
-        var hubstr = $("input[name='allHubs']").val();
-        try {
-            var hubs = JSON.parse(hubstr);
-            timerSetup(hubs);
-        } catch(e) {
-            console.log ("Couldn't find any hubs");
-            console.log ("hub raw str = " + hubstr);
-        }
-    }
+    if ( pagename==="main" ) {
+        setupSliders();
 
-    cancelDraggable();
-    cancelSortable();
-    cancelPagemove();
+        // setup click on a page
+        // this appears to be painfully slow so disable
+        setupTabclick();
+
+        setupColors();
+
+        // invoke the new timer that updates everything at once
+        // disable these if you want to minimize cloud web traffic
+        // if you do this manual controls will not be reflected in panel
+        // but you can always run a refresh to update the panel manually
+        // or you can run it every once in a blue moon too
+        // any value less than 5000 (5 sec) will be interpreted as never
+        // note - with multihub we now use hub type to set the timer
+
+        if ( !disabletimers ) {
+            var hubstr = $("input[name='allHubs']").val();
+            try {
+                var hubs = JSON.parse(hubstr);
+                timerSetup(hubs);
+            } catch(e) {
+                console.log ("Couldn't find any hubs");
+                console.log ("hub raw str = " + hubstr);
+            }
+        }
+
+        cancelDraggable();
+        cancelSortable();
+        cancelPagemove();
+    }
 
 });
 
@@ -810,20 +819,32 @@ function setupButtons() {
         toggleTabs();
     });
     
-    $("#cancelauth").click(function(evt) {
-        $.post(returnURL, 
-            {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: "none"},
-            function (presult, pstatus) {
-                if (pstatus==="success" && presult==="success") {
-                    window.location.href = returnURL;
-                }
-            }
-        );
-    });
+    if ( pagename==="auth" ) {
 
-//    $("div.panel").on("click",function(evt){
-//        if ( priorOpmode === "Operate" && evt.target === this ) { toggleTabs(); }
-//    });
+        $("#pickhub").on('change',function(event) {
+            var hubnum = $(this).val();
+            var target = "#authhub_" + hubnum;
+            $("div.authhub").each(function() {
+                if ( !$(this).hasClass("hidden") ) {
+                    $(this).addClass("hidden");
+                }
+            });
+            $(target).removeClass("hidden");
+        });
+
+        $("#cancelauth").click(function(evt) {
+            $.post(returnURL, 
+                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: "none"},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult==="success") {
+                        window.location.href = returnURL;
+                    }
+                }
+            );
+        });
+    
+    }
+
 }
 
 function addEditLink() {

@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.793      Cleaned up auth page GUI, bug fixes, added hub num & type to tiles 
  * 1.792      Updated but still beta update to multiple ST and HE hub support
  * 1.791      Multiple ST hub support and Analog Clock
  * 1.78       More bug fixes
@@ -101,7 +102,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.79');
+define('HPVERSION', 'Version 1.793');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
@@ -380,7 +381,7 @@ function tsk($timezone, $skin, $kiosk) {
 
     $tc.= "<div>";
     if ( $kiosk ) { $kstr = "checked"; } else { $kstr = ""; }
-    $tc.= "<input name=\"use_kiosk\" width=\"6\" type=\"checkbox\" $kstr/>";
+    $tc.= "<input class=\"indent\" name=\"use_kiosk\" width=\"6\" type=\"checkbox\" $kstr/>";
     $tc.= "<label for=\"use_kiosk\" class=\"startupinp\"> Kiosk Mode? </label>";
     $tc.= "</div>"; 
     return $tc;
@@ -397,19 +398,20 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // this will show only if the user hasn't set up HP
     // it will be bypassed if Hubitat is manually sst up
     $tc.= "<div class=\"greeting\">";
-
-    $tc.= "<p><strong>Welcome to HousePanel</strong></p>";
+//    $tc.= "<p><strong>Welcome to HousePanel</strong></p>";
 
     $tc.="<p>You are seeing this because you either requested a re-authentication " .
             "or you have not yet authorized a valid SmartThings or Hubitat hub for" .
             "HousePanel to access your smart home devices. With HousePanel " .
             "you can use any number and combination of hub types at the same time. " . 
-            "To configure HousePanel you should have detailed information about at least one hub. <br /><br />" .
-            "<strong>*** IMPORTANT ***</strong><br /> This information is secret AND it will be stored " .
+            "To configure HousePanel you should have the following info about at least one hub: " .
+            "API URL, Client ID, and Client Secret</p><br />";
+    
+    $tc.= "<p><strong>*** IMPORTANT ***</strong><br /> This information is secret and it will be stored " .
             "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
             "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
-            "unless the site is secure and/or password protected. A locally hosted " . 
-            "website on a Raspberry Pi is the strongly preferred option.</p>";
+            "unless the site is secured via some means such as password protection. <strong>A locally hosted " . 
+            "website on a Raspberry Pi is the strongly preferred option</strong>.</p>";
 
     $tc.= "<p>The Authorize button below will " .
             "begin the typical OAUTH process for your hub. " .
@@ -425,7 +427,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "to ensure that you can write to the home directory where HousePanel is installed. " .
             "You should also confirm that your PHP is set up to use cURL. " .
             "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
-            "(opens in a new window or tab)</p>";
+            "(opens in a new window or tab).</p>";
 
     $tc.= "</div>";
 
@@ -487,7 +489,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         }
 
         // make an empty new hub for adding new ones
-        $newhub = array("hubType"=>"New", "hubHost"=>"", "clientId"=>"", "clientSecret"=>"",
+        $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
+                        "clientId"=>"", "clientSecret"=>"",
                         "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>1,
                         "hubAccess"=>"", "hubEndpt"=>"");
         
@@ -526,7 +529,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                     "clientId"=>$configoptions["client_id"], 
                     "clientSecret"=>$configoptions["client_secret"],
                     "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
-                    "hubName"=>$hubName, "hubId"=>0,
+                    "hubName"=>$hubName, "hubId"=>1,
                     "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
                 $hubs[] = $sthub;
             }
@@ -626,7 +629,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $clientSecret = "";
         }
         $hubType = "SmartThings";
-        $hubId = 0;
+        $hubId = 1;
         if ( defined("ST_WEB") && ST_WEB ) { 
             $hubHost = ST_WEB; 
             if ( ST_WEB==="hubitat" ||  ST_WEB==="hubitatonly" ) {
@@ -725,16 +728,25 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $hubs[] = $newhub;
     
     $tc.= hidden("returnURL", $returl);
+    $tc.= hidden("pagename", "auth");
     
     $tc.= "<div class=\"greetingopts\">";
     $tc.= "<div><span class=\"startupinp\">Last update: $lastedit</span></div>";
     
     $tc.= "<div><label class=\"startupinp\">Authorize which hub?</label>";
     $tc.= "<select name=\"pickhub\" id=\"pickhub\" class=\"startupinp\">";
+
+    // get the default hub
+    if ( $hubset!==null && $newthings!==null && is_array($newthings) ) {
+        $defhub = intval($hubset);
+    } else {
+        $defhub = 0;
+    }
+    
     foreach ($hubs as $i => $hub) {
         $hubName = $hub["hubName"];
         $hubType = $hub["hubType"];
-        if ($i === $defaulthub) {
+        if ($i === $defhub) {
             $hubselected = "selected";
         } else {
             $hubselected = "";
@@ -747,7 +759,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
         $hubType = $hub["hubType"];
         $hubclass = "authhub";
-        if ( $i !== 0 ) $hubclass .= " hidden";
+        if ( $i !== $defhub ) { $hubclass .= " hidden"; }
         $tc.="<div id=\"authhub_$i\" class=\"$hubclass\">";
         
         $tc.= "<form id=\"hubform_$i\" hubnum=\"$i\" class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
@@ -759,7 +771,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
         if ( $hubset!==null && $newthings!==null && is_array($newthings) && intval($hubset)===intval($i) ) {
             $numnewthings = count($newthings);
-            $tc.= "<div><label class=\"startupinp\">Number things read: $numnewthings </label></div>";
+            $tc.= "<div><label class=\"startupinp highlight\">Hub was authorized and $numnewthings devices were retrieved.</label></div>";
         }
     
         $tc.= "<div class='hubopt'>";
@@ -780,13 +792,13 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<option value=\"OpenHab\" $o_select>OpenHab</option>";
         $tc.= "</select></div>";
 
-        $tc.= "<div><label class=\"startupinp\">API Url: </label>";
+        $tc.= "<div><label class=\"startupinp required\">API Url: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubHost\" width=\"80\" type=\"text\" value=\"" . $hub["hubHost"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp\">Client ID: </label>";
+        $tc.= "<div><label class=\"startupinp required\">Client ID: </label>";
         $tc.= "<input class=\"startupinp\" name=\"clientId\" width=\"80\" type=\"text\" value=\"" . $hub["clientId"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp\">Client Secret: </label>";
+        $tc.= "<div><label class=\"startupinp required\">Client Secret: </label>";
         $tc.= "<input class=\"startupinp\" name=\"clientSecret\" width=\"80\" type=\"text\" value=\"" . $hub["clientSecret"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Fixed Access Token: </label>";
@@ -798,7 +810,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<div><label class=\"startupinp\">Hub Name: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubName\" width=\"80\" type=\"text\" value=\"" . $hub["hubName"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp\">Hub ID: </label>";
+        $tc.= "<div><label class=\"startupinp required\">Hub ID: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hub["hubId"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Access Token: </label>";
@@ -1926,6 +1938,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<form id=\"optionspage\" class=\"options\" name=\"options" . "\" action=\"$retpage\"  method=\"POST\">";
     $tc.= hidden("options",1);
     $tc.= hidden("returnURL", $retpage);
+    $tc.= hidden("pagename", "options");
     $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/></div>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
@@ -2239,12 +2252,15 @@ function processOptions($optarray) {
     $options["kiosk"] = "false";
     $options["config"] = $oldoptions["config"];
     $roomoptions = $options["rooms"];
-    $blanktile = $oldoptions["index"]["blank|b1x1"];
+    
+    // use clock instead of blank for default only tile
+    $onlytile = $oldoptions["index"]["clock|clockdigital"];
     
     // fix long-standing bug by putting a blank in each room
     // to force the form to return each room defined in options file
     foreach(array_keys($oldoptions["rooms"]) as $room) {
-        $options["things"][$room] = array($blanktile,0,0,1,"");
+        $options["things"][$room] = array();
+        $options["things"][$room][] = array($onlytile,0,0,1,"");
     }
 
     // get all the rooms checkboxes and reconstruct list of active things
@@ -2328,7 +2344,7 @@ function processOptions($optarray) {
             
             // put a blank in a room if it is empty
             if ( count($options["things"][$roomname]) == 0  ) {
-                $options["things"][$roomname][] = array($blanktile,0,0,1,"");
+                $options["things"][$roomname][] = array($onlytile,0,0,1,"");
             }
         // keys starting with o_ are room names with order as value
         } else if ( substr($key,0,2)=="o_") {
@@ -2369,6 +2385,10 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
             </form></div>';
     }
     
+    $tc.="<form>";
+    $tc.= hidden("returnURL", $returnURL);
+    $tc.= hidden("pagename", "info");
+    $tc.= "</form>";
     $tc.= "<div class=\"infopage\">";
     $tc.= "<div>Sitename = $sitename </div>";
     $tc.= "<div>Skin directory = $skin </div>";
@@ -2575,6 +2595,7 @@ function is_ssl() {
                 $hub["userAccess"] = $userAcesses[$i];
                 $hub["userEndpt"] = $userEndpts[$i];
                 $hub["hubName"] = $hubNames[$i];
+                $hub["hubId"] = $hubIds[$i];
                 $hub["hubAccess"] = $hubAccesses[$i];
                 $hub["hubEndpt"] = $hubEndpts[$i];
                 $hubs[] = $hub;
@@ -2990,15 +3011,22 @@ function is_ssl() {
         // if the hub number is given then use that hub
         // this will typically be true for GUI invoked calls to the api
         // to tell the api which hub to use for the request
+        // for clocks and other generic stuff this will be false
+        // which will default to using the first hub found
         if ( $hubnum!==false && $hubnum!==null && $hubnum < count($hubs) ) {
-            $hub = $hubs[$hubnum];
+            if ( $hubnum === -1 ) {
+                $hub = $hubs[0];
+                $hubType = "None";
+            } else {
+                $hub = $hubs[$hubnum];
+                $hubType = $hub["hubType"];
+            }
             $access_token = $hub["hubAccess"];
             $endpt = $hub["hubEndpt"];
             $hubHost = $hub["hubHost"];
             $hubEndpt = $hub["hubEndpt"];
             $clientId = $hub["clientId"];
             $clientSecret = $hub["clientSecret"];
-            $hubType = $hub["hubType"];
         }
 
         // set tileid from options if it isn't provided
@@ -3317,6 +3345,7 @@ function is_ssl() {
         // but only do this if we are not in kiosk mode
         $tc.= "<form>";
         $tc.= hidden("returnURL", $returnURL);
+        $tc.= hidden("pagename", "main");
         $tc.= hidden("allHubs", json_encode($hubs));
         if ( !$kioskmode ) {
             $tc.= "<div id=\"controlpanel\">";
