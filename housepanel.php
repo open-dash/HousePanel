@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.80       Merged multihub with master that included multi-tile api calls
  * 1.793      Cleaned up auth page GUI, bug fixes, added hub num & type to tiles 
  * 1.792      Updated but still beta update to multiple ST and HE hub support
  * 1.791      Multiple ST hub support and Analog Clock
@@ -105,7 +106,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.793');
+define('HPVERSION', 'Version 1.800');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 
 // developer debug options
@@ -2959,6 +2960,7 @@ function is_ssl() {
     else if ( isset($_POST["hubnum"]) ) { $hubnum = intval($_POST["hubnum"]); }
     
     // take care of auto and multiple tile stuff
+    // note - multiple tiles must be from the same hub
     $multicall = false;
     if ( $valid ) {
         if ( $swid==="" && $tileid && $options ) {
@@ -3008,7 +3010,6 @@ function is_ssl() {
              ($useajax==="doaction" || $useajax==="dohubitat") &&
              strpos($swid,",")!==false ) {
             $multicall = true;
-            // $multitiles = substr($swid,1,$len-2);
             $tilearray = explode(",",$swid);
             $typesave = $swtype;
             $valsave = $swval;
@@ -3087,7 +3088,7 @@ function is_ssl() {
         }
 
         // set tileid from options if it isn't provided
-        if ( !$multicall && !$tileid && $swid && $swtype!=="auto" && $options && $options["index"] ) {
+        if ( !$multicall && $tileid==="" && $swid && $swtype!=="auto" && $options && $options["index"] ) {
             $idx = $swtype . "|" . $swid;
             if ( array_key_exists($idx, $options["index"]) ) { 
                 $tileid = $options["index"][$idx]; 
