@@ -739,21 +739,25 @@ div.contact.mat.closed {
 }
 
 /* specific contact types one might find */
+div.door.garage {
+    cursor: pointer;
+}
+div.contact.door {
+    cursor: default;
+}
 div.door.open, div.contact.door.open {
     background-image: url('icons/opendoor.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 40px;
-    cursor: pointer;
 }
 div.door.closed, div.contact.door.closed {
     background-image: url('icons/closedoor.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 40px;
-    cursor: pointer;
 }
 /* hide the contact part of garage doors that include an embedded contact sensor */
 /*div.door-thing div.overlay.contact, div.garage.door.contact {*/
-div.garage.door.contact {
+div.door-thing.garage div.contact {
     display: none;
 }
 div.contact.window.open {
@@ -776,6 +780,11 @@ div.door.garage.closed {
     color: rgba(255, 255, 255, 0.01);
     background-size: 80px;
     height: 112px;
+    cursor: pointer;
+}
+
+/* custom tiles*/
+div.custom-thing div.custom.post {
     cursor: pointer;
 }
 
@@ -1223,7 +1232,7 @@ div.music.musicstatus, div.music.musicmute {
 }*/
 
 /* pistons */
-div.piston-thing {
+div.piston-thing, div.music.musicmute  {
     cursor: pointer;
 }
 div.piston.webcore {

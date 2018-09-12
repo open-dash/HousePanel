@@ -1420,7 +1420,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         // exec("python getarlo.py");
         $videodata = returnVideo($swval);
         $response = array("url" => $videodata);
-    } else if ($swtype==="custom") {
+    } else if ($swtype==="custom" && $subid==="post") {
         
         // each custom tile can have any number of lines defined in the hmoptions.cfg file
         // or it can make any number of web REST API calls using GET or POST
