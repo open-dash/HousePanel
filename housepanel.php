@@ -120,7 +120,7 @@ define('DEBUG5', false); // debug print included in output table
 define('DEBUG6', false); // debug misc
 define('DEBUG7', false); // debug misc
 
-define("DONATE", false);  // turn on or off the donate button
+define("DONATE", true);  // turn on or off the donate button
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -1943,6 +1943,9 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= hidden("options",1);
     $tc.= hidden("returnURL", $retpage);
     $tc.= hidden("pagename", "options");
+    $tc.= hidden("useajax", "saveoptions");
+    $tc.= hidden("id", "none");
+    $tc.= hidden("type", "none");
     $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/></div>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
@@ -1973,9 +1976,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name (type)" . "</th>";
     $tc.= "<th class=\"roomname\">Hub</th>";
    
-    // add columns for custom titles & icons
-    // $tc.= "<th class=\"customedit\">" . "Edit" . "</th>";
-    // $tc.= "<th class=\"customname\">" . "Display Name" . "</th>";     
     // list the room names in the proper order
     // for ($k=0; $k < count($roomoptions); $k++) {
     foreach ($roomoptions as $roomname => $k) {
@@ -2291,6 +2291,9 @@ function processOptions($optarray) {
             $newuseroptions = $val;
             $options["useroptions"] = $newuseroptions;
         }
+        
+        // this should now never be true but left it here anyway
+        // because now tile editing is only done from main screen
         else if ( $key=="cssdata") {
             writeCustomCss($val);
         }
@@ -2942,8 +2945,8 @@ function is_ssl() {
     $subid = "";
     $tileid = "";
 
-    if ( isset($_GET["useajax"]) ) { $useajax = filter_input(INPUT_GET, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
-    else if ( isset($_POST["useajax"]) ) { filter_input(INPUT_POST, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
+//    if ( isset($_GET["useajax"]) ) { $useajax = filter_input(INPUT_GET, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
+//    else if ( isset($_POST["useajax"]) ) { filter_input(INPUT_POST, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
     if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
     else if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
@@ -3088,7 +3091,7 @@ function is_ssl() {
         }
 
         // set tileid from options if it isn't provided
-        if ( !$multicall && $tileid==="" && $swid && $swtype!=="auto" && $options && $options["index"] ) {
+        if ( !$multicall && $tileid==="" && $swid && $swid!=="none" && $swtype!=="auto" && $options && $options["index"] ) {
             $idx = $swtype . "|" . $swid;
             if ( array_key_exists($idx, $options["index"]) ) { 
                 $tileid = $options["index"][$idx]; 
@@ -3283,11 +3286,10 @@ function is_ssl() {
                 break;
                 
             case "saveoptions":
-                if ( isset($_POST["cssdata"]) && isset($_POST["options"]) ) {
+                if ( isset($_POST["options"]) ) {
                     processOptions($_POST);
-                    echo "success";
-                } else {
-                    echo "error: invalid save options request";
+                    header("Location: $returnURL");
+                    exit(0);
                 }
                 break;
                 
@@ -3303,12 +3305,6 @@ function is_ssl() {
         exit(0);
     }
     
-    // final save options step involves reloading page via submit action
-    // because just about everything could have changed
-    if ( $valid && isset($_POST["options"])) {
-        header("Location: $returnURL");
-        exit(0);
-    }
 /*
  * *****************************************************************************
  * Display Main Page Section

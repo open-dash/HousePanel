@@ -751,69 +751,70 @@ function dynoForm(ajaxcall, content, idval, typeval) {
 
 function setupButtons() {
 
-//    $("#optionsbutton").on("click", null, function(evt) {
-    $("#controlpanel").on("click", "div.formbutton", function() {
-        var buttonid = $(this).attr("id");
-        if ( $(this).hasClass("confirm") ) {
-            var pos = {top: 100, left: 100};
-            createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
-                var clk = $(ui).attr("name");
-                if ( clk==="okay" ) {
-                    // handle page editor
-                    if ( buttonid == "editpage") {
-                        pageEdit();
-                    } else {
-                        var newForm = dynoForm(buttonid);
-                        newForm.submit();
-                    }
-                }
-            });
-        } else {
-            if ( buttonid == "editpage") {
-                pageEdit();
-            } else {
-                var newForm = dynoForm(buttonid);
-                newForm.submit();
-            }
-        }
-    });
-    
-    $("div.modeoptions").on("click","input.radioopts",function(evt){
-        var opmode = $(this).attr("value");
-        if ( opmode !== priorOpmode ) {
-            if ( priorOpmode === "Reorder" ) {
-                cancelSortable();
-                cancelPagemove();
-            } else if ( priorOpmode === "DragDrop" ) {
-                var filters = [];
-                $('input[name="useroptions[]"').each(function(){
-                    if ( $(this).prop("checked") ) {
-                        filters.push($(this).attr("value")); 
+    if ( pagename==="main" && !disablepub ) {
+        $("#controlpanel").on("click", "div.formbutton", function() {
+            var buttonid = $(this).attr("id");
+            if ( $(this).hasClass("confirm") ) {
+                var pos = {top: 100, left: 100};
+                createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
+                    var clk = $(ui).attr("name");
+                    if ( clk==="okay" ) {
+                        // handle page editor
+                        if ( buttonid == "editpage") {
+                            pageEdit();
+                        } else {
+                            var newForm = dynoForm(buttonid);
+                            newForm.submit();
+                        }
                     }
                 });
-//                alert(filters);
-                $.post(returnURL, 
-                    {useajax: "savefilters", id: 0, type: "none", value: filters, attr: opmode}
-                );
-                cancelDraggable();
-                delEditLink();
+            } else {
+                if ( buttonid == "editpage") {
+                    pageEdit();
+                } else {
+                    var newForm = dynoForm(buttonid);
+                    newForm.submit();
+                }
             }
-            
-            if ( opmode==="Reorder" ) {
-                setupSortable();
-                setupPagemove();
-            } else if ( opmode==="DragDrop" ) {
-                setupDraggable();
-                addEditLink();
-                
-            // reload page fresh if we are returning from drag mode to operate mode
-            } else if ( opmode==="Operate" && (priorOpmode === "DragDrop") ) {
-                location.reload(true);
+        });
+
+        $("div.modeoptions").on("click","input.radioopts",function(evt){
+            var opmode = $(this).attr("value");
+            if ( opmode !== priorOpmode ) {
+                if ( priorOpmode === "Reorder" ) {
+                    cancelSortable();
+                    cancelPagemove();
+                } else if ( priorOpmode === "DragDrop" ) {
+                    var filters = [];
+                    $('input[name="useroptions[]"').each(function(){
+                        if ( $(this).prop("checked") ) {
+                            filters.push($(this).attr("value")); 
+                        }
+                    });
+    //                alert(filters);
+                    $.post(returnURL, 
+                        {useajax: "savefilters", id: 0, type: "none", value: filters, attr: opmode}
+                    );
+                    cancelDraggable();
+                    delEditLink();
+                }
+
+                if ( opmode==="Reorder" ) {
+                    setupSortable();
+                    setupPagemove();
+                } else if ( opmode==="DragDrop" ) {
+                    setupDraggable();
+                    addEditLink();
+
+                // reload page fresh if we are returning from drag mode to operate mode
+                } else if ( opmode==="Operate" && (priorOpmode === "DragDrop") ) {
+                    location.reload(true);
+                }
+
+                priorOpmode = opmode;
             }
-            
-            priorOpmode = opmode;
-        }
-    });
+        });
+    }
 
     $("#controlpanel").on("click","div.restoretabs",function(evt){
         toggleTabs();
@@ -1081,35 +1082,8 @@ function pageEdit() {
 }
 
 function setupSaveButton() {
-    
     $("#submitoptions").click(function(evt) {
-        var sheet = document.getElementById('customtiles').sheet;
-        var sheetContents = "";
-        c=sheet.cssRules;
-        for(j=0;j<c.length;j++){
-            sheetContents += c[j].cssText;
-        };
-        var regex = /[{;}]/g;
-        var subst = "$&\n";
-        sheetContents = sheetContents.replace(regex, subst);
-        
-        // create form data from our table plus the custom edits
-        var alldata = new FormData(document.getElementById("optionspage"));
-        alldata.append("cssdata", sheetContents);
-        alldata.append("useajax", "saveoptions");
-        
-        var request = new XMLHttpRequest();
-        request.open('POST', 'housepanel.php', true);
-//        $response = $.post(returnURL, 
-//                    {useajax: "saveoptions", id: "", type: "", value: alldata, attr: ""}
-//        );
-        
-        request.send(alldata);
-        // console.log(request.response);
-        
-        // if (request.response == "success") {
-            $("form.options").submit(); 
-        // }
+        $("form.options").submit(); 
     });
 }
 

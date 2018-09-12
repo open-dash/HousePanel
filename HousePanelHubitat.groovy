@@ -437,8 +437,8 @@ def getThing(things, swid, item=null) {
 // make a generic thing list getter to streamline the code
 def getThings(resp, things, thingtype) {
 //    def resp = []
-//    def n  = things ? things.size() : 0
-//    if ( n > 0 ) { log.debug "Number of things of type ${thingtype} = ${n}" }
+    def n  = things ? things.size() : 0
+    log.debug "Number of things of type ${thingtype} = ${n}"
     things?.each {
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
