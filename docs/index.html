@@ -11,33 +11,45 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018</i><br/>
-<i>Version 1.77 as of August 15, 2018</i>
+<i>Version 1.80 as of September 14, 2018</i>
 </p>
 </div>
 
+<br /><br /><div><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="XS7MHW7XPYJA4">
+<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form></div>
+
+    
 <h1>Introduction</h1>
 HousePanel (HP) is the highly customizable open source
 web application dashboard for accessing and
 controlling a SmartThings or Hubitat equipped smart home from a Tablet, 
 Computer, or even Smart Phone.
 
-HP is designed to give the user full control over the look and feel of their panel controller.
+<p>HP is designed to give the user full control over the look and feel of their panel controller.
 It does require some effort to install and configure, but once set up, making fine tunings
-and adjustments are relatively simple.  Most customizations involve editing a CSS file.
-HP runs on a customer-provided web server and does not expose your personal data
-nor any details about your SmartThings environment to the developer or any other party.
-You are in total control. The default settings are designed by a professional web designer
-to create a highly acceptable user interface for non-technical people. This was the motive for
-writing HP in the first place. It is designed to not look and feel "geeky". By default the tiles 
-are large and colorful, placed on beautiful full color backgrounds. Finally, a more advanced
-application of HP is that it can be used as a text-based web service to return
+and adjustments are relatively simple.  Most customizations can be done from within
+the built-in web-based user interface, which includes a full featured tile editor, but
+major modifications involve editing a CSS file using industry standard protocols.</p>
+
+<p>HP runs on a customer-provided web server and does not expose your personal data
+nor any details about your environment to the developer or any other party.
+You are in total control. The default settings were designed by a professional web designer
+to create a highly acceptable user interface for non-technical people. 
+It is designed to not look and feel "geeky". By default the tiles 
+are large and colorful, placed on beautiful full color backgrounds.</p>
+
+<p>An advanced feature of HP is that it can be used as a text-based web service to return
 json strings of status about your home to any other web application. This advanced
 feature is mostly for developers and can be safely ignored, but if you are a developer
-then you should read the final section of this Wiki on Advanced Applications of HP.
+then you should read the final section of this Wiki on Advanced Applications of HP.</p>
 
 <h2>Features</h2>
-HousePanel can display and/or control most types of things in the 
-SmartThings ecosystem, including:
+HousePanel can display and/or control most types of things in a smart home 
+ecosystem, including:
 <ul>
     <li>switches 
     <li>dimmers 
@@ -47,11 +59,14 @@ SmartThings ecosystem, including:
     <li>contact
     <li>doors 
     <li>locks 
+    <li>presence
     <li>thermostats 
     <li>temperature sensors 
+    <li>illuminance sensors
     <li>motion sensors 
     <li>water sensors 
     <li>valves (sprinklers)
+    <li>smoke
 </ul>
 
 A number of special tiles are also supported, including: 
@@ -63,7 +78,7 @@ A number of special tiles are also supported, including:
     <li>mode
     <li>routines
     <li>weather
-    <li>iFrame web pages
+    <li>forecast (frame)
     <li>WebCoRE pistons,
     <li>video
     <li>custom
@@ -75,25 +90,29 @@ maximum flexibility in the layout of the pages. A relatively new capability
 of HP is the ability to include user-defined iFrame tiles. These are tiles
 that can contain any content from anywhere on the web using iFrame browser capabilities.
 To use this feature you will need to create a local "html" file with your
-desired iFrame content.
+desired iFrame content. By default HP comes with two html frames that shows
+a weather forecast in two different formats.
 <br/><br/>
 
 A very important feature of HousePanel is the Tab layout. All controllable things are presented on one
 of several Tabs that can be quickly swapped in and out of view. This uses the tabbed display capability
-of modern web browsers. Under the hood we use jQuery to make this efficient. This means that any
-number of user pages can be displayed, and on each page, any number of "things" can be shown
+of modern web browsers. Under the hood HP uses jQuery to make this efficient. This means that any
+number of pages can be displayed, and on each page, any number of "things" can be shown
 and controlled. Later in this document we will explain how to customize the names of pages and
-the number of pages used. The default is 6 pages and each page has a fixed name. Pages can be
-easily renamed from within the web app. We will show how to do this later.<br /><br />
+the number of pages used. A default page configuration is provided but pages can be
+easily renamed, deleted, or added when in Edit mode.<br /><br />
 
-Finally, for advanced users HousePanel is a highly flexible API that can
+For advanced users HousePanel is a highly flexible API that can
 serve as a web service to access your smart home devices from anywhere. 
-This only works for SmartThings items and is ignored for Hubitat connected devices.
-This feature requires users to make intelligent decisions about the tradeoff between ease of
-use and security. By default, using this capability requires each API call to include multiple
-fairly complex URL-encoded security codes. HP can be set up to override
-this by hard coding these codes into the configuration file. Instructions for doing this
-are in the advanced section of this Wiki.
+This works for SmartThings and Hubitat connected devices.
+This feature requires that users first authenticate their hubs using the GUI.
+API calls are possible without using prior GUI authentication if the user is willing
+to provide fairly complex URL-encoded security codes on the API command line.
+Instructions for using the API are in the advanced section of this Wiki.<br/><br/>
+
+The main page of HousePanel once installed and configured will look something like this:
+<div><img src="mainpage.png"></div>
+
 
 <h2>Requirements - What You Need to Use HousePanel</h2>
 HousePanel is a web application written in PHP and Javascript that is 
@@ -115,45 +134,7 @@ I also find the color code preview plugin to be useful for picking colors easily
 
 <h2>Server Options and Instructions</h2>
 
-<h3>Option 1 (not recommended) - A public facing hosted web server</h3>
-This option is perhaps the simplest and provides the most flexibility, but less security and speed than
-the other two options below. To use this option you need to simply create a directory on the server
-that hosts your public-facing web pages, such as "housepanel". For the purposes of this documentation
-we will assume that the directory name is "housepanel". You can use any method you like to do this
-but the easiest is probably using a full-featured FTP program. An important step before proceeding
-is to set the permissions of that directory to enable write access. How this is done depends a lot on
-what type of server you are using. Most public web servers are Linux and Apache based in which case
-you can use chmod 777 on the directory. Some FTP programs will support this, others won't. You may need
-to use the file browser function of your web hosting service to change the permissions to "777" which means
-the owner, groups, and the world can read and write to the folder.<br/><br/>
-
-<h3>Option 2 - Dedicated computer on your LAN</h3>
-This option has great flexibility and speed as well as more security 
-over a public facing web server. It is more secure because it runs on 
-your LAN and is typically not exposed to the Internet. Your home
-router shields all computers from the Internet from outside access 
-unless you bypass that using either DMZ or port forwarding. The 
-disadvantage is you can't access this server unless you are at home 
-and on the same network. This can be a big restriction but many people 
-don't control their smart homes using a panel when they are away, so 
-I personally don't think this is a major limitation. To use this option
-you will need to have a web server installed on your dedicated computer, 
-and you will need to leave that computer on at all times that you want 
-the panel to work. Instructions for installing Apache on a
-dedicated home PC or Mac can be found at http://www.apache.org <br/><br/>
-
-You will then need to install PHP on your web server and enable cUrl. 
-Instructions for doing this are beyond the scope of this Wiki. You 
-can find excellent instructions and examples for how to do this all over the
-Internet. As with the public web server option, you will also need to 
-set the permissions of the directory where you want to install 
-HousePanel. Since this is a local computer you can do this using standard
-methods for your local computer. On a PC this involves right-clicking on the directory and setting
-permissions. But first you will need to create the directory within your web hosting area.
-For example, make a directory called "housepanel" under c:\htdocs on a standard Apache install. I have
-not tested HousePanel on IIS but it should work fine.<br/><br/>
-
-<h3>Option 3 - Raspberry Pi (Best Option)</h3>
+<h3>Option 1 - Raspberry Pi (Best Option)</h3>
 This is by far my favorite and the strongly preferred option. 
 Raspberry Pi single board hobby computers are perfect
 for projects like HousePanel. This is because they take up very little space, use a small amount of energy,
@@ -204,6 +185,49 @@ Finally, restart Apache using:<br/><br/>
 sudo service apache2 restart
 </pre></blockquote>
 
+<h3>Option 2 - Dedicated computer on your LAN</h3>
+This option has great flexibility and speed. It is secure because it runs on 
+your LAN and is typically not exposed to the Internet. Your home
+router shields all computers from the Internet from outside access 
+unless you bypass that using either DMZ or port forwarding. The 
+disadvantage is you can't access this server unless you are at home 
+and on the same network. This can be a big restriction but many people 
+don't control their smart homes using a panel when they are away, so 
+I personally don't think this is a major limitation. To use this option
+you will need to have a web server installed on your dedicated computer, 
+and you will need to leave that computer on at all times that you want 
+the panel to work. Instructions for installing Apache on a
+dedicated home PC or Mac can be found at http://www.apache.org <br/><br/>
+
+You will then need to install PHP on your web server and enable cUrl. 
+Instructions for doing this are beyond the scope of this Wiki. You 
+can find excellent instructions and examples for how to do this all over the
+Internet. As with the public web server option, you will also need to 
+set the permissions of the directory where you want to install 
+HousePanel. Since this is a local computer you can do this using standard
+methods for your local computer. On a PC this involves right-clicking on the directory and setting
+permissions. But first you will need to create the directory within your web hosting area.
+For example, make a directory called "housepanel" under c:\htdocs on a standard Apache install. I have
+not tested HousePanel on IIS but it should work fine.<br/><br/>
+
+<h3>Option 3 (not recommended) - A public facing hosted web server</h3>
+This option is perhaps the simplest but has major security issues than
+the other two options. It will also respond much slower because all commands including
+polling to keep your panel current requires messages to be sent over the Internet.
+Using this option is <strong>STRONLY DISCOURAGED</strong> for these reasons.
+If you must use this option you should protect your website with some type of security
+such as a password and a robots file to prevent it from being discovered by search engines.<br/><br/>
+
+To use this option you need to create a directory on the server
+that hosts your public-facing web pages, such as "housepanel". For the purposes of this documentation
+we will assume that the directory name is "housepanel". You can use any method you like to do this
+but the easiest is probably using a full-featured FTP program. An important step before proceeding
+is to set the permissions of that directory to enable write access. How this is done depends a lot on
+what type of server you are using. Most public web servers are Linux and Apache based in which case
+you can use chmod 777 on the directory. Some FTP programs will support this, others won't. You may need
+to use the file browser function of your web hosting service to change the permissions to "777" which means
+the owner, groups, and the world can read and write to the folder.<br/><br/>
+
 <h2>Testing your PHP Web Server</h2>
 Before proceeding I highly recommend that you test your web server
 and confirm that it works with PHP and cUrl. To do that create a simple file with
@@ -232,19 +256,20 @@ web that can help you troubleshoot this and get it working before you proceed.
 
 <h2>Installing the HousePanel Application</h2>
 
-<h3>Install and Configure SmartApp groovy file(s)</h3>
+<h3>Install and Configure groovy file</h3>
 There are two groovy files that are used to operate HousePanel - one for SmartThings
-and one for Hubitat. The SmartThings version is call HousePanel.groovy
+and one for Hubitat. The SmartThings version is called HousePanel.groovy
 and it should be installed into your SmartThings smartapp IDE repository.
 The Hubitat version is called HousePanelHubitat.groovy and it should be
-installed into your Hubitate IDE on your local LAN.
+installed into your Hubitate IDE on your local LAN.<br/><br/>
 
-<ul>SmartThings - HousePanel.groovy</ul>
+<u>SmartThings - HousePanel.groovy</u>
 Unfortunately I was not able to get the SmartThings IDE option to work with my account
 so you will have to install this manually. 
-First, go to the HousePanel GitHub account at 
+First, open the HousePanel groovy file from the following GitHub account:
+<pre>
 <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
-and open the HousePanel.groovy file.
+</pre>
 
 With this file open click on the "raw" icon in the upper right corner.
 This will open a window showing just the "raw" lines of code. Copy the entire file
@@ -267,12 +292,11 @@ help make HousePanel get much better over time.<br/><br/>
 Before you leave the ST IDE, you will need to 
 enable OAUTH2 in the IDE app settings. To do this, select App Settings
 and turn on OAUTH2 in the options. This will reveal two long strings 
-of data called CLIENT_ID and 
-CLIENT_SECRET. 
+of data called CLIENT_ID and CLIENT_SECRET. 
 These values are important and must be copied and saved for use in the
-next step when you are configuring your web server.
+next step when you are configuring your web server.<br/><br/>
 
-<ul>Hubitat HousePanelHubitat.groovy</ul>
+<u>Hubitat HousePanelHubitat.groovy</u>
 HousePanel now supports Hubitat with or without SmartThings. If you are
 a Hubitat user, you will need to install the HousePanelHubitat.groovy
 file into the app section of the Hubitat webpage API. To do this,
@@ -286,16 +310,41 @@ Navigate back to your Hubitat IDE on your local LAN.
 Create a new App "from code" and name it HousePanel.groovy.
 DO NOT name it HousePanelHubitat.groovy. In the blank window that opens, paste
 the code that you copied to the clipboard here using Control-V or Command-V
-on a mac. Then select Save.
+on a mac. Then select Save.<br/><br/>
 
-Note that you can install either the SmartThings or Hubitat apps or both of them. They
+Before you leave the Hubitat Apps Code page, you will need to 
+enable OAUTH. To do this, click on the OAUTH button in the upper right corner
+of the Hubitat IDE page. This will open a window showing two long strings 
+of data called Client ID and Client Secret.  
+These values are important and must be copied and saved for use in the
+next step when you are configuring your web server.<br/><br/>
+
+You can install either the SmartThings or Hubitat app or both of them. They
 play nice with each other so you can use both together or one or the other. This feature
 is a great way to make a gradual transition from SmartThings over to Hubitat.
-The Hubitat app has an option for using only Hubitat that you can select when
-you add the instance of the app to the Hubitat system. This means the ST auth flow
-will be skipped. When a HousePanel app instance is created the credentials for Hubitat
-will also be automatically pushed to the web app. This only works if your web app
-is up and running already, so you should do the next step first. <br/><br/>
+As of Version 1.80, any number of Hubitat and SmartThings 
+hubs can be connected to the panel. Hooks are there for Wink and Vera support which will 
+come with time. I'm excited about this because I wrote this generally enough to 
+make future hub bindings easy to add.<br/>
+
+Other updates included in Version 1.80 are:
+
+<ul>
+<li>New analog clock (uses the CoolClock javascript plugin)
+<li>Music tiles now work on the Hubitat side
+<li>Authentication flow on Hubitat now uses standard OAUTH
+    <ul>
+   <li>support both local and cloud end point flow options
+   <li>the API URL will dictate which version you get
+    </ul>
+<li>Info page now shows hub details for each connected hub
+<li>New graphics included for use in the Tile Editor
+<li>Squashed numerous bugs including a long-standing empty page bug
+</ul>
+
+If you are upgrading from a prior version, Version 1.80 implements a new format for the hmoptions.cfg file.  
+Code is included to read and translate an old hmoptions.cfg file but it is probably not perfect, 
+so you may need to redo some of your setup.<br/><br/>
 
 <h3>Install PHP Code on Web Server</h3>
 In this step you will install the PHP application by copying the
@@ -321,11 +370,8 @@ Earlier versions of HousePanel required the creation of
 a file named "clientinfo.php".  This file will still be used if created
 but it is no longer required, so you can skip this section. If you proceed
 and create this file, it will supercede any parameters you provide in the app.
-The clientinfo.php file is where you can provide your CLIENT_ID and CLIENT_SECRET 
-constants from the installation of housepanel.groovy.
-You will find that information in the SmartThings IDE as
-described in the previous sections.
-The clientinfo.php file will look like this:
+This is strongly discouraged. The following documentation is here for legacy support reasons
+and should simply be ignored by all new users. The clientinfo.php file will look like this:
 
 <blockquote><pre>
 &lt;?php
@@ -355,6 +401,7 @@ define('USER_SITENAME',FALSE);
 
 </pre></blockquote>
 
+<div style="color: #cccccc">
 The first parameter to set is TIMEZONE to reflect where your house 
 is located. The times displayed will always be shown in this time zone.<br /><br />
 
@@ -387,7 +434,7 @@ generic SmartThings web service. The comments
 provided in the sample file above should give you a pretty good hint as to what
 these options are for and how they are used, but don't worry, we will
 explain this in detail later.
-
+</div>
 
 <h3>Set Server Permissions</h3>
 This step ensures that your web server can create and update as needed
@@ -397,7 +444,7 @@ program that allows file permissions to be established and edited. If you are
 using Option 1 then FTP is your best bet. Alternatively some web hosting
 services provide separate tools for setting permissions. Whichever method
 you use, the directory where you installed all the files must be set to
-read/write. In Linux/Unix terminology this is done using "chmod 666 /housepanel"
+read/write. In Linux/Unix terminology this is done using "chmod 777 /housepanel"
 assuming your directory name is /housepanel. If you are using Option 2
 then your local web server configuration tool should be used to set
 the directory to read/write. If you are using Option 3 - Raspberry Pi - then your
@@ -415,11 +462,11 @@ and complete that step:<br/><br/>
 <ul>
     <li>Web server set up with PHP configured
     <li>Confirmed that cUrl is activated in your PHP
-    <li>either... HousePanel.groovy installed in your SmartThings IDE with OAUTH2 activated
-    <li>and/or... HousePanelHubitat.groovy installed in your Hubitat IDE with OAUTH2 optionally activated
-    <li>either... clientinfo.php file includes your CLIENT_ID, CLIENT_SECRET, and ST_WEB for SmartThings
-    <li>and/or... clientinfo.php file includes HUBITAT_HOST, HUBITAT_ID, and HUBITAT_ACCESS_TOKEN for Hubitat
-    <li>kewashi/HousePanel files uploaded to its own directory on your web server
+    <li>either... HousePanel.groovy installed in your SmartThings IDE with OAUTH activated
+    <li>and/or... HousePanelHubitat.groovy installed in your Hubitat IDE with OAUTH activated
+    <li>known values of Client ID and Client Secret for all hubs you want to activate
+    <li>known value of API host for all hubs you want to activate and Hub ID for Hubitat
+    <li>HousePanel files from https://github.com/kewashi/HousePanel uploaded to its own directory on your web server
     <li>the directory above configured to read/write using "chmod 777 yourdirectory"
     <li>Web browser with javascrpt and cookies enabled
 </ul><br/>
@@ -427,59 +474,89 @@ and complete that step:<br/><br/>
 If all of the above is true, you are ready to run HousePanel for the first time.
 Before trying this on your Tablet or Cell phone, confirm that it loads
 properly in a desktop browser. I have tested HousePanel with Chrome
-(on a PC, iPhone, iPad, and Android table),
+(on a PC, iPhone, iPad, and Android tablet),
 Microsoft Edge (on a Windows 10 PC), 
 IE 11 (on a Windows 7 and Windows 10 PC), 
-Safari (on a Mac and iPhone), and Fully Kiosk Browser (on PC and an
-Android tablet). All have been confirmed to work but others options are
-likely to work as well. Fire tablets work as well but videos don't reload.<br /><br />
+Safari (on a Mac and iPhone), Silk on an Amazon Fire table, and Fully Kiosk Browser (on PC, an
+Android tablet, and an Amazon Fire tablet). All have been confirmed to work but others are
+likely to work as well. Fire tablets work as well if you use the APK to load Fully Kiosk Browser.
+The Silk browser works but it lacks a full screen mode and videos don't load properly.<br /><br />
 
-Chrome and Edge appear
-to work best and are fastest. Before testing make sure Cookies and Javascript are enabled.
+Fully Kiosk, Chrome, and Edge work the best in my experience. 
+Before testing make sure Cookies and Javascript are enabled.
 Browse to the web server that you installed in the first step and the directory
 where you stored HousePanel. Using the same name examples we have been using
 throughout this guide, that would be:
 
 <blockquote><pre>
-    http://192.168.1.50/HousePanel/housepanel.php
+    http://192.168.1.50/housepanel/housepanel.php
 </pre></blockquote>
 
-If all goes well, HousePanel will launch and display an authentication challenge.
-If this happens, congratulations - you are ready to proceed. If you are using
-a Hubitat only installation there is nothing else to do. All supported devices
-will just simply show up as options to include. If you selected Hubitat only
-then you will not get a prompt to authenticate ST; instead HP will just show your things
-on the Hubitat side. The authentication page is where you will provide the
-CLIENT_ID and CLIENT_SECRET information from the SmartThings OAUTH settings.
-Once these are provided, the app will redirect you to SmartThings to authenticate.
-Note that if you provided a clientinfo.php file, these values will be pre-populated.
+If all goes well, HousePanel will launch and display an authentication page.
+If this happens, congratulations - you are ready to proceed. 
+
 
 <h1>Running HousePanel</h1>
 
-<h2>SmartThings First Time Launch - Authenticating</h2>
+<h2>First Time Launch - Authenticating</h2>
 
 If you have used other Web-based SmartThings apps HousePanel should look familiar
-to you. This is where you provide your credentials. This should be the
-same username and password that you use to access the SmartThings Web IDE
-and your account online. It is this authentication step that prevents anyone
+to you. The authentication page is where you provide your credentials.  It looks as follows:
+
+<div> <img src="authpage.png"> </div>
+
+This authentication page is where you will provide the API Url,
+Client ID and Client Secret information from the OAUTH settings noted earlier.
+Note that if you provided a clientinfo.php file, these values will be pre-populated.
+The Hub Name field is optional and will be filled in automatically for SmartThings.
+Hubitat does not support this so you might want to name your panel here.
+Hub ID is only used on the Hubitat side and then only if you want HP to automatically
+determine your user-provided end point. Most users can ignore this and use the
+normal OAUTH flow which doesn't use the Hub ID. <br/><br/>
+
+The Fixed Access Token and Fixed Endpoint values are also optional. If provided
+you do not have to provide the Client ID and Client Secret values. You also will
+not be redirected to an auth challenge page. This option is provided for those
+who know their tokens and don't want to bother being challenged every time
+to enter their credentials when doing a reauth. Otherwise, to proceed you must provide
+the Client ID and Client Secret values. You also ALWAYS have to provide a valid API Url address
+Typical values for the API Url are:<br/>
+
+<table>
+    <tr><td>SmartThings:</td><td>https://graph.api.smarthings.com</td></tr>
+    <tr><td>Hubitat Local:</td><td>Your local IP address of your Hub, such as http://191.168.1.50</td></tr>
+    <tr><td>Hubitat Cloud:</td><td>https://oauth.cloud.hubitat.com</td></tr>
+</table>
+
+If you want local processing for Hubitat use the local version. If you want to be
+able to use your panel anywhere use the cloud version. 
+Once these are provided, select "Authorize Hub" and the app will redirect you 
+to the Hub's page. For local Hubitat processing
+there is no auth challenge. For the cloud versions you will have to provide your login information,
+and then you select all of the devices that you want HousePanel to control.
+Your login information should be the same information you use to 
+access the SmartThings or Hubitat account online.<br/><br/>
+
+It is this authentication step that prevents anyone
 from accessing your HousePanel installation. This is why it is important to
 protect this login information; otherwise, anyone who has it will also be
 able to access your HousePanel and control your smart home. On the other hand,
 if you installed HousePanel on a Raspberry Pi on your home local network, then
 only people with access to your home network will have access to HousePanel.
 This gives you one extra layer of protection and is why I prefer the
-Raspberry Pi installation option (see Option 3 in Section 1). This same
+Raspberry Pi installation option (see Option 1 in Section 1). This same
 extra layer of protection exists for Option 2 installations on a PC or Mac with 
 a web server, but such a server must stay on and can be more easily accessed
 via a keyboard than a rPi that has been tucked inside a cabinet. Anyway, 
 enough preaching about the benefits of the rPi install. <br/><br/>
 
-Once you have authenticated using your credentials, HousePanel will present
+For SmartThings hubs HousePanel will present
 a list of your hubs. Select which hub you want to associate with HP. Most
 people only have 1 hub so there isn't any decision to make here, but you will
 still need to explicitly click on the one hub that you have. I have two hubs
 so in my case I have to pick the one that I want to control. Anyway, after you
-click on the hub, all of the supported things will be shown in a list.<br/><br/>
+click on the hub, or in the case of Hubitat, after you authenticate,
+all supported things will be shown in a list.<br/><br/>
 
 This is where you select which things you want HousePanel to have the
 option of displaying and controlling. <strong>IMPORTANT!!</strong> I am saying the
@@ -487,13 +564,24 @@ option of displaying and controlling. <strong>IMPORTANT!!</strong> I am saying t
 It is just that ONLY the things selected here will be possible to display.
 The way you select what is displayed where and how they are displayed will be
 described in the next few sections. What I recommend doing here is to just
-select everything that is supported, which will be everything shown. In my
-installation the only thing I didn't include is a light that I have in my
+select everything that is supported in the most intuitive category. 
+For example, dimmer switches will show up on both the switch list and
+the switchlevel list. I would select it only on the switchlevel list, but you can do both.
+You might decide to exlude some devices. For instance, I excluded a light that I have in my
 food pantry that is activated by a door open sensor, since I don't
 ever anticipate needing to turn the lights on in a closed food pantry. Anyway,
-just select everything and you will be good to go. To finish this step click
+just select the things you want and you will be good to go. To finish this step click
 on the Save button at the bottom of the screen. This will be the moment you
 waited for...<br/><br/>
+
+You will then be redirected back to this same Authentication page where the number
+of devices read will be shown for the hub you selected. At this point you can
+authorize another hub following the same procedure. Just select the hub you want from
+the "Authorize which hub" drop down list and proceed accordingly. If you want to add
+a hub then select the last item which is always a new blank hub.
+If you are done authorizing hubs, select the "Done Authorizing" button at the bottom
+of the screen. This will show you the main HousePanel page and you'll be ready to start
+enjoying your panel.<br/><br/>
 
 What happens next is control is returned to HousePanel and the app starts by
 reading all things and their states that you selected. It then assigns unique
@@ -503,13 +591,11 @@ called hmoptions.cfg that is saved on your
 server. In our example case, it
 will be stored in: "http://192.168.1.50/housepanel/hmoptions.cfg". As an aside,
 this is why you had to do the step of making your server directory Read/Write.
-Without that setting HousePanel will not be able to save this file. As it turns
-out it will actually run just fine even if it can't create this file, but each
-time you run you will see the same default configuration. If all goes well
+Without that setting HousePanel will not be able to save this file. If all goes well
 HousePanel will then render the page and display it to you. It will look
 something like:<br/><br/>
 
-<div><img src="kitchen.png"></div>
+<div><img src="family.png"></div>
 
 If you are curious how HousePanel decides what thing to put in which room by
 default, here is how it does it. First, HP creates seven default rooms 
@@ -562,24 +648,35 @@ and each one has up and down arrows that can be clicked on to adjust
 the temperature setting. On music tiles, play, pause, skip, and stop 
 can also be clicked on. On dimmer tiles you change the intensity 
 of the light by moving the slider. When you do this
-the light will always come if it is off.
+the light will always come if it is off.<br/><br/>
+
+If you have the Javascript control panel open, clicking on things will return
+status information to that screen. This is a great way to see if your panel is working
+properly.
 
 <h2>Edit Mode: Moving Tiles Around</h2>
 One of the most exciting features of HousePanel is the ability to highly
 customize its look and feel. The first level of customization involves
 simply moving existing tiles around on a page. To do this, you need to enter
 edit mode using the Edit radio button on the bottom right corner of the screen.
-When you are in this mode, tiles can be moved around freely on the page. <br/><br/>
+When you are in this mode, tiles can be moved around freely on the page
+by clicking and dragging them with your mouse or finger. While edit mode is
+fully supported on a table, I strongly recommend that you do edits on a PC
+and then deploy your edited configuration to your tablet by simply doing a Reload.
+When in edit mode you can also rename pages, add pages, delete pages, add tiles using
+drag and drop from the library, delete tiles, and edit individual tiles in detail. Edit
+mode will look something like this:<br/><br/>
 
-The other things you can do in Edit mode include adding new things by dragging and dropping
-them from the things library, deleting things, or editing things. If you select
+<div><img src="editmode.png"></div>
+
+The green dots on the page tabs are used to edit the page names. The red dots are
+clicked on to delete a page. Delete shown on each tile is used to delete that tile. If you select
 delete, you will be prompted to confirm. Upon confirmation the tile will be
 removed from the room being displayed. If you select Edit the Tile Editor will launch.
-Use of the tile editor is documented elsewhere. <strong>Note: Changes made in
-Edit mode will only be permanent if your hmoptions.cfg file is read/write</strong>. 
+Use of the tile editor is documented elsewhere. 
 
 <h2>Reorder Mode: Changing Order of Rooms and Tiles</h2>
-You can apply select Reorder mode to enable the reordering of tiles and rooms.
+You can select Reorder mode to enable the reordering of tiles and rooms.
 The main difference of this mode is things are automatically snapped into
 place in this mode based on the order. This is also the only mode that
 allows room tabs to be moved around into a different order. To do this,
@@ -610,8 +707,9 @@ the default keywords, or to uncheck a thing that matched that you don't
 want shown in the default room. For example, in my installation I added a
 check to "Back Yard Rock" to the Outside room, and removed the
 "Garage Entry Door" from the Outside room. I also checked the clock row
-for every room so I have a clock on all pages. Finally, I also made a new room
-just for my thermostats. The following section explains how to do that.
+for every room so I have a clock on all pages.
+You should also notice that the hub number and type of each thing is shown
+in this table.<br/><br/>
 
 <h1>Customizing HousePanel</h1>
 
@@ -620,22 +718,28 @@ Some amazing work done by @nitwit in the SmartThings community inspired the
 development of a robust tile editor in HousePanel that can be used to modify
 the look of just about every element of every tile. To use the editor, select
 "Edit" mode in the radio buttons near the bottom of the page. Each tile will then
-show a green Edit link and a red Delete link. The Edit link will open the editor.
-The tile editor is a somewhat self-explanatory
-dialog box that will allow users to select items to style. You can click on any
-item in the tile or you can select the item from the drop down list.
+show a green Edit link and a red Delete link. The Edit link will open the following editor page.
+
+<div><img src="tileedit.png"></div>
+
+This window can be dragged around on the screen such that you
+can see the effects of edits made on the main screen immediately.
+Tile editor use is self-explanatory as it uses standard 
+dialog box features. To style a particular item, first click on it 
+in the tile display or you can select the item from the drop down list below the tile.
 Some items are hidden and can only be selected from the drop down list. For those
 items you can select them and then unhide them and style them however you like.
-The icon background will style the entire tile. So if you want an imaage background
+The icon background will style the entire tile. So if you want an image background
 on a tile, select "whole tile" and then pick the image you want. 
 The on or off state of some tiles can be toggled by clicking on the main icon. Some
-tiles have multi-state icons such as thermostats. Each click rotates to the next state.
+tiles have multi-state icons such as thermostats. Each click rotates to the next state.<br/><br/>
 
 There is even a gradient background feature to add some flair to your tiles. 
 The icon can be selected from
 your local subdirectory or it can be taken from the a library of standard Android icons.
 There is also a directory called "media" where you can load any custom images. By
 default this directory contains a number of interesting backgrounds you can use.
+This is how I used my photo in the presence tile.<br/><br/>
 
 I think you will enjoy tinkering with this feature. If you are more of a power
 user and want to fully control your own destiny, keep reading for how one would
@@ -656,10 +760,10 @@ upload them when you are ready to your server. If you are using NetBeans then
 that IDE can handle uploads for you automatically if you set up the project
 files with your FTP username and password. Doing this is beyond the scope of
 this Wiki but you can find instructions in the NetBeans help file. To begin
-customizing open the <span class="filename">housepanel.css file into your
+customizing open the housepanel.css file in your favorite text
 editor. That file will have many well designed defaults for most types of
 HTML classes and tags that you will find in the displayed webpage. In the
-following sections we define how you would alter these settings.
+following sections we define how you would alter some of these settings.
 
 <h3>Background Images on Tab Pages</h3>
 All tabbed pages inherit the property of the "div.panel" style that is
@@ -675,7 +779,6 @@ div.panel {
     -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
     -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
 }
-
 </pre></blockquote>
 So if you want all pages to by default to be squeezed onto 75% of the page
 you could change "width:100%" to "width:75%".<br/><br/>
@@ -712,7 +815,6 @@ div.panel-music, div.panel-theater, div.panel-entertainment {
 div.panel-thermostats, div.panel-thermostat {
   background-image: url('thermostat.jpg');
 }
-
 </pre></blockquote>
 If you want to change the background image just provide your custom image
 and upload it to your server and refer to it in the above section of the CSS.
@@ -738,9 +840,9 @@ div.thing {
     cursor: default;
     width: auto; 
     height: auto;
-}
-    
+}    
 </pre></blockquote>
+
 If you want all tiles displayed to be a different size or have a different border
 color, this is where you would specify your custom information.
 
@@ -755,9 +857,9 @@ things of type "switch" look a certain way, you would style the following block:
 div.switch {
     width: 118px;
     height: 112px;
-}    
-
+}
 </pre></blockquote>
+
 This would just style the switch portion of the tile. Each tile also has
 a title bar and potentially other elements. The entire tile can be styled by
 referencing "div.thing.switch-thing". This approach will take priority over
@@ -769,7 +871,6 @@ cat into all switch things, you could do that by doing something like:
 div.thing.switch-thing {
   background-image: url('mycat.jpg');
 }
-
 </pre></blockquote>
 
 <h3>Styling Things Based on State</h3>
@@ -838,14 +939,16 @@ tiles and how to customize them are described below.
 
 <h3>Blank Tiles</h3>
 Blanks are just that - blank. They are used as spacers. Four blanks
-are provided that can be added to any page using the Options feature
+are provided for SmartThings hubs and a different set of four blanks
+are provided for Hubitat hubs. Any of them can be added to any page using the Options feature
 described previously. All blanks are styled as transparent in a
 standard tile size. The div tag used to style all blanks is
 div.thing.blank-thing so this div can be 
 styled to make blanks look differently. For example, one might want
 to use blanks as dividing lines to separate tiles into sections.
-Four different blank sizes are provided under the names
-b1x1, b1x2, b2x1, and b2x2. The names indicate the default sizes of
+The four SmartThings blank sizes are provided under the names
+b1x1, b1x2, b2x1, and b2x2. The Hubitat blanks have the names
+h1x1, h1x2, h2x1, and h2x2. The names indicate the default sizes of
 these four blank tiles using the following default styling:
 
 <blockquote><pre>
@@ -885,8 +988,10 @@ hidden. It can be displayed and uniquely styled using the tag name of
 div.thingname.clock.
 
 <h3>Image Tiles</h3>
-Four place-holder image tiles are provided for end-user unique styling.
-These tiles are named "img1" through "img4" and are styled using
+Four place-holder image tiles are provided for end-user unique styling for
+each hub that is authenticated.
+These tiles are named "img1" through "img4" for SmartThings hubs
+and "himg1" through "himg4" for Hubitat hubs. THey are styled using
 the div tag div.thing.image-thing. By default
 this styling is a double-wide tile that forces the image to stretch
 to fill the tile (using background-size: cover). Each individual
@@ -902,9 +1007,18 @@ div.image.url.img1 {
 In the above example the jpg file must be on the same server as
 the HousePanel app and in the same directory as the CSS file, but
 any valid Web URL can be provided here. The other three img tags
-can be similarly styled.
+can be similarly styled.<br/><br/>
 
-There are some amazing example in the SmartThings community for how
+<h3>Frame Tiles</h3>
+Four frame tiles are provided for end-user custom display of arbitrary web content.
+These tiles are named "frame1" through "frame4". THey are styled using
+the tag div.thing.frame-thing. By default
+this styling points to a forecast web page in two styles.
+Modifying frames requires a code edit in the housepanel.php file.
+You should only do this if you are comfortable with coding.
+Search for forecast.html or accuweather.html to locate where to make the changes.<br/><br/>
+
+There are some amazing examples in the SmartThings community for how
 to customize the styling of img tags to do things ranging from
 live video feeds to 5-day forecasts. The sky is the limit. I encourage
 you to browse the forum to get ideas for taking your HP to new heights.
@@ -1212,38 +1326,32 @@ The file looks like this.
 }    
 </pre></blockquote>
 
-Actually, the "things" section now looks far more intimidating becuase it has
+Actually, the "things" section now looks far more complex because it has
 tile location and custom names in each item. If you don't know how to preserve
 this then you should just stick with using the visual editor.
 The part not shown and represented by "..." is a long list of things with their
-corresponding unique SmartThings ID's. These should not be edited manually.
+corresponding unique hub ID's. These should not be edited manually.
 Finally, each item in the "things" list can be a single
 integer or an array of four integers plus a string. If the latter, the next two integers
 are offsets where the icon is physically displayed, the last integer is the z-index
 and the string is the custom tile name. This is normally established
 dynamically when tiles are dragged around screen but the user is free to edit
-these in the hmoptions.cfg file if wanted.
-
+these in the hmoptions.cfg file if wanted.<br/><br/>
 
 Important!!! Please be sure to confirm that your uploaded
 hmoptions.cfg file retains read/write privileges after you upload it.
 Many FTP programs do not retain the permissions of files when they
 are overwritten. Once you have made this change, you will need to force
 a re-read of your things and the room configuration. The easiest way
-to do this is to load the page with the following:
-
-<blockquote><pre>
-yoururl/housepanel.php?useajax=showoptions
-</pre></blockquote>
-
-This will force open the options page which in turn forces the app to
+to do this is to click the "Refresh" button on the bottom left of the main screen.
+This will force the app to
 re-load all of your rooms and things, so your new room setup will be active.
 
 <h2>Kiosk Mode</h2>
 To run HousePanel in Kiosk mode, first you will need to download a good
 kiosk mode browser. I like the 
-<a href="https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0ahUKEwjNtJujjO7XAhWH3oMKHXYUAE8QFgguMAA&url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dde.ozerov.fully%26hl%3Den&usg=AOvVaw1sb1EFJxp9AgPk5En_6jIc">
-Fully Kiosk</a> browser for Android tablets. For iOS iPAD tablets you will
+<a href="https://www.ozerov.de/fully-kiosk-browser/">
+Fully Kiosk Browser</a> for Android or Amazon Fire tablets. For iOS iPAD tablets you will
 have to research other options. You can also use Safari to then put the
 page on the iOS desktop to create a Kiosk effect. Once you have that then
 turning on kiosk mode will remove the Options button from the bottom of the
@@ -1251,7 +1359,7 @@ options page. On the options page, type in "true" for the kiosk option text.
 Only this word "true" will be recognized to turn on kiosk mode. Any other word
 will leave the Options button active. Be aware that once you turn kiosk mode
 on the only way to turn it back off is to force HousePanel to display the
-options page again using the same method described above. Again, this is:
+options page again by entering:
 
 <blockquote><pre>
 yoururl/housepanel.php?useajax=showoptions
@@ -1279,31 +1387,29 @@ you to write a complex and rich application using modern scripting
 tools like Python to control your smart home. Keep reading to find out how.<br/><br/>
 
 <h2>Getting Access and Endpoint Information</h2>
-To use HousePanel as an EndPoint start by launching your browser and invoking:
-
-<blockquote><pre>
-yoururl/housepanel.php?useajax=showid
-</pre></blockquote>
-
+To use HousePanel as an EndPoint start by loading HP as usual and then
+selected "Show Info" from the buttons on the bottom of the page. 
 This will retrieve a page that gives you all the info you need to 
 make the web service call using tools like Python or an EventGhost script.
 
 The page returned will look something like this:
 
-<p><img width="690" src="https://cdn-enterprise.discourse.org/smartthings/uploads/default/original/3X/8/3/832dc973336c5c7ea6c67df41e85d00055699a67.png"></p>
+<div><img src="showinfo.png"></div>
 
 <h2>HousePanel API Syntax</h2>
 The full syntax for calling the HousePanel API is:
 
 <blockquote><pre>
-yoururl/housepanel.php?useajax=[doquery|doaction]&hmtoken=xxxx&hmendpoint=zzzz&
-  id=abcd&type=thetype&value=thevalue&attr=theattr
+yoururl/housepanel.php?useajax=[doquery|doaction]&st_access=xxxx&st_endpt=zzzz&
+  [id=abcd|tile=123]&type=thetype&value=thevalue&attr=theattr
 </pre></blockquote>
 
 where, <br />
 
 <ul>
 <li> either doquery or doaction must be provided
+<li> abcd is the unique id of the tile
+<li> 1234 is the unique tile number of the tile
 <li> xxxx is the full access_token returned by the useajax=showid call above
 <li> zzzz is the full endpt returned by the useajax=showid call above
 <li> thetype is the type of thing, such as switch, motion, contact, thermostat, etc
@@ -1311,44 +1417,18 @@ where, <br />
 <li> theattr is a settings value such as a number when dimming lights
 </ul>
 
-If you are fine with providing the access token and endpoint information 
-as command line parameters, or if you authenticated HousePanel on the same 
-computer that you plan to make API calls from (in which case you can skip
-providing these parameters as they will be read from a Cookie), 
-then you are all set and can skip the next section. Otherwise, keep reading. 
-
-<h2>Hard Coded Authentication</h2>
-To simplify the API calls your computer can either be previously
-authenticated and have the ability to save cookies. If this is not possible
-you can save your authentication information in the clientinfo.php 
-configuration file described earlier in the Wiki. The last section of that file 
-looks as follows:
-
-<blockquote><pre>
-// provide the access_token and endpt values below if your browser does not support cookies
-// this can also be used to skip the authentication step if you are operating in a secure internal environment
-// *** WARNING *** do not do this if your website is exposed to the world and discoverable via search
-//                              doing so will enable anyone in the world to control your home
-// the access_token and endpt information can be obtained by going through authentication once
-// and then loading your webpage using mypanel.com/housepanel.php?useajax=showid
-// this will return a page with the access_point and endpt data plus other info about your devices
-define('USER_ACCESS_TOKEN',FALSE);
-define('USER_ENDPT',FALSE);
-define('USER_SITENAME',FALSE);
-</pre></blockquote>
-
-The information you need to include here is at the top of the page returned
-in the prior call using "?useajax=showid". Just copy and paste that information
-into the file above and re-upload it to your server. This will make the API 
-calls work from any computer that can access your HousePanel website. As an
-added bonus this will mean you will never have to re-authenticate, unless
-you ask it to from the Options page. If you change the groovy code in the
-SmartThings IDE you will need to update this information by call ?useajax=showid
-again.<br/>
+Either id or tile number must be provided, but not both. You also have the
+option of providing an array of tile numbers or id's separated by commas
+and each device listed will be acted on in a single API call.
+The access and endpt values are optional if you have already authenticated HP.
+Otherwise, you must provide these values on the API command line. 
+To simplify making API calls your computer should be previously authenticated.
+Note - previous versions of HP stored auth values in cookies. This is no
+longer done. Instead the auth values are stored on the server in the
+hmoptions.cfg file so API calls will always work if the hub was authenticated.
 
 <h2>Calling the HousePanel API</h2>
-Once you have the endpoint info above and confirmed that your access information
-has been encoded either in a stored cookie or in the clientinfo.php file (see above),
+Once you have the endpoint info above,
 you are ready to use the API to turn on any switch, query any thing,
 or do any other action that HousePanel knows how to do. 
 There are two types of API calls: actions and queries. Actions are done
@@ -1363,7 +1443,6 @@ or
 
 yoururl/housepanel.php?useajax=doquery?id=abcd1234...
 </pre></blockquote>
-
 
 Of course you have to use the full id from the list returned by showid. 
 The first call will toggle the switch matching the id. 
@@ -1417,14 +1496,8 @@ If you are using a browser or other tool that can read the REST response, you wi
 a json string with the post-action status. The above examples performed on
 a light dimmer return a string like this: {"switch":"on","level":75}.<br/>
 
-More complex things return longer json strings. For example, a lock thing when
-queried using doquery will return something that looks like:
-
-<blockquote><pre>
-{"battery":83,"lock":"locked"}
-</pre></blockquote>
-
-Thermostats will return the following type of result:
+More complex things return longer json strings. For example, 
+thermostats will return the following type of result:
 
 <blockquote><pre>
 {"temperature":75,"heat":68,"cool":72,"thermofan":"fanAuto","thermomode":"cool","thermostate":"cooling"}
@@ -1437,10 +1510,14 @@ might want to "fake" the activation of a motion sensor, the API supportsf
 sending "active" or "move" in the value parameter. This will set the
 motion device type to active. Any other value sent will set it to inactive.
 For this bit of magic to work, you must use a custom Motion Sensor device
-type for any motion sensor that you want to trick this way. The custom 
-device type is called MotionZwaveManual.groovy and is found in the main 
+type for any motion sensor that you want to trick this way. 
+
+<blockquote>
+The custom device type is called MotionZwaveManual.groovy and is found in the main 
 folder of the HousePanel GitHub. Note that this only works on Zwave motion sensors
-so please don't try this on the SmartThings ZigBee based motion sensors. <br /><br />
+so please don't try this on the SmartThings ZigBee based motion sensors.
+</blockquote>
+<br /><br />
 
 One of the exciting things about this feature is it enables one to control
 their smart home from apps like <a href="http://www.eventghost.net/">EventGhost</a>.

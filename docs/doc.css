@@ -11,7 +11,7 @@ body {
     color: #ffffff;
 }
 div.main {
-    background-color: #eeebe7;
+    background-color: #ffffff;
     color: black;
     width: 80%;
     margin-top: 0;
@@ -43,25 +43,28 @@ h3 {
 }
 
 img {
-    width: 800px;
     margin-top: 20px;
     margin-bottom: 20px;
+    max-width: 95%;
 }
 div.center {
     text-align: center;
 }
 blockquote, div.code {
-    font-size: 11pt;
-    color: #3333ff;
+    font-size: 14pt;
+    background-color: #cccccc;
+    border: 2px black solid;
 }
-span.var {
-    font-family: "Times New Roman", serif;
-    font-style: italic;
-    font-weight: bold;
-    color: #1ccc20;
+table {
+    color: black;
+    background-color: #eeeeee;
+    width: 80%;
+    margin-left: 5%;
+    margin-top: 20px;
+    margin-bottom: 10px;
 }
-.debug, .error {
-  background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
+td {
+    font-size: 14pt;
 }
 .hidden {
     display: none;

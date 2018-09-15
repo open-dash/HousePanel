@@ -343,13 +343,11 @@ function initDialogBinds(str_type, thingindex) {
     }
 //    console.log ("csstarget = " + cssRuleTarget + " txt= " + csstext);
     
-    $("#editName").on('input', function (event) {
+    $("#editName").on('input', function () {
         var target1 = "#wysiwyg span.original.n_"+thingindex;
-        // var target2 = "div.customname.m_"+thingindex+"::after";
-        // addCSSRule(target1, "display: none");
-        var newsize = parseInt( $("#tileWidth").val() );
-        var rule = "width: " + newsize.toString() + "px;";
-        addCSSRule(target1, rule);
+//        var newsize = parseInt( $("#tileWidth").val() );
+//        var rule = "width: " + newsize.toString() + "px;";
+//        addCSSRule(target1, rule);
 
         var newname = $("#editName").val();
         $(target1).html(newname);
