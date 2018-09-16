@@ -1409,7 +1409,13 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
     // update trigger tile first
     // alert("trigger= "+trigger+" aid= "+aid+" bid= "+bid+" type= "+thetype+" pvalue= "+strObject(pvalue));
     if ( trigger !== "slider") {
-        updateTile(aid, pvalue);
+        if ( thetype==="lock" || thetype==="door" || thetype==="music" ) {
+            setTimeout(function() {
+                updateTile(aid, pvalue);
+            }, 3000);
+        } else {
+            updateTile(aid, pvalue);
+        }
     }
     
     // for music tiles, wait few seconds and refresh again to get new info
@@ -1420,7 +1426,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
     }
     
     // for doors wait before refresh to give garage time to open or close
-    if (thetype==="door") {
+    if (thetype==="door" || thetype==="lock") {
         setTimeout(function() {
             refreshTile(aid, bid, thetype, hubnum);
         }, 15000);
