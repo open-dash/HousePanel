@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.801      Squashed a bug when tile instead of id was used to invoke the API
  * 1.80       Merged multihub with master that included multi-tile api calls
  * 1.793      Cleaned up auth page GUI, bug fixes, added hub num & type to tiles 
  * 1.792      Updated but still beta update to multiple ST and HE hub support
@@ -2983,7 +2984,7 @@ function is_ssl() {
                 $swattr = array();
                 $subid = array();
                 foreach($tilearray as $atile) {
-                    $idx = array_search($atile, $oldoptions["index"]);
+                    $idx = array_search($atile, $options["index"]);
                     $k = strpos($idx,"|");
                     $swtype[] = substr($idx, 0, $k);
                     $swid[] = substr($idx, $k+1);
@@ -2995,7 +2996,7 @@ function is_ssl() {
 //                exit(0);
                 
             } else {
-                $idx = array_search($tileid, $oldoptions["index"]);
+                $idx = array_search($tileid, $options["index"]);
                 $k = strpos($idx,"|");
                 $swtype = substr($idx, 0, $k);
                 $swid = substr($idx, $k+1);
