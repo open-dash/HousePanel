@@ -1506,6 +1506,9 @@ div.bulb.color, div.light.color {
     cursor: pointer;
     z-index: 9999;
 }
+div.bulb.colorMode {
+    display: none;
+}
 
 div.custom-thing {
     height: 150px;

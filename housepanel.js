@@ -1412,21 +1412,21 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
         if ( thetype==="lock" || thetype==="door" || thetype==="music" ) {
             setTimeout(function() {
                 updateTile(aid, pvalue);
-            }, 3000);
+            }, 1000);
         } else {
             updateTile(aid, pvalue);
         }
     }
     
-    // for music tiles, wait few seconds and refresh again to get new info
-    if (thetype==="music") {
+    // for music and lock tiles, wait few seconds and refresh again to get new info
+    if (thetype==="music" || thetype==="lock") {
         setTimeout(function() {
             refreshTile(aid, bid, thetype, hubnum);
         }, 3000);
     }
     
     // for doors wait before refresh to give garage time to open or close
-    if (thetype==="door" || thetype==="lock") {
+    if (thetype==="door") {
         setTimeout(function() {
             refreshTile(aid, bid, thetype, hubnum);
         }, 15000);
