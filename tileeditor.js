@@ -344,7 +344,7 @@ function initDialogBinds(str_type, thingindex) {
 //    console.log ("csstarget = " + cssRuleTarget + " txt= " + csstext);
     
     $("#editName").on('input', function () {
-        var target1 = "#wysiwyg span.original.n_"+thingindex;
+        var target1 = "span.original.n_"+thingindex;
 //        var newsize = parseInt( $("#tileWidth").val() );
 //        var rule = "width: " + newsize.toString() + "px;";
 //        addCSSRule(target1, rule);
@@ -961,7 +961,7 @@ function saveTileEdit(str_type, thingindex, newname) {
         {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
-                console.log("POST success"); // Custom CSS saved:\n"+ presult );
+                console.log("POST success - newname = " + newname + " id= "+thingindex); // Custom CSS saved:\n"+ presult );
             } else {
                 console.log("POST error= " + pstatus);
             }

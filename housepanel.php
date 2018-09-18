@@ -1066,7 +1066,17 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
     // fixed this to return name in the right place and support multiple tiles
     } else if ( $thingtype === "video") {
         $thingpr = $thingname;
+        if ( $customname ) { 
+            $thingpr = $customname; 
+        }
         $vidname = $thingvalue["url"];
+        
+        // if user sets name to a mp4 value then use that for video file name
+        if ( strpos($customname,".mp4") !== false &&
+                file_exists("media/$customname") ) {
+            $vidname = "media/$customname";
+        }
+        
         $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $thingpr . "</span>";
         // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
