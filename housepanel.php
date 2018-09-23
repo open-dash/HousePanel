@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.802      Password option implemented - leave blank to bypass
  * 1.801      Squashed a bug when tile instead of id was used to invoke the API
  * 1.80       Merged multihub with master that included multi-tile api calls
  * 1.793      Cleaned up auth page GUI, bug fixes, added hub num & type to tiles 
@@ -107,8 +108,9 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.800');
+define('HPVERSION', 'Version 1.802');
 define('APPNAME', 'HousePanel ' . HPVERSION);
+define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
@@ -375,7 +377,7 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
 
 }
 
-function tsk($timezone, $skin, $kiosk) {
+function tsk($timezone, $skin, $kiosk, $pword) {
 
     $tc= "";
     $tc.= "<div><label class=\"startupinp\">Timezone: </label>";
@@ -383,6 +385,9 @@ function tsk($timezone, $skin, $kiosk) {
 
     $tc.= "<div><label class=\"startupinp\">Skin Directory: </label>";
     $tc.= "<input class=\"startupinp\" name=\"skindir\" width=\"80\" type=\"text\" value=\"$skin\"/></div>"; 
+
+    $tc.= "<div><label class=\"startupinp\">Login Password: </label>";
+    $tc.= "<input class=\"startupinp\" name=\"pword\" width=\"80\" type=\"password\" value=\"\"/></div>"; 
 
     $tc.= "<div>";
     if ( $kiosk ) { $kstr = "checked"; } else { $kstr = ""; }
@@ -493,6 +498,11 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $kiosk = false;
         }
 
+        if ( array_key_exists("pword", $configoptions) ) {
+            $pword = $configoptions["pword"];
+        } else {
+            $pword = "";
+        }
         // make an empty new hub for adding new ones
         $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
                         "clientId"=>"", "clientSecret"=>"",
@@ -595,6 +605,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         // This is useful for triggering Stringify flows with custom tiles
         $rewrite = true;
         $timezone = date_default_timezone_get();
+        $skin = "skin-housepanel";
+        $kiosk = false;
+        $pword = "";
         
         $hubs = array();
     }
@@ -722,7 +735,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
-            "hubs" => $hubs
+            "hubs" => $hubs,
+            "pword" => $pword
         );
         
         $options["config"] = $configoptions;
@@ -772,7 +786,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= hidden("hubnum", $i);
 
         // ------------------ general settings ----------------------------------
-        $tc.= tsk($timezone, $skin, $kiosk);
+        $tc.= tsk($timezone, $skin, $kiosk, $pword);
 
         if ( $hubset!==null && $newthings!==null && is_array($newthings) && intval($hubset)===intval($i) ) {
             $numnewthings = count($newthings);
@@ -1295,7 +1309,6 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
             $thingid = array_search($kindex, $indexoptions);
             
             // if our thing is still in the master list, show it
-            // otherwise remove it from the options and flag cookie setting
             if ($thingid && array_key_exists($thingid, $allthings)) {
                 $thesensor = $allthings[$thingid];
                 if ( DEBUG || DEBUG3 ) {
@@ -2573,6 +2586,13 @@ function is_ssl() {
         $kiosk = false;
         if ( isset( $_POST["use_kiosk"]) ) { $kiosk = true; }
         
+        // get password
+        if ( isset( $_POST["pword"]) ) {
+            $pword = $_POST["pword"];
+        } else {
+            $pword = "";
+        }
+        
         $hubType = filter_input(INPUT_POST, "hubType", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubHost = filter_input(INPUT_POST, "hubHost", FILTER_SANITIZE_SPECIAL_CHARS);
         $clientId = filter_input(INPUT_POST, "clientId", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -2587,6 +2607,17 @@ function is_ssl() {
         // read the prior options
         $options = readOptions();
         $configoptions = $options["config"];
+        
+        // either keep the old password or replace if user gave new one
+        if ( $pword!=="" || !array_key_exists("pword", $configoptions) ) {
+            if ( $pword==="" ) {
+                $pword = "";
+            } else {
+                $pword = crypt($pword, CRYPTSALT);
+            }
+        } else {
+            $pword = $configoptions["pword"];
+        }
         $hubs = array();
 
         // get the array of hubs if old style
@@ -2649,7 +2680,8 @@ function is_ssl() {
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
-            "hubs" => $hubs
+            "hubs" => $hubs,
+            "pword" => $pword
         );
         $options["config"] = $configoptions;
 
@@ -2750,6 +2782,7 @@ function is_ssl() {
         $hubs = $configoptions["hubs"];
         $hub = $hubs[$hubnum];
         $hubType = $hub["hubType"];
+        $hubName = $hub["hubName"];
         $hubHost = $hub["hubHost"];
         $clientId = $hub["clientId"];
         $clientSecret = $hub["clientSecret"];
@@ -2764,7 +2797,7 @@ function is_ssl() {
         if ($token) {
             $endptinfo = getEndpoint($token, $hubHost, $clientId, $hubType);
             $endpt = $endptinfo[0];
-            if ( $endptinfo[1] ) {
+            if ( $endptinfo[1] && $hubType==="SmartThings" && $hubName==="" ) {
                 $hubName = $endptinfo[1];
             }
 
@@ -3304,6 +3337,20 @@ function is_ssl() {
                 }
                 break;
                 
+            case "dologin":
+                if ( isset($_POST["pword"]) ) {
+                    $pword = $_POST["pword"];
+                    if ( $pword==="" ) {
+                        setcookie("pword",$pword, $expirz, "/");
+                    } else {
+                        $pword = crypt($pword, CRYPTSALT);
+                        setcookie("pword",$pword, $expiry, "/");
+                    }
+                    header("Location: $returnURL");
+                    exit(0);
+                }
+                break;
+                
             case "cancelauth":
                 unset($_SESSION["hpcode"]);
                 echo "success";
@@ -3327,118 +3374,149 @@ function is_ssl() {
         $configoptions = $options["config"];
         $hubs = $configoptions["hubs"];
         $hubcount = count($hubs);
-
+        
         // set up time zone
         $timezone = $configoptions["timezone"];
         date_default_timezone_set($timezone);
-        
+
         // get the skin directory name or use the default
         $skin = $configoptions["skin"];
         if (! $skin || !file_exists("$skin/housepanel.css") ) {
             $skin = "skin-housepanel";
             $configoptions["skin"] = $skin;
         }
-
-        // get kiosk mode
-        $kiosk = $configoptions["kiosk"];
-        $kioskmode = ($kiosk===true || strtolower($kiosk)==="yes" || 
-                      $kiosk==="true" || intval($kiosk)===1 );
         
-        // get all the things from all the hubs
-        $allthings = getAllThings($configoptions);
-        $thingoptions = $options["things"];
-        $roomoptions = $options["rooms"];
-        $indexoptions = $options["index"];
-
-        // create defaults if nothing setup
-        $maxroom = 0;
-        foreach ($thingoptions as $roomname => $thinglist) {
-            if ( count($thinglist) > $maxroom ) {
-                $maxroom = count($thinglist);
+        $pword = $configoptions["pword"];
+        
+        // check for password unless blank
+        if ( $pword!=="" ) {
+            if ( isset($_COOKIE["pword"]) && $pword===$_COOKIE["pword"] ) {
+                $login = true;
+            } else {
+                $login = false;
             }
-        }
-
-        // if no room has more than 2 things setup defaults
-        // i picked 3 because clocks and weather are typically always there
-        if ( $maxroom < 3 ) {
-            $options = setDefaults($options, $allthings);
-            writeOptions($options);
+        } else {
+            $login = true;
         }
         
-        // check if custom tile CSS is present
-        if ( !file_exists("customtiles.css")) {
-            writeCustomCss("");
-        }
-
-        if (DEBUG || DEBUG5) {
-            $tc.= "<h2>Allthings</h2>";
-            $tc.= "<div class='debug'><pre>" . print_r($allthings,true) . "</pre></div>";
-            $tc.= "<hr><h2>Options</h2>";
-            $tc.= "<div class='debug'><pre>" . print_r($options,true) . "</pre></div>";
-        }
-
-        // new wrapper around catalog and things but excluding buttons
-        $tc.= '<div id="dragregion">';
-        
-        $tc.= '<div id="tabs"><ul id="roomtabs">';
-        // show all room with whatever index number assuming unique
-        foreach ($roomoptions as $room => $k) {
+        if ( !$login ) {
+            $tc = "<h2>" . APPNAME . "</h2>";
+            $tc.= "<br /><br />";
+            $tc.= "<form name=\"login\" action=\"$returnURL\"  method=\"POST\">";
+            $tc.= hidden("returnURL", $returnURL);
+            $tc.= hidden("pagename", "login");
+            $tc.= hidden("useajax", "dologin");
+            $tc.= hidden("id", "none");
+            $tc.= hidden("type", "none");
+            $tc.= "<div>";
+            $tc.= "<label class=\"startupinp\">Enter Password: </label>";
+            $tc.= "<input name=\"pword\" width=\"40\" type=\"password\" value=\"$pword\"/>"; 
+            $tc.= "<br /><br />";
+            $tc.= "<input class=\"submitbutton\" value=\"Login\" name=\"submit\" type=\"submit\" />";
+            $tc.= "</div>";
+            $tc.= "</form>";
+        } else {
             
-            // get name of the room in this column
-            // $room = array_search($k, $roomoptions);
-            
-            // use the list of things in this room
-            if ($room) {
-                $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
-            }
-        }
-        
-        $tc.= '</ul>';
-        $cnt = 0;
+            // get kiosk mode
+            $kiosk = $configoptions["kiosk"];
+            $kioskmode = ($kiosk===true || strtolower($kiosk)==="yes" || 
+                          $kiosk==="true" || intval($kiosk)===1 );
 
-        // changed this to show rooms in the order listed
-        // this is so we just need to rewrite order to make sortable permanent
-        foreach ($roomoptions as $room => $kroom) {
-            if ( key_exists($room, $thingoptions)) {
-                $things = $thingoptions[$room];
-                $tc.= getNewPage($cnt, $allthings, $room, $kroom, $things, $indexoptions, $kioskmode);
-            }
-        }
-        
-        // end of the tabs
-        $tc.= "</div>";
-        
-        // add catalog on right
-        // $tc.= getCatalog($allthings);
-        
-        // end drag region enclosing catalog and main things
-        $tc.= "</div>";
-        
-        // create button to show the Options page instead of as a Tab
-        // but only do this if we are not in kiosk mode
-        $tc.= "<form>";
-        $tc.= hidden("returnURL", $returnURL);
-        $tc.= hidden("pagename", "main");
-        $tc.= hidden("allHubs", json_encode($hubs));
-        if ( !$kioskmode ) {
-            $tc.= "<div id=\"controlpanel\">";
-            $tc.='<div id="showoptions" class="formbutton">Options</div>';
-            // $tc.='<div id="editpage" class="formbutton">Edit Tabs</div>';
-            $tc.='<div id="refresh" class="formbutton">Refresh</div>';
-            $tc.='<div id="refactor" class="formbutton confirm">Reset</div>';
-            $tc.='<div id="reauth" class="formbutton confirm">Re-Auth</div>';
-            $tc.='<div id="showid" class="formbutton">Show Info</div>';
-            $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
+            // get all the things from all the hubs
+            $allthings = getAllThings($configoptions);
+            $thingoptions = $options["things"];
+            $roomoptions = $options["rooms"];
+            $indexoptions = $options["index"];
 
-            $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
-              <input id=\"mode_Operate\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Operate\" checked><label for=\"mode_Operate\" class=\"radioopts\">Operate</label>
-              <input id=\"mode_Reorder\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Reorder\" ><label for=\"mode_Reorder\" class=\"radioopts\">Reorder</label>
-              <input id=\"mode_Edit\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><label for=\"mode_Edit\" class=\"radioopts\">Edit</label>
-            </div><div id=\"opmode\"></div>";
-            $tc.="</div>";
-            $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+            // create defaults if nothing setup
+            $maxroom = 0;
+            foreach ($thingoptions as $roomname => $thinglist) {
+                if ( count($thinglist) > $maxroom ) {
+                    $maxroom = count($thinglist);
+                }
+            }
+
+            // if no room has more than 2 things setup defaults
+            // i picked 3 because clocks and weather are typically always there
+            if ( $maxroom < 3 ) {
+                $options = setDefaults($options, $allthings);
+                writeOptions($options);
+            }
+
+            // check if custom tile CSS is present
+            if ( !file_exists("customtiles.css")) {
+                writeCustomCss("");
+            }
+
+            if (DEBUG || DEBUG5) {
+                $tc.= "<h2>Allthings</h2>";
+                $tc.= "<div class='debug'><pre>" . print_r($allthings,true) . "</pre></div>";
+                $tc.= "<hr><h2>Options</h2>";
+                $tc.= "<div class='debug'><pre>" . print_r($options,true) . "</pre></div>";
+            }
+
+            // new wrapper around catalog and things but excluding buttons
+            $tc.= '<div id="dragregion">';
+
+            $tc.= '<div id="tabs"><ul id="roomtabs">';
+            // show all room with whatever index number assuming unique
+            foreach ($roomoptions as $room => $k) {
+
+                // get name of the room in this column
+                // $room = array_search($k, $roomoptions);
+
+                // use the list of things in this room
+                if ($room) {
+                    $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
+                }
+            }
+
+            $tc.= '</ul>';
+            $cnt = 0;
+
+            // changed this to show rooms in the order listed
+            // this is so we just need to rewrite order to make sortable permanent
+            foreach ($roomoptions as $room => $kroom) {
+                if ( key_exists($room, $thingoptions)) {
+                    $things = $thingoptions[$room];
+                    $tc.= getNewPage($cnt, $allthings, $room, $kroom, $things, $indexoptions, $kioskmode);
+                }
+            }
+
+            // end of the tabs
+            $tc.= "</div>";
+
+            // add catalog on right
+            // $tc.= getCatalog($allthings);
+
+            // end drag region enclosing catalog and main things
+            $tc.= "</div>";
+
+            // but only do this if we are not in kiosk mode
+            $tc.= "<form>";
+            $tc.= hidden("returnURL", $returnURL);
+            $tc.= hidden("pagename", "main");
+            $tc.= hidden("allHubs", json_encode($hubs));
+            if ( !$kioskmode ) {
+                $tc.= "<div id=\"controlpanel\">";
+                $tc.='<div id="showoptions" class="formbutton">Options</div>';
+                // $tc.='<div id="editpage" class="formbutton">Edit Tabs</div>';
+                $tc.='<div id="refresh" class="formbutton">Refresh</div>';
+                $tc.='<div id="refactor" class="formbutton confirm">Reset</div>';
+                $tc.='<div id="reauth" class="formbutton confirm">Re-Auth</div>';
+                $tc.='<div id="showid" class="formbutton">Show Info</div>';
+                $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
+
+                $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
+                  <input id=\"mode_Operate\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Operate\" checked><label for=\"mode_Operate\" class=\"radioopts\">Operate</label>
+                  <input id=\"mode_Reorder\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Reorder\" ><label for=\"mode_Reorder\" class=\"radioopts\">Reorder</label>
+                  <input id=\"mode_Edit\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"DragDrop\" ><label for=\"mode_Edit\" class=\"radioopts\">Edit</label>
+                </div><div id=\"opmode\"></div>";
+                $tc.="</div>";
+                $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+            }
+            $tc.= "</form>";
         }
-        $tc.= "</form>";
     }
 
     // display the dynamically created web site

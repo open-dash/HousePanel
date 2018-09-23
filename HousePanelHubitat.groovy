@@ -64,6 +64,7 @@ preferences {
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true)
         paragraph "Enable this to use Pistons. You must have WebCore installed locally for this to work (Beta)."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        input (name: "dologging", type: "bool", multiple: false, title: "Do logging?", required: false, defaultValue: true)
     }
     section("Lights and Switches...") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
@@ -125,10 +126,13 @@ def updated() {
 
 def initialize() {
     configureHub();
-    log.debug "Installed with settings: ${settings} "
     state.usepistons = usepistons
+    state.dologging = dologging
     if ( state.usepistons ) {
         webCoRE_init()
+    }
+    if ( state.dologging ) {
+        log.debug "Installed with settings: ${settings} "
     }
 }
 
@@ -155,47 +159,7 @@ def configureHub() {
     log.debug "Hub ID = ${app.id}"
     log.debug "accessToken = ${state.accessToken}"
     log.debug "Hubitat endpt = ${endpt}"
-    // log.debug "Hubitat only? = ${state.hubitatOnly}"
 
-    // push these variables to our HousePanel server
-    // this can be local or somewhere out on the Internet
-    // we don't need the hubip and id but we send it anyway
-    // what we really need is the accesstoken and endpt
-    
-    // disabled this code since we now do this correctly
-    
-//    def cmds = [
-//        useajax: "confighubitat",
-//        id: "hubitat",
-//        type: "none",
-//        value: [
-//            hubip: hubip, 
-//            hubitatid: app.id,
-//            accesstoken: state.accessToken,
-//            endpt: endpt,
-//            hubitatonly: state.hubitatOnly
-//        ]
-//    ]
-//
-//    def params = [
-//        uri: "${hpurl}",
-//        requestContentType: "application/x-www-form-urlencoded",
-//        query: cmds
-//    ]
-//
-//    try {
-//        httpGet(params) { resp ->
-//            def msg = ""
-//            if (resp?.status == 200) {
-//                msg = "Success"
-//            } else {
-//                msg = "Failure: ${resp?.status}"
-//            }
-//            log.debug "response: ${msg} (${resp.data})"
-//        }
-//    } catch (e) {
-//        log.debug "Something went wrong: $e"
-//    }
 }
 
 def getSwitch(swid, item=null) {
@@ -272,7 +236,9 @@ def getThermostat(swid, item=null) {
     if ( item.hasCapability("Battery") ) {
         resp.put("battery", item.currentValue("battery"))
     }
-    // log.debug "Thermostat response = ${resp}"
+    if ( state.dologging ) {
+        log.debug "Thermostat response = ${resp}"
+    }
     return resp
 }
 
@@ -378,7 +344,9 @@ def setOther(swid, cmd, attr, subid ) {
     
     if (item && subid.startsWith("_")) {
         subid = subid.substring(1)
-        // log.debug "Activating other device " + item + " command: " + subid
+        if ( state.dologging ) {
+            log.debug "Activating other device " + item + " command: " + subid
+        }
         resp = [:]
         if ( item.hasCommand(subid) ) {
             item."$subid"()
@@ -408,7 +376,9 @@ def getThing(things, swid, item=null) {
                         def othervalue = item.currentValue(othername)
                         resp.put(othername,othervalue)
                     } catch (ex) {
-                        log.warn "Attempt to read attribute for ${swid} failed"
+                        if ( state.dologging ) {
+                            log.warn "Attempt to read attribute for ${swid} failed"
+                        }
                     } 
                 }
             }
@@ -438,7 +408,9 @@ def getThing(things, swid, item=null) {
 def getThings(resp, things, thingtype) {
 //    def resp = []
     def n  = things ? things.size() : 0
-    log.debug "Number of things of type ${thingtype} = ${n}"
+    if ( state.dologging ) {
+        log.debug "Number of things of type ${thingtype} = ${n}"
+    }
     things?.each {
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
@@ -482,7 +454,9 @@ def getAllThings() {
 // this returns just a single active mode, not the list of available modes
 // this is done so we can treat this like any other set of tiles
 def getModes(resp) {
-    log.debug "Getting 4 mode tiles"
+    if ( state.dologging ) {
+        log.debug "Getting 4 mode tiles"
+    }
     def val = getmyMode(0)
     resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
     resp << [name: "Mode", id: "m1x2", value: val, type: "mode"]
@@ -513,7 +487,9 @@ def getImages(resp) {
 
 def getPistons(resp) {
     def plist = webCoRE_list()
-    log.debug "Number of pistons = " + plist?.size() ?: 0
+    if ( state.dologging ) {
+        log.debug "Number of pistons = " + plist?.size() ?: 0
+    }
     plist?.each {
         def val = getPiston(it.id, it)
         resp << [name: it.name, id: it.id, value: val, type: "piston"]
@@ -633,7 +609,7 @@ def getRoutines(resp) {
 
 def getOthers(resp) {
     def n  = myothers ? myothers.size() : 0
-    if ( n > 0 ) { log.debug "Number of selected other sensors = ${n}" }
+    if ( n > 0 && state.dologging ) { log.debug "Number of selected other sensors = ${n}" }
     myothers?.each {
         def thatid = it.id;
         def multivalue = getThing(myothers, thatid, it)
@@ -681,7 +657,9 @@ def doAction() {
     def swattr = params.swattr
     def subid = params.subid
     def cmdresult = false
-    log.debug "doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid"
+    if ( state.dologging ) {
+        log.debug "doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid"
+    }
 
     // get the type if auto is set
     if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
@@ -754,7 +732,9 @@ def doAction() {
           cmdresult = setOther(swid, cmd, swattr, subid)
           break
     }
-    log.debug "HousePanel doaction: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult"
+    if ( state.dologging ) {
+        log.debug "HousePanel doaction: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult"
+    }
     return cmdresult
 }
 
@@ -935,7 +915,9 @@ def setMode(swid, cmd, swattr) {
         newsw = allmodes[0].getName()
     }
     
-    log.debug "Mode changed from $themode to $newsw index = $idx "
+    if ( state.dologging ) {
+        log.debug "Mode changed from $themode to $newsw index = $idx "
+    }
     location.setMode(newsw);
     resp =  [   name: swid, 
                 sitename: location.getName(),
@@ -964,7 +946,9 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     if (item ) {
     
         def newonoff = item.currentValue("switch")
-        log.debug "generic light cmd = $cmd swattr = $swattr"
+        if ( state.dologging ) {
+            log.debug "generic light cmd = $cmd swattr = $swattr"
+        }
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
@@ -1125,12 +1109,10 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 hue = cmd.substring(4,7).toInteger()
                 saturation = cmd.substring(8,11).toInteger()
                 newsw = cmd.substring(12,15).toInteger()
-//                log.debug "cmd= ${cmd} hue= ${hue} sat= ${saturation} level= ${newsw}"
                 item.setHue(hue)
                 item.setSaturation(saturation)
                 item.setLevel(newsw)
                 newcolor = hsv2rgb(hue, saturation, newsw)
-//                log.debug "New color = $newcolor"
                 newonoff = "on"
                 skiponoff = true
             }
@@ -1215,7 +1197,9 @@ def setLock(swid, cmd, swattr) {
     def newsw
     def item  = mylocks.find {it.id == swid }
     
-    log.debug "Performing setLock command with cmd = ${cmd} and swattr = ${swattr}"
+    if ( state.dologging ) {
+        log.debug "Performing setLock command with cmd = ${cmd} and swattr = ${swattr}"
+    }
     if (item) {
         if (cmd=="toggle") {
             newsw = item.currentLock=="locked" ? "unlocked" : "locked"
@@ -1226,10 +1210,8 @@ def setLock(swid, cmd, swattr) {
             }
         } else if ( cmd=="unknown" ) {
             newsw = item.currentLock
-    	    log.debug "Ignoring unknown status..."
         } else if ( cmd=="move" ) {
             newsw = item.currentLock
-    	    log.debug "Ignoring move command for lock..."
         } else if (cmd=="unlock") {
             item.unlock()
             newsw = "unlocked"
@@ -1520,11 +1502,10 @@ private webCoRE_poll(){sendLocationEvent([name: webCoRE_handle(),value:'poll',is
 public  webCoRE_execute(pistonIdOrName,Map data=[:]){def i=(state.webCoRE?.pistons?:[]).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;if(i){sendLocationEvent([name:i,value:app.label,isStateChange:true,displayed:false,data:data])}}
 public  webCoRE_list(mode)
 {
-	def p=state.webCoRE?.pistons;
+    def p=state.webCoRE?.pistons;
     if(p)p.collect{
-		mode=='id'?it.id:(mode=='name'?it.name:[id:it.id,name:it.name])
-        // log.debug "Reading piston: ${it}"
-	}
+        mode=='id'?it.id:(mode=='name'?it.name:[id:it.id,name:it.name])
+    }
     return p
 }
 public  webCoRE_handler(evt){switch(evt.value){case 'pistonList':List p=state.webCoRE?.pistons?:[];Map d=evt.jsonData?:[:];if(d.id&&d.pistons&&(d.pistons instanceof List)){p.removeAll{it.iid==d.id};p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};state.webCoRE = [updated:now(),pistons:p];};break;case 'pistonExecuted':def cbk=state.webCoRE?.cbk;if(cbk&&evt.jsonData)"$cbk"(evt.jsonData);break;}}
