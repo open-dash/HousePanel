@@ -304,6 +304,18 @@ function getDevices($allthings, $hubnum, $hubType, $hubAccess, $hubEndpt, $clien
     return $allthings;
 }
 
+function fixHost($stweb) {
+    $stweb = strtolower($stweb);
+    if ( substr($stweb,0,4) !== "http" ) {
+        if ( preg_match("/{1,3}\d\.{1,3}\d\.{1,3}\d\.{1,3}\d/", $stweb) ) {
+            $stweb = is_ssl() . $stweb;
+        } else {
+            $stweb = "https://" . $stweb;
+        }
+    }
+    return $stweb;
+}
+
 // function to get authorization code
 // this does a redirect back here with results
 // this is the first step of the oauth flow
@@ -2638,7 +2650,7 @@ function is_ssl() {
             for ($i=0; $i< count($hubTypes); $i++) {
                 $hub = array();
                 $hub["hubType"] = $hubTypes[$i];
-                $hub["hubHost"] = $hubTypes[$i];
+                $hub["hubHost"] = $hubHosts[$i];
                 $hub["clientId"] = $clientIds[$i];
                 $hub["clientSecret"] = $clientSecrets[$i];
                 $hub["userAccess"] = $userAcesses[$i];
