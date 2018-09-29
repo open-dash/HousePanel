@@ -1541,6 +1541,8 @@ function setupPage(trigger) {
             if ( thevalue=="off" ) { thevalue = "stay"; }
             else if ( thevalue=="stay") { thevalue = "away"; }
             else { thevalue = "off"; }
+        } else if ( thetype=="custom") {
+            thevalue = "";
         } else {
             thevalue = $(targetid).html();
         }
