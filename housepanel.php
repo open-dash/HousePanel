@@ -2507,15 +2507,17 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
           "</th><th class=\"infonum\">" . "Tile Num" . "</th></tr></thead>";
     foreach ($allthings as $bid => $thing) {
         if (is_array($thing["value"])) {
-            $value = "[";
+            $value = "";
             foreach ($thing["value"] as $key => $val) {
                 if ( $key === "frame" ) {
-                    $value.= $key . "= <i><b>EmbeddedFrame</b></i> ";
+                    $value.= $key . "= <strong>EmbeddedFrame</strong> ";
                 } else {
-                    $value.= $key . "=" . $val . " ";
+                    if ( $thing["type"]==="custom" && $key==="post" ) { $val = "custom..."; }
+                    $value.= $key . "=" . $val . "<br/>";
                 }
             }
-            $value .= "]";
+            // $value .= "]";
+            $value = substr($value,0,254);
         } else {
             $value = $thing["value"];
         }
