@@ -277,25 +277,6 @@ function initDialogBinds(str_type, thingindex) {
         initColor(str_type, "wholetile", thingindex);
         event.stopPropagation();
     });
-
-    $("#invertIcon").on("change",function() {
-//        invertImage();
-        var strInvert = "filter: invert(1);";
-        var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="wholetile" ) {
-            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
-        } else {
-            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
-        }
-        if($("#invertIcon").is(':checked')){
-            // alert(cssRuleTarget);
-            addCSSRule(cssRuleTarget, strInvert, true);
-        } else {
-            // addCSSRule(cssRuleTarget, "", true);	
-            resetInverted(cssRuleTarget);
-        }
-    });
         
     $('#noIcon').on('change', function() {
         var subid = $("#subidTarget").html();
@@ -1314,6 +1295,28 @@ function initColor(tile_type, str_type, thingindex) {
                 updateColor(strCaller, startTarget, tile_type, thingindex, strColor);
             }
         });
+    });
+
+    $("#invertIcon").off('change');
+    $("#invertIcon").on("change",function() {
+//        invertImage();
+        var strInvert;;
+        var subid = $("#subidTarget").html();
+        var cssRuleTarget;
+        if ( subid==="wholetile" ) {
+            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else {
+            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
+        }
+        // alert(cssRuleTarget);
+        if($("#invertIcon").is(':checked')){
+            strInvert = "filter: invert(1);";
+            addCSSRule(cssRuleTarget, strInvert, false);
+        } else {
+            strInvert = "filter: invert(0);";
+            addCSSRule(cssRuleTarget, strInvert, false);	
+            // resetInverted(cssRuleTarget);
+        }
     });
     
     $("#editReset").off('change');

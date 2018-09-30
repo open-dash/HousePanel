@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.804      Fix invert icon in TileEditor, update plain skin to work
  * 1.803      Fix http missing bug on hubHost, add custom POST, and other cleanup
  * 1.802      Password option implemented - leave blank to bypass
  * 1.801      Squashed a bug when tile instead of id was used to invoke the API
@@ -109,7 +110,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.803');
+define('HPVERSION', 'Version 1.804');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -923,7 +924,7 @@ function getAllThings($reset = false) {
             } else if (array_key_exists($swid, $options) ) {
                 $lines = $options[$swid];
             } else {
-                $lines = array(array("TEXT",$swid, "Not Configured"));
+                $lines = array(array("TEXT",$customid, "Not Configured"));
             }
             
             foreach ($lines as $msgs) {
@@ -932,12 +933,20 @@ function getAllThings($reset = false) {
                 $params = $msgs[2];
                 if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
                      substr(strtolower($posturl),0,4)==="http" ) {
-                    $webresponse = curl_call($posturl, FALSE, $params, $calltype);
-                    if (is_array($webresponse)) {
-                        $response["post"] .= "Array (" . count($webresponse) . " items)";
-                    } else {
-                        $response["post"] .= $webresponse;
+//                    $webresponse = curl_call($posturl, FALSE, $params, $calltype);
+//                    if (is_array($webresponse)) {
+//                        $response["post"] .= "Array (" . count($webresponse) . " items)";
+//                    } else {
+//                        $response["post"] .= $webresponse;
+//                    }
+                    if ( strlen($response["post"]) ) {
+                        $response["post"].= "<br />";
                     }
+                    $response["post"].= $calltype . ": " . $posturl;
+                    if ( strlen($response["text"]) && strlen($params) ) {
+                        $response["text"].= "<br />";
+                    }
+                    $response["text"].= $params;
                 } else {
                     if ( strlen($response["post"]) && strlen($posturl) ) {
                         $response["post"].= "<br />";
@@ -1510,7 +1519,15 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 $webresponse = curl_call($posturl, FALSE, $params, $calltype);
                 if (is_array($webresponse)) {
                     //$webresponse = json_encode(json_encode($webresponse, JSON_HEX_QUOT));
-                    $response["post"] .= "<pre>" . print_r($webresponse,true) . "</pre>";
+                    foreach($webresponse as $key => $val) {
+                        $response["post"] .= "<p>" . $key . ": ";
+                        if ( is_array($val) ) {
+                            $response["post"].= "<pre>" . print_r($val,true) . "</pre>";
+                        } else {
+                            $response["post"].= $val;
+                        }
+                        $response["post"].= "</p>";
+                    }
                 } else {
                     $response["post"] .= $webresponse;
                 }
