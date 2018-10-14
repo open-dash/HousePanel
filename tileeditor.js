@@ -9,6 +9,8 @@
  */
 var savedSheet;
 var priorIcon = "none";
+var defaultShow = "block";
+var defaultOverlay = "block";
 
 function getOnOff(str_type) {
     var onoff = ["",""];
@@ -58,7 +60,7 @@ function getOnOff(str_type) {
     return onoff;
 }
 
-function getCssRuleTarget(strSection, str_type, thingindex, useall) {
+function getCssRuleTarget(str_type, strSection, subid, thingindex, useall) {
 
     // get the scope to use
     if ( useall === undefined ) {
@@ -71,11 +73,14 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
     }
 
     var target = "";
+    if ( subid==="head" ) {
+        target = "div.thingname." + str_type +
+                 " span.original.n_"+thingindex;
 
     // if a tile isn't specified we default to changing all things
-    if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
+    } else if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
         target = "div.thing";
-        if ( str_type!=="wholetype" && useall!==2 ) {
+        if ( subid!=="wholetype" && useall!==2 ) {
             target+= "." + str_type + "-thing";
         }
 
@@ -88,114 +93,102 @@ function getCssRuleTarget(strSection, str_type, thingindex, useall) {
     
     // main branch for handling specific cases
     } else {
-	switch (strSection) {
-        case "icon":
-        case "icontext":
-            
-            // set the target to determine on/off status
-            // we always use the very specific target to this tile
-            var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
-            // var onofftarget = "div.overlay." + str_type + " div."+str_type+'.p_'+thingindex;
-            
-            // handle music controls special case
-            // target = "div." + str_type + "-thing div.overlay";
-            target = "div.overlay";
-            if ( useall < 2 ) {
-                if ( str_type.startsWith("music-" ) ) {
-                    target+= ".music-controls";
+        switch (strSection) {
+            case "icon":
+            case "icontext":
+
+                // set the target to determine on/off status
+                // we always use the very specific target to this tile
+                var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
+                // var onofftarget = "div.overlay." + str_type + " div."+str_type+'.p_'+thingindex;
+
+                // handle music controls special case
+                // target = "div." + str_type + "-thing div.overlay";
+                target = "div.overlay";
+                if ( useall < 2 ) {
+                    if ( str_type.startsWith("music-" ) ) {
+                        target+= ".music-controls";
+                    } else {
+                        target+= "." + str_type;
+                    }
+                }
+                if ( useall < 1 ) { target+= '.v_'+thingindex; }
+
+                // for everything other than levels, set the subid target
+                // levels use the overlay layer only
+                if ( useall < 2 && str_type!=="level" ) {
+                    target+= " div."+str_type;
+
+                    // handle special wrapper cases (music and thermostats)
+                    if ( str_type === "cool" || str_type==="heat" ) { 
+                        onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
+                        target+= "-val"; 
+                    } else if ( str_type.startsWith("music-") ) { 
+                        onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
+                    }
+                    else if ( useall < 1 ) target+= '.p_'+thingindex;
+                }
+
+                // get the on/off state
+                var on = $(onofftarget).html();
+                if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" &&
+                        !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
+                    on = "."+on;
                 } else {
-                    target+= "." + str_type;
+                    on = "";
                 }
-            }
-            if ( useall < 1 ) { target+= '.v_'+thingindex; }
-            
-            // for everything other than levels, set the subid target
-            // levels use the overlay layer only
-            if ( useall < 2 && str_type!=="level" ) {
-                target+= " div."+str_type;
-                
-                // handle special wrapper cases (music and thermostats)
-                if ( str_type === "cool" || str_type==="heat" ) { 
-                    onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
-                    target+= "-val"; 
-                } else if ( str_type.startsWith("music-") ) { 
-                    onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
-                }
-                else if ( useall < 1 ) target+= '.p_'+thingindex;
-            }
-            
-            // get the on/off state
-            var on = $(onofftarget).html();
-//            if ( !on || $.isNumeric(on) || (on.indexOf(" ") >= 0)  ) {
-//                on = "."+onoff[0];
-//            } else {
-//                on = "."+on;
-//            }
-            
-            if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" &&
-                    !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
-                on = "."+on;
-            } else {
-                on = "";
-            }
-            
-            // if ( on==="." ) { on= ""; }
-            target = target + on;
+
+                // if ( on==="." ) { on= ""; }
+                target = target + on;
             break;
-                // every sub-element is wrapped with this so size width this way
-                
-        case "subid":
-            // set the target to determine on/off status
-            // we always use the very specific target to this tile
-            // get the on/off state
-            var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
-            var on = $(onofftarget).html();
-            if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" && 
-                    !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
-                on = "."+on;
-            } else {
-                on = "";
-            }
-            
-            // handle music controls special case
-            target = "div";
-            if ( useall < 2 ) {
-                if ( str_type.startsWith("music-" ) ) {
-                    target+= ".music-controls";
+                    // every sub-element is wrapped with this so size width this way
+
+            case "subid":
+                // set the target to determine on/off status
+                // we always use the very specific target to this tile
+                // get the on/off state
+                var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
+                var on = $(onofftarget).html();
+                if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" && 
+                        !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
+                    on = "."+on;
                 } else {
-                    target+= "." + str_type;
+                    on = "";
                 }
-            }
-            target = target + on;
+
+                // handle music controls special case
+                target = "div";
+                if ( useall < 2 ) {
+                    if ( str_type.startsWith("music-" ) ) {
+                        target+= ".music-controls";
+                    } else {
+                        target+= "." + str_type;
+                    }
+                }
+                target = target + on;
             break;
-            
-        case "overlay":
-            target = "div.overlay";
-            if ( useall < 2 ) { target+= "." + str_type; }
-            if ( useall < 1 ) { target+= '.v_'+thingindex; }
+
+            case "overlay":
+                target = "div.overlay";
+                if ( useall < 2 ) { target+= "." + str_type; }
+                if ( useall < 1 ) { target+= '.v_'+thingindex; }
             break;
-            
-	case "text":
-            target = "div.thingname";
-            if ( useall < 2 ) { target+= "." + str_type; }
-            if ( useall < 1 ) { 
-                target+= '.t_'+thingindex; 
-                target+= " span.n_"+thingindex;
-            }
+
+            case "tile":
+                target = "div.thing";
+                if ( useall < 2 ) { target+= "." + str_type + "-thing"; }
+                if ( useall < 1 ) { target+= '.p_'+thingindex; }
             break;
-            
-        case "tile":
-            target = "div.thing";
-            if ( useall < 2 ) { target+= "." + str_type + "-thing"; }
-            if ( useall < 1 ) { target+= '.p_'+thingindex; }
+
+            case "head":
+                target = "div.thingname";
+                if ( useall < 2 ) { target+= "." + str_type; }
+                if ( useall < 1 ) { 
+                    target+= '.t_'+thingindex;
+                    target+= " span.original.n_"+thingindex;
+                }
             break;
-            
-        case "head":
-            target = "div.thingname";
-            if ( useall < 2 ) { target+= "." + str_type; }
-            if ( useall < 1 ) { target+= '.t_'+thingindex; }
-            break;
-	};	
+    	};	
     }
 
     return target;
@@ -521,7 +514,8 @@ function initDialogBinds(str_type, thingindex) {
             }
             if ( subid !== "wholetile" ) {
                 addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-                removeCSSRule(getCssRuleTarget('subid', subid, thingindex), thingindex, "width:", 0);
+                addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
+                // removeCSSRule(getCssRuleTarget('subid', subid, thingindex), thingindex, "width:", 0);
             }
         }
         event.stopPropagation;
@@ -753,7 +747,6 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
     // we either use the passed in content or make an Ajax call to get the content
     var jqxhr = null;
     if ( htmlcontent ) {
-        // dialog_html += "<div class=\"thing " + str_type + "-thing p_" + thingindex+"\" id='wysiwyg'>" + htmlcontent + "</div>";
         dialog_html += "<div class=\"" + thingclass + "\" id='wysiwyg'>" + htmlcontent + "</div>";
     } else {
         // put placeholder and populate after Ajax finishes retrieving true wysiwyg content
@@ -767,7 +760,6 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
             }
         );
     }
-    // dialog_html += "<div class='wholetile'><input id='wholetile' value='Whole Tile' type='button'></div>";
     dialog_html += "<div id='subsection'></div>";
     dialog_html += "</div>";
     
@@ -1182,47 +1174,32 @@ function initColor(tile_type, str_type, thingindex) {
                   class="colorset" value="' + onstart + '"> \
                   </div>';
 
-    // header background colors
-//    target = getCssRuleTarget("head", tile_type, thingindex, 0);
-//    var onstart = $(target).css("background-color");
-//    console.log("head back target= "+ target+ " color= "+onstart);
-//    var headback = '<div class="colorgroup"> \
-//                  <label for="headBackground">Header Background</label> \
-//                  <input type="text" id="headBackground" \
-//                  caller="head" target="' + target + '" \
-//                  class="colorset" value="' + onstart + '"> \
-//                  </div>';
-//
-//    // header foreground colors
-//    target = getCssRuleTarget("head", tile_type, thingindex, 0);
-//    var onstart = $(target).css("color");
-//    console.log("head text target= "+ target+ " color= "+onstart);
-//    var headfore = '<div class="colorgroup"> \
-//                  <label for="headFore">Header Foreground</label> \
-//                  <input type="text" id="headFore" \
-//                  caller="head" target="' + target + '" \
-//                  class="colorset" value="' + onstart + '"> \
-//                  </div>';
-
     // font size (returns px not pt)
     // get the default font
+    if ( str_type === "head" ) {
+        ictarget = "span.original.n_"+thingindex;
+    }
     var ffamily = $(ictarget).css("font-family");
     var fweight = $(ictarget).css("font-weight");
     var fstyle = $(ictarget).css("font-style");
     var fontdef;
-    if ( ffamily==="serif" || ffamily==="Times New Roman" || ffamily==="Raleway" || ffamily==="Times" ) {
+    
+    if ( ffamily===undefined || !ffamily || !ffamily.hasOwnProperty(("includes")) ) {
+        fontdef = "sans";
+    } else if ( ffamily.includes("Raleway") || ffamily.includes("Times") ) {
         fontdef = "serif";
-    } else if ( ffamily==="Courier" || ffamily==="monospace") {
+    } else if ( ffamily.includes("Courier") || ffamily.includes("Mono") ) {
         fontdef = "mono";
     } else {
         fontdef = "sans";
     }
-    if ( fweight==="bold") {
+    if ( fweight==="bold" || ( $.isNumeric(fweight) && fweight > 500)  ) {
         fontdef+= "b";
     }
-    if ( fstyle==="italic") {
+    if ( fstyle!=="normal") {
         fontdef+= "i";
     }
+    console.log("strtype= " + str_type + " ffamily= " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle + " fontdef = "+ fontdef);
         
     var fe = "";
     fe += "<div class='colorgroup font'><label>Font Type:</label>";
@@ -1305,6 +1282,8 @@ function initColor(tile_type, str_type, thingindex) {
         var cssRuleTarget;
         if ( subid==="wholetile" ) {
             cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
+        } else if ( subid==="head" ) {
+            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex);
         } else {
             cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
         }
@@ -1319,7 +1298,7 @@ function initColor(tile_type, str_type, thingindex) {
         }
     });
     
-    $("#editReset").off('change');
+    // $("#editReset").off('change');
     $("#editReset").on('click', function (event) {
         // alert("Reset type= "+tile_type+" thingindex= "+thingindex);
         resetCSSRules(str_type, thingindex);
@@ -1350,7 +1329,12 @@ function initColor(tile_type, str_type, thingindex) {
     $("#fontEffect").off('change');
     $("#fontEffect").on('change', function (event) {
         var subid = $("#subidTarget").html();
-        var target = getCssRuleTarget('icontext', subid, thingindex);
+        var target;
+        if ( subid==="head" ) {
+            target = getCssRuleTarget('head', tile_type, thingindex);
+        } else {
+            target = getCssRuleTarget('icontext', subid, thingindex);
+        }
         var fontstyle = $(this).val();
         var fontstr = "";
         if ( fontstyle.startsWith("sans" ) ) {
@@ -1387,7 +1371,12 @@ function initColor(tile_type, str_type, thingindex) {
     $("#editFont").on('change', function (event) {
         var subid = $("#subidTarget").html();
         var cssRuleTarget;
-        cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
+        if ( subid==="head" ) {
+            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex) +
+                            " span.original.n_"+thingindex;
+        } else {
+            cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
+        }
         var fontsize = $(this).val();
         var fontstr= "font-size: " + fontsize;
         console.log("Changing font. Target= " + cssRuleTarget + " to: "+fontstr);
@@ -1399,7 +1388,12 @@ function initColor(tile_type, str_type, thingindex) {
     $("#alignEffect").off('change', "input");
     $("#alignEffect").on('change', "input", function (event) {
         var subid = $("#subidTarget").html();
-        var cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
+        var cssRuleTarget;
+        if ( subid==="head" ) {
+            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex);
+        } else {
+            cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
+        }
         if ( subid!=="wholetile" ) {
             cssRuleTarget = "div." + tile_type + "-thing " + cssRuleTarget;
         }
@@ -1416,11 +1410,11 @@ function initColor(tile_type, str_type, thingindex) {
         var strCaller = $($(event.target)).attr("target");
         var ischecked = $(event.target).prop("checked");
         if ( ischecked  ){
-            addCSSRule("div.overlay."+str_type, "display: none;", true);
+            addCSSRule("div.overlay."+str_type+" v_"+thingindex, "display: none;", true);
             addCSSRule(strCaller, "display: none;", true);
         } else {
-            addCSSRule("div.overlay."+str_type, "display: block;", true);
-            addCSSRule(strCaller, "display: block;", true);
+            addCSSRule("div.overlay."+str_type+" v_"+thingindex, "display: " + defaultOverlay + ";", true);
+            addCSSRule(strCaller, "display: " + defaultShow + ";", true);
         }
         event.stopPropagation;
     });	
@@ -1440,13 +1434,25 @@ function initColor(tile_type, str_type, thingindex) {
         $("#noIcon").prop("checked", false);
     }
     
+    // set the initial alignment
+    var initalign = $(icontarget).css("text-align");
+    if ( initalign === "center") {
+        $("#aligncenter").prop("checked", true);
+    } else if (initalign === "right") {
+        $("#alignright").prop("checked", true);
+    } else {
+        $("#alignleft").prop("checked", true);
+    }
+    
     // set initial hidden status
     var ish1= $(icontarget).css("display");
-    var ish2= $("div.overlay."+str_type).css("display");
+    var ish2= $("div.overlay."+str_type+" v_"+thingindex).css("display");
     if ( ish1 === "none" || ish2 === "none") {
         $("#isHidden").prop("checked", true);
     } else {
         $("#isHidden").prop("checked", false);
+        defaultShow = ish1;
+        defaultOverlay = ish2;
     }
     
 }
@@ -1480,22 +1486,13 @@ function updateColor(strCaller, cssRuleTarget, str_type, thingindex, strColor) {
                 console.log("caller= "+strCaller+" rule= "+sliderTarget+" str_type= "+str_type);
                 addCSSRule(sliderTarget, "background-color: " + strColor + ";");		
             } else {
-//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-//                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
                 addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
 //                $(cssRuleTarget).css( "color: " + strColor + ";" );
             }
             break;
             
         case "icon":
-//            if ( str_type ==="level" ) {
-//                cssRuleTarget = getCssRuleTarget("overlay", str_type, thingindex);
-//            } else {
-//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-//            }
-//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
             addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
-//            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
             break;
             
         case "tile":

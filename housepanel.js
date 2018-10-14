@@ -784,6 +784,7 @@ function setupButtons() {
                 if ( priorOpmode === "Reorder" ) {
                     cancelSortable();
                     cancelPagemove();
+                    delEditLink();
                 } else if ( priorOpmode === "DragDrop" ) {
                     var filters = [];
                     $('input[name="useroptions[]"').each(function(){
@@ -802,12 +803,13 @@ function setupButtons() {
                 if ( opmode==="Reorder" ) {
                     setupSortable();
                     setupPagemove();
+                    delEditLink();
                 } else if ( opmode==="DragDrop" ) {
                     setupDraggable();
                     addEditLink();
 
                 // reload page fresh if we are returning from drag mode to operate mode
-                } else if ( opmode==="Operate" && (priorOpmode === "DragDrop") ) {
+                } else if ( opmode==="Operate" ) {
                     location.reload(true);
                 }
 

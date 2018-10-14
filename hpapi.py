@@ -7,7 +7,7 @@ import json
 import urllib
 
 def callAPI(mystr, hubnum):
-    weburl = "http://192.168.11.20/smartthings/housepanel.php"
+    weburl = "http://www.kenw.com/hptest/housepanel.php"
     url = weburl + "?useajax=doquery&id=" + mystr + "&hubnum=" + str(hubnum)
     f = urllib.urlopen(url)
     responsestr = f.read().encode('utf-8')
@@ -36,9 +36,9 @@ if __name__ == "__main__":
     hubnum = 0
 
     mytypes, myids, mytiles = getThings()
-    print "Your config file has", len(mytypes), "things detected from your hubs by HousePanel"
-    print "Displaying details for only the switches and dimmers using HP's API..."
-    print "------------------------------------------------------------------ \n\n"
+    print ("Your config file has", len(mytypes), "things detected from your hubs by HousePanel")
+    print ("Displaying details for only the switches and dimmers using HP's API...")
+    print ("------------------------------------------------------------------ \n\n")
 
     for i in range(len(mytypes)):
 
@@ -52,6 +52,6 @@ if __name__ == "__main__":
         if ( mytypes[i]=="switch" or mytypes[i]=="switchlevel" ):
             response = callAPI(myids[i], hubnum)
             if ( response ):
-                print "Thing type= ", mytypes[i]," id= ", myids[i]," tile= ", mytiles[i]
-                print response
-                print "------------------------------------------------------------------ \n"
+                print ("Thing type= ", mytypes[i]," id= ", myids[i]," tile= ", mytiles[i])
+                print (response)
+                print ("------------------------------------------------------------------ \n")
