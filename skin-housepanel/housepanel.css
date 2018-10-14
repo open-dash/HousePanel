@@ -77,7 +77,7 @@ h1, h2, h3 {
 }
 
 
-input.startupinp, select.startupinp {
+input.startupinp, select.startupinp, input.editinp {
     font-style: normal;
     font-weight: normal;
     font-size: 12pt;
@@ -94,7 +94,15 @@ input.startupinp, select.startupinp {
 select.startupinp {
     width: 200px;
 }
+input.editinp {
+    left: 150px;
+    width: 400px;
+}
 
+div.tileDialog {
+    width: 400px;
+    
+}
 div#tabs, div#controlpanel {
     /*width: 1180px;*/
 /*    transform: scale(0.6);

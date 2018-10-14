@@ -989,8 +989,13 @@ function editPage(roomnum, roomname, parent) {
 
     var dialog_html = "<div id='pageDialog' class='tileDialog'>";
     dialog_html+= "<div>Editing Page #" + roomnum + " with Name: " + roomname + "</div>";
-    dialog_html+= "<div class='colorgroup'><label>Page name:</label>";
-    dialog_html+= "<input name=\"pageName\" id=\"pageName\" class=\"ddlDialog\" value=\"" + roomname +"\"></div>";
+    dialog_html+= "<div>";
+    dialog_html+= "<label>Page Name: </label>";
+    dialog_html+= "<input name=\"pageName\" id=\"pageName\" class=\"editinp\" value=\"" + roomname +"\"></div>";
+    dialog_html+= "<div>";
+    dialog_html+= "<label>Background Image: </label>";
+    var oldname = $("div.panel-"+roomname).css("background-image");
+    dialog_html+= "<input name=\"imageName\" id=\"imageName\" width='80' class=\"editinp\" value=\"" + encodeURI(oldname) +"\"></div>";
     dialog_html+= "</div>";
 
     // create a function to display the tile

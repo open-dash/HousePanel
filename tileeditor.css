@@ -2,6 +2,14 @@ div.tileDialog {
   overflow: hidden;
 }
 
+#pageDialog {
+    width: 600px;
+}
+#pageDialog div {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
 #tileDialog {
     display: block;
     background-color: rgba(20, 20, 20, 1);
