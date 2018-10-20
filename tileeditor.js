@@ -60,7 +60,7 @@ function getOnOff(str_type) {
     return onoff;
 }
 
-function getCssRuleTarget(str_type, strSection, subid, thingindex, useall) {
+function getCssRuleTarget(str_type, subid, thingindex, useall) {
 
     // get the scope to use
     if ( useall === undefined ) {
@@ -69,126 +69,97 @@ function getCssRuleTarget(str_type, strSection, subid, thingindex, useall) {
         else if ( scope=== "alltiles") { useall= 2; }
         else { useall = 0; }
     } else {
-        if ( !useall || useall!==1 || useall!==2 ) { useall= 0; }
+        if ( !useall || useall!==1 || useall!==2 ) { 
+            useall= 0; 
+        }
     }
 
     var target = "";
-    if ( subid==="head" ) {
-        target = "div.thingname." + str_type +
-                 " span.original.n_"+thingindex;
 
     // if a tile isn't specified we default to changing all things
-    } else if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
+    if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
         target = "div.thing";
-        if ( subid!=="wholetype" && useall!==2 ) {
+        if ( str_type && useall!==2 ) {
             target+= "." + str_type + "-thing";
+        }
+    } else if ( subid==="head" ) {
+        target = "div.thingname";
+        if ( useall < 2 ) { target+= "." + str_type; }
+        if ( useall < 1 ) { 
+            target+= '.t_'+thingindex;
+            // target+= " span.original.n_"+thingindex;
         }
 
     // handle special case when whole tile is being requested
-    } else if ( str_type==="wholetile" ) {
+    } else if ( subid==="wholetile"  || subid==="tile" ) {
         target = "div.thing";
-        if ( useall < 1 ) {
-            target+= ".p_" + thingindex;
-        }
+        if ( useall < 2 ) { target+= "." + str_type + "-thing"; }
+        if ( useall < 1 ) { target+= '.p_'+thingindex; }
     
-    // main branch for handling specific cases
+    } else if ( subid==="overlay" ) {
+        target = "div.overlay";
+        if ( useall < 2 ) {
+            if ( subid.startsWith("music-") ) {
+                target+= ".music-controls";
+            } else {
+                target+= "." + subid;
+            }
+        }
+        if ( useall < 1 ) { target+= '.v_'+thingindex; }
+        
+    // main handling of type with subid specific case
+    // starts just like overlay but adds all the specific subid stuff
     } else {
-        switch (strSection) {
-            case "icon":
-            case "icontext":
 
-                // set the target to determine on/off status
-                // we always use the very specific target to this tile
-                var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
-                // var onofftarget = "div.overlay." + str_type + " div."+str_type+'.p_'+thingindex;
+        // handle music controls special case
+        // target = "div." + str_type + "-thing div.overlay";
+        target = "div.overlay";
+        if ( useall < 2 ) {
+            if ( subid.startsWith("music-") ) {
+                target+= ".music-controls";
+            } else {
+                target+= "." + subid;
+            }
+        }
+        if ( useall < 1 ) { target+= '.v_'+thingindex; }
 
-                // handle music controls special case
-                // target = "div." + str_type + "-thing div.overlay";
-                target = "div.overlay";
-                if ( useall < 2 ) {
-                    if ( str_type.startsWith("music-" ) ) {
-                        target+= ".music-controls";
-                    } else {
-                        target+= "." + str_type;
-                    }
-                }
-                if ( useall < 1 ) { target+= '.v_'+thingindex; }
+        // for everything other than levels, set the subid target
+        // levels use the overlay layer only
+        if ( useall < 2 && subid!=="level" ) {
+            // target+= " div."+str_type;
 
-                // for everything other than levels, set the subid target
-                // levels use the overlay layer only
-                if ( useall < 2 && str_type!=="level" ) {
-                    target+= " div."+str_type;
+            // handle special wrapper cases (music and thermostats)
+            if ( subid === "cool" || subid==="heat" ) { 
+                target+= " div." + subid + "-val"; 
+            } else {
+                target+= " div."+str_type + "." + subid;
+            }
+            if ( useall < 1 ) target+= '.p_'+thingindex;
+        }
 
-                    // handle special wrapper cases (music and thermostats)
-                    if ( str_type === "cool" || str_type==="heat" ) { 
-                        onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
-                        target+= "-val"; 
-                    } else if ( str_type.startsWith("music-") ) { 
-                        onofftarget=  "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type;
-                    }
-                    else if ( useall < 1 ) target+= '.p_'+thingindex;
-                }
+        // get the on/off state
+        // set the target to determine on/off status
+        // we always use the very specific target to this tile
+        if ( subid==="name" || subid==="track" || subid==="weekday" || 
+             subid==="color" || subid==="level" || 
+             subid==="cool" || subid==="heat" ) {
+            on = "";
+        } else {
+            var onofftarget = "div.overlay." + subid + '.v_' + thingindex + " div."+str_type+ '.' + subid + '.p_'+thingindex;
+            var on = $(onofftarget).html();
+            if ( on && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
+                on = "."+on;
+            } else {
+                on = "";
+            }
+        }
 
-                // get the on/off state
-                var on = $(onofftarget).html();
-                if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" &&
-                        !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
-                    on = "."+on;
-                } else {
-                    on = "";
-                }
-
-                // if ( on==="." ) { on= ""; }
-                target = target + on;
-            break;
-                    // every sub-element is wrapped with this so size width this way
-
-            case "subid":
-                // set the target to determine on/off status
-                // we always use the very specific target to this tile
-                // get the on/off state
-                var onofftarget = "div.overlay." + str_type + '.v_' + thingindex + " div."+str_type+'.p_'+thingindex;
-                var on = $(onofftarget).html();
-                if ( on && str_type!=="name" && str_type!=="track" && str_type!=="weekday" && str_type!=="color" && 
-                        !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
-                    on = "."+on;
-                } else {
-                    on = "";
-                }
-
-                // handle music controls special case
-                target = "div";
-                if ( useall < 2 ) {
-                    if ( str_type.startsWith("music-" ) ) {
-                        target+= ".music-controls";
-                    } else {
-                        target+= "." + str_type;
-                    }
-                }
-                target = target + on;
-            break;
-
-            case "overlay":
-                target = "div.overlay";
-                if ( useall < 2 ) { target+= "." + str_type; }
-                if ( useall < 1 ) { target+= '.v_'+thingindex; }
-            break;
-
-            case "tile":
-                target = "div.thing";
-                if ( useall < 2 ) { target+= "." + str_type + "-thing"; }
-                if ( useall < 1 ) { target+= '.p_'+thingindex; }
-            break;
-
-            case "head":
-                target = "div.thingname";
-                if ( useall < 2 ) { target+= "." + str_type; }
-                if ( useall < 1 ) { 
-                    target+= '.t_'+thingindex;
-                    target+= " span.original.n_"+thingindex;
-                }
-            break;
-    	};	
+        // if ( on==="." ) { on= ""; }
+        target = target + on;
+        
+        if ( subid==="level" ) {
+            console.log ("type= " + str_type+ " target= " + target);
+        }
     }
 
     return target;
@@ -200,7 +171,7 @@ function toggleTile(target, tile_type, thingindex) {
     // alert("tile type= "+tile_type+" subid= "+subid);
     
     // activate the icon click to use this
-    var onoff = getOnOff(subid, swval);
+    var onoff = getOnOff(subid);
     var newsub = 0;
     if ( onoff && onoff.length > 0 ) {
         for ( var i=0; i < onoff.length; i++ ) {
@@ -234,14 +205,9 @@ function setupIcons(category, str_type, thingindex) {
 
 
         var subid = $("#subidTarget").html();
-        var strIconTarget;
-        if ( subid==="wholetile" ) {
-            strIconTarget = getCssRuleTarget('tile', str_type, thingindex);
-        } else {
-            strIconTarget = getCssRuleTarget('icon', subid, thingindex);
-        }
-        // console.log("Clicked on img= "+img+" Category= "+category+" icontarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
-        iconSelected(category, strIconTarget, img, subid, thingindex);
+        var strIconTarget = getCssRuleTarget(str_type, subid, thingindex);
+        console.log("Clicked on img= "+img+" Category= "+category+" icontarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
+        iconSelected(category, strIconTarget, img, str_type, subid, thingindex);
     });
 }
 
@@ -273,12 +239,7 @@ function initDialogBinds(str_type, thingindex) {
         
     $('#noIcon').on('change', function() {
         var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="wholetile" ) {
-            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
-        } else {
-            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var strEffect = getBgEffect();
         
         if( $("#noIcon").is(':checked') ){
@@ -293,7 +254,7 @@ function initDialogBinds(str_type, thingindex) {
     });
 	
     $('#noHead').on('change', function(event) {
-        var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
+        var cssRuleTarget = getCssRuleTarget(str_type, 'head', thingindex);
         if($("#noHead").is(':checked')){
             addCSSRule(cssRuleTarget, "display: none;", true);
             // removeCSSRule(cssRuleTarget, thingindex, "border-bottom:");
@@ -308,7 +269,7 @@ function initDialogBinds(str_type, thingindex) {
         event.stopPropagation;
     });	
     
-    var cssRuleTarget = getCssRuleTarget('head', str_type, thingindex);
+    var cssRuleTarget = getCssRuleTarget(str_type, 'head', thingindex);
     var csstext = $(cssRuleTarget).css("display");
     if ( csstext === "none" ) {
         $("#noHead").prop("checked", true);
@@ -342,13 +303,13 @@ function initDialogBinds(str_type, thingindex) {
         } else {
             $("#bgSize").prop("disabled", false);
         }
-        updateSize(subid, thingindex);
+        updateSize(str_type, subid, thingindex);
         event.stopPropagation;
     });
     
     $("#bgSize").on('input', function(event) {
         var subid = $("#subidTarget").html();
-        updateSize(subid, thingindex);
+        updateSize(str_type, subid, thingindex);
         event.stopPropagation;
     });
 
@@ -356,7 +317,7 @@ function initDialogBinds(str_type, thingindex) {
     $("#tileHeight").on('input', function(event) {
         var newsize = parseInt( $("#tileHeight").val() );
         var rule = "height: " + newsize.toString() + "px;";
-        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget(str_type, 'tile', thingindex), rule);
         event.stopPropagation;
     });
 
@@ -364,10 +325,10 @@ function initDialogBinds(str_type, thingindex) {
     $("#tileWidth").on('input', function(event) {
         var newsize = parseInt( $("#tileWidth").val() );
         var rule = "width: " + newsize.toString() + "px;";
-        addCSSRule(getCssRuleTarget('tile', str_type, thingindex), rule);
-        addCSSRule(getCssRuleTarget("head", str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget(str_type, 'tile', thingindex), rule);
+        addCSSRule(getCssRuleTarget(str_type, 'head', thingindex), rule);
         
-        // alert(str_type);
+        // handle special case of thermostats that need to have widths fixed
         if ( str_type === "thermostat" ) {
             var midsize = newsize - 64;
             rule = "width: " + midsize.toString() + "px;";
@@ -378,7 +339,7 @@ function initDialogBinds(str_type, thingindex) {
     });
 
     // set overall tile width and height header and overlay for all subitems
-    var target = getCssRuleTarget("tile", str_type, thingindex);
+    var target = getCssRuleTarget(str_type, 'tile', thingindex);
     var tilewidth = $(target).width();
     var tilehigh = $(target).height();
     
@@ -403,7 +364,7 @@ function initDialogBinds(str_type, thingindex) {
             var midsize = newsize - 64;
             midrule = "width: " + midsize.toString() + "px;";
         }
-        addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget(str_type, 'tile', thingindex), rule);
         
         if ( str_type === "thermostat" ) {
             addCSSRule( "div.thermostat-thing.p_"+thingindex+" div.heat-val", midrule);
@@ -425,7 +386,7 @@ function initDialogBinds(str_type, thingindex) {
             $("#tileHeight").prop("disabled", false);
             $("#tileHeight").css("background-color","white");
         }
-        addCSSRule(getCssRuleTarget("tile", str_type, thingindex), rule);
+        addCSSRule(getCssRuleTarget(str_type, "tile", thingindex), rule);
         event.stopPropagation;
     });
 
@@ -434,7 +395,7 @@ function initDialogBinds(str_type, thingindex) {
         var newsize = parseInt( $("#editHeight").val() );
         var subid = $("#subidTarget").html();
         if ( subid !== "wholetile" ) {
-            var target = getCssRuleTarget('icontext', subid, thingindex);
+            var target = getCssRuleTarget(str_type, subid, thingindex);
             var rule = "height: " + newsize.toString() + "px;";
             addCSSRule(target, rule);
         }
@@ -446,7 +407,7 @@ function initDialogBinds(str_type, thingindex) {
         var newsize = parseInt( $("#editWidth").val() );
         var subid = $("#subidTarget").html();
         if ( subid !== "wholetile" ) {
-            var target = getCssRuleTarget('icontext', subid, thingindex);
+            var target = getCssRuleTarget(str_type, subid, thingindex);
             var rule = "width: " + newsize.toString() + "px;";
             addCSSRule(target, rule);
         }
@@ -479,8 +440,7 @@ function initDialogBinds(str_type, thingindex) {
             rule = "height: " + newsize;
         }
         if ( subid !== "wholetile" ) {
-            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-            // addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
+            addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         }
         event.stopPropagation;
     });
@@ -499,8 +459,7 @@ function initDialogBinds(str_type, thingindex) {
             $("#editWidth").prop("disabled", true);
             $("#editWidth").css("background-color","gray");
             if ( subid !== "wholetile" ) {
-                addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-                addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
+                addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
             }
         } else {
             var newsize = parseInt( $("#editWidth").val() );
@@ -513,9 +472,7 @@ function initDialogBinds(str_type, thingindex) {
                 rule = "width: " + newsize + " padding-left: 0; padding-right: 0; display: inline-block;";
             }
             if ( subid !== "wholetile" ) {
-                addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
-                addCSSRule(getCssRuleTarget('subid', subid, thingindex), rule);
-                // removeCSSRule(getCssRuleTarget('subid', subid, thingindex), thingindex, "width:", 0);
+                addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
             }
         }
         event.stopPropagation;
@@ -525,19 +482,16 @@ function initDialogBinds(str_type, thingindex) {
     $("#topPadding").on('change', function(event) {
         var subid = $("#subidTarget").html();
         var newsize = parseInt( $("#topPadding").val() );
-        if ( !newsize || newsize==="NaN" ) { 
+        if ( !newsize || isNaN(newsize) ) { 
             newsize = "0px;";
         } else {
             newsize = newsize.toString() + "px;";
         }
         var rule = "padding-top: " + newsize;
         if ( subid === "wholetile" ) {
-            var tile_type = $("#onoffTarget").html();
             rule = "background-position-y: " + newsize;
-            addCSSRule(getCssRuleTarget('tile', tile_type, thingindex), rule);
-        } else {
-            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
         }
+        addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;
     });
 
@@ -545,19 +499,16 @@ function initDialogBinds(str_type, thingindex) {
     $("#botPadding").on('change', function(event) {
         var subid = $("#subidTarget").html();
         var newsize = parseInt( $("#botPadding").val() );
-        if ( !newsize || newsize==="NaN" ) { 
+        if ( !newsize || isNaN(newsize) ) { 
             newsize = "0px;";
         } else {
             newsize = newsize.toString() + "px;";
         }
         var rule = "padding-left: " + newsize;
         if ( subid === "wholetile" ) {
-            var tile_type = $("#onoffTarget").html();
             rule = "background-position-x: " + newsize;
-            addCSSRule(getCssRuleTarget('tile', tile_type, thingindex), rule);
-        } else {
-            addCSSRule(getCssRuleTarget('icontext', subid, thingindex), rule);
         }
+        addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;
     });
     
@@ -589,20 +540,20 @@ function editSection(str_type, thingindex) {
 
 function effectspicker(str_type, thingindex) {
     var dh = "";
-    var target = "div." + str_type + "-thing span.n_" + thingindex;
+    // var target = "div." + str_type + "-thing span.original.n_" + thingindex;
+    var target = getCssRuleTarget(str_type, "head", thingindex);
+    target = target +  " span.original.n_" + thingindex;
     var name = $(target).html();
 
     // Title changes and options
 	dh += "<div class='colorgroup'><label>Title (blank = reset):</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
-	// dh += "<div class='editSection_input'><input type='checkbox' id='noHead'><label class=\"iconChecks\" for=\"noHead\">No Header?</label></div>";
-	// dh += "<div class='editSection_input'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
         
 	//Effects
 	dh += "<div class='colorgroup'><label>Effect Scope:</label>";
 	dh += "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
-	dh += "<option value=\"thistile\" selected>This Tile</option>";
-	dh += "<option value=\"alltypes\">All " + str_type + "</option>";
-	dh += "<option value=\"alltiles\">All Tiles</option>";
+	dh += "<option value=\"thistile\" selected>This " + str_type + " tile</option>";
+	dh += "<option value=\"alltypes\">All " + str_type + " tiles</option>";
+	dh += "<option value=\"alltiles\">All tiles</option>";
 	dh += "</select>";
 	dh += "</div>";
     return dh;    
@@ -612,12 +563,7 @@ function sizepicker(str_type, thingindex) {
     var dh = "";
 
     var subid = setsubid(str_type);
-    var target;
-    if ( subid === "wholetile" ) {
-        var target = getCssRuleTarget("tile", str_type, thingindex);  // "div.thing";
-    } else {
-        var target = getCssRuleTarget("icon", subid, thingindex);  // "div.thing";
-    }
+    var target = getCssRuleTarget(str_type, subid, thingindex);  // "div.thing";
     var size = $(target).css("background-size");
     // alert("old size: " + size);
     size = parseInt(size);
@@ -625,7 +571,6 @@ function sizepicker(str_type, thingindex) {
         size = 80; 
         if ( subid === "wholetile" ) { size = 150; }
     }
-    
     
     // icon size effects
     dh += "<div class='sizeText'></div>";
@@ -635,8 +580,10 @@ function sizepicker(str_type, thingindex) {
     dh += "</div>";
     dh += "<div class='editSection_input'><input type='checkbox' id='autoBgSize'><label class=\"iconChecks\" for=\"autoBgSize\">Auto?</label></div>";
 
-    // overall tile size effect
-    var target2 = "div.thing."+str_type+"-thing";
+    // overall tile size effect -- i dont' know why I had this set different?
+    // var target2 = "div.thing."+str_type+"-thing";
+    var target2 = target;
+    
     var th = $(target2).css("height");
     var tw = $(target2).css("width");
     if ( !th || th.indexOf("px") === -1 ) { 
@@ -663,7 +610,6 @@ function sizepicker(str_type, thingindex) {
         w = parseInt(w);
     }
     
-    // alert("target= "+target+" w= "+w+" h= "+h);
     dh += "<div class='sizeText'>Overall Tile Size</div>";
     dh += "<div class='editSection_input'>";
     dh += "<label for='tileHeight'>Tile H: </label>";
@@ -694,8 +640,8 @@ function sizepicker(str_type, thingindex) {
     var ptop = parseInt($(target).css("padding-top"));
     var pbot = parseInt($(target).css("padding-bottom"));
     
-    if ( !ptop || ptop==="NaN" ) { ptop = 0; }
-    if ( !pbot || pbot==="NaN" ) { pbot = 0; }
+    if ( !ptop || isNaN(ptop) ) { ptop = 0; }
+    if ( !pbot || isNaN(pbot) ) { pbot = 0; }
     dh += "<div class='editSection_input'>";
     dh += "<label for='topPadding'>Top Padding:</label>\t";
     dh += "<input size='4' type=\"number\" min='0' max='100' step='5' id=\"topPadding\" value=\"" + ptop + "\"/>";
@@ -943,7 +889,6 @@ function saveTileEdit(str_type, thingindex, newname) {
 }
 
 function cancelTileEdit(str_type, thingindex) {
-    // resetCSSRules(str_type, thingindex);
     document.getElementById('customtiles').sheet = savedSheet;
     location.reload(true);
 }
@@ -961,48 +906,27 @@ function resetInverted(selector) {
 }
 
 // add all the color selectors to the colorpicker div
-function initColor(tile_type, str_type, thingindex) {
+function initColor(str_type, subid, thingindex) {
   
     var target;
     var generic;
     var newonoff;
-    var caller;
     var onstart;
     var ictarget;
 
     // selected background color
-    if ( str_type==="wholetile") {
-        target = getCssRuleTarget("tile", tile_type, thingindex, 0);
-        ictarget = target;
-        generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
-        newonoff = tile_type;
-        caller = "tile";
-    } else if ( str_type==="head") {
-        target = getCssRuleTarget("head", tile_type, thingindex, 0);
-        ictarget = target;
-        generic = getCssRuleTarget("head", tile_type, thingindex, 1);
-        newonoff = "";
-        caller = "head";
-    } else {
-        target = getCssRuleTarget("icon", str_type, thingindex, 0);
-        generic = getCssRuleTarget("icon", tile_type, thingindex, 1);
-        ictarget = target;
-        caller = "icon";
-        newonoff = "";
-        var swval = $(target).html();
-
-        // activate the icon click to use this
-        var onoff = getOnOff(str_type, swval);
-        // $("#onoffTarget").html("");
-        if ( onoff && onoff.length > 0 ) {
-            for ( var i=0; i < onoff.length; i++ ) {
-                var oldsub = onoff[i];
-                if ( $(target).html() === oldsub ) {
-    //                $("#onoffTarget").html( oldsub );
-                    newonoff = oldsub;
-    //                alert("oldsub= "+oldsub);
-                    break;
-                }
+    target = getCssRuleTarget(str_type, subid, thingindex, 0);
+    generic = getCssRuleTarget(str_type, subid, thingindex, 1);
+    ictarget = target;
+    newonoff = "";
+    var swval = $(target).html();
+    var onoff = getOnOff(subid);
+    if ( onoff && onoff.length > 0 ) {
+        for ( var i=0; i < onoff.length; i++ ) {
+            var oldsub = onoff[i];
+            if ( swval === oldsub ) {
+                newonoff = oldsub;
+                break;
             }
         }
     }
@@ -1027,15 +951,15 @@ function initColor(tile_type, str_type, thingindex) {
             iconsize = $(generic).css("background-size");
             if ( isNaN(iconsize) || iconsize <= 0 ) { 
                 iconsize = 80; 
-                if ( str_type === "wholetile" ) { iconsize = 150; }
+                if ( subid === "wholetile" ) { iconsize = 150; }
             }
-            if ( str_type.startsWith("music") ) { iconsize = 40; }
+            if ( str_type==="music" ) { iconsize = 40; }
         }
         $("#bgSize").val(iconsize);
     }
     
     // set the item height and width parameters
-    if ( str_type!=="wholetile" && str_type!=="head" ) {
+    if ( subid!=="wholetile" && subid!=="head" ) {
         var tilewidth = $(icontarget).css("width");
         var tileheight = $(icontarget).css("height");
         
@@ -1083,16 +1007,11 @@ function initColor(tile_type, str_type, thingindex) {
     var dh= "";
     dh += "<button id='editReset' type='button'>Reset</button>";
     // dh += "<div class='dlgtext'>Item: </div>";
-    dh += "<div id='subidTarget' class='dlgtext'>" + str_type + "</div>";
+    dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
 
     onstart = $(icontarget).css("background-color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-//        if ( str_type==="wholetile") {
-//            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
-//        } else {
-//            generic = getCssRuleTarget("icon", str_type, thingindex, 1);
-//        }
         onstart = $(generic).css("background-color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("background-color"); }
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(0, 0, 0, 1)"; }
@@ -1102,8 +1021,7 @@ function initColor(tile_type, str_type, thingindex) {
     console.log("target= "+ icontarget+ " initial background-color= "+onstart);
     var iconback = '<div class="colorgroup"> \
                   <label for="iconColor">Background Color</label> \
-                  <input type="text" id="iconColor" \
-                  caller="' + caller + '" target="' + icontarget + '" \
+                  <input type="text" id="iconColor" caller="background" target="' + icontarget + '" \
                   class="colorset" value="' + onstart + '"> \
                   </div>';
 
@@ -1149,40 +1067,27 @@ function initColor(tile_type, str_type, thingindex) {
     ceffect += "</select>";
     ceffect += "</div>";
 
-    // selected foreground color
-    if ( str_type==="wholetile" ) {
-        caller = "tile";
-    } else {
-        caller = "icontext";
-    }
     var onstart = $(ictarget).css("color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-//        if ( str_type==="wholetile") {
-//            generic = getCssRuleTarget("tile", tile_type, thingindex, 1);
-//        } else {
-//            generic = getCssRuleTarget("icontext", str_type, thingindex, 1);
-//        }
         onstart = $(generic).css("color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
     }
-    console.log("target= "+ ictarget+ " initial color= "+onstart);
+    console.log("target= "+ ictarget+ ", initial color= "+onstart);
     var iconfore = '<div class="colorgroup"> \
                   <label for="iconFore">Text Font Color</label> \
                   <input type="text" id="iconFore" \
-                  caller="' + caller + '" target="' + ictarget + '" \
+                  caller="color" target="' + target + '" \
                   class="colorset" value="' + onstart + '"> \
                   </div>';
 
-    // font size (returns px not pt)
     // get the default font
-    if ( str_type === "head" ) {
-        ictarget = "span.original.n_"+thingindex;
-    }
-    var ffamily = $(ictarget).css("font-family");
-    var fweight = $(ictarget).css("font-weight");
-    var fstyle = $(ictarget).css("font-style");
+    var ffamily = $(target).css("font-family");
+    var fweight = $(target).css("font-weight");
+    var fstyle = $(target).css("font-style");
     var fontdef;
+    
+    console.log("ffamily = " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle);
     
     if ( ffamily===undefined || !ffamily || !ffamily.hasOwnProperty(("includes")) ) {
         fontdef = "sans";
@@ -1250,10 +1155,7 @@ function initColor(tile_type, str_type, thingindex) {
     var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
 
     // insert the color blocks
-    // $("#colorpicker").html(dh + iconback + ceffect + headback + headfore + iconfore + fe + align);
     $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted);
-
-
 
     // turn on minicolor for each one
     $('#colorpicker .colorset').each( function() {
@@ -1261,6 +1163,7 @@ function initColor(tile_type, str_type, thingindex) {
         // alert("caller= "+strCaller);
         var startColor = $(this).val();
         var startTarget = $(this).attr("target");
+        var subid = $("#subidTarget").html();
         $(this).minicolors({
             control: "hue",
             position: "bottom left",
@@ -1269,7 +1172,7 @@ function initColor(tile_type, str_type, thingindex) {
             opacity: true,
             format: 'rgb',
             change: function(strColor) {
-                updateColor(strCaller, startTarget, tile_type, thingindex, strColor);
+                updateColor(strCaller, startTarget, str_type, subid, thingindex, strColor);
             }
         });
     });
@@ -1279,14 +1182,7 @@ function initColor(tile_type, str_type, thingindex) {
 //        invertImage();
         var strInvert;;
         var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="wholetile" ) {
-            cssRuleTarget = getCssRuleTarget('tile', str_type, thingindex);
-        } else if ( subid==="head" ) {
-            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex);
-        } else {
-            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         // alert(cssRuleTarget);
         if($("#invertIcon").is(':checked')){
             strInvert = "filter: invert(1);";
@@ -1294,14 +1190,14 @@ function initColor(tile_type, str_type, thingindex) {
         } else {
             strInvert = "filter: invert(0);";
             addCSSRule(cssRuleTarget, strInvert, false);	
-            // resetInverted(cssRuleTarget);
         }
     });
     
     // $("#editReset").off('change');
     $("#editReset").on('click', function (event) {
         // alert("Reset type= "+tile_type+" thingindex= "+thingindex);
-        resetCSSRules(str_type, thingindex);
+        var subid = $("#subidTarget").html();
+        resetCSSRules(str_type, subid, thingindex);
         event.stopPropagation;
     });
 
@@ -1309,19 +1205,13 @@ function initColor(tile_type, str_type, thingindex) {
     $("#editEffect").on('change', function (event) {
         var editEffect = getBgEffect( $(this).val() );
         var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="wholetile" ) {
-            cssRuleTarget = getCssRuleTarget('tile', tile_type, thingindex);
-        } else {
-            cssRuleTarget = getCssRuleTarget('icon', subid, thingindex);
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var priorEffect = "background-image: " + $(cssRuleTarget).css("background-image");
         var idx = priorEffect.indexOf(", linear-gradient");
         if ( idx !== -1 ) {
             priorEffect = priorEffect.substring(0,idx);
         }
         editEffect = priorEffect + editEffect;
-        // alert("Changing effect to: "+editEffect);
         addCSSRule(cssRuleTarget, editEffect);
         event.stopPropagation;
     });
@@ -1329,12 +1219,7 @@ function initColor(tile_type, str_type, thingindex) {
     $("#fontEffect").off('change');
     $("#fontEffect").on('change', function (event) {
         var subid = $("#subidTarget").html();
-        var target;
-        if ( subid==="head" ) {
-            target = getCssRuleTarget('head', tile_type, thingindex);
-        } else {
-            target = getCssRuleTarget('icontext', subid, thingindex);
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var fontstyle = $(this).val();
         var fontstr = "";
         if ( fontstyle.startsWith("sans" ) ) {
@@ -1362,7 +1247,7 @@ function initColor(tile_type, str_type, thingindex) {
         }
         
         // alert("Changing font effect target= " + target + " to: "+fontstr);
-        addCSSRule(target, fontstr);
+        addCSSRule(cssRuleTarget, fontstr);
         event.stopPropagation;
     });
     
@@ -1370,13 +1255,7 @@ function initColor(tile_type, str_type, thingindex) {
     $("#editFont").off('change');
     $("#editFont").on('change', function (event) {
         var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="head" ) {
-            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex) +
-                            " span.original.n_"+thingindex;
-        } else {
-            cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var fontsize = $(this).val();
         var fontstr= "font-size: " + fontsize;
         console.log("Changing font. Target= " + cssRuleTarget + " to: "+fontstr);
@@ -1388,15 +1267,7 @@ function initColor(tile_type, str_type, thingindex) {
     $("#alignEffect").off('change', "input");
     $("#alignEffect").on('change', "input", function (event) {
         var subid = $("#subidTarget").html();
-        var cssRuleTarget;
-        if ( subid==="head" ) {
-            cssRuleTarget = getCssRuleTarget('head', tile_type, thingindex);
-        } else {
-            cssRuleTarget = getCssRuleTarget('icontext', subid, thingindex);
-        }
-        if ( subid!=="wholetile" ) {
-            cssRuleTarget = "div." + tile_type + "-thing " + cssRuleTarget;
-        }
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var aligneffect = $(this).val();
         var fontstr= "text-align: " + aligneffect;
         console.log("Changing alignment. Target= " + cssRuleTarget + " to: "+fontstr);
@@ -1458,56 +1329,27 @@ function initColor(tile_type, str_type, thingindex) {
 }
     
 // main routine that sets the color of items
-function updateColor(strCaller, cssRuleTarget, str_type, thingindex, strColor) {
+function updateColor(strCaller, cssRuleTarget, str_type, subid, thingindex, strColor) {
     
-    
-    if ( strCaller === "icon" ||  strCaller === "icontext") {
-        str_type = $("#subidTarget").html();
-    }
-    console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
+    if ( subid==="level" ) {
+        cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex); //  "div.overlay.level.v_" + thingindex;
+        var sliderline = cssRuleTarget;
+        if ( strCaller==="background" ) {
+            addCSSRule(sliderline, "background-color: " + strColor + ";");		
+        } else {
+            var sliderbox= sliderline + " .ui-slider";
+            addCSSRule(sliderbox, "background-color: " + strColor + ";");		
+            addCSSRule(sliderbox, "color: " + strColor + ";");		
+            var sliderbox2= sliderbox + " span.ui-slider-handle";
+            addCSSRule(sliderbox2, "background-color: " + strColor + ";");		
+            addCSSRule(sliderbox2, "color: " + strColor + ";");		
+        }
+        console.log("Slider color: caller= " + strCaller + " LineTarget= " + sliderline + " BoxTarget= "+ sliderbox);
 
-//    var cssRuleTarget;
-    switch (strCaller) {
-        case 'text':
-//                cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-//                console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
-                addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
-//                $(cssRuleTarget).css( "color: " + strColor + ";" );
-                break;
-                
-        case 'icontext':
-            
-            if ( str_type ==="level" ) {
-                cssRuleTarget = getCssRuleTarget("overlay", str_type, thingindex);
-                var sliderTarget= cssRuleTarget + " .ui-slider-handle.ui-state-default";
-                console.log("caller= "+strCaller+" rule= "+sliderTarget+" str_type= "+str_type);
-                addCSSRule(sliderTarget, "background-color: " + strColor + ";");		
-                sliderTarget = cssRuleTarget + " .ui-slider-horizontal.ui-widget-content";
-                console.log("caller= "+strCaller+" rule= "+sliderTarget+" str_type= "+str_type);
-                addCSSRule(sliderTarget, "background-color: " + strColor + ";");		
-            } else {
-                addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
-//                $(cssRuleTarget).css( "color: " + strColor + ";" );
-            }
-            break;
-            
-        case "icon":
-            addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
-            break;
-            
-        case "tile":
-//            cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
-            addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
-//            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
-            break;
-            
-        default:
-//            cssRuleTarget = getCssRuleTarget(strCaller, str_type, thingindex);
-//            console.log("caller= "+strCaller+" rule= "+cssRuleTarget+" str_type= "+str_type);
-            addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
-//            $(cssRuleTarget).css( "background-color: " + strColor + ";" );
-            break;
+    } else if ( strCaller==="background" ) {
+        addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
+    } else {
+        addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
     }
 }
 
@@ -1618,7 +1460,7 @@ function getBgEffect(effect) {
 }
 
 // main routine that sets the icon of things
-function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) {
+function iconSelected(category, cssRuleTarget, imagePath, str_type, subid, thingindex) {
     $("#noIcon").prop('checked', false);
     var strEffect = getBgEffect();
     var imgurl = 'background-image: url("' + imagePath + '")';
@@ -1627,17 +1469,11 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, thingindex) 
 
     // set new icons to default size
     $("#autoBgSize").prop("checked", false);
-    updateSize(str_type, thingindex);
+    updateSize(str_type, subid, thingindex);
 }
 
-function updateSize(subid, thingindex) {
-    var cssRuleTarget;
-    if ( subid==="wholetile" ) {
-        var tile_type = $("#onoffTarget").html();
-        cssRuleTarget = getCssRuleTarget("tile", tile_type, thingindex);
-    } else {
-        cssRuleTarget = getCssRuleTarget("icon", subid, thingindex);
-    }
+function updateSize(str_type, subid, thingindex) {
+    var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
     
     if ( $("#autoBgSize").is(":checked") ) {
         $("#bgSize").prop("disabled", true);
@@ -1695,26 +1531,22 @@ function addCSSRule(selector, rules, resetFlag){
     }
 }
 
-function resetCSSRules(str_type, thingindex){
+function resetCSSRules(str_type, subid, thingindex){
 
-        var ruletypes = ['icon','subid','tile','head','text'];
+        var ruletypes = ['wholetile','head'];
         ruletypes.forEach( function(rule, idx, arr) {
-            var strIconTarget = getCssRuleTarget(rule, str_type, thingindex);
-            // alert("rule= " + rule + " type= "+ str_type + " thingindex" + thingindex + "target= "+strIconTarget);
-            removeCSSRule(strIconTarget, thingindex, null, 0);
+            var subtarget = getCssRuleTarget(str_type, rule, thingindex);
+            removeCSSRule(subtarget, thingindex, null, 0);
         });
 
         // remove all the subs
-        var onoff = getOnOff(str_type);
-        var target = "div.overlay." + str_type + ".v_" + thingindex + " div."+str_type + '.p_'+thingindex;
+        var onoff = getOnOff(subid);
         if ( onoff && onoff.length ) {
-            for (var i= 0; i < onoff.length; i++) {
-                var subtarget = target + "." + onoff[i];
+            onoff.forEach( function(rule, idx, arr) {
+                var subtarget = getCssRuleTarget(str_type, rule, thingindex);
                 removeCSSRule(subtarget, thingindex, null, 0);
-            }
+            })
         }
-        
-        // document.getElementById('customtiles').sheet = savedSheet;
 }
 
 function removeCSSRule(strMatchSelector, thingindex, target, ignoreall){

@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.805      Updates to tile editor and change outside image; other bug fixes
  * 1.804      Fix invert icon in TileEditor, update plain skin to work
  * 1.803      Fix http missing bug on hubHost, add custom POST, and other cleanup
  * 1.802      Password option implemented - leave blank to bypass
@@ -1231,9 +1232,9 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
             $colorval = "";
         }
         $tc.= "<div class=\"overlay $tkey" . $subtype . " v_$kindex\">";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-dn\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$tkey\"$colorval class=\"$tkeyval\" id=\"a-$i"."-$tkey\">" . $tval . "</div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" class=\"$tkey-up\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype down\" class=\"$thingtype $tkey-dn p_$kindex\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype $tkey\" class=\"$thingtype $tkeyval p_$kindex\"$colorval id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype up\" class=\"$thingtype $tkey-up p_$kindex\"></div>";
         $tc.= "</div>";
     
     // process analog clocks signalled by use of a skin with a valid name other than digital
@@ -1264,11 +1265,11 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         if ($tkey==="musicstatus") {
             // print controls for the player
             $tc.= "<div class=\"overlay music-controls" . $subtype . " v_$kindex\">";
-            $tc.= "<div  aid=\"$i\" subid=\"music-previous\" title=\"Previous\" class=\"music-previous\"></div>";
-            $tc.= "<div  aid=\"$i\" subid=\"music-pause\" title=\"Pause\" class=\"music-pause\"></div>";
-            $tc.= "<div  aid=\"$i\" subid=\"music-play\" title=\"Play\" class=\"music-play\"></div>";
-            $tc.= "<div  aid=\"$i\" subid=\"music-stop\" title=\"Stop\" class=\"music-stop\"></div>";
-            $tc.= "<div  aid=\"$i\" subid=\"music-next\" title=\"Next\" class=\"music-next\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"music-previous\" title=\"Previous\" class=\"$thingtype music-previous p_$kindex\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"music-pause\" title=\"Pause\" class=\"$thingtype music-pause p_$kindex\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"music-play\" title=\"Play\" class=\"$thingtype music-play p_$kindex\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"music-stop\" title=\"Stop\" class=\"$thingtype music-stop p_$kindex\"></div>";
+            $tc.= "<div  aid=\"$i\" subid=\"music-next\" title=\"Next\" class=\"$thingtype music-next p_$kindex\"></div>";
             $tc.= "</div>";
         }
 
