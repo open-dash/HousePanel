@@ -876,6 +876,10 @@ function addEditLink() {
     
     $("div.editlink").on("click",function(evt) {
         var thing = "#" + $(evt.target).attr("aid");
+        $(thing + ">div.editlink").remove();
+        $(thing + ">div.dellink").remove();
+        $(thing).draggable("destroy");
+        
         var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");
         var strhtml = $(thing).html();
@@ -956,9 +960,9 @@ function addEditLink() {
     $("#roomtabs div.editpage").on("click",function(evt) {
         var roomnum = $(evt.target).attr("roomnum");
         var roomname = $(evt.target).attr("roomname");
-        var clickid = $(evt.target).parent().attr("aria-labelledby");
-        var parent = $("#"+clickid);
-        editPage(roomnum, roomname, parent);
+        var thingclass = $(evt.target).attr("class");
+        editTile("page", roomname, thingclass, roomnum, "");
+        // editPage(roomnum, roomname, parent);
     });
     
    

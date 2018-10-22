@@ -254,14 +254,18 @@ div.minheight {
 }
 
 /* all panels look like this */
+#dragregion div.panel {
+    position:relative;    
+    min-height: 600px;
+}
+
 div.panel {
     display: inline-block;
     border: 0px solid #3333cc;
-    padding: 2px;    width: 100%;    margin: auto;
-    position:relative;    background-repeat: no-repeat;
+    padding: 2px;    width: auto;    margin: auto;
     background-position: 0 0;
+    background-repeat: no-repeat;
     background-size: cover;
-    min-height: 600px;
 }
 
 div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {

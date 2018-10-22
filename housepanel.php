@@ -1032,7 +1032,7 @@ function returnVideo($vidname) {
 // all tiles on screen are created using this call
 // some special cases are handled such as clocks, weather, and video tiles
 // updated to include hub number and hub type in each thing
-function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $zindex=1, $customname="") {
+function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $zindex=1, $customname="", $wysiwyg="") {
     
     $bid = $thesensor["id"];
     $thingvalue = $thesensor["value"];
@@ -1055,10 +1055,16 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
     $posleft = intval($posleft);
     $zindex = intval($zindex);;
     
+    if ( $wysiwyg ) {
+        $idtag = $wysiwyg;
+    } else {
+        $idtag = "t-$i";
+    }
+    
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
     //             so one must now use the id to get the value of "i" to find elements
-    $tc=  "<div id=\"t-$i\" hub=\"$hubnum\" hubtype=\"$hubt\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
+    $tc=  "<div id=\"$idtag\" hub=\"$hubnum\" hubtype=\"$hubt\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
     $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing $subtype p_$kindex\" "; 
     if ( ($postop!==0 && $posleft!==0) || $zindex>1 ) {
         $tc.= "style=\"position: relative; left: $posleft" . "px" . "; top: $postop" . "px" . "; z-index: $zindex" . ";\"";
@@ -1363,7 +1369,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         if ($kioskmode) {
             $tc.="<div class=\"restoretabs\">Hide Tabs</div>";
         }
-       
+
         // end the form and this panel
         $tc.= "</div></form>";
                 
@@ -3232,10 +3238,19 @@ function is_ssl() {
                 break;
         
             case "wysiwyg":
-                $idx = $swtype . "|" . $swid;
-                $allthings = getAllThings();
-                $thesensor = $allthings[$idx];
-                echo makeThing(0, $tileid, $thesensor, "Options");
+                if ( $swtype==="page" ) {
+                    // make the fake tile for the room for editing purposes
+                    $faketile = array("panel" => "Panel", "tab" => "Tab Inactive", "tabon" => "Tab Selected" );
+                    $thesensor = array("id" => "r_".strval($swid), "name" => $swval, 
+                        "hubnum" => -1, "hubtype" => "None", "type" => "page", "value" => $faketile);
+                    echo makeThing($tileid, $tileid, $thesensor, $swval, 0, 0, 99, "", "wysiwyg" );
+                    
+                } else {
+                    $idx = $swtype . "|" . $swid;
+                    $allthings = getAllThings();
+                    $thesensor = $allthings[$idx];
+                    echo makeThing(0, $tileid, $thesensor, "Options", 0, 0, 99, "", "wysiwyg");
+                }
                 break;
         
             case "pageorder":
