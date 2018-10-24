@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.806      Multi-tile editing and major upgrade to page editing
  * 1.805      Updates to tile editor and change outside image; other bug fixes
  * 1.804      Fix invert icon in TileEditor, update plain skin to work
  * 1.803      Fix http missing bug on hubHost, add custom POST, and other cleanup
@@ -111,7 +112,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.804');
+define('HPVERSION', 'Version 1.806');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2461,7 +2462,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
 //    $clientSecret = $configoptions["client_secret"];
     
     $tc = "";
-    $tc.= "<h3>HousePanel Information Display</h3>";
+    $tc.= "<h3>HousePanel " . HPVERSION . " Information Display</h3>";
     $tc.= "<div class='returninfo'><a href=\"$returnURL\">Return to HousePanel</a></div><br />";
 
     if ( defined("DONATE") && DONATE===true ) {
@@ -2568,6 +2569,28 @@ function editPage($pagenum, $pagename) {
         writeOptions($options);
     } else {
         $retcode = "error - page not found";
+    }
+    return $retcode;
+}
+
+function changePageName($oldname, $pagename) {
+    
+    $options = readOptions();
+    $roomnames = $options["rooms"];
+    if ( $oldname && $pagename && array_key_exists($oldname, $roomnames) ) {
+        $pagenum = $roomnames[$oldname];
+        $retcode = true;
+        $roomthings = $options["things"][$oldname];
+        unset( $options["rooms"][$oldname] );
+        unset( $options["things"][$oldname] );
+        $options["rooms"][$pagename] = $pagenum;
+        $options["things"][$pagename] = $roomthings;
+        $prooms = $options["rooms"];
+        asort($prooms);
+        $options["rooms"] = $prooms;
+        writeOptions($options);
+    } else {
+        $retcode = false;
     }
     return $retcode;
 }
@@ -3366,35 +3389,42 @@ function is_ssl() {
             
             case "savetileedit":
                 // grab the new tile name and set all tiles with matching id
-                $newname = $swattr;
-                $options = readOptions();
-                $thingoptions = $options["things"];
-                $updated = false;
-                foreach ($thingoptions as $room => $things) {
-                    foreach ($things as $k => $tiles) {
-                        // handle legacy files
-                        if ( !is_array($tiles) ) {
-                            $tiles = array($tiles, 0, 0, 1, "");
-                            $options["things"][$room][$k] = $tiles;
-                            $updated = true;
-                        } else if ( count($tiles) < 4 ) {
-                            $tiles[3] = 1;
-                            $tiles[4] = "";
-                            $options["things"][$room][$k] = $tiles;
-                            $updated = true;
-                        }
-                        if ( intval($tiles[0]) === intval($tileid) ) {
-                            $tiles[4] = $newname;
-                            $options["things"][$room][$k] = $tiles;
-                            $updated = true;
+                
+                if ( $swtype === "page" ) {
+                    $newname = $swattr;
+                    $oldname = $tileid;
+                    $updated = changePageName($oldname, $newname);
+                    if ( $updated ) {
+                        $result = "old page= $oldname new page = $newname";
+                    } else {
+                        $retcode = "old page= $oldname not found for $newname to replace";
+                    }
+                } else {
+                    $newname = $swattr;
+                    $options = readOptions();
+                    $thingoptions = $options["things"];
+                    $updated = false;
+                    $nupd = 0;
+                    foreach ($thingoptions as $room => $things) {
+                        foreach ($things as $k => $tiles) {
+                            if ( intval($tiles[0]) === intval($tileid) ) {
+                                $tiles[4] = $newname;
+                                $options["things"][$room][$k] = $tiles;
+                                $nupd++;
+                                $updated = true;
+                            }
                         }
                     }
+                    writeCustomCss($swval);
+                    if ( $updated ) {
+                        writeOptions($options);
+                        $result = "$nupd names changed for type= $swtype tileid= $tileid newname= $newname";
+                    } else {
+                        $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
+                    }
                 }
-                if ( $updated ) {
-                    writeOptions($options);
-                }
-                writeCustomCss($swval);
-                echo $swval;
+                
+                echo $result;
                 break;
                 
             case "saveoptions":
@@ -3573,7 +3603,8 @@ function is_ssl() {
                 $tc.='<div id="refactor" class="formbutton confirm">Reset</div>';
                 $tc.='<div id="reauth" class="formbutton confirm">Re-Auth</div>';
                 $tc.='<div id="showid" class="formbutton">Show Info</div>';
-                $tc.='<div id="restoretabs" class="restoretabs">Hide Tabs</div>';
+                $tc.='<div id="restoretabs" class="formbutton">Hide Tabs</div>';
+                $tc.='<div id="blackout" class="formbutton">Blankout</div>';
 
                 $tc.= "<div class=\"modeoptions\" id=\"modeoptions\">
                   <input id=\"mode_Operate\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"Operate\" checked><label for=\"mode_Operate\" class=\"radioopts\">Operate</label>

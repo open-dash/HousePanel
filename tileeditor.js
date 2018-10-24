@@ -11,6 +11,7 @@ var savedSheet;
 var priorIcon = "none";
 var defaultShow = "block";
 var defaultOverlay = "block";
+var tileCount = 0;
 
 function getOnOff(str_type) {
     var onoff = ["",""];
@@ -260,6 +261,13 @@ function initDialogBinds(str_type, thingindex) {
         $(target1).html(newname);
         // addCSSRule(target2, "content: " + newname + ";" );
         // event.stopPropagation;
+    });
+    
+    // new button to process the name change
+    $("#processName").on("click", function (event) {
+        var newname = $("#editName").val();
+        saveTileEdit(str_type, thingindex, newname);
+        event.stopPropagation;
     });
 
     $("#iconSrc").on('change', function (event) {
@@ -577,12 +585,15 @@ function effectspicker(str_type, thingindex) {
     var target = getCssRuleTarget(str_type, "head", thingindex);
     target = target +  " span.original.n_" + thingindex;
     var name = $(target).html();
+    var labelname = "Tile Name:";
     if ( str_type==="page" ) {
         name = thingindex;
+        labelname = "Page Name:";
     }
 
     // Title changes and options
-	dh += "<div class='colorgroup'><label>Title (blank = reset):</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
+	dh += "<div class='colorgroup'><label id=\"labelName\">" + labelname + "</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
+    dh += "<div class='colorgroup'><button id='processName' type='button'>Save Name</button></div>";
         
 	//Effects
 	dh += "<div class='colorgroup'><label>Effect Scope:</label>";
@@ -775,7 +786,6 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
     dialog_html += "</div>";
     
     // create a function to display the tile
-    var firstsub = setsubid(str_type);
     var dodisplay = function() {
         var pos = {top: 100, left: 200};
         createModal( dialog_html, "body", true, pos, 
@@ -789,10 +799,10 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
                 } else if ( clk==="cancel" ) {
                     cancelTileEdit(str_type, thingindex);
                 }
+                tileCount = 0;
             },
             // function invoked upon starting the dialog
             function(hook, content) {
-                // getIcons(str_type, thingindex);	
                 $("#modalid").draggable();
             }
         );
@@ -802,11 +812,13 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
         jqxhr.done(function() {
             dodisplay();
             $("#editInfo").after(htmlcontent);
+            tileCount++;
             setupClicks(str_type, thingindex);
         });
     } else {
         dodisplay();
         $("#editInfo").after(htmlcontent);
+        tileCount++;
         setupClicks(str_type, thingindex);
     }
     
@@ -818,6 +830,17 @@ function setupClicks(str_type, thingindex) {
     initDialogBinds(str_type, thingindex);
     loadSubSelect(str_type, firstsub, thingindex);
     getIcons(str_type, thingindex);	
+            
+    var newtitle;
+    if ( str_type==="page" ) {
+        newtitle = "Editing Page with Name: " + thingindex;
+        $("#labelName").html("Page Name:");
+    } else {
+        newtitle = "Editing Tile #" + thingindex + " of Type: " + str_type;
+        $("#labelName").html("Tile Name:");
+    }
+    newtitle+= " (editing " + tileCount + " items)";
+    $("#editheader").html(newtitle);
     
     var trigger = "div"; // div." + str_type + ".p_"+thingindex;
     $("#wysiwyg").on('click', trigger, function(event) {
@@ -842,15 +865,17 @@ function setupClicks(str_type, thingindex) {
         initColor(str_type, subid, thingindex);
         initDialogBinds(str_type, thingindex);
         loadSubSelect(str_type, subid, thingindex);
-            
+        
         var newtitle;
         if ( str_type==="page" ) {
             newtitle = "Editing Page with Name: " + thingindex;
+            $("#labelName").html("Page Name:");
         } else {
             newtitle = "Editing Tile #" + thingindex + " of Type: " + str_type;
+            $("#labelName").html("Tile Name:");
         }
+        newtitle+= " (editing " + tileCount + " items)";
         $("#editheader").html(newtitle);
-    
         
         event.stopPropagation();
     });
@@ -996,18 +1021,24 @@ function saveTileEdit(str_type, thingindex, newname) {
     var regex = /[{;}]/g;
     var subst = "$&\n";
     sheetContents = sheetContents.replace(regex, subst);
+
+    var results = "";
     
     // post changes to save them in a custom css file
     $.post(returnURL, 
         {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
-                console.log("POST success - newname = " + newname + " id= "+thingindex); // Custom CSS saved:\n"+ presult );
+                results = "success: msg = " + presult;
+                console.log("POST " + results);
             } else {
-                console.log("POST error= " + pstatus);
+                results = "error: pstatus = " + pstatus + " msg = " + presult;
+                console.log("POST " + results);
             }
         }
     );
+    
+    return results;
 }
 
 function cancelTileEdit(str_type, thingindex) {

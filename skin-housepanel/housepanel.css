@@ -2038,3 +2038,7 @@ div.jsondump {
     margin-right: 10px;
     border-bottom: 1px solid black;
 }
+div.custom-thing div.post, div.custom-thing div.text {
+    overflow-wrap: break-word;
+    overflow: auto;
+}

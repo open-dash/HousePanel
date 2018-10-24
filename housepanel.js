@@ -751,6 +751,31 @@ function dynoForm(ajaxcall, content, idval, typeval) {
 
 function setupButtons() {
 
+    function execButton(buttonid) {
+        // blank out screen with a black box size of the window and pause timers
+        if ( buttonid === "blackout") {
+            var w = window.innerWidth;
+            var h = window.innerHeight;            
+            priorOpmode = "Sleep";
+            $("div.maintable").after("<div id=\"blankme\"></div>");
+            $("#blankme").css( {"height":h+"px", "width":w+"px", 
+                                "position":"absolute", "background-color":"black",
+                                "left":"0px", "top":"0px", "z-index":"9999" } );
+            
+            // clicking anywhere will restore the window to normal
+            $("#blankme").on("click", function(event) {
+               $("#blankme").remove(); 
+                priorOpmode = "Operate";
+                event.stopPropagation;
+            });
+        } else if ( buttonid === "restoretabs") {
+            toggleTabs();
+        } else {
+            var newForm = dynoForm(buttonid);
+            newForm.submit();
+        }
+    }
+
     if ( pagename==="main" && !disablepub ) {
         $("#controlpanel").on("click", "div.formbutton", function() {
             var buttonid = $(this).attr("id");
@@ -759,22 +784,11 @@ function setupButtons() {
                 createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
-                        // handle page editor
-                        if ( buttonid == "editpage") {
-                            pageEdit();
-                        } else {
-                            var newForm = dynoForm(buttonid);
-                            newForm.submit();
-                        }
+                        execButton(buttonid);
                     }
                 });
             } else {
-                if ( buttonid == "editpage") {
-                    pageEdit();
-                } else {
-                    var newForm = dynoForm(buttonid);
-                    newForm.submit();
-                }
+                execButton(buttonid);
             }
         });
 
@@ -818,10 +832,6 @@ function setupButtons() {
         });
     }
 
-    $("#controlpanel").on("click","div.restoretabs",function(evt){
-        toggleTabs();
-    });
-    
     if ( pagename==="auth" ) {
 
         $("#pickhub").on('change',function(event) {
@@ -1342,7 +1352,9 @@ function timerSetup(hubs) {
 
             // skip if not in operation mode or if inside a modal dialog box
             if ( priorOpmode !== "Operate" || modalStatus  || !token) { 
-                console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+                // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+                // repeat the method above indefinitely
+                setTimeout(function() {updarray.myMethod();}, this[1]);
                 return; 
             }
 
