@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1/807      Fix brain fart mistake with 1.806 update
  * 1.806      Multi-tile editing and major upgrade to page editing
  * 1.805      Updates to tile editor and change outside image; other bug fixes
  * 1.804      Fix invert icon in TileEditor, update plain skin to work
@@ -112,7 +113,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.806');
+define('HPVERSION', 'Version 1.807');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -3397,7 +3398,7 @@ function is_ssl() {
                     if ( $updated ) {
                         $result = "old page= $oldname new page = $newname";
                     } else {
-                        $retcode = "old page= $oldname not found for $newname to replace";
+                        $result = "old page= $oldname not found for $newname to replace";
                     }
                 } else {
                     $newname = $swattr;
@@ -3423,7 +3424,9 @@ function is_ssl() {
                         $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
                     }
                 }
-                
+                if ( $updated ) {
+                    writeCustomCss($swval);
+                }
                 echo $result;
                 break;
                 
