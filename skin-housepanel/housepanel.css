@@ -780,14 +780,14 @@ div.contact.window.closed {
     background-image: url('icons/closewindow.png');
     color: rgba(255, 255, 255, 0.01);
 }
-div.door.garage.open {
+div.door.garage.open, div.door.garage.opening {
     background-image: url('icons/garage-opened.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 80px;
     height: 112px;
     cursor: pointer;
 }
-div.door.garage.closed {
+div.door.garage.closed, div.door.garage.closing {
     background-image: url('icons/garage-closed.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 80px;

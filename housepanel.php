@@ -7,7 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
- * 1/807      Fix brain fart mistake with 1.806 update
+ * 1.808      Clean up page tile editing
+ * 1.807      Fix brain fart mistake with 1.806 update
  * 1.806      Multi-tile editing and major upgrade to page editing
  * 1.805      Updates to tile editor and change outside image; other bug fixes
  * 1.804      Fix invert icon in TileEditor, update plain skin to work
@@ -113,7 +114,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.807');
+define('HPVERSION', 'Version 1.808');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 

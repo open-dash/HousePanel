@@ -988,7 +988,7 @@ function setsubid(str_type) {
     var subid = str_type;
     switch(str_type) {
         case "page":
-            subid= "head";
+            subid= "panel";
             break;
 
         case "bulb":
@@ -1111,16 +1111,6 @@ function initColor(str_type, subid, thingindex) {
     var icontarget = target;
     
     // alert("initcolor: str_type= " + str_type + " subid= " + subid + " thingindex= " + thingindex + " target= " + icontarget);
-
-//    // set the header name
-//    var target1 = "span.original.n_"+thingindex;
-//    var newname = $(target1).html();
-//    $("#editName").val(newname);
-//    
-//    // set the scope dropdown list
-//    var newscope = getScope(str_type);
-//    $("#scopeEffect").html(newscope);
-    
     // set the default icon to last one
     priorIcon = $(icontarget).css("background-image");
 
@@ -1248,12 +1238,21 @@ function initColor(str_type, subid, thingindex) {
     if ( !pleft || isNaN(pleft) ) { pleft = 0; }
     $("#topPadding").val(ptop);
     $("#leftPadding").val(pleft);
-
-// display of subid and reset button
+// -----------------------------------------------------------------------
+// far left side of the screen
+// -----------------------------------------------------------------------
     var dh= "";
     dh += "<button id='editReset' type='button'>Reset</button>";
     dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
+    
+    // $("#editReset").off('change');
+    $("#editReset").on('click', function (event) {
+        // alert("Reset type= "+str_type+" thingindex= "+thingindex);
+        var subid = $("#subidTarget").html();
+        resetCSSRules(str_type, subid, thingindex);
+        event.stopPropagation;
+    });
 
     onstart = $(icontarget).css("background-color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
@@ -1269,158 +1268,165 @@ function initColor(str_type, subid, thingindex) {
                   <input type="text" id="iconColor" caller="background" target="' + icontarget + '" \
                   class="colorset" value="' + onstart + '"> \
                   </div>';
-
-    // background effect
-    var oneffect = $(icontarget).css("background-image");
-    var dirright = false;
-    var isdark = false;
-    var iseffect = -1;
-    if ( oneffect ) { iseffect= oneffect.indexOf("linear-gradient"); }
-    if ( iseffect !== -1 ) {
-        iseffect = true;
-        dirright = ( oneffect.indexOf("to right") !== -1 );
-        isdark = ( oneffect.indexOf("50%") !== -1 );
+    
+    if ( str_type==="page" && subid==="head" ) {
+        var ceffect = "<div class='colorgroup'><label>Note: Header field for pages cannot be styled. Only the name can be changed. To style the name, select a Tab item.</label>";
+        $("#colorpicker").html(dh + ceffect);
     } else {
-        iseffect = false;
-    }
-    
-    var ceffect = "";
-    ceffect += "<div class='colorgroup'><label>Background Effect:</label>";
-    ceffect += "<select name=\"editEffect\" id=\"editEffect\" class=\"ddlDialog\">";
-    
-    var effects = [ ["none", "No Effect"],
-                    ["hdark","Horiz. Dark"],
-                    ["hlight","Horiz. Light"],
-                    ["vdark","Vertical Dark"],
-                    ["vlight","Vertical Light"]
-    ];
-    var stext = "";
-    $.each(effects, function() {
-        ceffect += "<option value=\"" + this[0] + "\"";
-        if ( !iseffect && this[0]==="none") { stext = " selected"; }
-        else if ( iseffect && dirright && isdark && this[0]==="hdark") { stext = " selected"; }
-        else if ( iseffect && dirright && !isdark && this[0]==="hlight") { stext = " selected"; }
-        else if ( iseffect && !dirright && isdark && this[0]==="vdark") { stext = " selected"; }
-        else if ( iseffect && !dirright && !isdark && this[0]==="vlight") { stext = " selected"; }
-        else if ( this[0]==="none") { stext = " selected"; }
-        else { stext = ""; }
-        
-        ceffect += stext + ">" + this[1] + "</option>";
-        
-        
-    });
-    ceffect += "</select>";
-    ceffect += "</div>";
 
-    var onstart = $(ictarget).css("color");
-    if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
-        onstart = $(generic).css("color");
-        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
-        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
-    }
-    console.log("target= "+ ictarget+ ", initial color= "+onstart);
-    var iconfore = '<div class="colorgroup"> \
-                  <label for="iconFore">Text Font Color</label> \
-                  <input type="text" id="iconFore" \
-                  caller="color" target="' + target + '" \
-                  class="colorset" value="' + onstart + '"> \
-                  </div>';
-
-    // get the default font
-    var ffamily = $(target).css("font-family");
-    var fweight = $(target).css("font-weight");
-    var fstyle = $(target).css("font-style");
-    var fontdef;
-    
-    console.log("ffamily = " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle);
-    
-    if ( ffamily===undefined || !ffamily || !ffamily.hasOwnProperty(("includes")) ) {
-        fontdef = "sans";
-    } else if ( ffamily.includes("Raleway") || ffamily.includes("Times") ) {
-        fontdef = "serif";
-    } else if ( ffamily.includes("Courier") || ffamily.includes("Mono") ) {
-        fontdef = "mono";
-    } else {
-        fontdef = "sans";
-    }
-    if ( fweight==="bold" || ( $.isNumeric(fweight) && fweight > 500)  ) {
-        fontdef+= "b";
-    }
-    if ( fstyle!=="normal") {
-        fontdef+= "i";
-    }
-    console.log("strtype= " + str_type + " ffamily= " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle + " fontdef = "+ fontdef);
-        
-    var fe = "";
-    fe += "<div class='colorgroup font'><label>Font Type:</label>";
-    fe += "<select name=\"fontEffect\" id=\"fontEffect\" class=\"ddlDialog\">";
-    
-    var fonts = {sans:"Sans", sansb:"Sans Bold", sansi:"Sans Italic", sansbi:"Sans Bold+Italic",
-                 serif:"Serif", serifb:"Serif Bold", serifi:"Serif Italic", serifbi:"Serif Bold+Italic",
-                 mono:"Monospace", monob:"Mono Bold", monoi:"Mono Italic", monobi:"Mono Bold+Italic" };
-    for ( var key in fonts ) {
-        if ( fonts.hasOwnProperty(key) ) {
-            var checked = "";
-            if ( key===fontdef) {
-                checked = " selected";
-            }
-            fe += "<option value=\"" + key + "\"" + checked + ">" + fonts[key] + "</option>";
+        // background effect
+        var oneffect = $(icontarget).css("background-image");
+        var dirright = false;
+        var isdark = false;
+        var iseffect = -1;
+        if ( oneffect ) { iseffect= oneffect.indexOf("linear-gradient"); }
+        if ( iseffect !== -1 ) {
+            iseffect = true;
+            dirright = ( oneffect.indexOf("to right") !== -1 );
+            isdark = ( oneffect.indexOf("50%") !== -1 );
+        } else {
+            iseffect = false;
         }
-    }
-    fe += "</select>";
-    fe += "</div>";
-    
-    var f = $(ictarget).css("font-size");
-    f = parseInt(f);
-       
-    fe += "<div class='colorgroup font'><label>Font Size (px):</label>";
-    fe += "<select name=\"fontEffect\" id=\"editFont\" class=\"ddlDialog\">";
-    var sizes = [8,9,10,11,12,14,16,18,20,24,28,32,40,48,60,80,100,120];
-    sizes.forEach( function(sz, index, arr) {
-        sz = parseInt(sz);
-        var checked = "";
-        if ( f === sz ) { checked = " selected"; }
-        fe+= "<option value=\"" + sz + "px;\"" + checked + ">" + sz + "</option>";
-    });
-    fe += "</select>";
-    fe += "</div>";
 
-    var align = "";
-    align += "<div id='alignEffect' class='colorgroup'><label>Text Alignment:</label><div class='editSection_input'>";
-    align+= '<input id="alignleft" type="radio" name="align" value="left"><label for="alignleft">Left</label>';
-    align+= '<input id="aligncenter" type="radio" name="align" value="center" checked><label for="aligncenter">Center</label>';
-    align+= '<input id="alignright" type="radio" name="align" value="right"><label for="alignright">Right</label>';
-    align += "</div></div>";
-    
-    var ishidden = "";
-    ishidden += "<div class='editSection_input autochk'>";
-    ishidden += "<input type='checkbox' id='isHidden' target='" + target + "'>";
-    ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div>";
+        var ceffect = "";
+        ceffect += "<div class='colorgroup'><label>Background Effect:</label>";
+        ceffect += "<select name=\"editEffect\" id=\"editEffect\" class=\"ddlDialog\">";
 
-    var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
+        var effects = [ ["none", "No Effect"],
+                        ["hdark","Horiz. Dark"],
+                        ["hlight","Horiz. Light"],
+                        ["vdark","Vertical Dark"],
+                        ["vlight","Vertical Light"]
+        ];
+        var stext = "";
+        $.each(effects, function() {
+            ceffect += "<option value=\"" + this[0] + "\"";
+            if ( !iseffect && this[0]==="none") { stext = " selected"; }
+            else if ( iseffect && dirright && isdark && this[0]==="hdark") { stext = " selected"; }
+            else if ( iseffect && dirright && !isdark && this[0]==="hlight") { stext = " selected"; }
+            else if ( iseffect && !dirright && isdark && this[0]==="vdark") { stext = " selected"; }
+            else if ( iseffect && !dirright && !isdark && this[0]==="vlight") { stext = " selected"; }
+            else if ( this[0]==="none") { stext = " selected"; }
+            else { stext = ""; }
 
-    // insert the color blocks
-    $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted);
+            ceffect += stext + ">" + this[1] + "</option>";
 
-    // turn on minicolor for each one
-    $('#colorpicker .colorset').each( function() {
-        var strCaller = $(this).attr("caller");
-        // alert("caller= "+strCaller);
-        var startColor = $(this).val();
-        var startTarget = $(this).attr("target");
-        var subid = $("#subidTarget").html();
-        $(this).minicolors({
-            control: "hue",
-            position: "bottom left",
-            defaultValue: startColor,
-            theme: 'default',
-            opacity: true,
-            format: 'rgb',
-            change: function(strColor) {
-                updateColor(strCaller, startTarget, str_type, subid, thingindex, strColor);
-            }
+
         });
-    });
+        ceffect += "</select>";
+        ceffect += "</div>";
+
+        var onstart = $(ictarget).css("color");
+        if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
+            onstart = $(generic).css("color");
+            if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
+            if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
+        }
+        console.log("target= "+ ictarget+ ", initial color= "+onstart);
+        var iconfore = '<div class="colorgroup"> \
+                      <label for="iconFore">Text Font Color</label> \
+                      <input type="text" id="iconFore" \
+                      caller="color" target="' + target + '" \
+                      class="colorset" value="' + onstart + '"> \
+                      </div>';
+
+        // get the default font
+        var ffamily = $(target).css("font-family");
+        var fweight = $(target).css("font-weight");
+        var fstyle = $(target).css("font-style");
+        var fontdef;
+
+        console.log("ffamily = " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle);
+
+        if ( ffamily===undefined || !ffamily || !ffamily.hasOwnProperty(("includes")) ) {
+            fontdef = "sans";
+        } else if ( ffamily.includes("Raleway") || ffamily.includes("Times") ) {
+            fontdef = "serif";
+        } else if ( ffamily.includes("Courier") || ffamily.includes("Mono") ) {
+            fontdef = "mono";
+        } else {
+            fontdef = "sans";
+        }
+        if ( fweight==="bold" || ( $.isNumeric(fweight) && fweight > 500)  ) {
+            fontdef+= "b";
+        }
+        if ( fstyle!=="normal") {
+            fontdef+= "i";
+        }
+        console.log("strtype= " + str_type + " ffamily= " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle + " fontdef = "+ fontdef);
+
+        var fe = "";
+        fe += "<div class='colorgroup font'><label>Font Type:</label>";
+        fe += "<select name=\"fontEffect\" id=\"fontEffect\" class=\"ddlDialog\">";
+
+        var fonts = {sans:"Sans", sansb:"Sans Bold", sansi:"Sans Italic", sansbi:"Sans Bold+Italic",
+                     serif:"Serif", serifb:"Serif Bold", serifi:"Serif Italic", serifbi:"Serif Bold+Italic",
+                     mono:"Monospace", monob:"Mono Bold", monoi:"Mono Italic", monobi:"Mono Bold+Italic" };
+        for ( var key in fonts ) {
+            if ( fonts.hasOwnProperty(key) ) {
+                var checked = "";
+                if ( key===fontdef) {
+                    checked = " selected";
+                }
+                fe += "<option value=\"" + key + "\"" + checked + ">" + fonts[key] + "</option>";
+            }
+        }
+        fe += "</select>";
+        fe += "</div>";
+
+        var f = $(ictarget).css("font-size");
+        f = parseInt(f);
+
+        fe += "<div class='colorgroup font'><label>Font Size (px):</label>";
+        fe += "<select name=\"fontEffect\" id=\"editFont\" class=\"ddlDialog\">";
+        var sizes = [8,9,10,11,12,14,16,18,20,24,28,32,40,48,60,80,100,120];
+        sizes.forEach( function(sz, index, arr) {
+            sz = parseInt(sz);
+            var checked = "";
+            if ( f === sz ) { checked = " selected"; }
+            fe+= "<option value=\"" + sz + "px;\"" + checked + ">" + sz + "</option>";
+        });
+        fe += "</select>";
+        fe += "</div>";
+
+        var align = "";
+        align += "<div id='alignEffect' class='colorgroup'><label>Text Alignment:</label><div class='editSection_input'>";
+        align+= '<input id="alignleft" type="radio" name="align" value="left"><label for="alignleft">Left</label>';
+        align+= '<input id="aligncenter" type="radio" name="align" value="center" checked><label for="aligncenter">Center</label>';
+        align+= '<input id="alignright" type="radio" name="align" value="right"><label for="alignright">Right</label>';
+        align += "</div></div>";
+
+        var ishidden = "";
+        ishidden += "<div class='editSection_input autochk'>";
+        ishidden += "<input type='checkbox' id='isHidden' target='" + target + "'>";
+        ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div>";
+
+        var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
+
+        // insert the color blocks
+        $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted);
+
+        // turn on minicolor for each one
+        $('#colorpicker .colorset').each( function() {
+            var strCaller = $(this).attr("caller");
+            // alert("caller= "+strCaller);
+            var startColor = $(this).val();
+            var startTarget = $(this).attr("target");
+            var subid = $("#subidTarget").html();
+            $(this).minicolors({
+                control: "hue",
+                position: "bottom left",
+                defaultValue: startColor,
+                theme: 'default',
+                opacity: true,
+                format: 'rgb',
+                change: function(strColor) {
+                    updateColor(strCaller, startTarget, str_type, subid, thingindex, strColor);
+                }
+            });
+        });
+    
+    }
 
     $("#invertIcon").off('change');
     $("#invertIcon").on("change",function() {
@@ -1435,14 +1441,6 @@ function initColor(str_type, subid, thingindex) {
             strInvert = "filter: invert(0);";
             addCSSRule(cssRuleTarget, strInvert, false);	
         }
-    });
-    
-    // $("#editReset").off('change');
-    $("#editReset").on('click', function (event) {
-        // alert("Reset type= "+str_type+" thingindex= "+thingindex);
-        var subid = $("#subidTarget").html();
-        resetCSSRules(str_type, subid, thingindex);
-        event.stopPropagation;
     });
 
     $("#editEffect").off('change');
@@ -1593,6 +1591,9 @@ function updateColor(strCaller, cssRuleTarget, str_type, subid, thingindex, strC
     } else if ( strCaller==="background" ) {
         addCSSRule(cssRuleTarget, "background-color: " + strColor + ";");		
     } else {
+        if ( str_type==="page" && (subid==="tab" || subid==="tabon") ) {
+            cssRuleTarget += " a.ui-tabs-anchor";
+        }
         addCSSRule(cssRuleTarget, "color: " + strColor + ";");	
     }
 }
