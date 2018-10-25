@@ -135,32 +135,36 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
 
         // handle music controls special case
         // target = "div." + str_type + "-thing div.overlay";
-        target = "div.overlay";
+        target = "div.thing div.overlay";
+        // target = "div.overlay";
+        
         var subidtag = "." + subid;
         if ( subid===str_type ) {
             subidtag = "";
         }
-        if ( useall < 2 ) {
+        if ( useall > 0 ) {
             if ( subid.startsWith("music-") ) {
                 target+= ".music-controls";
             } else {
                 target+= "." + subid;
             }
         }
-        if ( useall < 1 ) { target+= '.v_'+thingindex; }
+        if ( useall === 0 ) { target+= '.v_'+thingindex; }
 
         // for everything other than levels, set the subid target
         // levels use the overlay layer only
-        if ( useall < 2 && subid!=="level" ) {
+        if ( subid!=="level" ) {
             // target+= " div."+str_type;
 
             // handle special wrapper cases (music and thermostats)
-            if ( subid === "cool" || subid==="heat" ) { 
+            if ( useall===2 ){
+                target+= " div";
+            } else if ( subid === "cool" || subid==="heat" ) { 
                 target+= " div." + subid + "-val"; 
             } else {
                 target+= " div."+str_type + subidtag;
             }
-            if ( useall < 1 ) target+= '.p_'+thingindex;
+            if ( useall === 0 ) target+= '.p_'+thingindex;
         }
 
         // get the on/off state
@@ -282,9 +286,8 @@ function initDialogBinds(str_type, thingindex) {
     $("#editName").val(newname);
     
     // set the scope dropdown list
-    var newscope = getScope(str_type);
-    $("#scopeEffect").html(newscope);
-    
+    var newscope = getScope(str_type, false);
+    // $("#scopeEffect").html(newscope);
     
     $("#bgSize").on('change', function(event) {
         var subid = $("#subidTarget").html();
@@ -566,15 +569,28 @@ function editSection(str_type, thingindex) {
     return dh;
 }
 
-function getScope(str_type) {
+function getScope(str_type, ftime) {
     var dh = "";
-    if ( str_type==="page" ) {
-        dh += "<option value=\"thistile\" selected>This page</option>";
-        dh += "<option value=\"alltiles\">All pages</option>";
+    if ( ftime ) {
+        if ( str_type==="page" ) {
+            dh += "<option id=\"tscope1\" value=\"thistile\" selected>This page</option>";
+            dh += "<option id=\"tscope2\" value=\"alltypes\">All pages</option>";
+            dh += "<option id=\"tscope3\" value=\"alltiles\">All pages</option>";
+        } else {
+            dh += "<option id=\"tscope1\" value=\"thistile\" selected>This " + str_type + " tile</option>";
+            dh += "<option id=\"tscope2\" value=\"alltypes\">All " + str_type + " tiles</option>";
+            dh += "<option id=\"tscope3\" value=\"alltiles\">All tiles</option>";
+        }
     } else {
-        dh += "<option value=\"thistile\" selected>This " + str_type + " tile</option>";
-        dh += "<option value=\"alltypes\">All " + str_type + " tiles</option>";
-        dh += "<option value=\"alltiles\">All tiles</option>";
+        if ( str_type==="page" ) {
+            $("#tscope1").text("This page");
+            $("#tscope2").text("All pages");
+            $("#tscope3").text("All pages");
+        } else {
+            $("#tscope1").text("This " + str_type + " tile");
+            $("#tscope2").text("All " + str_type + " tiles");
+            $("#tscope3").text("All tiles");
+        }
     }
     return dh;
 }
@@ -598,7 +614,7 @@ function effectspicker(str_type, thingindex) {
 	//Effects
 	dh += "<div class='colorgroup'><label>Effect Scope:</label>";
 	dh += "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
-        dh += getScope(str_type);
+        dh += getScope(str_type, true);
 	dh += "</select>";
 	dh += "</div>";
     return dh;    
@@ -879,7 +895,15 @@ function setupClicks(str_type, thingindex) {
         
         event.stopPropagation();
     });
-
+    
+    $("#scopeEffect").off('change');
+    $("#scopeEffect").on('change', function(event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
+        var subid = $("#subidTarget").html();
+        initColor(str_type, subid, thingindex);
+        event.stopPropagation();
+    });
     
 }
 
