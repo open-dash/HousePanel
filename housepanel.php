@@ -803,7 +803,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "</div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Hub Type: </label>";
-        $tc.= "<select name=\"hubType\" id=\"hubType\" class=\"startupinp\">";
+        $tc.= "<select name=\"hubType\" class=\"startupinp\">";
         $st_select = $he_select = $w_select = $v_select = $o_select = "";
         if ( $hubType==="SmartThings" ) { $st_select = "selected"; }
         if ( $hubType==="Hubitat" ) { $he_select = "selected"; }

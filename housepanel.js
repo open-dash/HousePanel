@@ -1580,6 +1580,7 @@ function setupPage(trigger) {
                 this[0].attr("class", this[1]);
                 this[0].html(this[2]);
             };
+            
             $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid, hubnum: hubnum},
                 function(presult, pstatus) {
@@ -1611,6 +1612,7 @@ function setupPage(trigger) {
         } else if ( thetype==="weather") {
             console.log("Weather tiles have no actions...");
         } else {
+            // alert("ajax= "+ajaxcall+" id= "+bid+" value= "+thevalue+" attr= "+subid+" subid= "+subid+" class="+theclass);
             console.log(ajaxcall + ": id= "+bid+" hub= " + hubnum + " type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid, hubnum: hubnum},

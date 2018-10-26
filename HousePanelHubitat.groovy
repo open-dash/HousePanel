@@ -830,8 +830,12 @@ def setOnOff(items, itemtype, swid, cmd, swattr) {
     if (item) {
         if (cmd=="on" || cmd=="off") {
             newonoff = cmd
-        } else if ( swattr=="on" || swattr=="off") {
-            newonoff = swattr
+        } else if ( cmd=="toggle" ) {
+            newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
+        } else if ( swattr.endsWith("on") ) {
+            newonoff = "off"
+        } else if ( swattr.endsWith("off") ) {
+            newonoff = "on"
         } else {
             newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
         }
