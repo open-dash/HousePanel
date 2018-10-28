@@ -207,27 +207,6 @@ div.editSection_input.autochk {
   text-decoration: none;
 }
 
-#dgclose:hover {
-  background: #f00000;
-  background-image: -webkit-linear-gradient(top, #f00000, #903000);
-  background-image: -moz-linear-gradient(top, #f00000, #903000);
-  background-image: -ms-linear-gradient(top, #f00000, #903000);
-  background-image: -o-linear-gradient(top, #f00000, #903000);
-  background-image: linear-gradient(to bottom, #f00000, #903000);
-  text-decoration: none;	
-}
-
-#saveCss {
-	font-size: 14pt;
-	-webkit-border-radius: 32;
-	-moz-border-radius: 32;
-	border-radius: 32px;
-}
-#showCssSaved {
-	margin-left: 6px;
-	font-size: 12pt;
-	color: #900;
-}
 #custom_footer {
 	position: relative;
 	margin: 4px;

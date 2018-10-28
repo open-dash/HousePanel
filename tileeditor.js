@@ -483,8 +483,10 @@ function initDialogBinds(str_type, thingindex) {
                 // special handling for default temperature circles
                 if ( subid==="temperature" || subid==="feelsLike" ) {
                     rule = "width: 70px; border-radius: 50%;  padding-left: 0; padding-right: 0; ";
+                } else if ( str_type==="page" && subid==="panel") {
+                    rule = "width: 100%; padding-left: 0px; padding-right: 0px;";
                 } else {
-                    rule = "width: 92%; padding-left: 4%; padding-right: 4%;";
+                    rule = "width: 96%; padding-left: 2%; padding-right: 2%;";
                 }
                 $("#editWidth").prop("disabled", true);
                 $("#editWidth").css("background-color","gray");
@@ -494,7 +496,13 @@ function initDialogBinds(str_type, thingindex) {
                 $("#editWidth").prop("disabled", false);
                 $("#editWidth").css("background-color","white");
                 if ( newsize === 0 ) {
-                    rule = "width: 92%; padding-left: 4%; padding-right: 4%;";
+                    if ( subid==="temperature" || subid==="feelsLike" ) {
+                        rule = "width: 70px; border-radius: 50%;  padding-left: 0; padding-right: 0; ";
+                    } else if ( str_type==="page" && subid==="panel") {
+                        rule = "width: 100%; padding-left: 0px; padding-right: 0px;";
+                    } else {
+                        rule = "width: 96%; padding-left: 2%; padding-right: 2%;";
+                    }
                 } else {
                     newsize = newsize.toString() + "px;";
                     rule = "width: " + newsize + " padding-left: 0; padding-right: 0; display: inline-block;";
@@ -721,10 +729,6 @@ function sizepicker(str_type, thingindex) {
 
 function colorpicker(str_type, thingindex) {
     var dh = "";
-    // dh += "<div id='pickerWrapper'>";
-//    dh += "<button id='editReset' type='button'>Reset</button>";
-//    dh += "<div class='dlgtext'>Setting Icon: </div><div id='subidTarget' class='dlgtext'>" + str_type + "</div>";
-//    dh += "<div id='onoffTarget' class='dlgtext'>" + "" + "</div>";
     
     // this section is loaded later with a bunch of color pickers
     // including script to respond to picked color
@@ -1242,7 +1246,8 @@ function initColor(str_type, subid, thingindex) {
 // far left side of the screen
 // -----------------------------------------------------------------------
     var dh= "";
-    dh += "<button id='editReset' type='button'>Reset</button>";
+    // dh += "<button id='editReset' type='button'>Reset</button>";
+    dh += "<div class='colorgroup'><label>Item Selected:</label></div>";
     dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
     
@@ -1399,12 +1404,14 @@ function initColor(str_type, subid, thingindex) {
         var ishidden = "";
         ishidden += "<div class='editSection_input autochk'>";
         ishidden += "<input type='checkbox' id='isHidden' target='" + target + "'>";
-        ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div>";
+        ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div><br />";
 
         var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
 
+        var resetbutton = "<br /><br /><button id='editReset' type='button'>Reset</button>";
+
         // insert the color blocks
-        $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted);
+        $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted + resetbutton);
 
         // turn on minicolor for each one
         $('#colorpicker .colorset').each( function() {
