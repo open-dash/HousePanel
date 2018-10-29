@@ -135,28 +135,34 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
 
         // handle music controls special case
         // target = "div." + str_type + "-thing div.overlay";
-        target = "div.thing div.overlay";
-        // target = "div.overlay";
-        
-        var subidtag = "." + subid;
-        if ( subid===str_type ) {
-            subidtag = "";
+        if ( useall===2 ) {
+            target = "div.thing";
+        } else if ( useall===1 ) {
+            target = "div.thing." + str_type + "-thing";
+        } else {
+            target = "div.thing." + str_type + "-thing." + "p_" + thingindex;
         }
-        if ( useall > 0 ) {
-            if ( subid.startsWith("music-") ) {
-                target+= ".music-controls";
-            } else {
-                target+= "." + subid;
-            }
+        
+        // set the overlay wrapper
+        target += " div.overlay";
+        if ( subid.startsWith("music-") ) {
+            target+= ".music-controls";
+        } else {
+            target+= "." + subid;
         }
         if ( useall === 0 ) { target+= '.v_'+thingindex; }
 
         // for everything other than levels, set the subid target
         // levels use the overlay layer only
+        // set the subid which is blank if it matches the tile type
+        var subidtag = "." + subid;
+        if ( subid===str_type ) {
+            subidtag = "";
+        }
         if ( subid!=="level" ) {
             // target+= " div."+str_type;
 
-            // handle special wrapper cases (music and thermostats)
+            // handle special thermostat wrapper case
             if ( useall===2 ){
                 target+= " div";
             } else if ( subid === "cool" || subid==="heat" ) { 
@@ -1093,12 +1099,10 @@ function initColor(str_type, subid, thingindex) {
     var generic;
     var newonoff;
     var onstart;
-    var ictarget;
 
     // selected background color
     target = getCssRuleTarget(str_type, subid, thingindex, 0);
     generic = getCssRuleTarget(str_type, subid, thingindex, 1);
-    ictarget = target;
     newonoff = "";
     var swval = $(target).html();
     var onoff = getOnOff(subid);
@@ -1247,12 +1251,15 @@ function initColor(str_type, subid, thingindex) {
 // -----------------------------------------------------------------------
     var dh= "";
     // dh += "<button id='editReset' type='button'>Reset</button>";
-    dh += "<div class='colorgroup'><label>Item Selected:</label></div>";
+    dh += "<div class='colorgroup'><label>Item Selected:</label>";
     dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
+    dh += "</div>";
     
     // $("#editReset").off('change');
     $("#editReset").on('click', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         // alert("Reset type= "+str_type+" thingindex= "+thingindex);
         var subid = $("#subidTarget").html();
         resetCSSRules(str_type, subid, thingindex);
@@ -1321,13 +1328,19 @@ function initColor(str_type, subid, thingindex) {
         ceffect += "</select>";
         ceffect += "</div>";
 
-        var onstart = $(ictarget).css("color");
+        var sliderbox = icontarget;
+        if ( subid==="level" ) {
+            sliderbox+= " .ui-slider";
+            generic+= " .ui-slider";
+        }
+        
+        var onstart = $(sliderbox).css("color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
             onstart = $(generic).css("color");
             if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
             if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
         }
-        console.log("target= "+ ictarget+ ", initial color= "+onstart);
+        console.log("target= "+ icontarget+ ", initial color= "+onstart);
         var iconfore = '<div class="colorgroup"> \
                       <label for="iconFore">Text Font Color</label> \
                       <input type="text" id="iconFore" \
@@ -1379,7 +1392,7 @@ function initColor(str_type, subid, thingindex) {
         fe += "</select>";
         fe += "</div>";
 
-        var f = $(ictarget).css("font-size");
+        var f = $(icontarget).css("font-size");
         f = parseInt(f);
 
         fe += "<div class='colorgroup font'><label>Font Size (px):</label>";
@@ -1428,6 +1441,8 @@ function initColor(str_type, subid, thingindex) {
                 opacity: true,
                 format: 'rgb',
                 change: function(strColor) {
+                    var str_type = $("#tileDialog").attr("str_type");
+                    var thingindex = $("#tileDialog").attr("thingindex");
                     updateColor(strCaller, startTarget, str_type, subid, thingindex, strColor);
                 }
             });
@@ -1438,6 +1453,8 @@ function initColor(str_type, subid, thingindex) {
     $("#invertIcon").off('change');
     $("#invertIcon").on("change",function() {
         var strInvert;;
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         // alert(cssRuleTarget);
@@ -1452,6 +1469,8 @@ function initColor(str_type, subid, thingindex) {
 
     $("#editEffect").off('change');
     $("#editEffect").on('change', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var editEffect = getBgEffect( $(this).val() );
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
@@ -1467,6 +1486,8 @@ function initColor(str_type, subid, thingindex) {
 
     $("#fontEffect").off('change');
     $("#fontEffect").on('change', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var fontstyle = $(this).val();
@@ -1503,6 +1524,8 @@ function initColor(str_type, subid, thingindex) {
     // font size handling
     $("#editFont").off('change');
     $("#editFont").on('change', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var fontsize = $(this).val();
@@ -1515,6 +1538,8 @@ function initColor(str_type, subid, thingindex) {
     // font size handling
     $("#alignEffect").off('change', "input");
     $("#alignEffect").on('change', "input", function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
         var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
         var aligneffect = $(this).val();
@@ -1527,6 +1552,8 @@ function initColor(str_type, subid, thingindex) {
     // determine hiding of element
     $("#isHidden").off('change');
     $("#isHidden").on('change', function(event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
         var strCaller = $($(event.target)).attr("target");
         var ischecked = $(event.target).prop("checked");
         if ( ischecked  ){
@@ -1538,6 +1565,16 @@ function initColor(str_type, subid, thingindex) {
         }
         event.stopPropagation;
     });	
+    
+    // $("#editReset").off('change');
+    $("#editReset").on('click', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
+        alert("Reset type= "+str_type+" thingindex= "+thingindex);
+        var subid = $("#subidTarget").html();
+        resetCSSRules(str_type, subid, thingindex);
+        event.stopPropagation;
+    });
 
     // set the initial invert check box
     if ( $(icontarget).css("filter") && $(icontarget).css("filter").startsWith("invert") ) {
