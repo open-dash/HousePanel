@@ -144,13 +144,18 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         }
         
         // set the overlay wrapper
-        target += " div.overlay";
+        // target += " div.overlay";
         if ( subid.startsWith("music-") ) {
-            target+= ".music-controls";
+            target += " div.overlay.music-controls";
+            if ( useall === 0 ) { target+= '.v_'+thingindex; }
+//        } else if ( subid==="forecastIcon" || subid==="weatherIcon" )  {
+//            target += " div.weather_icons";
+//        } else if ( subid==="feelsLike" || (str_type==="weather" && subid==="temperature") )  {
+//            target += " div.weather_temps";
         } else {
-            target+= "." + subid;
+            target += " div.overlay." + subid;
+            if ( useall === 0 ) { target+= '.v_'+thingindex; }
         }
-        if ( useall === 0 ) { target+= '.v_'+thingindex; }
 
         // for everything other than levels, set the subid target
         // levels use the overlay layer only
@@ -159,7 +164,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         if ( subid===str_type ) {
             subidtag = "";
         }
-        if ( subid!=="level" ) {
+        if ( subid!=="level" && subid!=="cool" && subid!=="head" ) {
             // target+= " div."+str_type;
 
             // handle special thermostat wrapper case
@@ -533,6 +538,9 @@ function initDialogBinds(str_type, thingindex) {
         var rule = "padding-top: " + newsize;
         if ( subid === "wholetile" || subid === "panel" ) {
             rule = "background-position-y: " + newsize;
+        } else if ( subid==="temperature" || subid==="feelsLike" ||
+                    subid==="weatherIcon" || subid==="forecastIcon" ) {
+            rule = "margin-top: " + newsize;
         }
         addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;
@@ -552,6 +560,9 @@ function initDialogBinds(str_type, thingindex) {
         var rule = "padding-left: " + newsize;
         if ( subid === "wholetile" || subid === "panel") {
             rule = "background-position-x: " + newsize;
+        } else if ( subid==="temperature" || subid==="feelsLike" ||
+                    subid==="weatherIcon" || subid==="forecastIcon" ) {
+            rule = "margin-left: " + newsize;
         }
         addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;

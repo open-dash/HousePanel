@@ -261,9 +261,12 @@ div.minheight {
 
 div.panel {
     display: inline-block;
-    border: 0px solid #3333cc;
-    padding: 2px;    width: auto;    margin: auto;
-    background-position: 0 0;
+    border: 0px;
+    padding: 2px;    
+    width: 100%;
+    margin: auto;
+    background-position-x: 0px;
+    background-position-y: 0px;
     background-repeat: no-repeat;
     background-size: cover;
 }
@@ -1846,6 +1849,11 @@ div.switch-thing div.overlay.level {
 }
 div.weather-thing div.overlay {
     display: inline;
+    padding-right: 0px;
+}
+div.weather-thing div.overlay.temperature, div.weather-thing div.overlay.feelsLike {
+    display: inline;
+    padding-right: 4px;
 }
 div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
     background-position-y: 8px;

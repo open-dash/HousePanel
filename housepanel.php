@@ -1086,7 +1086,6 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         }
         $tc.= "<div aid=\"$i\" title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
-        // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
         $tc.= "</div>";
         $tc.= putElement($kindex, $i, 0, $thingtype, $thingname, "name");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["city"], "city");
@@ -1103,9 +1102,9 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         if (substr($ficonstr,0,3) === "nt_") {
             $ficonstr = substr($ficonstr,3);
         }
-        $tc.= "</div>";
         $tc.= putElement($kindex, $i, 4, $thingtype, $wiconstr, "weatherIcon");
         $tc.= putElement($kindex, $i, 5, $thingtype, $ficonstr, "forecastIcon");
+        $tc.= "</div>";
         $tc.= putElement($kindex, $i, 6, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
         $j = 7;
         foreach($thingvalue as $tkey => $tval) {
@@ -1752,9 +1751,9 @@ function cleanupStr($str) {
 }
 
 // call to write Custom Css Back to customtiles.css
-function writeCustomCss($str) {
+function writeCustomCss($fname, $str) {
     $today = date("F j, Y  g:i a");
-    $file = fopen("customtiles.css","wb");
+    $file = fopen($fname,"wb");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
@@ -1875,7 +1874,7 @@ function refactorOptions($allthings) {
     }
     writeOptions($options);
     if ( $updatecss ) {
-        writeCustomCss($customcss);
+        writeCustomCss("customtiles.css",$customcss);
     }
     
 }
@@ -2374,12 +2373,6 @@ function processOptions($optarray) {
         else if ( $key=="useroptions" && is_array($val) ) {
             $newuseroptions = $val;
             $options["useroptions"] = $newuseroptions;
-        }
-        
-        // this should now never be true but left it here anyway
-        // because now tile editing is only done from main screen
-        else if ( $key=="cssdata") {
-            writeCustomCss($val);
         }
         // if the value is an array it must be a room name with
         // the values being either an array of indexes to things
@@ -3417,7 +3410,6 @@ function is_ssl() {
                             }
                         }
                     }
-                    writeCustomCss($swval);
                     if ( $updated ) {
                         writeOptions($options);
                         $result = "$nupd names changed for type= $swtype tileid= $tileid newname= $newname";
@@ -3426,7 +3418,7 @@ function is_ssl() {
                     }
                 }
                 if ( $updated ) {
-                    writeCustomCss($swval);
+                    writeCustomCss("customtiles.css",$swval);
                 }
                 echo $result;
                 break;
@@ -3547,7 +3539,7 @@ function is_ssl() {
 
             // check if custom tile CSS is present
             if ( !file_exists("customtiles.css")) {
-                writeCustomCss("");
+                writeCustomCss("customtiles.css","");
             }
 
             if (DEBUG || DEBUG5) {
