@@ -766,7 +766,7 @@ function setupButtons() {
             $("#blankme").on("click", function(event) {
                $("#blankme").remove(); 
                 priorOpmode = "Operate";
-                event.stopPropagation;
+                event.stopPropagation();
             });
         } else if ( buttonid === "restoretabs") {
             toggleTabs();
@@ -1528,7 +1528,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
 // this used to be done by page but now it is done by sensor type
 function setupPage(trigger) {
     $("div.overlay > div").off("click.tileactions");
-    $("div.overlay > div").on("click.tileactions", function() {
+    $("div.overlay > div").on("click.tileactions", function(event) {
         
         var aid = $(this).attr("aid");
         var theclass = $(this).attr("class");
@@ -1568,6 +1568,9 @@ function setupPage(trigger) {
             thevalue = "";
         } else {
             thevalue = $(targetid).html();
+            if ( !thevalue && thetype=="thermostat") {
+                thevalue = $("#a-"+aid+"-temperature").html();
+            }
         }
 
         // turn momentary items on or off temporarily
@@ -1633,7 +1636,8 @@ function setupPage(trigger) {
             );
             
         } 
-                            
+         
+        event.stopPropagation();
     });
    
 };

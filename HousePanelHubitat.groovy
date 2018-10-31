@@ -1258,12 +1258,15 @@ def setThermostat(swid, curtemp, swattr, subid) {
     def newsw = 72
     def tempint
 
+    def cmd = curtemp
     def item  = mythermostats.find {it.id == swid }
     if (item) {
+//          log.debug "setThermostat attr = $swattr for id = $swid curtemp = $curtemp"
+        
           resp = getThermostat(swid, item)
           // switch (swattr) {
           // case "heat-up":
-          if ( swattr.endsWith("heat-up") ) {
+          if ( subid=="heat-up" || swattr.contains("heat-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.heat()
@@ -1273,7 +1276,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-up":
-          else if ( swattr.endsWith("cool-up") ) {
+          else if ( subid=="cool-up" || swattr.contains("cool-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.cool()
@@ -1283,7 +1286,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
 
           // case "heat-dn":
-          else if ( swattr.endsWith("heat-dn")) {
+          else if ( subid=="heat-dn" || swattr.contains("heat-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 50) newsw = 50
               // item.heat()
@@ -1293,7 +1296,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-dn":
-          else if ( swattr.endsWith("cool-dn")) {
+          else if ( subid=="cool-up" || swattr.contains("cool-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.cool()
@@ -1311,8 +1314,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermomode heat":
-          else if ( swattr.contains("thermomode") && swattr.endsWith("heat")) {
-              def modecmd = swattr
+          else if ( swattr.contains("thermomode") && (cmd=="heat" || swattr.contains("heat")) ) {
               item.cool()
               newsw = "cool"
               resp['thermomode'] = newsw
@@ -1320,7 +1322,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermomode cool":
-          else if ( swattr.contains("thermomode") && swattr.endsWith("cool")) {
+          else if ( swattr.contains("thermomode") && (cmd=="cool" || swattr.contains("cool")) ) {
               item.auto()
               newsw = "auto"
               resp['thermomode'] = newsw
@@ -1328,7 +1330,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermomode auto":
-          else if ( swattr.contains("thermomode") && swattr.endsWith("auto")) {
+          else if ( swattr.contains("thermomode") && (cmd=="auto" || swattr.contains("auto")) ) {
               item.off()
               newsw = "off"
               resp['thermomode'] = newsw
@@ -1336,7 +1338,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermomode off":
-          else if ( swattr.contains("thermomode") && swattr.endsWith("off")) {
+          else if ( swattr.contains("thermomode") && (cmd=="off" || swattr.contains("off")) ) {
               item.heat()
               newsw = "heat"
               resp['thermomode'] = newsw
@@ -1344,7 +1346,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermofan fanOn":
-          else if ( swattr.contains("thermofan") && swattr.endsWith("on")) {
+          else if ( swattr.contains("thermofan") && (cmd=="on" || swattr.contains("on")) ) {
               item.fanAuto()
               newsw = "auto"
               resp['thermofan'] = newsw
@@ -1352,15 +1354,15 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.contains("thermofan") && swattr.endsWith("auto")) {
+          else if ( swattr.contains("thermofan") && (cmd=="auto" || swattr.contains("auto")) ) {
               item.fanCirculate()
               newsw = "circulate"
               resp['thermofan'] = newsw
               // break
           }
           
-          // case "thermostat thermofan circulate":
-          else if ( swattr.contains("thermofan") && swattr.endsWith("circulate")) {
+          // case "thermostat thermofan fanAuto":
+          else if ( swattr.contains("thermofan") && (cmd=="circulate" || swattr.contains("circulate")) ) {
               item.fanOn()
               newsw = "on"
               resp['thermofan'] = newsw
@@ -1370,7 +1372,6 @@ def setThermostat(swid, curtemp, swattr, subid) {
           // define actions for python end points  
           else {
           // default:
-              def cmd = curtemp
               if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
                   resp['heat'] = swattr

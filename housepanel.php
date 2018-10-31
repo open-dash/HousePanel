@@ -7,7 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
- * 1.808      Clean up page tile editing
+ * 1.808      Clean up page tile editing and thermostat bug fix
  * 1.807      Fix brain fart mistake with 1.806 update
  * 1.806      Multi-tile editing and major upgrade to page editing
  * 1.805      Updates to tile editor and change outside image; other bug fixes
