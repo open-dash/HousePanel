@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.809      Fix disappearing things in Hubitat bug
  * 1.808      Clean up page tile editing and thermostat bug fix
  * 1.807      Fix brain fart mistake with 1.806 update
  * 1.806      Multi-tile editing and major upgrade to page editing
@@ -114,7 +115,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.808');
+define('HPVERSION', 'Version 1.809');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -925,8 +926,14 @@ function getAllThings($reset = false) {
             $postkey = "post_" . $customid;
             if ( array_key_exists($postkey, $options) ) {
                 $lines = $options[$postkey];
+                if ( !is_array($lines[0]) ) {
+                    $lines = array($lines);
+                }
             } else if (array_key_exists($swid, $options) ) {
                 $lines = $options[$swid];
+                if ( !is_array($lines[0]) ) {
+                    $lines = array($lines);
+                }
             } else {
                 $lines = array(array("TEXT",$customid, "Not Configured"));
             }
@@ -1897,14 +1904,8 @@ function getOptions($options, $newthings) {
     // find the largest index number for a sensor in our index
     // and undo the old flawed absolute positioning
     $cnt = 0;
-    foreach ($options["index"] as $thingid => $idxarray) {
-        if ( is_array($idxarray) ) {
-            $idx = $idxarray[0];
-        } else {
-            $idx = $idxarray;
-        }
+    foreach ($options["index"] as $thingid => $idx) {
         $idx = intval($idx);
-        $options["index"][$thingid] = $idx;
         $cnt = ($idx > $cnt) ? $idx : $cnt;
     }
     $cnt++;
@@ -1926,7 +1927,8 @@ function getOptions($options, $newthings) {
 
     // update the index with latest sensor information
     foreach ($newthings as $thingid =>$thesensor) {
-        if ( !key_exists($thingid, $options["index"]) ) {
+        if ( !key_exists($thingid, $options["index"]) ||
+             intval($options["index"][$thingid])===0 ) {
             $options["index"][$thingid] = $cnt;
             $cnt++;
         }
