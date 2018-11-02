@@ -864,8 +864,8 @@ function addEditLink() {
     
     // add links to edit and delete this tile
     $("div.panel > div.thing").each(function() {
-       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + ">Edit</div>";
-       var deldiv = "<div class=\"dellink\" aid=" + $(this).attr("id") + ">Del</div>";
+       var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + "> </div>";
+       var deldiv = "<div class=\"dellink\" aid=" + $(this).attr("id") + "> </div>";
        $(this).append(editdiv).append(deldiv);
     });
     

@@ -3389,6 +3389,7 @@ function is_ssl() {
                 
                 if ( $swtype === "page" ) {
                     $newname = $swattr;
+                    $newname = str_replace(" ", "_", $newname);
                     $oldname = $tileid;
                     $updated = changePageName($oldname, $newname);
                     if ( $updated ) {

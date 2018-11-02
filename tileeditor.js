@@ -1262,7 +1262,7 @@ function initColor(str_type, subid, thingindex) {
 // -----------------------------------------------------------------------
     var dh= "";
     // dh += "<button id='editReset' type='button'>Reset</button>";
-    dh += "<div class='colorgroup'><label>Item Selected:</label>";
+    dh += "<div class='colorgroup'><label>Feature Selected:</label>";
     dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
     dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
     dh += "</div>";
