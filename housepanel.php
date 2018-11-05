@@ -2207,10 +2207,7 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     if ( ! is_numeric($cnt) ) {
         $cnt = substr($cnt,2);
     }
-    $cnt = intval($cnt);
-    if ( !$cnt || $cnt < 0 ) {
-        $cnt = 1000;
-    }
+    $cnt = intval($cnt, 10);
 
     $options["things"][$panel] = array_values($options["things"][$panel]);
     $lastid = count( $options["things"][$panel] ) - 1;
