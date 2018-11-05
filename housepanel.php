@@ -7,7 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
- * 1.809      Fix disappearing things in Hubitat bug
+ * 1.809      Fix disappearing things in Hubitat bug - really this time...
  * 1.808      Clean up page tile editing and thermostat bug fix
  * 1.807      Fix brain fart mistake with 1.806 update
  * 1.806      Multi-tile editing and major upgrade to page editing
@@ -1850,7 +1850,7 @@ function refactorOptions($allthings) {
                     $postop = 0;
                     $posleft = 0;
                 }
-                if ( $idx == $pid ) {
+                if ( $idx === $pid ) {
 
 //  use the commented code below if you want to preserve any user movements
 //  otherwise a refactor call resets all tiles to their baseeline position  
@@ -1874,10 +1874,8 @@ function refactorOptions($allthings) {
             $updatecss = true;
         }
         
-        $checkthingid = explode("|", $thingid);
-        if ( count($checkthingid)===2 && strlen($checkthingid[0]) > 1 && strlen($checkthingid[1]) > 1 ) {
-            $options["index"][$thingid] = $cnt;
-        }
+        // save the index number - fixed prior bug that only did this sometimes
+        $options["index"][$thingid] = $cnt;
     }
     writeOptions($options);
     if ( $updatecss ) {
