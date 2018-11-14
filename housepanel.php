@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.900      Refresh when done auth and update documentation to ccurrent version
  * 1.809      Fix disappearing things in Hubitat bug - really this time...
  * 1.808      Clean up page tile editing and thermostat bug fix
  * 1.807      Fix brain fart mistake with 1.806 update
@@ -24,7 +25,7 @@
  *            - fix icon setting on some servers by removing backslashes
  *            - added separate option for timers and action disable
  * 1.78       Activate multiple things for API calls using comma separated lists
- *            to use this you must have useajax=doaction or useajax=dohubitat
+ *            to use this you mugit stst have useajax=doaction or useajax=dohubitat
  *            and list all the things to control in the API call with commas separating
  * 1.77       More bug fixes
  *             - fix accidental delete of icons in hubitat version
@@ -2643,6 +2644,10 @@ function is_ssl() {
     
     if ( $useajax==="cancelauth" ) { 
         unset($_SESSION["hpcode"]);
+        $allthings = getAllThings(true);
+        $oldoptions = readOptions();
+        $options= getOptions($oldoptions, $allthings);
+        writeOptions($options);
         echo "success";
         exit(0);
     }
