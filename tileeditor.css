@@ -1,5 +1,499 @@
-div.tileDialog {
-  overflow: hidden;
+/*
+This file now is the main CSS that doesn't change with skins
+All styling that is fixed across all skins is now here
+Of course, anything here can be overridden by a skin since
+this file is loaded first, so nothing if carved in stone
+By moving things here we reduce the skin file to the bare needs
+*/
+* {
+    font-family: "Droid Sans", sans-serif;
+    font-size: 11pt; padding: 0px; margin: 0px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+body {
+    background-color: #ffffff;
+    color: #000000;
+    width: 1190px;
+}
+div.greeting {
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-bottom: 20px;
+    border: 4px solid black;
+    width: 1010px;
+    background-color: #eeeeee;
+    color: black;
+    font-size: 12pt;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+div.greeting p {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+div.greetingopts {
+    margin-left: 10px;
+    margin-bottom: 20px;
+}
+div.greetingopts div {
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+div.greetingopts div.hubopt {
+    margin-top: 20px; margin-bottom: 20px;
+    width: 1020px;
+    border-bottom: 2px solid black;
+}
+
+label.startupinp, input.indent {
+    font-weight: bold;
+    font-size: 12pt;
+    margin-left: 5px;
+}
+
+label.highlight {
+    background-color: rgba(0, 40, 20, 1);
+    color: #ffffee;
+}
+
+div.authhub {
+    border: 2px solid black;
+    background-color: rgba(240, 240, 220, 1);
+    width: 1020px;
+}
+
+div.maintable {
+/*    transform: scale(0.6);
+    -ms-transform: scale(0.6);
+    -moz-transform: scale(0.6);
+    -o-transform: scale(0.6);
+    -webkit-transform: scale(0.6);
+    transform-origin: 0 0;
+    -ms-transform-origin: 0 0;
+    -moz-transform-origin: 0 0;
+    -o-transform-origin: 0 0;
+    -webkit-transform-origin: 0 0;*/
+    width: auto;
+}
+
+h1, h2, h3 {
+    color: #000000;
+    font-size: 24pt;
+    margin-bottom: 2px;    margin-top: 2px;    margin-left: 10px;
+}
+
+input.startupinp, select.startupinp, input.editinp {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12pt;
+    border-top: #cccccc solid 3px;
+    border-left: #cccccc solid 3px;
+    border-right: black solid 3px;
+    border-bottom: black solid 3px;
+    width: 800px;
+    position: absolute;
+    left: 220px;
+    display: inline-block;
+}
+
+select.startupinp {
+    width: 200px;
+}
+
+div#catalog {
+    width: 395px;
+    display: block;
+    position: absolute;
+    top: 0px;
+    left: 1192px;
+    border: 2px solid rgb(128, 128, 128);
+    background-color: rgba(255, 255, 255, 1);
+    
+    /* set z-index above all tiles but below dragged tiles set to 999 */
+    z-index: 500;
+}
+div#dragregion {
+    width: auto;
+}
+
+.ui-widget.ui-widget-content{
+    border-radius: 4px;
+    margin: 0px 0 0 0;
+}
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor{
+	text-decoration: none;
+	padding: .5em 1em;
+}
+div.ui-tabs-panel, ui-widget-content {
+    background: #333333;
+}
+ul.ui-tabs-nav {
+    background-color: #666666;
+    color: #000000;
+    font-size: 12pt;
+    border: none;
+}
+.ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
+    cursor: pointer;
+}
+.ui-tabs {
+    padding: 0;
+}
+.error {
+    background-color: #cc3300;  color: #ffffff;  font-size: 10pt;
+}
+.debug {
+    background-color: #006666;  
+    color: #ffffcc;  
+    font-size: 11pt;
+}
+.hidden, ul.ul-tabs-nav.hidden {
+    display: none;
+}
+
+.shown, ul.ul-tabs-nav.shown {
+    display: inline-block;
+}
+
+div.skinoption, .kioskoption, div.filteroption, td.optname {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-left: 8px;
+    margin-bottom: 2px;
+    color: #000000;
+}
+
+div.skinoption input {
+    width: 600px;
+}
+div.filteroption {
+    margin-top: 12px;
+}
+table.useroptions, table.catoptions {
+    margin-left: 8px;
+    background-color: #eeeeee;
+    border: solid 1px black;
+}
+table.catoptions {
+    margin-left: 5px;
+    width: 380px;
+}
+table.catoptions input {
+    margin-left: 15px;
+}
+td.optname {
+    padding-left: 5px;
+    padding-right: 30px;
+}
+
+form {
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+    background: #ffffff;
+    width: 100%;
+}
+
+form.houseauth {
+    display: inline;
+    width: auto;
+    margin-left: 10px;
+}
+
+/* how the tab page shows up - this affects everything shown */
+.ui-tabs .ui-tabs-panel {
+    padding-top: 0px;    padding-bottom: 0px;
+    padding-left: 0px;    padding-right: 4px;
+    text-align: left;
+}
+.ui-corner-all, .ui-corner-bottom, .ui-corner-right, .ui-corner-br {
+    border-bottom-right-radius: 0px;
+}
+
+#options-tab {
+    padding-top: 10px;
+}
+
+#options-tab {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* formatting for endpoint mode query of access id information */
+table.showid {
+    background-color: white;
+    color: #000000;
+    width: 90%;
+    text-align: left;
+    
+}
+table.showid td, table.showid th {
+    width: 200px;
+    font-size: 12pt;
+    padding-left: 2px; padding-right: 2px;
+}
+
+/* format the options page */
+div.thead {
+    position: fixed;
+}
+div.scrollvtable {
+    overflow-y: auto;
+}
+@media only screen and (orientation: landscape) {
+    div.scrollvtable {
+        /*max-height: 400px;*/
+        overflow-y: hidden;
+    }
+}
+@media only screen and (orientation: portrait) {
+    div.scrollvtable {
+        /*max-height: 800px;*/
+        overflow-y: hidden;
+    }
+}
+@media only screen and (hover: hover) {
+    div.scrollvtable {
+        overflow-y: scroll;
+        max-height: 500px;
+    }
+}
+div.scrollhtable {
+    max-height: 100%;    overflow-x: auto;    overflow-y: hidden;
+    background-color: #ffffff;
+}
+div.optionstable {
+    background-color: #ffffff;
+    color: #000000;
+    width: 100%;
+}
+table.roomoptions, table.headoptions {
+    margin: 0px;    background-color: #ffffff;    color: #000000;
+    font-size: 11pt;    width: 100%;
+    border-collapse: collapse;    border: 2px solid black;
+    height: 24px;
+}
+table.headoptions {
+    height: 40px;
+}
+table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
+    border-bottom: 5px solid rgba(0, 0, 80, 1);    
+    background-color: #3a5795;    
+    color:#ffffff;
+    font-weight: bold;    padding: 2px;    width: 100px;
+    text-align: center;    line-height: 1.5;    height: 30px;
+}
+table.headoptions th.roomname {
+    cursor: pointer;
+}
+table.headoptions td, table.roomoptions td {
+    width: 100px;
+    color:#000000;
+    text-align: center;
+    border-right: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+}
+table.roomoptions td.customedit, table.headoptions th.customedit {
+    text-align: center; 
+    width: 5%;    
+}
+table.roomoptions td.customname, table.headoptions th.customname {
+    text-align: center; 
+    width: 10%;    
+}
+
+table.roomoptions td.thingname, table.headoptions th.thingname {
+    text-align: left; 
+    width: 20%;    
+    border-left: 1px solid #999999;
+    font-weight: bold;
+    border-left: 1px solid #999999;    
+    border-right: 1px solid #999999;
+}
+
+table.roomoptions tr.showrow {
+    height: 24px;
+    background-color: #ffffff;
+}
+table.roomoptions tr.showrow.odd {
+    background-color: #cccccc;
+}
+table.roomoptions tr.hiderow {
+    display: none;
+}
+
+table.showid .thingname, table.showid .thingarr, table.showid .infotype, table.showid .infoid, table.showid .infonum {
+    padding-left: 5px;
+    text-align: center; 
+    width: 10%;  
+    font-weight: normal;
+    border-left: 1px solid #999999;    
+    border-bottom: 1px solid #999999;
+}
+table.showid td.thingname {
+    font-weight: bold;
+    text-align: left; 
+    width: 20%;  
+}
+table.showid td.thingarr {
+    text-align: left; 
+    width: 30%;  
+}
+table.showid td.infotype {
+    text-align: center; 
+    width: 10%;  
+}
+table.showid td.infoid {
+    text-align: left; 
+    width: 30%;  
+}
+table.showid td.infonum, table.showid th.infonum {
+    border-right: 1px solid #999999;
+}
+table.showid th.thingname, table.showid th.thingarr, table.showid th.infotype, table.showid th.infoid, table.showid th.infonum {
+    font-weight: bold;
+    font-size: 14pt;
+    border-top: 1px solid #999999;
+}
+div.infopage {
+    margin-left: 20px;
+    width: 85%;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: 1px solid black;
+    padding: 10px;
+}
+div.returninfo {
+    margin-left: 20px;
+    background-color: #cccccc;
+    font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+    display: inline-block;
+    width: 200px; height: 32px;
+    padding-top: 10px;
+}
+div.returninfo a {
+    text-decoration: none;
+}
+
+/* only adjust for scrollbar on screens with hover */
+@media only screen and (hover: hover) {
+    table.roomoptions tbody {
+        overflow-y: scroll;  width: 95%;
+    }
+    table.headoptions thead th.roomname:last-child {
+        padding-right: 12px;
+    }
+}
+span.typeopt {
+    font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;
+    color: #666666;
+}
+div.processoptions {
+    margin-left: 0px; margin-top: 0px;    
+    padding-top: 10px;
+    background-color: white;
+    width: 550px;
+    display: inline-block;
+}
+
+/* buttons */
+input {
+    background-repeat: no-repeat;
+}
+div.buttons, form.buttons {
+    display: inline;
+}
+input.submitbutton, input.resetbutton, input.authbutton, 
+div.restoretabs, div.formbutton {
+    background-color: #3a5795;
+    width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
+    cursor: pointer;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
+    font-size: 14pt;
+}
+/* style restore tabs like a button - notice adjustments for border and vertical centering */
+div.restoretabs, div.formbutton {
+    display: inline-block;
+    padding-top: 14px; padding-right: 2px;
+    width: 90px; height: 24px;
+    margin-left: 2px; margin-right: 2px;
+    font-size: 12pt;
+}
+input.resetbutton, input.submitbutton {
+    padding-right: 2px;
+    padding-top: 8px;
+    width: 90px; height: 42px;
+    margin-left: 2px; margin-right: 2px;
+    font-size: 12pt;
+}
+
+div.restoretabs.hidden, div.thing.hidden.catalog-thing {
+    display: none;
+}
+div.filteroption div.smallbutton {
+    padding: 4px;
+    height: 0.8em;
+    width: 60px;
+    display: inline-block;
+    font-size: 12pt;
+    background-color: #cccccc;
+    border-left: solid 2px gray;
+    border-top: solid 2px gray;
+    border-right: solid 3px black;
+    border-bottom: solid 3px black;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    cursor: pointer;
+}
+
+div.filteroption div.smallbutton:hover {
+    background-color: black;
+    color: white;
+}
+
+div.modalbox {
+    display: inline-block;
+    text-align: left;
+    padding: 5px;
+    background-color: rgba(255, 255, 246, 1);
+    color: rgba(0, 0, 0, 1);
+    font-size: 12pt;
+    position: absolute; 
+    z-index: 99999;
+}
+
+td.thingname.clickable:hover {
+    cursor: pointer;
+    background-color: blue;
+    font-style: normal;
+    color: white;
+}
+
+div.modalbuttons {
+    margin-top: 5px;
+}
+
+button.dialogbtn {
+    background-color: #3a5795;
+    display: inline;
+    width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
+    cursor: pointer;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.8); 
+    border-right: 2px solid rgba(0, 0, 0, 0.8); 
+    font-size: 12pt;
+}
+
+input.editinp {
+    left: 150px;
+    width: 400px;
 }
 
 #pageDialog {
@@ -9,12 +503,54 @@ div.tileDialog {
     margin-bottom: 10px;
     font-weight: bold;
 }
+/* don't need to display this anymore since use clock and panel click instead */
+/* but the div needs to be in the php file to make the js work */
+div.panel div.restoretabs {
+    font-size: 12pt;
+    color: rgba(255, 255, 255, 1);
+    width: auto; height: 20px; margin-top: 1px;
+    border: 0px; text-align: right;
+    background-color: rgba(0, 0, 0, 0.5);
+    position: absolute; right: -1px; bottom: -1px;
+    display: none;
+}
+input.authbutton {
+    background-color: #000099;
+    margin: 0;
+    margin-left: 10px;
+    width: 250px;
+}
+input.submitbutton:hover, input.resetbutton:hover, 
+input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
+    font-weight: bold;    color: #ffffff;
+    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
+    border-bottom: 0px; 
+    border-right: 0px; */
+}
+div.sitebutton {
+    background: #ffffff;     
+    display: inline-block; 
+    position: relative;
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+div.formbutton a {
+    text-decoration: none;
+    font-size: inherit;
+    color: #ffffff;
+}
+
+
+
+/* tile editor stuff */
 
 #tileDialog {
     display: block;
     background-color: rgba(20, 20, 20, 1);
     width: auto;
     height: auto;
+    overflow: hidden;
 }
 
 #editheader {
@@ -316,6 +852,310 @@ div.colorgroup label {
     font-weight: bold;
     font-size: 16px;
 }
+input.radioopts {
+    cursor: pointer;
+    margin-left: 10px;
+    margin-right: 4px;
+    display: inline-block;
+}
+label.radioopts {
+    cursor: pointer;
+    margin-left: 0px;
+    margin-right: 10px;
+    font-size: 12pt;
+    width: 50px;
+    text-align: left;
+    display: inline-block;
+}
+label.radioopts:hover {
+    font-weight: bold;
+}
+div#opmode {
+    position: absolute;
+    left: 5%; bottom: 5%; width: 600px;
+    font-size: 18pt; text-align: center;
+    color: #cc3300;
+    background-color: white;
+    border: 3px;
+    z-index: 999;
+}
+
+/* mini colors */
+div.overlay.color .minicolors-theme-default.minicolors {
+    z-index: 999;
+}
+.minicolors-theme-default .minicolors-swatch {
+  top: 2px;
+  left: 30px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.minicolors-swatch-color {
+  border-radius: 50%;
+}
+.minicolors-position-left .minicolors-panel {
+    left: 60px;
+}
+
 .minicolors-theme-default .minicolors-input {
     width: 170px;
+    z-index: 999;
+}
+div.thing .minicolors-theme-default .minicolors-input {
+    display: none;
+}
+div.minicolors-grid {
+    z-index: 999;
+}
+
+/* debug dumps */
+div.jsonid {
+    margin-top: 5px;
+    border-bottom: 1px solid black;
+}
+div.jsondump {
+    background-color: #ffffc6;
+    color: black;
+    margin-left: 10px;
+    margin-right: 10px;
+    border-bottom: 1px solid black;
+}
+
+/* This section has minimal skin used when no skin is available */
+#dragregion div.panel {
+    position:relative;    
+    min-height: 600px;
+}
+
+div.panel {
+    display: inline-block;
+    border: 0px;
+    padding: 2px;    
+    width: 100%;
+    margin: auto;
+    background-position-x: 0px;
+    background-position-y: 0px;
+    background-image: none;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+/* all things look like this */  
+/* the heights are set to auto for larger items like weather and thermostats */
+div.thing {
+    display: inline-block;
+    margin: 3px;
+    text-align: center;
+    vertical-align: top;
+    border: 1px solid black; 
+    background-color: rgba(0, 51, 204, 1);
+    color: rgba(250, 250, 250, 1);
+    cursor: default;
+    width: auto; 
+    height: auto;
+    z-index: 2;
+}
+div.thing:hover{
+    position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+}
+
+div.thing.catalog-thing {
+    display: inline-block;
+    width: 120px;
+}
+/* the name of the thing - must be after the above heights */
+/* added catalog-thing div.thingname to ensure catalog shows properly */
+div.thingname, div.catalog-thing div.thingname {
+    background-color: rgba(0, 50, 100,1);
+    font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    border-bottom: 2px solid rgba(0,0,0,1);
+    height: 30px;
+    cursor: default;
+}
+div.thingname:hover {
+    background-color: #5050a0; 
+    color: #cccccc;
+}
+
+/* blank tiles styling */
+div.thing.blank-thing {
+    border: 0px none;
+    padding: 0;
+    background-color: rgba(255,255,255,0.01);
+    color: rgba(0, 0, 0, 0.01);
+    box-shadow: none;
+    width: auto;
+    height: auto;
+}
+div.blank.size.b1x1, div.blank.size.b1x2, div.blank.size.b2x1, div.blank.size.b2x2 {
+    width: 120px;    height: 160px;
+}
+div.blank.size.h1x1, div.blank.size.h1x2, div.blank.size.h2x1, div.blank.size.h2x2 {
+    width: 120px;    height: 160px;
+}
+/* add special sizes for the b1x2, b2x1, and b2x2 tiles  */
+div.blank.size.b2x1, div.blank.size.b2x2 {
+    width: 244px;
+}
+div.blank.size.h2x1, div.blank.size.h2x2 {
+    width: 244px;
+}
+div.blank.size.b1x2, div.blank.size.b2x2 {
+    height: 320px;
+}
+div.blank.size.h1x2, div.blank.size.h2x2 {
+    height: 320px;
+}
+div.thing.blank-thing:hover {
+    position: relative;
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
+    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50); 
+    transition-duration: .2s;
+    -webkit-transition-duration: .2s;
+}
+
+/* clock styling */
+div.thing.clock-thing {
+    height: 150px;
+    width: 246px;
+}
+div.thing.clock-thing.analog {
+    background-color: white;
+}
+div.clock.weekday {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+div.clock.time {
+    font-size: 36pt;
+    margin-top: 12px;
+}
+div.clock.tzone{
+    display:none;
+}
+
+/* do not display these items */
+div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
+div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 
+div.contact.checkInterval,
+div.switch.colorTemperature, div.lock.checkInterval,
+div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
+div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
+div.lock.minCodeLength, div.lock.codeLength,
+div.thingname.blank, div.thingname.clock,
+div.thingname.image, div.thingname.routine, div.overlay.healthStatus
+{
+    display:none;
+}
+
+/* overlays */
+div.overlay {
+    width: 100%;
+    display: block;
+}
+div.overlay.level {
+    height: 32px;
+}
+div.overlay.name {
+    position: absolute;
+    display: block;
+    color: rgba(255, 255, 255, 0.01);
+    width: auto;
+}
+
+
+/* battery display */
+div.overlay.battery {
+    position: absolute;
+    z-index: 10;
+    border: none;
+    background: none;
+    left: 2px;
+    height: auto;
+}
+div.overlay.battery div.battery {
+    display: block;
+    position: absolute;
+    float: right;
+    right: 2px;
+    width: 24px;
+    height: 8px;
+    border: 1px solid #fff;
+    border-radius: 2px;
+    padding: 1px;
+    transform: scale(0.8);
+}
+
+div.overlay div.battery:before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    margin-top: -3px;
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    clip: rect(0, 5px, 5px, 3px);
+    border-radius: 50%;
+}
+
+div.ovbLevel {
+    height: 100%;
+	font-size: 0px;
+    background: #fff;
+    border-radius:  2px;
+	width: 2%;
+}
+div.ovbLevel.L90{
+    background: #ffffee;
+}
+div.ovbLevel.L80{
+    background: #ffffc6;
+}
+div.ovbLevel.L70{
+    background: #ffff00;
+}
+div.ovbLevel.L60{
+    background: #ffee00;
+}
+div.ovbLevel.L50{
+    background: #ffcc00;
+}
+div.ovbLevel.L40{
+    background: #ff993f;
+}
+div.ovbLevel.L30{
+    background: #ff663f;
+}
+div.ovbLevel.L20{
+    background: #ff6000;
+}
+div.ovbLevel.L10{
+    background: #ff3f00;
+}
+div.ovbLevel.L0{
+    background: #ff0000;
+}
+
+/* sliders */
+.ui-slider-horizontal {
+    height: 0.3em; 
+}
+
+/* disable commands in general */
+div.overlay._on, div.overlay._off, 
+div.overlay._open, div.overlay._close, 
+div.overlay._onPhysical, div.overlay._offPhysical,
+div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
+    display: none;
+}
+div.custom-thing div.post, div.custom-thing div.text {
+    overflow-wrap: break-word;
+    overflow: auto;
 }

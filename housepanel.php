@@ -169,6 +169,12 @@ function htmlHeader($skin="skin-housepanel") {
     // analog clock support
     $tc.= '<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->';
     $tc.= '<script type="text/javascript" src="coolclock.js"></script>';
+	
+    //load fixed css file with cutomization helpers
+    $tejshash = md5_file($skin . "/tileeditor.js");
+    $tecsshash = md5_file($skin . "/tileeditor.css");
+    $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js?v=" . $tejshash . "\"></script>";
+    $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css?v=" . $tecsshash . "\">";	
     
     // load custom .css and the main script file
     if (!$skin) {
@@ -176,20 +182,15 @@ function htmlHeader($skin="skin-housepanel") {
     }
     $csshash = md5_file($skin . "/housepanel.css");
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skin/housepanel.css?v=" . $csshash . "\">";
-	
-    //load cutomization helpers
-    $tejshash = md5_file($skin . "/tileeditor.js");
-    $tecsshash = md5_file($skin . "/tileeditor.css");
-    $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js?v=" . $tejshash . "\"></script>";
-    $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css?v=" . $tecsshash . "\">";	
 
     // load the custom tile sheet if it exists - changed this to put in root
     // so now custom tiles apply to all skins
-    // note - if it doesn't exist, we will create it and for future page reloads
     if (file_exists("customtiles.css")) {
         $customhash = md5_file("customtiles.css");
         $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css?v=". $customhash ."\">";
     }
+    
+    // load main script file
     $jshash = md5_file("housepanel.js");
     $tc.= '<script type="text/javascript" src="housepanel.js?v=' . $jshash . '"></script>';  
     
