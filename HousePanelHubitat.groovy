@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/17/2018 - added Hubitat modes and hsm; removed routines dead code; bugfixes
  * 09/03/2018 - updated to work with multihub
  * 08/20/2018 - fix another bug in lock that caused render to fail upon toggle
  * 08/11/2018 - added pistons and other cleanup
@@ -295,6 +296,17 @@ def getmyMode(swid, item=null) {
     return resp
 }
 
+def getHsmState(swid) {
+    // uses Hubitat specific call for HSM per 
+    // https://community.hubitat.com/t/hubitat-safety-monitor-api/934/11
+    def status = location.hsmStatus
+    if ( !status ) {
+        status = "uninstalled"
+    }
+    def resp = [name : "Hubitat Smart Monitor", state: status]
+    return resp
+}
+
 def getBlank(swid, item=null) {
     def resp = [name: "Blank ${swid}", size: "${swid}"]
     return resp
@@ -302,13 +314,6 @@ def getBlank(swid, item=null) {
 
 def getImage(swid, item=null) {
     def resp = [name: "Image ${swid}", url: "${swid}"]
-    return resp
-}
-
-def getRoutine(swid, item=null) {
-    def routines = location.helloHome?.getPhrases()
-    def routine = item ? item : routines.find{it.id == swid}
-    def resp = routine ? [name: routine.label, label: routine.label] : false
     return resp
 }
 
@@ -440,6 +445,8 @@ def getAllThings() {
     resp = getWaters(resp)
     resp = getMusics(resp)
     resp = getSmokes(resp)
+    resp = getModes(resp)
+    resp = getHsmStates(resp)
     resp = getOthers(resp)
     resp = getBlanks(resp)
     resp = getImages(resp)
@@ -455,18 +462,26 @@ def getAllThings() {
 // this is done so we can treat this like any other set of tiles
 def getModes(resp) {
     if ( state.dologging ) {
-        log.debug "Getting 4 mode tiles"
+        log.debug "Getting 4 Hubitat mode tiles"
     }
     def val = getmyMode(0)
-    resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m1x2", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m2x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m2x2", value: val, type: "mode"]
+    resp << [name: "Mode", id: "hm1x1", value: val, type: "mode"]
+    resp << [name: "Mode", id: "hm1x2", value: val, type: "mode"]
+    resp << [name: "Mode", id: "hm2x1", value: val, type: "mode"]
+    resp << [name: "Mode", id: "hm2x2", value: val, type: "mode"]
+    return resp
+}
+
+def getHsmStates(resp) {
+    def val = getHsmState(0)
+    if ( val ) {
+        resp << [name: "Hubitat Smart Monitor", id: "hsm", value: val, type: "hsm"]
+    }
     return resp
 }
 
 def getBlanks(resp) {
-    def vals = ["h1x1","h1x2","h2x1","h2x2"]
+    def vals = ["hb1x1","hb1x2","hb2x1","hb2x2"]
     def val
     vals.each {
         val = getBlank(it)
@@ -597,16 +612,6 @@ def getWeathers(resp) {
     return resp
 }
 
-// get hellohome routines - thanks to ady264 for the tip
-def getRoutines(resp) {
-    def routines = location.helloHome?.getPhrases()
-    routines?.each {
-        def multivalue = getRoutine(it.id, it)
-        resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
-    }
-    return resp
-}
-
 def getOthers(resp) {
     def n  = myothers ? myothers.size() : 0
     if ( n > 0 && state.dologging ) { log.debug "Number of selected other sensors = ${n}" }
@@ -639,15 +644,16 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
-    else if ( swid=="m1x1" || swid=="m1x2" || swid=="m2x1" || swid=="m2x2" ) { swtype= "mode" }
-    else if ( swid=="b1x1" || swid=="b1x2" || swid=="b2x1" || swid=="b2x2" ) { swtype= "blank" }
-    else if ( swid=="img1" || swid=="img2" || swid=="img3" || swid=="img4" ) { swtype= "image" }
+    else if ( swid=="hsm" ) { swtype= "hsm" }
+    else if ( swid=="hm1x1" || swid=="hm1x2" || swid=="hm2x1" || swid=="hm2x2" ) { swtype= "mode" }
+    else if ( swid=="hb1x1" || swid=="hb1x2" || swid=="hb2x1" || swid=="hb2x2" ) { swtype= "blank" }
+    else if ( swid=="himg1" || swid=="himg2" || swid=="himg3" || swid=="himg4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
     else { swtype = "" }
     return swtype
 }
 
-// routine that performs ajax action for clickable tiles
+// this performs ajax action for clickable tiles
 def doAction() {
     // returns false if the item is not found
     // otherwise returns a JSON object with the name, value, id, type
@@ -709,6 +715,10 @@ def doAction() {
          cmdresult = setMode(swid, cmd, swattr)
          break
          
+      case "hsm":
+          cmdresult = setHsmState(swid, cmd, swattr)
+          break;
+         
       case "valve" :
       	 cmdresult = setValve(swid, cmd, swattr)
          break
@@ -723,10 +733,6 @@ def doAction() {
              cmdresult = getPiston(swid)
          }
          break;
-      
-      case "routine" :
-        cmdresult = setRoutine(swid, cmd, swattr)
-        break;
         
       case "other" :
           cmdresult = setOther(swid, cmd, swattr, subid)
@@ -815,8 +821,8 @@ def doQuery() {
     case "mode" :
         cmdresult = getmyMode(swid)
         break
-    case "routine" :
-        cmdresult = swid ? getRoutine(swid) : getRoutines( [] )
+    case "hsm" :
+        cmdresult = getHsmState(swid)
         break
 
     }
@@ -919,15 +925,32 @@ def setMode(swid, cmd, swattr) {
         newsw = allmodes[0].getName()
     }
     
-    if ( state.dologging ) {
-        log.debug "Mode changed from $themode to $newsw index = $idx "
-    }
+    log.debug "Mode changed from $themode to $newsw index = $idx "
     location.setMode(newsw);
     resp =  [   name: swid, 
                 sitename: location.getName(),
                 themode: newsw
             ];
     
+    return resp
+}
+
+def setHsmState(swid, cmd, swattr){
+    
+    def cmds = ["armAway", "armHome", "armNight", "disarm"]
+    def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
+    if ( keys.contains(cmd) ) {
+        def i = keys.indexOf(cmd) + 1
+        if ( i >= keys.size() ) { i = 0 }
+        cmd = cmds[i]
+        key = keys[i]
+        sendLocationEvent(name: "hsmSetArm", value: cmd)
+        // log.debug "HSM arm set to ${key}"
+    } else {
+        sendLocationEvent(name: "hsmSetArm", value: cmd)
+        key = cmd
+    }
+    def resp = [name : "Hubitat Smart Monitor", state: key]
     return resp
 }
 
@@ -1296,7 +1319,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-dn":
-          else if ( subid=="cool-up" || swattr.contains("cool-dn")) {
+          else if ( subid=="cool-dn" || swattr.contains("cool-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.cool()
@@ -1355,8 +1378,13 @@ def setThermostat(swid, curtemp, swattr, subid) {
           
           // case "thermostat thermofan fanAuto":
           else if ( swattr.contains("thermofan") && (cmd=="auto" || swattr.contains("auto")) ) {
-              item.fanCirculate()
-              newsw = "circulate"
+              if ( item.hasCommand("fanCirculate") ) {
+                item.fanCirculate()
+                newsw = "circulate"
+              } else {
+                  item.fanOn()
+                  newsw = "on"
+              }
               resp['thermofan'] = newsw
               // break
           }
@@ -1468,14 +1496,6 @@ def setMusic(swid, cmd, swattr, subid) {
         }
     }
     return resp
-}
-
-def setRoutine(swid, cmd, swattr) {
-    def routine = location.helloHome?.getPhrases().find{ it.id == swid }
-    if (routine) {
-        location.helloHome?.execute(routine.label)
-    }
-    return routine
 }
 
 /*************************************************************************/

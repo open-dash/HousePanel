@@ -55,7 +55,8 @@ div.delpage, div.dellink {
     right: 0px;
 }
 div.editlink, div.dellink {
-    top: 2px;
+    top: 12px;
+    width: 32px; height: 32px;
 }
 div.addpage {
     font-size: 14px;

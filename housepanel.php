@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.910      Clean up CSS files to prepare for new skin creation
  * 1.900      Refresh when done auth and update documentation to ccurrent version
  * 1.809      Fix disappearing things in Hubitat bug - really this time...
  * 1.808      Clean up page tile editing and thermostat bug fix
@@ -1984,7 +1985,7 @@ function getTypes() {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
-                        "weather", "presence", "mode", "shm", "piston", "other",
+                        "weather", "presence", "mode", "shm", "hsm", "piston", "other",
                         "clock","blank","image","frame","video","custom");
     return $thingtypes;
 }

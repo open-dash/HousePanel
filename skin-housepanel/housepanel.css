@@ -668,7 +668,6 @@ div.contact, div.music, div.presence, div.piston, div.valve, div.door, div.tempe
     padding: 0px 0;
     margin: 0;
     cursor: default;
-    height: auto;
 }
 
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
@@ -1168,12 +1167,15 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
 }
 /* hide hue & sat & level for bulbs because we now have color pickers */
 div.overlay.hue, div.overlay.saturation, 
-div.switch-thing div.overlay.colorTemperature,
-div.bulb-thing div.overlay.colorTemperature {
+div.overlay.colorTemperature,
+div.overlay.RGB, div.overlay.colorName {
     display: none;
 }
 div.overlay.color {
     position: absolute;
+}
+div.light-thing div.overlay.colorTemperature {
+    display: inline-block;
 }
 
 div.heat-val {
@@ -1410,7 +1412,7 @@ div.clock.tzone{
 div.thingname.mode {
     display: none;
 }
-div.thing.mode-thing, div.thing.shm-thing {
+div.thing.mode-thing, div.thing.shm-thing, div.thing.hsm-thing {
     width: auto;
     height: 150px;
 }
@@ -1423,27 +1425,28 @@ div.mode2x1, div.mode2x2 {
 div.mode1x2, div.mode2x2 {
     height: 326px;
 }
-div.mode.themode, div.shm.state {
+div.mode.themode, div.shm.state, div.hsm.state {
     font-size: 20pt;    margin-top: 10px;
     cursor: pointer;
 }
-div.shm.state.off, div.shm.state.stay, div.shm.state.away {
+div.shm.state,
+div.hsm.state {
     color: rgba(255, 255, 255, 1);
 }
-div.shm.state {
+div.shm.state, div.hsm.state {
     background-size: 70px;
     background-repeat: no-repeat;
     height: 90px;
     background-position-x: center;
     background-position-y: bottom;
 }
-div.shm.state.stay {
+div.shm.state.stay, div.hsm.state.armedHome, div.hsm.state.armedNight {
     background-image: url('icons/security-blue.png');
 }
-div.shm.state.away {
+div.shm.state.away, div.hsm.state.armedAway {
     background-image: url('icons/security-red.png');
 }
-div.shm.state.off {
+div.shm.state.off, div.hsm.state.disarmed, div.hsm.state.allDisarmed {
     background-image: url('icons/security-green.png');
 }
 div.mode-thing div.name {

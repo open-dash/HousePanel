@@ -13,10 +13,10 @@ var defaultShow = "block";
 var defaultOverlay = "block";
 var tileCount = 0;
 
-function getOnOff(str_type) {
+function getOnOff(str_type, subid) {
     var onoff = ["",""];
     
-    switch (str_type) {
+    switch (subid) {
         case "switch" :
         case "switchlevel":
         case "bulb":
@@ -39,7 +39,7 @@ function getOnOff(str_type) {
             onoff = ["firing","idle"];
             break;
         case "thermofan":
-            onoff = ["auto","circulate","on"];
+            onoff = ["auto","on"];
             break;
         case "thermomode":
             onoff = ["heat","cool","auto","off"];
@@ -56,6 +56,14 @@ function getOnOff(str_type) {
         case "presence":
             onoff = ["present","absent"];
             break;
+        case "state":
+            if ( str_type==="shm" ) {
+                onoff = ["off","stay","away"];
+            } else if ( str_type==="hsm" ) {
+                onoff = ["armedAway","armedHome","armedNight","disarmed","allDisarmed"];
+            }
+            break;
+            
     }
     
     return onoff;
@@ -208,7 +216,7 @@ function toggleTile(target, str_type, thingindex) {
     // alert("tile type= "+str_type+" subid= "+subid);
     
     // activate the icon click to use this
-    var onoff = getOnOff(subid);
+    var onoff = getOnOff(str_type, subid);
     var newsub = 0;
     if ( onoff && onoff.length > 0 ) {
         for ( var i=0; i < onoff.length; i++ ) {
@@ -1040,6 +1048,11 @@ function setsubid(str_type) {
             subid = str_type;
             break;
             
+        case "shm":
+        case "hsm":
+            subid = "state";
+            break;
+            
         default:
             subid = "wholetile";
             break;
@@ -1116,7 +1129,7 @@ function initColor(str_type, subid, thingindex) {
     generic = getCssRuleTarget(str_type, subid, thingindex, 1);
     newonoff = "";
     var swval = $(target).html();
-    var onoff = getOnOff(subid);
+    var onoff = getOnOff(str_type, subid);
     if ( onoff && onoff.length > 0 ) {
         for ( var i=0; i < onoff.length; i++ ) {
             var oldsub = onoff[i];
@@ -1849,7 +1862,7 @@ function resetCSSRules(str_type, subid, thingindex){
         });
 
         // remove all the subs
-        var onoff = getOnOff(subid);
+        var onoff = getOnOff(str_type, subid);
         if ( onoff && onoff.length ) {
             onoff.forEach( function(rule, idx, arr) {
                 var subtarget = getCssRuleTarget(str_type, rule, thingindex);
