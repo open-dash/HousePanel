@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/18/2018 - fixed mode names to include size cues
  * 11/17/2018 - bug fixes and cleanup to match Hubitat update
  * 10/30/2018 - fix thermostat bug
  * 08/20/2018 - fix another bug in lock that caused render to fail upon toggle
@@ -429,10 +430,10 @@ def getModes(resp) {
         log.debug "Getting 4 mode tiles"
     }
     def val = getmyMode(0)
-    resp << [name: "Mode", id: "m1x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m1x2", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m2x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "m2x2", value: val, type: "mode"]
+    resp << [name: "Mode m1x1", id: "m1x1", value: val, type: "mode"]
+    resp << [name: "Mode m1x2", id: "m1x2", value: val, type: "mode"]
+    resp << [name: "Mode m2x1", id: "m2x1", value: val, type: "mode"]
+    resp << [name: "Mode m2x2", id: "m2x2", value: val, type: "mode"]
     return resp
 }
 

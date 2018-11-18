@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/18/2018 - fixed hsm name and mode names to include size cues
  * 11/17/2018 - added Hubitat modes and hsm; removed routines dead code; bugfixes
  * 09/03/2018 - updated to work with multihub
  * 08/20/2018 - fix another bug in lock that caused render to fail upon toggle
@@ -303,7 +304,7 @@ def getHsmState(swid) {
     if ( !status ) {
         status = "uninstalled"
     }
-    def resp = [name : "Hubitat Smart Monitor", state: status]
+    def resp = [name : "Hubitat Safety Monitor", state: status]
     return resp
 }
 
@@ -465,10 +466,10 @@ def getModes(resp) {
         log.debug "Getting 4 Hubitat mode tiles"
     }
     def val = getmyMode(0)
-    resp << [name: "Mode", id: "hm1x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "hm1x2", value: val, type: "mode"]
-    resp << [name: "Mode", id: "hm2x1", value: val, type: "mode"]
-    resp << [name: "Mode", id: "hm2x2", value: val, type: "mode"]
+    resp << [name: "Mode hm1x1", id: "hm1x1", value: val, type: "mode"]
+    resp << [name: "Mode hm1x2", id: "hm1x2", value: val, type: "mode"]
+    resp << [name: "Mode hm2x1", id: "hm2x1", value: val, type: "mode"]
+    resp << [name: "Mode hm2x2", id: "hm2x2", value: val, type: "mode"]
     return resp
 }
 

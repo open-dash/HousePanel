@@ -457,6 +457,17 @@ div.filteroption div.smallbutton:hover {
     background-color: black;
     color: white;
 }
+div.modeoptions {
+    background-color: #3a5795;
+    width: auto; height: 24px; 
+    margin-left: 20px; margin-right: 0px;
+    cursor: default;    border: none;
+    color: #eeeeee;    text-align: center;    font-weight: normal;
+    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
+    border-right: 4px solid rgba(0, 0, 0, 0.8); 
+    display: inline-block;
+    padding-top: 14px; padding-left: 16px;
+}
 
 div.modalbox {
     display: inline-block;
@@ -541,8 +552,6 @@ div.formbutton a {
     color: #ffffff;
 }
 
-
-
 /* tile editor stuff */
 
 #tileDialog {
@@ -561,6 +570,24 @@ div.formbutton a {
     text-align: center;    line-height: 2;    height: 30px;
     padding-top: 5px; margin-bottom: 5px;
     cursor: move;
+}
+
+/* style for modal dialog boxes - presently not used */
+.modalhide, .modalshow {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 9999; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 40%; /* Full width */
+    height: 60%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    color: #ffffee;
+}
+.modalshow {
+    display: block;
 }
 
 #wysiwyg {
@@ -1048,9 +1075,23 @@ div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
 div.lock.minCodeLength, div.lock.codeLength,
 div.thingname.blank, div.thingname.clock,
-div.thingname.image, div.thingname.routine, div.overlay.healthStatus
+div.thingname.image, div.thingname.routine, div.overlay.healthStatus,
+div.valve.switch, div.valve.contact, div.valve.stopWatering, div.valve.log,
+div.clock.tzone, div.thingname.mode
 {
     display:none;
+}
+
+/* hide hue & sat & level for bulbs because we now have color pickers */
+div.overlay.hue, div.overlay.saturation, 
+div.overlay.colorTemperature,
+div.overlay.RGB, div.overlay.colorName {
+    display: none;
+}
+
+div.overlay.color {
+    position: absolute;
+    right: -2px;
 }
 
 /* overlays */
@@ -1068,27 +1109,26 @@ div.overlay.name {
     width: auto;
 }
 
+/* sliders */
+.ui-slider-horizontal {
+    height: 0.3em; 
+}
+
 
 /* battery display */
-div.overlay.battery {
-    position: absolute;
-    z-index: 10;
-    border: none;
-    background: none;
-    left: 2px;
-    height: auto;
-}
 div.overlay.battery div.battery {
+    background: none;
     display: block;
     position: absolute;
     float: right;
     right: 2px;
-    width: 24px;
-    height: 8px;
+    width: 32px;
+    height: 6px;
     border: 1px solid #fff;
     border-radius: 2px;
     padding: 1px;
-    transform: scale(0.8);
+    z-index: 10;
+    /*transform: scale(0.8);*/
 }
 
 div.overlay div.battery:before {
@@ -1141,11 +1181,6 @@ div.ovbLevel.L10{
 }
 div.ovbLevel.L0{
     background: #ff0000;
-}
-
-/* sliders */
-.ui-slider-horizontal {
-    height: 0.3em; 
 }
 
 /* disable commands in general */
