@@ -476,7 +476,7 @@ def getModes(resp) {
 def getHsmStates(resp) {
     def val = getHsmState(0)
     if ( val ) {
-        resp << [name: "Hubitat Smart Monitor", id: "hsm", value: val, type: "hsm"]
+        resp << [name: "Hubitat Safety Monitor", id: "hsm", value: val, type: "hsm"]
     }
     return resp
 }
@@ -717,7 +717,7 @@ def doAction() {
          break
          
       case "hsm":
-          cmdresult = setHsmState(swid, cmd, swattr)
+          cmdresult = setHsmState(swid, cmd, swattr, subid)
           break;
          
       case "valve" :
@@ -936,20 +936,21 @@ def setMode(swid, cmd, swattr) {
     return resp
 }
 
-def setHsmState(swid, cmd, swattr){
+def setHsmState(swid, cmd, swattr, subid){
     
-    def cmds = ["armAway", "armHome", "armNight", "disarm"]
-    def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
-    if ( keys.contains(cmd) ) {
-        def i = keys.indexOf(cmd) + 1
-        if ( i >= keys.size() ) { i = 0 }
-        cmd = cmds[i]
-        key = keys[i]
-        sendLocationEvent(name: "hsmSetArm", value: cmd)
-        // log.debug "HSM arm set to ${key}"
-    } else {
-        sendLocationEvent(name: "hsmSetArm", value: cmd)
-        key = cmd
+    def key = location.hsmStatus
+    
+    if ( subid=="state" ) {
+        def cmds = ["armAway", "armHome", "armNight", "disarm"]
+        def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
+        if ( keys.contains(cmd) ) {
+            def i = keys.indexOf(cmd) + 1
+            if ( i >= keys.size() ) { i = 0 }
+            cmd = cmds[i]
+            key = keys[i]
+            sendLocationEvent(name: "hsmSetArm", value: cmd)
+            // log.debug "HSM arm set to ${key}"
+        }
     }
     def resp = [name : "Hubitat Smart Monitor", state: key]
     return resp

@@ -1089,11 +1089,6 @@ div.overlay.RGB, div.overlay.colorName {
     display: none;
 }
 
-div.overlay.color {
-    position: absolute;
-    right: -2px;
-}
-
 /* overlays */
 div.overlay {
     width: 100%;

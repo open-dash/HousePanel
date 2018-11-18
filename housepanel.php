@@ -7,6 +7,13 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.920      CSS cleanup and multiple new features
+ *            - enable skin editing on the main page
+ *            - connect customtiles to each skin to each one has its own
+ *              this means all customizations are saved in the skin directory too
+ *            - migrated fixed portions of skin to tileedit.css
+ *            - fix plain skin to use as skin swapping demo
+ *            - various bug fixes and performance improvements
  * 1.910      Clean up CSS files to prepare for new skin creation
  * 1.900      Refresh when done auth and update documentation to ccurrent version
  * 1.809      Fix disappearing things in Hubitat bug - really this time...
@@ -117,7 +124,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.809');
+define('HPVERSION', 'Version 1.920');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1761,9 +1768,10 @@ function cleanupStr($str) {
 }
 
 // call to write Custom Css Back to customtiles.css
-function writeCustomCss($fname, $str) {
+// we actually write two copies - one saved in the skin for skin swapping
+function writeCustomCss($fname, $str, $skin="") {
     $today = date("F j, Y  g:i a");
-    $file = fopen($fname,"wb");
+    // $file = fopen($fname,"wb");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
@@ -1771,14 +1779,22 @@ function writeCustomCss($fname, $str) {
     $fixstr.= "/* ****** ANY EDITS MADE WILL BE REPLACED ****** */\n";
     $fixstr.= "/* ****** WHENEVER TILE EDITOR IS USED    ****** */\n";
     $fixstr.= "/* ********************************************* */\n";
-    fwrite($file, $fixstr, strlen($fixstr));
+    // fwrite($file, $fixstr, strlen($fixstr));
     if ( $str && strlen($str) ) {
         // fix addition of backslashes before quotes on some servers
         $str3 = str_replace("\\\"","\"",$str);
-        fwrite($file, $str3);
+        $fixstr.= $str3;
+        // fwrite($file, $str3);
     }
-    fclose($file);
-    chmod($file, 0777);
+    // fclose($file);
+
+    // write the file
+    file_put_contents($fname, $fixstr);
+    
+    // if we are dual writing the file then do it
+    if ( $skin && file_exists($skin . "/housepanel.css") ) {
+        file_put_contents($skin . "/customtiles.css", $fixstr);
+    }
 }
 
 // read in customtiles ignoring the comments
@@ -1882,7 +1898,8 @@ function refactorOptions($allthings) {
     }
     writeOptions($options);
     if ( $updatecss ) {
-        writeCustomCss("customtiles.css",$customcss);
+        $skin = $options["config"]["skin"];
+        writeCustomCss("customtiles.css",$customcss,$skin);
     }
     
 }
@@ -3381,9 +3398,26 @@ function is_ssl() {
                 break;
 
             case "savefilters":
+                // the filter options is in value
+                // and the new skin directory is in the attr
                 $options = readOptions();
                 $options["useroptions"] = $swval;
+                $skin = $swattr;
+                
+                // set the skin and replace the custom file with that skin's version
+                if ( $skin && file_exists($skin . "/housepanel.css") ) {
+                    // make sure our default skin has a custom file
+                    if ( !file_exists($skin . "/customtiles.css") ) {
+                        writeCustomCss($skin . "/customtiles.css","");
+                    }
+                    // set the options to use this skin
+                    $options["config"]["skin"] = $skin;
+                    // move this skin's custom file over to the main routine
+                    $css = file_get_contents($skin . "/customtiles.css");
+                    writeCustomCss("customtiles.css",$css);
+                }
                 writeOptions($options);
+                echo "success";
                 break;
             
             case "savetileedit":
@@ -3423,7 +3457,8 @@ function is_ssl() {
                     }
                 }
                 if ( $updated ) {
-                    writeCustomCss("customtiles.css",$swval);
+                    $skin = $options["config"]["skin"];
+                    writeCustomCss("customtiles.css",$swval,$skin);
                 }
                 echo $result;
                 break;
@@ -3542,9 +3577,15 @@ function is_ssl() {
                 writeOptions($options);
             }
 
+            // make sure our default skin has a custom file
+            if ( !file_exists($skin . "/customtiles.css") ) {
+                writeCustomCss($skin . "/customtiles.css","");
+            }
+            
             // check if custom tile CSS is present
-            if ( !file_exists("customtiles.css")) {
-                writeCustomCss("customtiles.css","");
+            if ( !file_exists("customtiles.css") ) {
+                $css = file_get_contents($skin . "/customtiles.css");
+                writeCustomCss("customtiles.css",$css);
             }
 
             if (DEBUG || DEBUG5) {

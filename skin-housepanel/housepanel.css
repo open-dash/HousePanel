@@ -1,3 +1,12 @@
+/* 
+ * This is the default HousePanel skin file 
+ * you can edit this file directly but I recommend
+ * that instead you copy this entire folder to a new folder
+ * renaming it to your new skin name and edit that copy
+ * then you can activate the skin in the HousePanel main GUI
+ * 
+ */
+
 /* panel backgrounds go here in the skin */
 div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {
     background-image: url('media/family.jpg');
@@ -83,9 +92,12 @@ div.temperature, div.overlay div.themode, div.shm, div.hsm {
 
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
 div.contact, div.music, div.presence, div.piston, div.valve, div.overlay div.door,
-div.overlay div.themode, div.shm, div.hsm, 
+div.overlay div.themode, 
 div.temperature-thing, div.thingname.temperature {
     width: 120px;
+}
+div.shm, div.hsm {
+    width: 140px;
 }
 
 /* heights for things with icons */
@@ -703,7 +715,7 @@ div.overlay.weatherIcon div.mostlycloudy, div.overlay.forecastIcon div.mostlyclo
     background-image: url("media/mostlycloudy.png");
 }
 div.overlay.weatherIcon div.partlycloudy, div.overlay.forecastIcon div.partlycloudy {
-    background-image: url("media/mostlycloudy.png");
+    background-image: url("media/partlycloudy.png");
 }
 div.overlay.weatherIcon div.windy, div.overlay.forecastIcon div.windy {
     background-image: url("media/windy.png");
@@ -760,7 +772,7 @@ div.mode-thing div.overlay.themode {
 }
 div.shm.state,
 div.hsm.state {
-    font-size: 20pt;
+    font-size: 18pt;
     margin-top: 10px;
     color: rgba(255, 255, 255, 1);
 }
@@ -831,6 +843,11 @@ div.bulb.color, div.light.color {
 }
 div.bulb.colorMode {
     display: none;
+}
+
+div.bulb-thing div.overlay.color {
+    position: absolute;
+    right: -2px;
 }
 
 div.custom-thing {

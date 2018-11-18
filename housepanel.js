@@ -806,9 +806,9 @@ function setupButtons() {
                             filters.push($(this).attr("value")); 
                         }
                     });
-    //                alert(filters);
+                    var newskin = $("#skinid").val();
                     $.post(returnURL, 
-                        {useajax: "savefilters", id: 0, type: "none", value: filters, attr: opmode}
+                        {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
                     );
                     cancelDraggable();
                     delEditLink();
@@ -819,6 +819,10 @@ function setupButtons() {
                     setupPagemove();
                     delEditLink();
                 } else if ( opmode==="DragDrop" ) {
+                    // show the skin for swapping on main screen
+                    $("div.skinoption").show();
+                    
+                    // set up draggable things and add edit links
                     setupDraggable();
                     addEditLink();
 
@@ -880,9 +884,6 @@ function addEditLink() {
     // add link to add a new page
     var editdiv = "<div class=\"addpage\" roomnum=\"new\">Add</div>";
     $("#roomtabs").append(editdiv);
-    
-    // show the skin 
-    $("div.skinoption").show();
     
     $("div.editlink").on("click",function(evt) {
         var thing = "#" + $(evt.target).attr("aid");
