@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.921      Hybrid custom tile support using hmoptions user provided input
  * 1.920      CSS cleanup and multiple new features
  *            - enable skin editing on the main page
  *            - connect customtiles to each skin to each one has its own
@@ -926,65 +927,6 @@ function getAllThings($reset = false) {
         $allthings["video|vid3"] = array("id" => "vid3", "name" => "video3.mp4", "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "value" => array("name"=>"Video 3", "url"=>"media/video3.mp4"));
         $allthings["video|vid4"] = array("id" => "vid4", "name" => "video4.mp4", "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "value" => array("name"=>"Video 4", "url"=>"media/video4.mp4"));
 
-        // add 8 custom ad-hoc tiles
-        for ($i=1; $i<9; $i++ ) {
-            $customid = "custom_" . strval($i);
-            
-            $response = array();
-            $response["post"] = "";
-            $response["text"] = "";
-            $postkey = "post_" . $customid;
-            if ( array_key_exists($postkey, $options) ) {
-                $lines = $options[$postkey];
-                if ( !is_array($lines[0]) ) {
-                    $lines = array($lines);
-                }
-            } else if (array_key_exists($swid, $options) ) {
-                $lines = $options[$swid];
-                if ( !is_array($lines[0]) ) {
-                    $lines = array($lines);
-                }
-            } else {
-                $lines = array(array("TEXT",$customid, "Not Configured"));
-            }
-            
-            foreach ($lines as $msgs) {
-                $calltype = strtoupper($msgs[0]);
-                $posturl = $msgs[1];
-                $params = $msgs[2];
-                if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
-                     substr(strtolower($posturl),0,4)==="http" ) {
-//                    $webresponse = curl_call($posturl, FALSE, $params, $calltype);
-//                    if (is_array($webresponse)) {
-//                        $response["post"] .= "Array (" . count($webresponse) . " items)";
-//                    } else {
-//                        $response["post"] .= $webresponse;
-//                    }
-                    if ( strlen($response["post"]) ) {
-                        $response["post"].= "<br />";
-                    }
-                    $response["post"].= $calltype . ": " . $posturl;
-                    if ( strlen($response["text"]) && strlen($params) ) {
-                        $response["text"].= "<br />";
-                    }
-                    $response["text"].= $params;
-                } else {
-                    if ( strlen($response["post"]) && strlen($posturl) ) {
-                        $response["post"].= "<br />";
-                    }
-                    if ( strlen($response["text"]) && strlen($params) ) {
-                        $response["text"].= "<br />";
-                    }
-                    $response["post"].= $posturl;
-                    $response["text"].= $params;
-                }
-            }
-            
-            $allthings["custom|$customid"] = array("id" => $customid, "name" => "Custom " . strval($i), 
-                "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "custom",
-                "value" => array("name"=>"Custom " . strval($i), "post"=>$response["post"], "text"=>$response["text"]));
-        }
-
         // loop through all the hubs and add anything that is new
         $hubs = $configoptions["hubs"];
         foreach( $hubs as $hubnum => $hub) {
@@ -997,6 +939,28 @@ function getAllThings($reset = false) {
                 $allthings = getDevices($allthings, $hubnum, $hubType, $access_token, $endpt, $clientId, $clientSecret);
             }
         }
+
+        // add 8 custom ad-hoc tiles
+        // custom tiles can only reference things in the first hub
+        for ($i=1; $i<9; $i++ ) {
+            $customid = "custom_" . strval($i);
+            $customname = "Custom " . strval($i);
+            
+            if (array_key_exists($customid, $options) ) {
+                $lines = $options[$customid];
+                if ( !is_array($lines[0]) ) {
+                    $lines = array($lines);
+                }
+            } else {
+                $lines = array(array("TEXT", "Not Configured", "text"));
+            }
+            $custom_val = getCustomTile($customname, $lines, $options, $allthings);
+            
+            $allthings["custom|$customid"] = array("id" => $customid, "name" => $customname, 
+                "hubnum" => 0, "hubtype" => $hubs[0]["hubType"], "type" => "custom",
+                "value" => $custom_val);
+        }
+        
     }
 
     // save the things
@@ -1014,6 +978,55 @@ function getAllThings($reset = false) {
     }
     
     return $allthings; 
+}
+
+function getCustomTile($tilename, $lines, $options, $allthings) {
+    $custom_val = array("name"=> $tilename);
+    $j = 0;
+    foreach ($lines as $msgs) {
+        $calltype = strtoupper($msgs[0]);
+        $posturl = $msgs[1];
+        $subid = $msgs[2];
+        
+        // process web calls made in custom tiles
+        if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
+            substr(strtolower($posturl),0,4)==="http" ) {
+            
+//            $webresponse = curl_call($posturl, FALSE, "", $calltype);
+//            if (is_array($webresponse)) {
+//                $custom_val[$subid] = "";
+//                foreach($webresponse as $key => $val) {
+//                    $custom_val[$subid] .= "<p>" . $key . ": ";
+//                    if ( is_array($val) ) {
+//                        $custom_val[$subid].= "<pre>" . print_r($val,true) . "</pre>";
+//                    } else {
+//                        $custom_val[$subid].= $val;
+//                    }
+//                    $custom_val[$subid].= "</p>";
+//                }
+//            } else {
+//                $custom_val[$subid] = $webresponse;
+//            }
+            $custom_val[$subid] = $calltype;
+
+        // code for enabling mix and match subid's into custom tiles
+        } else if ( $calltype==="LINK" ) {
+            $tileid = $posturl;
+            $idx = array_search($tileid, $options["index"]);
+            if ( $idx!== false && array_key_exists($idx, $allthings) ) {
+                $thesensor = $allthings[$idx];
+                $thevalue = $thesensor["value"];
+                if (array_key_exists($subid, $thevalue) ) {
+                    $custom_val[$subid] = $thevalue[$subid];
+                }
+            }
+
+        // anything else is treated like a TEXT custom item
+        } else {
+            $custom_val[$subid] = $posturl;
+        }
+    }
+    return $custom_val;
 }
 
 // function to search for triggers in the name to include as classes to style
@@ -1508,68 +1521,90 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     // each custom tile can have any number of lines defined in the hmoptions.cfg file
     // or it can make any number of web REST API calls using GET or POST
     // returning the result to the content of the tiles in the "post" field
-    // the text field will remain blank for REST API calls
-    // three parameters are passed for each call: type, url, params
+    // the text field defines the subid where the results go
+    // which is recommended to be "post" but can be anything you want
     // the type must be either GET, POST, or PUT
     // the url is the REST API url or it can be a text message
-    // params is a query string passed to the GET or POST call in standard format
-    // such as "val=1&opt=2&info=myinfo"
-    // custom tiles can also be populated with data via API custom post calls
-    // to use this you must provide a cmd value or an attr on the REST call
-    // button presses will not create cmd values
-    } else if ($swtype==="custom" ) {
+    // custom tiles can also grab values from other tiles using LINK as the type
+    // just enter the tileid as the url and the subid as the param
+    // only items from the first authenticated hub can be used
+    // multiple things can be grabbed but each subid must be unique
+    // so you can't grab two switches but you can grab a switch and a temperature
+    } else if ($swtype==="custom" && $path==="doaction" ) {
 
         $response = array();
-        $response["post"] = "";
-        $response["text"] = "";
-        $postkey = "post_" . $swid;
-
+        
         // handle custom tiles if invoked as an api call we use parameters passed
-        if ( $swval!=="" || substr($swattr,0,6)!=="custom" ) {
-            $lines = array(array("TEXT",$swval, $swattr));
-            $options[$postkey] = $lines;
-            writeOptions($options);
-        } else if ( array_key_exists($postkey, $options) ) {
-            $lines = $options[$postkey];
-        } else if (array_key_exists($swid, $options) ) {
+        if (array_key_exists($swid, $options) ) {
             $lines = $options[$swid];
-        } else {
-            $lines = array(array("TEXT",$swid, "Not Configured"));
-        }
-        foreach ($lines as $msgs) {
-            $calltype = strtoupper($msgs[0]);
-            $posturl = $msgs[1];
-            $params = $msgs[2];
-            if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
-                 substr(strtolower($posturl),0,4)==="http" ) {
-                $webresponse = curl_call($posturl, FALSE, $params, $calltype);
-                if (is_array($webresponse)) {
-                    //$webresponse = json_encode(json_encode($webresponse, JSON_HEX_QUOT));
-                    foreach($webresponse as $key => $val) {
-                        $response["post"] .= "<p>" . $key . ": ";
-                        if ( is_array($val) ) {
-                            $response["post"].= "<pre>" . print_r($val,true) . "</pre>";
+            foreach ($lines as $msgs) {
+                $calltype = strtoupper($msgs[0]);
+                $posturl = $msgs[1];
+                $params = $msgs[2];
+
+                // take action on the one clicked on
+                if ( $params===$subid ) {
+                    
+                    // handle web posts
+                    if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
+                                      substr(strtolower($posturl),0,4)==="http" ) 
+                    {
+                        $webresponse = curl_call($posturl, FALSE, $params, $calltype);
+                        if (is_array($webresponse)) {
+                            foreach($webresponse as $key => $val) {
+                                $response["post"] .= "<p>" . $key . ": ";
+                                if ( is_array($val) ) {
+                                    $response["post"].= "<pre>" . print_r($val,true) . "</pre>";
+                                } else {
+                                    $response["post"].= $val;
+                                }
+                                $response["post"].= "</p>";
+                            }
                         } else {
-                            $response["post"].= $val;
+                            $response["post"] .= $webresponse;
                         }
-                        $response["post"].= "</p>";
+
+                    // handle items linked to other things
+                    } else if ( $calltype==="LINK" ) {
+                        $tileid = $posturl;
+                        $idx = array_search($tileid, $options["index"]);
+                        $theparts = explode("|",$idx);
+                        $linked_swtype = $theparts[0];
+                        $linked_swid = $theparts[1];
+                        $linked_swattr = $linked_swtype . substr($swattr,6);
+
+                        // make the action call on the linked thing
+                        $headertype = array("Authorization: Bearer " . $access_token);
+                        $nvpreq = "swid=" . urlencode($linked_swid) . 
+                                  "&swattr=" . urlencode($linked_swattr) . 
+                                  "&swvalue=" . urlencode($swval) . 
+                                  "&swtype=" . urlencode($linked_swtype);
+                        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
+                        $response = curl_call($host, $headertype, $nvpreq, "POST");
+                        
+                        // update the main array
+                        if ( $response && count($response)>0 && isset($_SESSION["allthings"]) ) {
+                            $allthings = $_SESSION["allthings"];
+                            $lidx = $linked_swtype . "|" . $linked_swid;
+                            if ( isset($allthings[$lidx]) && $linked_swtype==$allthings[$lidx]["type"] ) {
+                                $newval = array_merge($allthings[$lidx]["value"], $response);
+                                $allthings[$lidx]["value"] = $newval;
+                            }
+                        }
+                        
+                        // $response[$params] = $posturl;
+                        
+                    // default is we assume a text value put in the params slot
+                    } else {
+                        $response[$params] = $posturl;
                     }
-                } else {
-                    $response["post"] .= $webresponse;
+                    
                 }
-            } else {
-                if ( strlen($response["post"]) && strlen($posturl) ) {
-                    $response["post"].= "<br />";
-                }
-                if ( strlen($response["text"]) && strlen($params) ) {
-                    $response["text"].= "<br />";
-                }
-                $response["post"].= $posturl;
-                $response["text"].= $params;
             }
         }
             
-        if ( isset($_SESSION["allthings"]) ) {
+        // if we have a response update the main array
+        if ( $response && count($response)>0 && isset($_SESSION["allthings"]) ) {
             $allthings = $_SESSION["allthings"];
             $idx = $swtype . "|" . $swid;
             if ( isset($allthings[$idx]) && $swtype===$allthings[$idx]["type"] ) {
@@ -1588,7 +1623,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                   "&swtype=" . urlencode($swtype);
         if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
         $response = curl_call($host, $headertype, $nvpreq, "POST");
-        
+
         // do nothing if we don't have things loaded in a session
         // but we can still return the API feature
         // we just don't update the session for a web browser

@@ -1557,15 +1557,15 @@ function setupPage(trigger) {
         var thevalue;
         // for switches and locks set the command to toggle
         // for most things the behavior will be driven by the class value = swattr
-        if (subid==="switch" || subid==="lock" || thetype==="door" ) {
+        if (subid==="switch" || subid==="lock" || (thetype==="door" && subid==="door") ) {
             thevalue = "toggle";
         // handle shm special case
-        } else if ( thetype=="shm") {
+        } else if ( (thetype=="shm" || thetype=="custom") && subid=="state" )  {
             thevalue = $(targetid).html();
             if ( thevalue=="off" ) { thevalue = "stay"; }
             else if ( thevalue=="stay") { thevalue = "away"; }
             else { thevalue = "off"; }
-        } else if ( thetype=="custom") {
+        } else if ( subid=="post") {
             thevalue = "";
         } else {
             thevalue = $(targetid).html();
@@ -1586,7 +1586,7 @@ function setupPage(trigger) {
             };
             
             $.post(returnURL, 
-                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid, hubnum: hubnum},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid, subid: subid, hubnum: hubnum},
                 function(presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         console.log( ajaxcall + " POST returned: "+ strObject(presult) );

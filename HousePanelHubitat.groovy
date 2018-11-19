@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/19/2018 - thermostat tweaks to support new custom tile feature 
  * 11/18/2018 - fixed hsm name and mode names to include size cues
  * 11/17/2018 - added Hubitat modes and hsm; removed routines dead code; bugfixes
  * 09/03/2018 - updated to work with multihub
@@ -1398,6 +1399,31 @@ def setThermostat(swid, curtemp, swattr, subid) {
               resp['thermofan'] = newsw
               // break
           }
+
+        else if ( subid=="temperature" ) {
+            def subidval = resp[subid]
+            resp = [temperature: subidval]
+        }
+          
+        else if ( subid=="heat" ) {
+            def subidval = resp[subid]
+            resp = [heat: subidval]
+        }
+          
+        else if ( subid=="cool" ) {
+            def subidval = resp[subid]
+            resp = [cool: subidval]
+        }
+          
+        else if ( subid=="state" ) {
+            def subidval = resp[subid]
+            resp = [state: subidval]
+        }
+          
+        else if ( subid=="humidity" ) {
+            def subidval = resp[subid]
+            resp = [humidity: subidval]
+        }
            
           // define actions for python end points  
           else {

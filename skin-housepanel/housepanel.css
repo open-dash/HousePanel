@@ -116,7 +116,7 @@ div.level, div.door.garage,
 div.custom-thing div.custom.post,
 div.piston-thing, div.music.musicmute, div.overlay.music-controls div.music,
 div.door.garage.closed, div.door.garage.closing, div.door.garage.open, div.door.garage.opening,
-div.thermostat.thermofan, div.thermostat.thermomode,
+div.thermofan, div.thermomode,
 div.valve.startZone, div.valve.pause, div.piston-thing div.pistonName,
 div.shm.state, div.hsm.state
 {
@@ -152,9 +152,9 @@ div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
 }
 
 /* alter the thermostat on and off to show since we don't use an icon here */
-div.thermostat.thermomode.auto, div.thermostat.thermomode.off,
-div.thermostat.thermomode.heat, div.thermostat.thermomode.cool,
-div.thermostat.thermofan.off, div.thermostat.thermofan.on, div.thermostat.thermofan.circulate {
+div.thermomode.auto, div.thermomode.off,
+div.thermomode.heat, div.thermomode.cool,
+div.thermofan.off, div.thermofan.on, div.thermofan.circulate {
     font-size: 11pt;
     background-image: none;
     background-position: center center;
@@ -466,43 +466,43 @@ div.weather.temperature, div.weather.feelsLike {
     -moz-border-radius: 50%;
 }
 
-div.thermostat.thermomode.off, div.thermostat.thermofan.off,
-div.thermostat.thermomode.on, div.thermostat.thermofan.on,
-div.thermostat.thermostate, div.thermostat.humidity  {
+div.thermomode.off, div.thermofan.off,
+div.thermomode.on, div.thermofan.on,
+div.thermostate, div.thermostat.humidity  {
 	background-color: #333333;
 	font-size: 11pt;
 	height: auto;
         margin: 0; padding: 0;
         color: #ffffff;
 }
-div.thermostat.thermomode.on, div.thermostat.thermofan.on {
+div.thermomode.on, div.thermofan.on {
     background-color: #3333ff;
 }
-div.thermostat.thermomode.heat {
+div.thermomode.heat {
     background-color: #ff3300;
 }
-div.thermostat.thermomode.cool {
+div.thermomode.cool {
     background-color: #3333ff;
 }
-div.thermostat.thermomode.auto, div.thermostat.thermofan.auto {
+div.thermomode.auto, div.thermofan.auto {
     background-color: #009999;
 }
 div.thermostat.humidity {
     background-color: #666666;
 }
-div.thermostat.thermofan::before {
+div.thermofan::before {
     content: "Fan: ";
 }
-div.thermostat.thermomode::before {
+div.thermomode::before {
     content: "Mode: ";
 }
-div.thermostat.thermostate::before {
+div.thermostate::before {
     content: "State: ";
 }
 div.thermostat.humidity::before {
     content: "Humidity: ";
 }
-div.thermostat.humidity::after {
+div.humidity::after {
     content: "%";
 }
 

@@ -1187,5 +1187,4 @@ div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
 }
 div.custom-thing div.post, div.custom-thing div.text {
     overflow-wrap: break-word;
-    overflow: auto;
 }
