@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.922      Updated default skin to make custom reflect originals in more places
  * 1.921      Hybrid custom tile support using hmoptions user provided input
  * 1.920      CSS cleanup and multiple new features
  *            - enable skin editing on the main page
@@ -125,7 +126,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.920');
+define('HPVERSION', 'Version 1.922');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
