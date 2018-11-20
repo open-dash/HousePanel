@@ -875,6 +875,9 @@ div.custom.text {
     height: 30px;
     color: rgba(255, 255, 255, 1);
 }
+div.custom.name {
+    display: none;
+}
 
 /* for weather illuminance avoid showing T and fix humidity */
 div.illuminance-thing .overlay.temperature {

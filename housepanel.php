@@ -1008,7 +1008,7 @@ function getCustomTile($tilename, $lines, $options, $allthings) {
 //            } else {
 //                $custom_val[$subid] = $webresponse;
 //            }
-            $custom_val[$subid] = $calltype;
+            $custom_val[$subid] = $calltype . ": " . $posturl;
 
         // code for enabling mix and match subid's into custom tiles
         } else if ( $calltype==="LINK" ) {
@@ -1550,19 +1550,20 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     if ( $posturl && ($calltype==="GET" || $calltype==="POST" || $calltype==="PUT") &&
                                       substr(strtolower($posturl),0,4)==="http" ) 
                     {
-                        $webresponse = curl_call($posturl, FALSE, $params, $calltype);
+                        $webresponse = curl_call($posturl, FALSE, "", $calltype);
                         if (is_array($webresponse)) {
+                            $response[$params] = "";
                             foreach($webresponse as $key => $val) {
-                                $response["post"] .= "<p>" . $key . ": ";
+                                $response[$params] .= "<p>" . $key . ": ";
                                 if ( is_array($val) ) {
-                                    $response["post"].= "<pre>" . print_r($val,true) . "</pre>";
+                                    $response[$params].= "<pre>" . print_r($val,true) . "</pre>";
                                 } else {
-                                    $response["post"].= $val;
+                                    $response[$params].= $val;
                                 }
-                                $response["post"].= "</p>";
+                                $response[$params].= "</p>";
                             }
                         } else {
-                            $response["post"] .= $webresponse;
+                            $response[$params] = $webresponse;
                         }
 
                     // handle items linked to other things
@@ -1593,7 +1594,8 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                             }
                         }
                         
-                        // $response[$params] = $posturl;
+                        // unset the name if returned
+                        unset( $response["name"] );
                         
                     // default is we assume a text value put in the params slot
                     } else {
