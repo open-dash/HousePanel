@@ -137,9 +137,10 @@ div.thingname, div.catalog-thing div.thingname {
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
     width: 100%;
+    filter: invert(0);
     cursor: default;
 }
-div.thingname:hover {
+div.panel div.thingname:hover {
     filter: invert(1);
 }
 

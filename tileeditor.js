@@ -583,11 +583,16 @@ function iconlist() {
 	dh += "<div id='editicon'>";
 	dh += "<div id='iconChoices'>";
 	dh += "<select name=\"iconSrc\" id=\"iconSrc\" class=\"ddlDialog\"></select>";
-//	dh += "<input type=\"checkbox\" id=\"invertIcon\">";
-//	dh += "<label class=\"iconChecks\" for=\"invertIcon\">Invert</label>";	
 	dh += "<input type='checkbox' id='noIcon'>";
 	dh += "<label class=\"iconChecks\" for=\"noIcon\">None</label>";
 	dh += "</div>";
+        var align = "";
+        align += "<div id='alignIcon' class='radiogroup'>";
+        align+= '<input id="iconleft" type="radio" name="alignicon" value="left"><label for="iconleft">Left</label>';
+        align+= '<input id="iconcenter" type="radio" name="alignicon" value="center" checked><label for="iconcenter">Center</label>';
+        align+= '<input id="iconright" type="radio" name="alignicon" value="right"><label for="iconright">Right</label>';
+        align += "</div>";
+        dh += align;
 	dh += "<div id='iconList'></div>";
 	dh += "</div>";
     return dh;
@@ -716,14 +721,14 @@ function sizepicker(str_type, thingindex) {
     dh += "<div class='editSection_input autochk'><input type='checkbox' id='autoTileHeight'><label class=\"iconChecks\" for=\"autoTileHeight\">Auto H?</label></div>";
     dh += "<div class='editSection_input autochk'><input type='checkbox' id='autoTileWidth'><label class=\"iconChecks\" for=\"autoTileWidth\">Auto W?</label></div>";
 
-    dh += "<div class='sizeText'><p>Text Size & Position:</p></div>";
+    dh += "<div class='sizeText'><p>Item Size & Position:</p></div>";
     dh += "<div class='editSection_input autochk'>";
-    dh += "<label for='editHeight'>Text H: </label>";
+    dh += "<label for='editHeight'>Item H: </label>";
     dh += "<input size='4' type=\"number\" min='5' max='1200' step='5' id=\"editHeight\" value=\"" + h + "\"/>";
     dh += "</div>";
     dh += "<div>";
     dh += "<div class='editSection_input autochk'>";
-    dh += "<label for='editWidth'>Text W: </label>";
+    dh += "<label for='editWidth'>Item W: </label>";
     dh += "<input size='4' type=\"number\" min='5' max='1200' step='5' id=\"editWidth\" value=\"" + w + "\"/>";
     dh += "</div>";
     dh += "</div>";
@@ -1559,7 +1564,7 @@ function initColor(str_type, subid, thingindex) {
         event.stopPropagation;
     });
     
-    // font size handling
+    // alignment handling
     $("#alignEffect").off('change', "input");
     $("#alignEffect").on('change', "input", function (event) {
         var str_type = $("#tileDialog").attr("str_type");
@@ -1572,20 +1577,35 @@ function initColor(str_type, subid, thingindex) {
         addCSSRule(cssRuleTarget, fontstr);
         event.stopPropagation;
     });
+    
+    // icon alignment handling
+    $("#alignIcon").off('change', "input");
+    $("#alignIcon").on('change', "input", function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
+        var subid = $("#subidTarget").html();
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
+        var aligneffect = $(this).val();
+        var fontstr= "background-position-x: " + aligneffect;
+        console.log("Changing alignment. Target= " + cssRuleTarget + " to: "+fontstr);
+        addCSSRule(cssRuleTarget, fontstr);
+        event.stopPropagation;
+    });
 	
     // determine hiding of element
     $("#isHidden").off('change');
     $("#isHidden").on('change', function(event) {
         var str_type = $("#tileDialog").attr("str_type");
         var thingindex = $("#tileDialog").attr("thingindex");
+        var subid = $("#subidTarget").html();
         var strCaller = $($(event.target)).attr("target");
         var ischecked = $(event.target).prop("checked");
         if ( ischecked  ){
-            addCSSRule("div.overlay."+str_type+" v_"+thingindex, "display: none;", true);
-            addCSSRule(strCaller, "display: none;", true);
+            addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: none;", true);
+            addCSSRule(strCaller, "display: none;", false);
         } else {
-            addCSSRule("div.overlay."+str_type+" v_"+thingindex, "display: " + defaultOverlay + ";", true);
-            addCSSRule(strCaller, "display: " + defaultShow + ";", true);
+            addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: " + defaultOverlay + ";", true);
+            addCSSRule(strCaller, "display: " + defaultShow + ";", false);
         }
         event.stopPropagation;
     });	
@@ -1601,7 +1621,7 @@ function initColor(str_type, subid, thingindex) {
     });
 
     // set the initial invert check box
-    if ( $(icontarget).css("filter") && $(icontarget).css("filter").startsWith("invert") ) {
+    if ( $(icontarget).css("filter") && $(icontarget).css("filter").includes("invert(1)") ) {
         $("#invertIcon").prop("checked",true);
     } else {
         $("#invertIcon").prop("checked",false);
@@ -1617,23 +1637,35 @@ function initColor(str_type, subid, thingindex) {
     
     // set the initial alignment
     var initalign = $(icontarget).css("text-align");
-    if ( initalign === "center") {
-        $("#aligncenter").prop("checked", true);
+    if ( initalign === "left") {
+        $("#alignleft").prop("checked", true);
     } else if (initalign === "right") {
         $("#alignright").prop("checked", true);
     } else {
-        $("#alignleft").prop("checked", true);
+        $("#aligncenter").prop("checked", true);
+    }
+    
+    // set the initial alignment
+    initalign = $(icontarget).css("background-position-x");
+    if ( initalign === "left") {
+        $("#iconleft").prop("checked", true);
+    } else if (initalign === "right") {
+        $("#iconright").prop("checked", true);
+    } else {
+        $("#iconcenter").prop("checked", true);
     }
     
     // set initial hidden status
     var ish1= $(icontarget).css("display");
-    var ish2= $("div.overlay."+str_type+" v_"+thingindex).css("display");
+    var ish2= $("div.overlay."+str_type+".v_"+thingindex).css("display");
     if ( ish1 === "none" || ish2 === "none") {
         $("#isHidden").prop("checked", true);
+        defaultShow = "inline-block";
+        defaultOverlay = "block";
     } else {
         $("#isHidden").prop("checked", false);
-        defaultShow = ish1;
-        defaultOverlay = ish2;
+        defaultShow = ish1 ? ish1 : "inline-block";
+        defaultOverlay = ish2 ? ish2 : "block";
     }
     
 }

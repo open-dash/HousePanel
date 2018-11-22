@@ -425,6 +425,15 @@ div.restoretabs, div.formbutton {
     margin-left: 2px; margin-right: 2px;
     font-size: 12pt;
 }
+div.formauto {
+    display: inline-block;
+    padding-top: 6px; padding-bottom: 6px;
+    padding-left: 2px; padding-right: 2px;
+    width: auto; height: auto;
+    margin-left: 10px; margin-right: 2px;
+    font-size: 12pt;
+}
+
 input.resetbutton, input.submitbutton {
     padding-right: 2px;
     padding-top: 8px;
@@ -839,6 +848,17 @@ div.colorgroup label {
     display: block;
 }
 
+div.radiogroup {
+    display: block;
+    margin-top: 10px;
+}
+div.radiogroup label, div.radiogroup input {
+    color: white;
+    width: auto;
+    display: inline-block;
+    margin-left: 2px; margin-right: 3px;
+}
+
 #colorpicker .minicolors-swatch {
   top: 2px;
   left: 0px;
@@ -871,6 +891,10 @@ div.colorgroup label {
     display: inline-block;
     margin-right: 5px;
 }
+/*#alignIcon input, #alignIcon label {
+    display: inline-block;
+    margin-right: 5px;
+}*/
 #editReset {
     display: inline-block;
     padding-left: 10px;

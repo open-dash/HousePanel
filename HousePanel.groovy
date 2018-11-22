@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/21/2018 - add routine to return location name
  * 11/19/2018 - thermostat tweaks to support new custom tile feature 
  * 11/18/2018 - fixed mode names to include size cues
  * 11/17/2018 - bug fixes and cleanup to match Hubitat update
@@ -38,7 +39,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.793" }
+public static String version() { return "v1.923" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -105,6 +106,10 @@ mappings {
   
   path("/doquery") {
      action: [       POST: "doQuery"     ]
+  }
+  
+  path("/gethubinfo") {
+     action: [       POST: "getHubInfo"     ]
   }
 
 }
@@ -641,6 +646,12 @@ def getOthers(resp) {
         def multivalue = getThing(myothers, thatid, it)
         resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
     }
+    return resp
+}
+
+def getHubInfo() {
+    def resp =  [ sitename: location.getName(),
+                  hubtype: "SmartThings" ]
     return resp
 }
 
