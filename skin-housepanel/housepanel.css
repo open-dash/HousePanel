@@ -74,10 +74,6 @@ div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.bulb-thing {
     height: auto;
     width: auto;
 }
-div.thing.catalog-thing {
-    display: inline-block;
-    width: 120px;
-}
 
 /* styling defaults without state or specific thing subtypes */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
@@ -124,24 +120,6 @@ div.shm.state, div.hsm.state
 }
 div.contact.door {
     cursor: default;
-}
-
-/* the name in the header */
-div.thingname, div.catalog-thing div.thingname {
-    background-color: #303050;
-    font-size: 11pt;
-    text-align: center;
-    color: #ffffff;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    border-bottom: 5px solid rgba(0,0,0,0.3);
-    height: 30px;
-    width: 100%;
-    filter: invert(0);
-    cursor: default;
-}
-div.panel div.thingname:hover {
-    filter: invert(1);
 }
 
 /* style the on and off states of things to not show up */
@@ -387,8 +365,6 @@ div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     color: rgba(255, 255, 255, 0.01);
     background-position: -32px 0px;
 	background-size: auto;
-/*    border-top-left-radius: 25px;
-    border-bottom-left-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -400,8 +376,6 @@ div.colorTemperature-up, div.hue-up, div.saturation-up {
     color: rgba(255, 255, 255, 0.01);
     background-position: -272px -2px;
 	background-size: auto;
-/*    border-top-right-radius: 25px;
-    border-bottom-right-radius: 25px; */
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
@@ -412,16 +386,13 @@ div.music.level, div.music.vol {
     width: 99%;
 }
 div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
-    /*background-image: url("media/Media-Player-Buttons.png");*/
     color: rgba(255, 255, 255, 0.01);
     background-size: 38px;
     display: inline-block;
     background-repeat: no-repeat;
     height:38px; 
     width: 32px;
-    /*background-position: -160px -4px;*/
     margin-top: 5px;
-    /*position: absolute;*/
 }
 div.music-pause {
     background-image: url("media/pause.png");
@@ -614,13 +585,10 @@ div.overlay.temperature div.weather.temperature, div.overlay.feelsLike div.weath
     text-align: center;
     height: 70px;
     width: 70px;
-    padding: 4px 3px 0 3px;
-    margin-top: 10px;
-    margin-bottom: 10px;
     margin-left: 10px;
     margin-right: 10px;
     border-radius: 50%;
-    font-size: 20px;
+    font-size: 28px;
     line-height: 55px;
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
@@ -655,15 +623,15 @@ div.weather.illuminance::after,
 div.custom.illuminance::after {
     content: " Lux";
 }
-div.weather.sunriseset {
+div.weather.sunrise {
     margin-top: 10px;
 }
-div.weather.sunriseset, div.weather.humidity,
+div.weather.humidity, div.weather.sunrise, div.weather.sunset,
 div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: #333333;
     margin-bottom: 0px;
 }
-div.weather.timeZoneOffset, div.weather.alertKeys,
+div.weather.sunriseset, div.weather.timeZoneOffset, div.weather.alertKeys,
 div.weather.sunriseDate, div.weather.sunsetDate,
 div.weather.ultravioletIndex, div.weather.lastUpdate {
     display: none;
@@ -696,7 +664,7 @@ div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
     background-image: url("media/clear.png");
 }
 div.overlay.weatherIcon div.mostlysunny, div.overlay.forecastIcon div.mostlysunny {
-    background-image: url("media/partlysunny.png");
+    background-image: url("media/mostlysunny.png");
 }
 div.overlay.weatherIcon div.partlysunny, div.overlay.forecastIcon div.partlysunny {
     background-image: url("media/partlysunny.png");
@@ -753,24 +721,6 @@ div.clock.weekday {
 div.clock.time {
     font-size: 36pt;
     margin-top: 12px;
-}
-
-/* mode and ST shm and Hubitat hsm styles */
-div.thing.mode-thing, div.thing.shm-thing, div.thing.hsm-thing {
-    width: auto;
-    height: auto;
-}
-div.mode-thing.m1x1, div.mode-thing.m2x1, div.mode-thing.hm1x1, div.mode-thing.hm2x1 {
-    height: 147px;
-}
-div.mode-thing.m1x2, div.mode-thing.m2x2, div.mode-thing.hm1x2, div.mode-thing.hm2x2 {
-    height: 300px;
-}
-div.mode-thing.m1x1, div.mode-thing.m1x2, div.mode-thing.hm1x1, div.mode-thing.hm1x2 {
-    width: 120px;
-}
-div.mode-thing.m2x1, div.mode-thing.m2x2, div.mode-thing.hm2x1, div.mode-thing.hm2x2 {
-    width: 244px;
 }
 div.mode.themode {
     font-size: 20pt;
@@ -960,30 +910,6 @@ div.switch-thing div.overlay.level {
 
 /* Example custom settings from Ken's home */
 /* you should remove these since they will likely do nothing */
-
-/* images - can be customized to show any valid jpg or png on the web */
-div.image.url.img1 {
-    background-image: url("/smartthings/garagecam/livingroom.jpg");
-}
-div.image.url.img2 {
-    background-image: url("/smartthings/garagecam/officecam.jpg");
-}
-div.image.url.img3 {
-    background-image: url("/smartthings/garagecam/garagepic.jpg");
-}
-div.image.url.img4 {
-    background-image: url("../media/myhouse.jpg");
-}
-
-/* girl sillhouette for wife's phone */
-div.presence.jana.present {
-    background-image: url('icons/girlpresent.png');
-    color: rgba(255, 255, 255, 0.01);
-}
-div.presence.jana.absent {
-    background-image: url('icons/girlabsent.png');
-    color: rgba(255, 255, 255, 0.01);
-}
 
 /* smart switch on my rock fountain */
 div.switch.rock.on {

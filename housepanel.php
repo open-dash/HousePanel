@@ -7,6 +7,11 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.925      Various patches and hub tweaks
+ *            - Hub name retrieval from hub
+ *            - Show user auth activation data
+ *            - Hack to address Hubitat bug for Zwave generic dimmers
+ *            - Added border styling to TileEditor
  * 1.924      Update custom tile status to match linked tiles
  *            Added option to select number of custom tiles to use (beta)
  * 1.923      TileEditor updates
@@ -133,7 +138,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.922');
+define('HPVERSION', 'Version 1.925');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -374,7 +379,8 @@ function getAccessToken($returl, $code, $stweb, $clientId, $clientSecret, $hubTy
     
 }
 
-// returns an array of the first endpoint and the sitename
+// changed this routine to only get endpoint
+// since we now get the location name separately
 // this only works if the clientid within theendpoint matches our auth version
 // TODO: Implement logic to read Wink and Vera hub end points
 function getEndpoint($access_token, $stweb, $clientId, $hubType) {
@@ -390,25 +396,23 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
     $response = curl_call($host, $headertype);
 
     $endpt = false;
-    $sitename = "";
+//    $sitename = "";
     if ($response) {
         if ( is_array($response) ) {
 	    $endclientid = $response[0]["oauthClient"]["clientId"];
 	    if ($endclientid === $clientId) {
                 $endpt = $response[0]["uri"];
-                $sitename = $response[0]["location"]["name"];
+//                $sitename = $response[0]["location"]["name"];
 	    }
         } else {
 	    $endclientid = $response["oauthClient"]["clientId"];
 	    if ($endclientid === $clientId) {
                 $endpt = $response["uri"];
-                $sitename = $response["location"]["name"];
+//                $sitename = $response["location"]["name"];
 	    }
-            
         }
     }
-    return array($endpt, $sitename);
-
+    return $endpt;
 }
 
 function tsk($timezone, $skin, $kiosk, $pword) {
@@ -459,8 +463,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
     $tc.= "<p>The Authorize button below will " .
             "begin the typical OAUTH process for your hub. " .
-            "Please note that if you provide a manual Access Token and Endpoint you will " .
-            "be returned immediately to the main page and not sent through the OAUTH flow process, and your " .
+            "If you provide a manual Access Token and Endpoint your hub will " .
+            "be authorized immediately and not sent through the OAUTH flow process, so your " .
             "devices will have to be selected or modified from the hub app instead of here.</p>";
 
     $tc.= "<p>After a successful OAUTH flow authorization, you will be redirected back here to repeat " .
@@ -823,9 +827,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         // ------------------ general settings ----------------------------------
         $tc.= tsk($timezone, $skin, $kiosk, $pword);
 
-        if ( $hubset!==null && $newthings!==null && is_array($newthings) && intval($hubset)===intval($i) ) {
+        if ( $hubset!==null && intval($hubset)===intval($i) && $newthings!==null && is_array($newthings) && count($newthings) ) {
             $numnewthings = count($newthings);
-            $tc.= "<div><label class=\"startupinp highlight\">Hub was authorized and $numnewthings devices were retrieved.</label></div>";
+            $tc.= "<div><label class=\"startupinp highlight\">Hub #$defhub was authorized and $numnewthings devices were retrieved.</label></div>";
         }
     
         $tc.= "<div class='hubopt'>";
@@ -836,18 +840,21 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $st_select = $he_select = $w_select = $v_select = $o_select = "";
         if ( $hubType==="SmartThings" ) { $st_select = "selected"; }
         if ( $hubType==="Hubitat" ) { $he_select = "selected"; }
-        if ( $hubType==="Wink" ) { $w_select = "selected"; }
-        if ( $hubType==="Vera" ) { $v_select = "selected"; }
-        if ( $hubType==="OpenHab" ) { $o_select = "selected"; }
+//        if ( $hubType==="Wink" ) { $w_select = "selected"; }
+//        if ( $hubType==="Vera" ) { $v_select = "selected"; }
+//        if ( $hubType==="OpenHab" ) { $o_select = "selected"; }
         $tc.= "<option value=\"SmartThings\" $st_select>SmartThings</option>";
         $tc.= "<option value=\"Hubitat\" $he_select>Hubitat</option>";
-        $tc.= "<option value=\"Wink\" $w_select>Wink</option>";
+        // $tc.= "<option value=\"Wink\" $w_select>Wink</option>";
         // $tc.= "<option value=\"Vera\" $v_select>Vera</option>";
-        $tc.= "<option value=\"OpenHab\" $o_select>OpenHab</option>";
+        // $tc.= "<option value=\"OpenHab\" $o_select>OpenHab</option>";
         $tc.= "</select></div>";
-
+        
+        if ( !$hub["hubHost"] ) {
+            $hub["hubHost"] = "https://graph.api.smartthings.com";
+        }
         $tc.= "<div><label class=\"startupinp required\">API Url: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubHost\" width=\"80\" type=\"text\" value=\"" . $hub["hubHost"] . "\"/></div>"; 
+        $tc.= "<input class=\"startupinp\" title=\"Enter the hub OAUTH address here\" name=\"hubHost\" width=\"80\" type=\"text\" value=\"" . $hub["hubHost"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp required\">Client ID: </label>";
         $tc.= "<input class=\"startupinp\" name=\"clientId\" width=\"80\" type=\"text\" value=\"" . $hub["clientId"] . "\"/></div>"; 
@@ -1156,8 +1163,10 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         $tc.= putElement($kindex, $i, 4, $thingtype, $wiconstr, "weatherIcon");
         $tc.= putElement($kindex, $i, 5, $thingtype, $ficonstr, "forecastIcon");
         $tc.= "</div>";
+        $tc.= putElement($kindex, $i, 7, $thingtype, "Sunrise: " . $thingvalue["localSunrise"], "sunrise");
+        $tc.= putElement($kindex, $i, 8, $thingtype, "Sunset: " . $thingvalue["localSunset"], "sunset");
         $tc.= putElement($kindex, $i, 6, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
-        $j = 7;
+        $j = 9;
         foreach($thingvalue as $tkey => $tval) {
             if ($tkey!=="temperature" &&
                 $tkey!=="feelsLike" &&
@@ -1221,7 +1230,7 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
         }
         
         $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";;
+        $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
         // $tc.= "<span class=\"customname m_$kindex\">$customname</span>";
         $tc.= "</div>";
 	
@@ -2884,13 +2893,15 @@ function is_ssl() {
         $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubAccess = $userAccess;
         $hubEndpt = $userEndpt;
+        $hubName = trim($hubName);
         
         // read the prior options
         $options = readOptions();
         $configoptions = $options["config"];
         
         // either keep the old password or replace if user gave new one
-        if ( $pword!=="" || !array_key_exists("pword", $configoptions) ) {
+        if ( trim($pword)!=="" || !array_key_exists("pword", $configoptions) ) {
+            $pword = trim($pword);
             if ( $pword==="" ) {
                 $pword = "";
             } else {
@@ -2984,8 +2995,37 @@ function is_ssl() {
         writeOptions($options);
 
         // if manual is set the skip OAUTH flow
+        // also proceed with recapturing things from this hub
         if ( $userAccess && $userEndpt ) {
-            header("Location: $returnURL");
+
+            // get all new devices and update the options index array
+            $newthings = getDevices(array(), $hubnum, $hubType, $userAccess, $userEndpt, $clientId, $clientSecret);
+            
+            if ( count($newthings) ) {
+                $options = getOptions($options, $newthings);
+                if ( $hubName === "" ) {
+                    $hubName = getName($userAccess, $userEndpt, $clientId, $clientSecret);
+                }
+                if ( $hubName ) {
+                    $hub["hubName"] = $hubName;
+                    $hubs[$hubnum] = $hub;
+                    $configoptions["hubs"] = $hubs;
+                    $options["config"] = $configoptions;
+                }
+                writeOptions($options);
+            }
+
+            $hpcode = time();
+            $_SESSION["hpcode"] = $hpcode;
+            unset($_SESSION["HP_hubnum"]);
+            $authpage= getAuthPage($returnURL, $hpcode, $hubnum, $newthings);
+            echo htmlHeader($skin);
+            echo $authpage;
+            echo htmlFooter();
+            exit(0);
+//            $_SESSION["HP_hubnum"] = $hubnum;
+//            $_SESSION["hpcode"]= "redoauth";
+//            header("Location: $returnURL");
         } else {
             
             // save the hub number in a session variable
@@ -3076,18 +3116,13 @@ function is_ssl() {
         // get the endpoint if the token is valid
         // this works for either ST or HE hubs
         if ($token) {
-            $endptinfo = getEndpoint($token, $hubHost, $clientId, $hubType);
-            $endpt = $endptinfo[0];
-            if ( $endptinfo[1] && $hubType==="SmartThings" && $hubName==="" ) {
-                $hubName = $endptinfo[1];
-            }
+            $endpt = getEndpoint($token, $hubHost, $clientId, $hubType);
 
             // save auth info in hmoptions file
             // *** IMPT *** this is the info needed to allow HP to read things
             if ($endpt) {
                 $hub["hubAccess"] = $token;
                 $hub["hubEndpt"] = $endpt;
-                $hub["hubName"] = $hubName;
                 $hubs[$hubnum] = $hub;
                 $configoptions["hubs"] = $hubs;
                 
@@ -3096,24 +3131,27 @@ function is_ssl() {
                 
                 // get all new devices and update the options index array
                 $newthings = getDevices(array(), $hubnum, $hubType, $token, $endpt, $clientId, $clientSecret);
-                $options = getOptions($options, $newthings);
-//                $hubName = getName($token, $endpt, $clientId, $clientSecret);
-//                $hub["hubName"] = $hubName;
+                if ( count($newthings) ) {
+                    $options = getOptions($options, $newthings);
 
-                // write the options file with our credentials
-                // *** IMPT *** if this file write fails, HP will not work properly
-                writeOptions($options);
+                    // get name from the hub if still blank
+                    if ( $hubName==="" ) {
+                        $hubName = getName($token, $endpt, $clientId, $clientSecret);
+                    }
+                    if ( $hubName ) {
+                        $hub["hubName"] = $hubName;
+                        $hubs[$hubnum] = $hub;
+                        $configoptions["hubs"] = $hubs;
+                        $options["config"] = $configoptions;
+                    }
+                    writeOptions($options);
+                }
                 
                 $hpcode = time();
                 $_SESSION["hpcode"] = $hpcode;
                 unset($_SESSION["HP_hubnum"]);
                 $authpage= getAuthPage($returnURL, $hpcode, $hubnum, $newthings);
                 echo htmlHeader($skin);
-//                if ( $hubType==="Hubitat" ) {
-//                    echo "<div class='error'>token= $token endpt= $endpt hubnum= $hubnum host= $hubHost <pre>";
-//                    print_r($newthings);
-//                    echo "</pre></div>";
-//                }
                 echo $authpage;
                 echo htmlFooter();
                 exit(0);

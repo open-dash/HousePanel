@@ -1334,6 +1334,7 @@ function updateTile(aid, presult) {
                 // update the content 
                 if (oldvalue || value) {
                     $(targetid).html(value);
+                    // if ( aid=="91" ) { alert("key= " + key + " changed value to: " + value); }
                 }
             }
     });
@@ -1382,9 +1383,9 @@ function timerSetup(hubs) {
         var token = hub.hubAccess;
         var timerval = 60000;
         if ( hubType==="Hubitat" ) {
-            timerval = 5000;
+            timerval = 10000;
         }
-        console.log("hub #" + hubnum + " timer = " + timerval + " hub = " + strObject(hub));
+        // console.log("hub #" + hubnum + " timer = " + timerval + " hub = " + strObject(hub));
 
         var updarray = ["all", timerval, hubnum, token];
         updarray.myMethod = function() {
@@ -1672,7 +1673,7 @@ function setupPage(trigger) {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
                                     console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                                    updAll(subid,aid,bidupd,thetype,hubnum,presult);
+                                     updAll(subid,aid,bidupd,thetype,hubnum,presult);
                                 } else {
                                     console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                                 }

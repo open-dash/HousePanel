@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 11/24/2018 - implement workaround hack to dimmer light inconsistency
+ * 11/21/2018 - add routine to return location name
  * 11/19/2018 - thermostat tweaks to support new custom tile feature 
  * 11/18/2018 - fixed hsm name and mode names to include size cues
  * 11/17/2018 - added Hubitat modes and hsm; removed routines dead code; bugfixes
@@ -114,6 +116,10 @@ mappings {
   
   path("/doquery") {
      action: [       POST: "doQuery"     ]
+  }
+  
+  path("/gethubinfo") {
+     action: [       POST: "getHubInfo"     ]
   }
 
 }
@@ -622,6 +628,12 @@ def getOthers(resp) {
         def multivalue = getThing(myothers, thatid, it)
         resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
     }
+    return resp
+}
+
+def getHubInfo() {
+    def resp =  [ sitename: location.getName(),
+                  hubtype: "Hubitat" ]
     return resp
 }
 
@@ -1154,10 +1166,18 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            newonoff=="on" ? item.on() : item.off()
-            if ( swattr.isNumber() ) {
+            if ( swattr.isNumber() && item.hasCommand("setLevel") ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
+            }
+            if ( newonoff == "on" ) {
+                item.on()
+            } else {
+                item.off()
+                // address Hubitat bug to set level zero
+                if ( item.hasCommand("setLevel") ) {
+                    item.setLevel(0)
+                }
             }
             skiponoff = true
             break               
@@ -1165,8 +1185,19 @@ def setGenericLight(mythings, swid, cmd, swattr) {
         }
         
         if ( ! skiponoff ) {
-        	newonoff=="on" ? item.on() : item.off()
+            if ( newonoff == "on" ) {
+                item.on()
+            } else {
+                item.off()
+                
+                // address Hubitat bug to set level zero
+                if ( item.hasCommand("setLevel") ) {
+                    item.setLevel(0)
+                }
+            }
+            item.poll()
         }
+        
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( newcolor ) { resp.put("color", newcolor) }

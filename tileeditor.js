@@ -13,6 +13,39 @@ var defaultShow = "block";
 var defaultOverlay = "block";
 var tileCount = 0;
 
+$.fn.isAuto = function(dimension){
+    // will detect auto widths including percentage changes
+    if (dimension == 'width'){
+        var originalWidth = this.css("width");
+        var parentWidth = this.parent().css("width");
+        // pick some weird big number
+        var testWidth = 2000;
+        this.parent().css({width: testWidth});
+        var newWidth = this.css("width");
+        this.parent().css({width: parentWidth});
+        // console.log(originalWidth, newWidth, parentWidth);
+        if ( newWidth > originalWidth ) {
+            return true;    
+        } else{
+            return false;
+        }
+    } else if (dimension == 'height'){
+        var originalHeight = this.height();
+        this.append('<div id="testzzz"></div>');
+        var testHeight = originalHeight+500;
+        $('#testzzz').css({height: testHeight});
+        var newHeight = this.height();
+        $('#testzzz').remove();
+        if( newHeight > originalHeight ) {
+            return true;    
+        } else{
+            return false;
+        }
+    } else {
+        return false;
+    }
+};
+
 function getOnOff(str_type, subid) {
     var onoff = ["",""];
     
@@ -117,7 +150,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         if ( useall < 2 ) { target+= "." + str_type; }
         if ( useall < 1 ) { 
             target+= '.t_'+thingindex;
-            // target+= " span.original.n_"+thingindex;
+            // target+= " span.n_"+thingindex;
         }
 
     // handle special case when whole tile is being requested
@@ -172,7 +205,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         if ( subid===str_type ) {
             subidtag = "";
         }
-        if ( subid!=="level" && subid!=="cool" && subid!=="head" ) {
+        if ( subid!=="level" && subid!=="head" ) {
             // target+= " div."+str_type;
 
             // handle special thermostat wrapper case
@@ -278,7 +311,7 @@ function initDialogBinds(str_type, thingindex) {
     
     $("#editName").on('input', function () {
         var thingindex = $("#tileDialog").attr("thingindex");
-        var target1 = "span.original.n_"+thingindex;
+        var target1 = "span.n_"+thingindex;
 
         var newname = $("#editName").val();
         $(target1).html(newname);
@@ -300,7 +333,7 @@ function initDialogBinds(str_type, thingindex) {
     
 
     // set the header name
-    var target1 = "span.original.n_"+thingindex;
+    var target1 = "span.n_"+thingindex;
     var newname = $(target1).html();
     $("#editName").val(newname);
     
@@ -439,6 +472,10 @@ function initDialogBinds(str_type, thingindex) {
         if ( subid !== "wholetile" ) {
             var target = getCssRuleTarget(str_type, subid, thingindex);
             var rule = "height: " + newsize.toString() + "px;";
+            if ( subid==="temperature" || subid==="feelsLike" ) {
+                var halfnew = newsize - 5;
+                rule += " line-height: " + halfnew.toString() + "px;";
+            }
             addCSSRule(target, rule);
         }
         event.stopPropagation;
@@ -467,7 +504,7 @@ function initDialogBinds(str_type, thingindex) {
         if ( $("#autoHeight").is(":checked") ) {
             // special handling for default temperature circles
             if ( subid==="temperature" || subid==="feelsLike" ) {
-                rule = "height: 50px; border-radius: 50%;  padding-left: 0; padding-right: 0; ";
+                rule = "height: 50px; line-height: 45px;";
             } else {
                 rule = "height: auto;";
             }
@@ -479,11 +516,17 @@ function initDialogBinds(str_type, thingindex) {
             $("#editHeight").prop("disabled", false);
             $("#editHeight").css("background-color","white");
             if ( newsize === 0 ) {
-                newsize = "148px;";
+                if ( subid === "wholetile" ) {
+                    rule = "height: 150px;";
+                } else if ( subid==="temperature" || subid==="feelsLike" ) {
+                    rule = "height: 50px; line-height: 45px;";
+                } else {
+                    rule = "height: 16px;";
+                }
             } else {
                 newsize = newsize.toString() + "px;";
+                rule = "height: " + newsize;
             }
-            rule = "height: " + newsize;
         }
         if ( subid !== "wholetile" ) {
             addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
@@ -501,11 +544,11 @@ function initDialogBinds(str_type, thingindex) {
             if ( $("#autoWidth").is(":checked") ) {
                 // special handling for default temperature circles
                 if ( subid==="temperature" || subid==="feelsLike" ) {
-                    rule = "width: 70px; border-radius: 50%;  padding-left: 0; padding-right: 0; ";
+                    rule = "width: 50px;";
                 } else if ( str_type==="page" && subid==="panel") {
                     rule = "width: 100%; padding-left: 0px; padding-right: 0px;";
                 } else {
-                    rule = "width: 96%; padding-left: 2%; padding-right: 2%;";
+                    rule = "width: 100%;";
                 }
                 $("#editWidth").prop("disabled", true);
                 $("#editWidth").css("background-color","gray");
@@ -516,15 +559,15 @@ function initDialogBinds(str_type, thingindex) {
                 $("#editWidth").css("background-color","white");
                 if ( newsize === 0 ) {
                     if ( subid==="temperature" || subid==="feelsLike" ) {
-                        rule = "width: 70px; border-radius: 50%;  padding-left: 0; padding-right: 0; ";
+                        rule = "width: 50px;";
                     } else if ( str_type==="page" && subid==="panel") {
                         rule = "width: 100%; padding-left: 0px; padding-right: 0px;";
                     } else {
-                        rule = "width: 96%; padding-left: 2%; padding-right: 2%;";
+                        rule = "width: 100%;";
                     }
                 } else {
                     newsize = newsize.toString() + "px;";
-                    rule = "width: " + newsize + " padding-left: 0; padding-right: 0; display: inline-block;";
+                    rule = "width: " + newsize + " display: inline-block;";
                 }
                 addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
             }
@@ -543,12 +586,14 @@ function initDialogBinds(str_type, thingindex) {
         } else {
             newsize = newsize.toString() + "px;";
         }
-        var rule = "padding-top: " + newsize;
+        var rule;
         if ( subid === "wholetile" || subid === "panel" ) {
             rule = "background-position-y: " + newsize;
         } else if ( subid==="temperature" || subid==="feelsLike" ||
                     subid==="weatherIcon" || subid==="forecastIcon" ) {
             rule = "margin-top: " + newsize;
+        } else {
+            rule = "padding-top: " + newsize;
         }
         addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;
@@ -565,12 +610,14 @@ function initDialogBinds(str_type, thingindex) {
         } else {
             newsize = newsize.toString() + "px;";
         }
-        var rule = "padding-left: " + newsize;
+        var rule;
         if ( subid === "wholetile" || subid === "panel") {
             rule = "background-position-x: " + newsize;
         } else if ( subid==="temperature" || subid==="feelsLike" ||
                     subid==="weatherIcon" || subid==="forecastIcon" ) {
             rule = "margin-left: " + newsize;
+        } else {
+            rule = "padding-left: " + newsize;
         }
         addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
         event.stopPropagation;
@@ -635,9 +682,9 @@ function getScope(str_type, ftime) {
 
 function effectspicker(str_type, thingindex) {
     var dh = "";
-    // var target = "div." + str_type + "-thing span.original.n_" + thingindex;
+    // var target = "div." + str_type + "-thing span.n_" + thingindex;
     var target = getCssRuleTarget(str_type, "head", thingindex);
-    target = target +  " span.original.n_" + thingindex;
+    target = target +  " span.n_" + thingindex;
     var name = $(target).html();
     var labelname = "Tile Name:";
     if ( str_type==="page" ) {
@@ -1147,7 +1194,8 @@ function initColor(str_type, subid, thingindex) {
     
     var icontarget = target;
     
-    // alert("initcolor: str_type= " + str_type + " subid= " + subid + " thingindex= " + thingindex + " target= " + icontarget);
+    console.log ("initcolor: str_type= " + str_type + " subid= " + subid + " thingindex= " + thingindex + " target= " + icontarget);
+    // 
     // set the default icon to last one
     priorIcon = $(icontarget).css("background-image");
 
@@ -1225,7 +1273,10 @@ function initColor(str_type, subid, thingindex) {
         var editwidth = $(icontarget).css("width");
         var editheight = $(icontarget).css("height");
         
-        if ( editheight==="auto" ) {
+//        alert("width = " + editwidth + " height= " + editheight + " autoH? " +
+//                $(icontarget).isAuto("height") + " autoW? " + $(icontarget).isAuto('width') );
+        
+        if ( $(icontarget).isAuto("height") ) {
             $("#autoHeight").prop("checked", true);
             $("#editHeight").prop("disabled", true);
             $("#editHeight").css("background-color","gray");
@@ -1244,7 +1295,7 @@ function initColor(str_type, subid, thingindex) {
             $("#editHeight").val(editheight);
         }
         
-        if ( editwidth==="auto" ) {
+        if ( $(icontarget).isAuto("width") ) {
             $("#autoWidth").prop("checked", true);
             $("#editWidth").prop("disabled", true);
             $("#editWidth").css("background-color","gray");
@@ -1450,10 +1501,37 @@ function initColor(str_type, subid, thingindex) {
 
         var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
 
+        var border = "<div class='editSection_input'><label>Border Type:</label>";
+        border += "<select name=\"borderType\" id=\"borderType\" class=\"ddlDialog\">";
+        var borderopts = {"Select Option":"",
+                          "Default": "border: unset; border-right: unset; border-bottom: unset; border-radius: 0%; box-shadow: unset;",
+                          "Shadow Square": "border: 2px solid #999999; border-right: 2px solid #333333; border-bottom: 2px solid #333333; border-radius: 0%; box-shadow: 2px 2px 7px black;",
+                          "Thin Border": "border: 1px solid black;",
+                          "2x Border": "border: 2px solid black;",
+                          "3x Border": "border: 3px solid black;",
+                          "Thick Border": "border: 6px solid black;",
+                          "White Color": "border-color: white;", 
+                          "Black Color": "border-color: black;", 
+                          "No Color" : "border-color: rgba(0,0,0,0.01);",
+                          "White Shadow": "box-shadow: 5px 4px 15px #cccccc;",
+                          "Black Shadow": "box-shadow: 5px 4px 15px black;",
+                          "No Shadow": "box-shadow: none;",
+                          "Square": "border-radius: 0%;",
+                          "Circle": "border-radius: 50%;",
+                          "Rounded Rect": "border-radius: 25%;",
+                          "None": "border: none; box-shadow: none;" };
+        for ( var bopt in borderopts ) {
+            var checked = "";
+            if ( bopt==="Select Option" ) { checked = " selected"; }
+            border+= "<option value=\"" + borderopts[bopt] + "\"" + checked + ">" + bopt + "</option>";
+        }
+        border += "</select>";
+        border += "</div>";
+        
         var resetbutton = "<br /><br /><button id='editReset' type='button'>Reset</button>";
 
         // insert the color blocks
-        $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted + resetbutton);
+        $("#colorpicker").html(dh + iconback + ceffect + iconfore + fe + align + ishidden + inverted + border + resetbutton);
 
         // turn on minicolor for each one
         $('#colorpicker .colorset').each( function() {
@@ -1547,6 +1625,21 @@ function initColor(str_type, subid, thingindex) {
         
         // alert("Changing font effect target= " + target + " to: "+fontstr);
         addCSSRule(cssRuleTarget, fontstr);
+        event.stopPropagation;
+    });
+
+    $("#borderType").off('change');
+    $("#borderType").on('change', function (event) {
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
+        var subid = $("#subidTarget").html();
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
+        var borderstyle = $(this).val();
+        
+        // alert("Changing border effect of target " + target + " to: "+borderstyle);
+        if ( borderstyle!=="" ) {
+            addCSSRule(cssRuleTarget, borderstyle);
+        }
         event.stopPropagation;
     });
     

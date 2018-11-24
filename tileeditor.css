@@ -992,6 +992,11 @@ div.panel {
     background-repeat: no-repeat;
     background-size: cover;
 }
+
+div.panel div.thingname:hover {
+    filter: invert(1);
+}
+
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
 div.thing {
@@ -1061,6 +1066,25 @@ div.blank.size.b1x2, div.blank.size.b2x2 {
 div.blank.size.h1x2, div.blank.size.h2x2 {
     height: 320px;
 }
+
+/* mode and ST shm and Hubitat hsm styles */
+div.thing.mode-thing, div.thing.shm-thing, div.thing.hsm-thing {
+    width: auto;
+    height: auto;
+}
+div.mode-thing.m1x1, div.mode-thing.m2x1, div.mode-thing.hm1x1, div.mode-thing.hm2x1 {
+    height: 147px;
+}
+div.mode-thing.m1x2, div.mode-thing.m2x2, div.mode-thing.hm1x2, div.mode-thing.hm2x2 {
+    height: 300px;
+}
+div.mode-thing.m1x1, div.mode-thing.m1x2, div.mode-thing.hm1x1, div.mode-thing.hm1x2 {
+    width: 120px;
+}
+div.mode-thing.m2x1, div.mode-thing.m2x2, div.mode-thing.hm2x1, div.mode-thing.hm2x2 {
+    width: 244px;
+}
+
 div.thing.blank-thing:hover {
     position: relative;
     box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
@@ -1208,6 +1232,10 @@ div.overlay._open, div.overlay._close,
 div.overlay._onPhysical, div.overlay._offPhysical,
 div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
     display: none;
+}
+div.custom-thing {
+    height: auto;
+    width: 120px;
 }
 div.custom-thing div.post, div.custom-thing div.text {
     overflow-wrap: break-word;

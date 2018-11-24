@@ -102,6 +102,7 @@ div.thingname.lock, div.thingname.piston, catalog-thing div.thingname {
     border-bottom: 5px solid rgba(0,0,0,0.3);
     height: 30px;
     cursor: default;
+    display: block;
 }
 div.thingname:hover {
     background-color: #5050a0; 
@@ -516,9 +517,6 @@ div.music.musicstatus, div.music.musicmute {
     font-size: 11pt;
     background-color: rgba(80, 80, 80, 0.7);
 }
-/*div.music div.level-val, div.music div.vol-val {
-    width: 60%;
-}*/
 
 /* pistons */
 div.piston-thing, div.music.musicmute  {
@@ -641,15 +639,7 @@ div.thing.mode-thing, div.thing.shm-thing {
     width: auto;
     height: 150px;
 }
-div.mode1x1, div.mode1x2 {
-    width: 120px;
-}
-div.mode2x1, div.mode2x2 {
-    width: 246px;
-}
-div.mode1x2, div.mode2x2 {
-    height: 326px;
-}
+
 div.mode.themode, div.shm.state {
     font-size: 20pt;    margin-top: 10px;
     cursor: pointer;
@@ -718,10 +708,6 @@ div.bulb.colorMode {
     display: none;
 }
 
-div.custom-thing {
-    height: 150px;
-    width: 120px;
-}
 div.custom.post {
     height: 80px;
     color: rgba(255, 255, 255, 1);
@@ -824,107 +810,6 @@ div.overlay.battery {
 	/*width: 100%;*/
 	height: auto;
 }
-div.overlay.name {
-    position: absolute;
-    display: block;
-    color: rgba(255, 255, 255,0.01);
-}
-
-div.ovCaption {
-	position: relative;
-	left: 1px;
-	font-size: 10px;
-	text-align: left;
-	color: #ffffee;
-	visibility: hidden;
-}
-div.ovStatus {
-	position: relative;
-	left: 1px;
-	font-size: 12px;
-	text-transform: capitalize;
-	text-align: left;
-	color: #ffffee;
-	visibility: hidden;
-}
-
-div.overlay.battery div.battery {
-  display: block;
-  position: absolute;
-  float: right;
-  right: 2px;
-  /*top: -11px;*/
-  width: 24px;
-  height: 8px;
-  border: 1px solid #fff;
-  border-radius: 2px;
-  padding: 1px;
-  transform: scale(0.8);
-}
-
-div.overlay div.battery:before {
-    content: '';
-    display: block;
-    position: absolute;
-    top: 50%;
-    right: 3px;
-    margin-top: -3px;
-    width: 5px;
-    height: 5px;
-    background: #fff;
-    clip: rect(0, 5px, 5px, 3px);
-    border-radius: 50%;
-}
-
-div.ovbLevel {
-    height: 100%;
-	font-size: 0px;
-    background: #fff;
-    border-radius:  2px;
-	width: 2%;
-}
-div.ovbLevel.L90{
-    background: #ffffee;
-}
-div.ovbLevel.L80{
-    background: #ffffc6;
-}
-div.ovbLevel.L70{
-    background: #ffff00;
-}
-div.ovbLevel.L60{
-    background: #ffee00;
-}
-div.ovbLevel.L50{
-    background: #ffcc00;
-}
-div.ovbLevel.L40{
-    background: #ff993f;
-}
-div.ovbLevel.L30{
-    background: #ff663f;
-}
-div.ovbLevel.L20{
-    background: #ff6000;
-}
-div.ovbLevel.L10{
-    background: #ff3f00;
-}
-div.ovbLevel.L0{
-    background: #ff0000;
-}
-
-div.overlay {
-    width: 100%;
-    display: block;
-}
-div.overlay.level {
-    height: 32px;
-}
-div.switch-thing div.overlay.level {
-    display: none;
-    height: 0px;
-}
 div.weather-thing div.overlay {
     display: inline;
 }
@@ -991,111 +876,3 @@ div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
     background-image: url("media/rain.png");
 }
 
-.ui-slider-horizontal {
-    height: 0.3em; 
-}
-div.modeoptions {
-    background-color: #3a5795;
-    width: auto; height: 24px; margin-left: 20px; margin-right: 0px;
-    cursor: default;    border: none;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
-    border-right: 4px solid rgba(0, 0, 0, 0.8); 
-    display: inline-block;
-    padding-top: 14px; padding-left: 16px;
-}
-input.radioopts {
-    cursor: pointer;
-    margin-left: 10px;
-    margin-right: 4px;
-    display: inline-block;
-}
-label.radioopts {
-    cursor: pointer;
-    margin-left: 0px;
-    margin-right: 10px;
-    font-size: 12pt;
-    width: 50px;
-    text-align: left;
-    display: inline-block;
-}
-label.radioopts:hover {
-    font-weight: bold;
-}
-div#opmode {
-    position: absolute;
-    left: 5%; bottom: 5%; width: 600px;
-    font-size: 18pt; text-align: center;
-    color: #cc3300;
-    background-color: white;
-    border: 3px;
-    z-index: 999;
-}
-
-/* disable commands in general */
-div.overlay._on, div.overlay._off, 
-div.overlay._open, div.overlay._close, 
-div.overlay._onPhysical, div.overlay._offPhysical,
-div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
-    display: none;
-}
-
-div.other-thing div.switch {
-    height: 20px;
-    background-color: rgba(50, 50, 50, 1);
-}
-
-div.other-thing.pioneer, div.other-thing.pioneer div.thingname, div.other-thing.lg, div.other-thing.lg div.thingname {
-    width: 420px;
-    padding-left: 0;
-    padding-right: 0;
-}
-div.other-thing.pioneer, div.other-thing.lg {
-    background-color: rgba(110, 222, 222, 0.3);
-}
-div.other-thing.pioneer div.overlay,
-div.other-thing.lg div.overlay {
-    display: inline-block;
-    width: 80px; height: 30px;
-    padding-top: 10px;
-    margin: 4px;
-    border: 2px solid cyan;
-    background-color: rgba(0, 50, 50, 1)
-}
-
-div.other-thing.pioneer div.overlay.healthStatus,
-div.other-thing.pioneer div.overlay.name, 
-div.other-thing.lg div.overlay.healthStatus,
-div.other-thing.lg div.overlay.name 
-{
-    display: none;
-}
-
-
-div.other.switch {
-    background-image: none;
-    height: auto;
-    width: auto;
-    font-size: 11pt;
-    color: rgba(255, 255, 255, 1);
-}
-div.other-thing div.overlay._on,
-div.other-thing div.overlay._off,
-div.other-thing div.overlay._on,
-div.other-thing div.overlay._on {
-    display: inline-block;
-    color: rgba(255,255,255,1);
-    font-size: 12pt;
-}
-
-div.jsonid {
-    margin-top: 5px;
-    border-bottom: 1px solid black;
-}
-div.jsondump {
-    background-color: #ffffc6;
-    color: black;
-    margin-left: 10px;
-    margin-right: 10px;
-    border-bottom: 1px solid black;
-}
