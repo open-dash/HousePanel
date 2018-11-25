@@ -47,6 +47,26 @@ div.greetingopts div.hubopt {
     border-bottom: 2px solid black;
 }
 
+#showdocs {
+    display: inline-block;
+    position: absolute;
+    top: 1px;
+    right: 80px;
+    width: 30px; height: 22px; padding-top: 8px;
+    border-radius: 50%;
+    background-color: rgba(140,140,140,0.5);
+    border: 1px solid rgba(50,50,50,0.5);
+    text-align: center; 
+    color: white;
+    cursor: pointer;
+}
+#showdocs a {
+    text-decoration: none;
+}
+#showdocs:hover {
+    filter: invert(1);
+}
+
 label.startupinp, input.indent {
     font-weight: bold;
     font-size: 12pt;

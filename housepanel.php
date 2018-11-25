@@ -7,7 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
- * 1.926      Doc update to describe video tiles and minor tweaks
+ * 1.926      Doc update to describe video tiles and minor tweaks, added help button
  * 1.925      Various patches and hub tweaks
  *            - Hub name retrieval from hub
  *            - Show user auth activation data
@@ -139,7 +139,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.925');
+define('HPVERSION', 'Version 1.926');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -3846,13 +3846,16 @@ function is_ssl() {
                     $tc.= getNewPage($cnt, $allthings, $room, $kroom, $things, $indexoptions, $kioskmode);
                 }
             }
+            
+            // include doc button
+            $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
 
             // end of the tabs
             $tc.= "</div>";
 
             // add catalog on right
             // $tc.= getCatalog($allthings);
-
+            
             // end drag region enclosing catalog and main things
             $tc.= "</div>";
 
