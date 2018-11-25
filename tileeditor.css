@@ -1102,10 +1102,6 @@ div.thing.clock-thing {
 div.thing.clock-thing.analog {
     background-color: white;
 }
-div.clock.weekday {
-    margin-top: 0px;
-    margin-bottom: 0px;
-}
 div.clock.time {
     font-size: 36pt;
     margin-top: 12px;
@@ -1128,6 +1124,28 @@ div.valve.switch, div.valve.contact, div.valve.stopWatering, div.valve.log,
 div.clock.tzone, div.thingname.mode
 {
     display:none;
+}
+
+// by default put digital stuff in analog clock as an overlay
+div.clock-thing.analog div.overlay.time,
+div.clock-thing.analog div.overlay.weekday,
+div.clock-thing.analog div.overlay.tzone {
+    display: none;
+    position: absolute;
+}
+div.clock.analog.time, div.clock.analog.weekday, div.clock.analog.tzone {
+    display: none;
+}
+div.clock-thing.digital div.overlay.skin {
+    display: none;
+    position: absolute;
+}
+
+div.clock-thing.analog div.overlay.skin {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    border: none;
 }
 
 /* hide hue & sat & level for bulbs because we now have color pickers */

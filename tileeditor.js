@@ -1506,6 +1506,7 @@ function initColor(str_type, subid, thingindex) {
         var borderopts = {"Select Option":"",
                           "Default": "border: unset; border-right: unset; border-bottom: unset; border-radius: 0%; box-shadow: unset;",
                           "Shadow Square": "border: 2px solid #999999; border-right: 2px solid #333333; border-bottom: 2px solid #333333; border-radius: 0%; box-shadow: 2px 2px 7px black;",
+                          "ActionTiles Look": "border: 4px solid #666666; border-right: 4px solid #666666; border-bottom: 4px solid #666666; border-radius: 0%; box-shadow: none; margin: 0px;",
                           "Thin Border": "border: 1px solid black;",
                           "2x Border": "border: 2px solid black;",
                           "3x Border": "border: 3px solid black;",

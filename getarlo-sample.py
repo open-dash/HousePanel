@@ -22,7 +22,7 @@ try:
 	recording = library[0]
 
 	# videofilename = recording['name'] + recording['uniqueId'] + '.mp4'
-	videofilename = 'media/arlovideo.mp4'
+	videofilename = 'media/video1.mp4'
 	# Get video as a chunked stream; this function returns a generator.
 	stream = arlo.StreamRecording(recording['presignedContentUrl'])
 	with open(videofilename, 'wb') as f:

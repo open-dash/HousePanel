@@ -1103,6 +1103,23 @@ any valid Web URL can be provided here. The other three img tags
 can be similarly styled.<br/><br/>
 
 <h3>Frame Tiles</h3>
+Four video tiles are provided for end-user custom display of video files
+stored on the server. These files must be named video1.mp4 through
+video4.mp4 and stored in the media folder. This is the top-level media
+folder, not the media folder inside of each skin's folder. Any file named
+video1.mp4 will be played in the video1 tile. Same for video2 through video4.
+When the tile is clicked, the video will replay. Note that this is not
+a live camera video feed - these are static videos only. However, you can
+write a script to grab the latest video feed from your camera and save it
+to the media folder with the appropriate name. This is how I view the videos
+from my Arlo cameras. There is a sample script provided called getarlo-sample.py
+that will save the latest video recorded by an Arlo camera to video1.mp4.
+A second sample is provided called arlo-sample.py that will save the last
+four videos to the media folder with names video1.mp4 through video4.mp4.
+The next section describes frames that can be coaxed into displaying
+live video feeds for some cameras. Examples are shown on the forum.
+
+<h3>Frame Tiles</h3>
 Four frame tiles are provided for end-user custom display of arbitrary web content.
 These tiles are named "frame1" through "frame4". THey are styled using
 the tag div.thing.frame-thing. By default

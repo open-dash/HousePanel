@@ -4,12 +4,12 @@ import datetime
 import sys
 
 def writeVideoFile(arlo, recording, videofilename):
-	""" Get video as a chunked stream; this function returns a generator. """
-	stream = arlo.StreamRecording(recording['presignedContentUrl'])
-	with open(videofilename, 'wb') as f:
-		for chunk in stream:
-			f.write(chunk)
-		f.close()
+    """ Get video as a chunked stream; this function returns a generator. """
+    stream = arlo.StreamRecording(recording['presignedContentUrl'])
+    with open(videofilename, 'wb') as f:
+        for chunk in stream:
+            f.write(chunk)
+        f.close()
     return
 
 if __name__ == "__main__":

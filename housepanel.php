@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.926      Doc update to describe video tiles and minor tweaks
  * 1.925      Various patches and hub tweaks
  *            - Hub name retrieval from hub
  *            - Show user auth activation data
@@ -927,7 +928,7 @@ function getAllThings($reset = false) {
         $clockname = "Analog Clock";
         // $clockskin = "CoolClock:classic";
         $clockskin = "CoolClock:swissRail:72";
-        $aclock = array("name" => $clockname, "skin" => $clockskin);
+        $aclock = array("name" => $clockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone, "skin" => $clockskin);
         $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => $clockname, 
              "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "value" => $aclock);
 
@@ -1530,12 +1531,12 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         $dateofmonth = date("M d, Y");
         $timeofday = date("g:i a");
         $timezone = date("T");
-        $dclock = array("name" => $dclockname, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone, "skin" => "");
+        $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
 
         $aclockname = "Analog Clock";
         // $clockskin = "CoolClock:classic";
         $clockskin = "CoolClock:swissRail:72";
-        $aclock = array("name" => $aclockname, "skin" => $clockskin);
+        $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone);
     }
     
     if ($swtype==="clock" && $swid==="clockdigital") {

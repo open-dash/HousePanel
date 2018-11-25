@@ -447,135 +447,6 @@ input {
 div.buttons, form.buttons {
     display: inline;
 }
-input.submitbutton, input.resetbutton, input.authbutton, 
-div.restoretabs, div.formbutton {
-    background-color: #3a5795;
-    width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
-    cursor: pointer;    border: none;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
-    border-right: 4px solid rgba(0, 0, 0, 0.8); 
-    font-size: 14pt;
-}
-/* style restore tabs like a button - notice adjustments for border and vertical centering */
-div.restoretabs, div.formbutton {
-    display: inline-block;
-    padding-top: 14px; padding-right: 2px;
-    width: 90px; height: 24px;
-    margin-left: 2px; margin-right: 2px;
-    font-size: 12pt;
-}
-input.resetbutton, input.submitbutton {
-    padding-right: 2px;
-    padding-top: 8px;
-    width: 90px; height: 42px;
-    margin-left: 2px; margin-right: 2px;
-    font-size: 12pt;
-}
-
-div.restoretabs.hidden, div.thing.hidden.catalog-thing {
-    display: none;
-}
-div.filteroption div.smallbutton {
-    padding: 4px;
-    height: 0.8em;
-    width: 60px;
-    display: inline-block;
-    font-size: 12pt;
-    background-color: #cccccc;
-    border-left: solid 2px gray;
-    border-top: solid 2px gray;
-    border-right: solid 3px black;
-    border-bottom: solid 3px black;
-    margin-left: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    cursor: pointer;
-}
-
-div.filteroption div.smallbutton:hover {
-    background-color: black;
-    color: white;
-}
-
-div.modalbox {
-    display: inline-block;
-    text-align: left;
-    padding: 5px;
-    background-color: rgba(255, 255, 246, 1);
-    color: rgba(0, 0, 0, 1);
-    font-size: 12pt;
-    position: absolute; 
-    z-index: 9999;
-}
-
-td.thingname.clickable:hover {
-    cursor: pointer;
-    background-color: blue;
-    font-style: normal;
-    color: white;
-}
-
-div.modalbuttons {
-    margin-top: 5px;
-}
-
-button.dialogbtn {
-    background-color: #3a5795;
-    display: inline;
-    width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
-    cursor: pointer;    border: none;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.8); 
-    border-right: 2px solid rgba(0, 0, 0, 0.8); 
-    font-size: 12pt;
-}
-
-/* don't need to display this anymore since use clock and panel click instead */
-/* but the div needs to be in the php file to make the js work */
-/* uncomment this to show the display link */
-div.panel div.restoretabs {
-    font-size: 12pt;
-    color: rgba(0,0,0,0.1);
-    width: auto; height: 20px; margin-top: 1px;
-    border: 0px; text-align: right;
-    background-color: rgba(0,0,0,0.1);
-    position: absolute; right: -1px; bottom: -1px;
-}
-input.authbutton {
-    background-color: #000099;
-    margin: 0;
-    margin-left: 10px;
-    width: 250px;
-}
-input.submitbutton:hover, input.resetbutton:hover, 
-input.authbutton:hover, div.restoretabs:hover, div.formbutton:hover {
-    font-weight: bold;    color: #ffffff;
-    /* border-left: 4px solid rgba(126, 126, 126, 0.8);
-    border-bottom: 0px; 
-    border-right: 0px; */
-}
-div.sitebutton {
-    background: #ffffff;     
-    display: inline-block; 
-    position: relative;
-    font-size: 14pt;
-    font-weight: bold;
-}
-
-div.formbutton a {
-    text-decoration: none;
-    font-size: inherit;
-    color: #ffffff;
-}
-
-/* disable commands in general */
-div.overlay._on, div.overlay._off, 
-div.overlay._open, div.overlay._close, 
-div.overlay._onPhysical, div.overlay._offPhysical,
-div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {
-    display: none;
-}
 
 div.maintable {
 /*    transform: scale(0.84);
@@ -903,7 +774,7 @@ input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.fo
     /* background-color: #ababab; */
     /* font-size: 14pt; */
     color: #757575;
-    background-color: #ffff;
+    background-color: #fff;
     transition-duration: 0.5s;
     transition-property: background-color, color;
     border: none;
@@ -2383,19 +2254,4 @@ div.switch.power, div.switch.energy {
 
 .mdc-switch-label {
     margin: 0 0.5em;
-}
-.minicolors-theme-default .minicolors-swatch {
-  top: 20px;
-  left: 40px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-.minicolors-swatch-color {
-  border-radius: 50%;
-}
-.minicolors-position-left .minicolors-panel {
-    left: -60px;
-    top: -20px;
 }

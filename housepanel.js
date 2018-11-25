@@ -1342,6 +1342,10 @@ function updateTile(aid, presult) {
     if ( isclock ) {
         CoolClock.findAndCreateClocks();
     }
+    
+//    if ( aid=="1" && presult["skin"]!==undefined ) {
+//        console.log ( "debugging analog clock: " + strObject(presult) );
+//    }
 }
 
 // this differs from updateTile by calling ST to get the latest data first
@@ -1421,7 +1425,7 @@ function timerSetup(hubs) {
                                     var tileid = $(this).attr("tile");
                                     var bid = $(this).attr("bid");
                                     
-                                    if ( bid!=="clockanalog" ) {
+                                    if ( bid!=="clockanalogxxx" ) {
                                         var thevalue;
                                         try {
                                             thevalue = presult[tileid];
