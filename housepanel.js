@@ -890,9 +890,9 @@ function addEditLink() {
     
     $("div.editlink").on("click",function(evt) {
         var thing = "#" + $(evt.target).attr("aid");
-        $(thing + ">div.editlink").remove();
-        $(thing + ">div.dellink").remove();
-        $(thing).draggable("destroy");
+//        $(thing + ">div.editlink").remove();
+//        $(thing + ">div.dellink").remove();
+//        $(thing).draggable("destroy");
         
         var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");

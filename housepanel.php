@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.927      Added flourescent graphic to default skin, fix edit of active tile
  * 1.926      Doc update to describe video tiles and minor tweaks, added help button
  * 1.925      Various patches and hub tweaks
  *            - Hub name retrieval from hub
@@ -139,7 +140,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.926');
+define('HPVERSION', 'Version 1.927');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
