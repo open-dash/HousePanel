@@ -1198,7 +1198,6 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                     item.setLevel(0)
                 }
             }
-            item.poll()
         }
         
         resp = [switch: newonoff]
