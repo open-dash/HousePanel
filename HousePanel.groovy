@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 12/01/2018 - hub prefix option implemented for unique tiles with multiple hubs
  * 11/21/2018 - add routine to return location name
  * 11/19/2018 - thermostat tweaks to support new custom tile feature 
  * 11/18/2018 - fixed mode names to include size cues
@@ -57,6 +58,8 @@ preferences {
     section("HousePanel SmartThings Configuration") {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
+        paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "")
         paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         input (name: "dologging", type: "bool", multiple: false, title: "Do Logging?", required: false, defaultValue: true)
@@ -436,10 +439,10 @@ def getModes(resp) {
         log.debug "Getting 4 mode tiles"
     }
     def val = getmyMode(0)
-    resp << [name: "Mode m1x1", id: "m1x1", value: val, type: "mode"]
-    resp << [name: "Mode m1x2", id: "m1x2", value: val, type: "mode"]
-    resp << [name: "Mode m2x1", id: "m2x1", value: val, type: "mode"]
-    resp << [name: "Mode m2x2", id: "m2x2", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m1x1", id: "${hubprefix}m1x1", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m1x2", id: "${hubprefix}m1x2", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m2x1", id: "${hubprefix}m2x1", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m2x2", id: "${hubprefix}m2x2", value: val, type: "mode"]
     return resp
 }
 
@@ -448,7 +451,7 @@ def getSHMStates(resp) {
         log.debug "Getting Smart Home Monitor state for SmartThings Hub"
     }
     def val = getSHMState(0)
-    resp << [name: "Smart Home Monitor", id: "shm", value: val, type: "shm"]
+    resp << [name: "Smart Home Monitor", id: "${hubprefix}shm", value: val, type: "shm"]
     return resp
 }
 
@@ -460,7 +463,7 @@ def getBlanks(resp) {
     def val
     vals.each {
         val = getBlank(it)
-        resp << [name: "Blank ${it}", id: "${it}", value: val, type: "blank"]
+        resp << [name: "Blank ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "blank"]
     }
     return resp
 }
@@ -473,7 +476,7 @@ def getImages(resp) {
     def val
     vals.each {
         val = getImage(it)
-        resp << [name: "Image ${it}", id: "${it}", value: val, type: "image"]
+        resp << [name: "Image ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "image"]
     }
     return resp
 }
@@ -676,10 +679,10 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
-    else if ( swid=="shm" ) { swtype= "shm" }
-    else if ( swid=="m1x1" || swid=="m1x2" || swid=="m2x1" || swid=="m2x2" ) { swtype= "mode" }
-    else if ( swid=="b1x1" || swid=="b1x2" || swid=="b2x1" || swid=="b2x2" ) { swtype= "blank" }
-    else if ( swid=="img1" || swid=="img2" || swid=="img3" || swid=="img4" ) { swtype= "image" }
+    else if ( swid=="${hubprefix}shm" ) { swtype= "shm" }
+    else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
+    else if ( swid=="${hubprefix}b1x1" || swid=="${hubprefix}b1x2" || swid=="${hubprefix}b2x1" || swid=="${hubprefix}b2x2" ) { swtype= "blank" }
+    else if ( swid=="${hubprefix}img1" || swid=="${hubprefix}img2" || swid=="${hubprefix}img3" || swid=="${hubprefix}img4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
     else { swtype = "" }
     return swtype

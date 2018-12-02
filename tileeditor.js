@@ -224,7 +224,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         // we always use the very specific target to this tile
         if ( subid==="name" || subid==="track" || subid==="weekday" || 
              subid==="color" || subid==="level" || 
-             subid==="cool" || subid==="heat" ) {
+             subid==="cool" || subid==="heat" || subid==="stream" ) {
             on = "";
         } else {
             var onofftarget = "div.overlay." + subid + '.v_' + thingindex + " div."+str_type + subidtag + '.p_'+thingindex;
@@ -1097,6 +1097,8 @@ function setsubid(str_type) {
         case "presence":
         case "momentary":
         case "door":
+        case "contact":
+        case "illuminance":
             subid = str_type;
             break;
             
@@ -1105,11 +1107,22 @@ function setsubid(str_type) {
             subid = "state";
             break;
             
+        case "blank":
+            subid = "size";
+            break;
+            
+        case "mode":
+            subid = "themode";
+            break;
+            
+        case "image":
+            subid = "url";
+            break;
+            
         default:
             subid = "wholetile";
             break;
     }
-    // $("#subidTarget").html(subid);
     return subid;
 }
 
@@ -1180,16 +1193,26 @@ function initColor(str_type, subid, thingindex) {
     target = getCssRuleTarget(str_type, subid, thingindex, 0);
     generic = getCssRuleTarget(str_type, subid, thingindex, 1);
     newonoff = "";
-    var swval = $(target).html();
-    var onoff = getOnOff(str_type, subid);
-    if ( onoff && onoff.length > 0 ) {
-        for ( var i=0; i < onoff.length; i++ ) {
-            var oldsub = onoff[i];
-            if ( swval === oldsub ) {
-                newonoff = oldsub;
-                break;
+
+    var swval;
+    var onoff;
+    
+    try {
+        swval = $(target).html();
+        onoff = getOnOff(str_type, subid);
+        if ( onoff && onoff.length > 0 ) {
+            for ( var i=0; i < onoff.length; i++ ) {
+                var oldsub = onoff[i];
+                if ( swval === oldsub ) {
+                    newonoff = oldsub;
+                    break;
+                }
             }
         }
+    } catch (e) {
+        swval = "Unknown";
+        onoff = "";
+        newonoff = "";
     }
     
     var icontarget = target;
@@ -1704,6 +1727,16 @@ function initColor(str_type, subid, thingindex) {
         event.stopPropagation;
     });	
     
+    // disable the Hidden button if this is a wholetile edit
+    if ( subid==="wholetile" ) {
+        $("#isHidden").prop("checked", false);
+        $("#isHidden").prop("disabled", true);
+        $("#isHidden").css("background-color","gray");
+    } else {
+        $("#isHidden").prop("disabled", false);
+        $("#isHidden").css("background-color","white");
+    }
+    
     // $("#editReset").off('change');
     $("#editReset").on('click', function (event) {
         var str_type = $("#tileDialog").attr("str_type");
@@ -1750,16 +1783,18 @@ function initColor(str_type, subid, thingindex) {
     }
     
     // set initial hidden status
-    var ish1= $(icontarget).css("display");
-    var ish2= $("div.overlay."+str_type+".v_"+thingindex).css("display");
-    if ( ish1 === "none" || ish2 === "none") {
-        $("#isHidden").prop("checked", true);
-        defaultShow = "inline-block";
-        defaultOverlay = "block";
-    } else {
-        $("#isHidden").prop("checked", false);
-        defaultShow = ish1 ? ish1 : "inline-block";
-        defaultOverlay = ish2 ? ish2 : "block";
+    if ( subid!=="wholetile" ) {
+        var ish1= $(icontarget).css("display");
+        var ish2= $("div.overlay."+str_type+".v_"+thingindex).css("display");
+        if ( ish1 === "none" || ish2 === "none") {
+            $("#isHidden").prop("checked", true);
+            defaultShow = "inline-block";
+            defaultOverlay = "block";
+        } else {
+            $("#isHidden").prop("checked", false);
+            defaultShow = ish1 ? ish1 : "inline-block";
+            defaultOverlay = ish2 ? ish2 : "block";
+        }
     }
     
 }

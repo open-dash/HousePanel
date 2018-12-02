@@ -719,9 +719,21 @@ div.clock.weekday {
     margin-bottom: 0px;
 }
 div.clock.time {
-    font-size: 36pt;
+    font-size: 32pt;
     margin-top: 12px;
 }
+div.clock.weekday, div.clock.date {
+    font-size: 14pt;
+    margin-top: 5px;
+}
+
+/* disable non time elements for analog clocks */
+div.clock-thing.analog div.clock.weekday,
+div.clock-thing.analog div.clock.date,
+div.clock-thing.analog div.clock.tzone {
+    display: none;
+}
+
 div.mode.themode {
     font-size: 20pt;
     margin-top: 10px;
@@ -858,10 +870,6 @@ div.thing.frame-thing.weather {
 }
 div.thing.frame-thing div.overlay.status {
     display: none;
-}
-
-div.frame.forecast {
-    height: 200px;
 }
 
 div.thing.video-thing {

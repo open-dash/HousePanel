@@ -117,11 +117,15 @@ $(document).ready(function() {
             var hubstr = $("input[name='allHubs']").val();
             try {
                 var hubs = JSON.parse(hubstr);
-                timerSetup(hubs);
+                setupTimer(hubs);
             } catch(e) {
                 console.log ("Couldn't find any hubs");
                 console.log ("hub raw str = " + hubstr);
             }
+            
+            // every 5 seconds update fast tiles
+            // this is experimental code for now and is disabled
+            // setupFastTimer(5000);
         }
 
         cancelDraggable();
@@ -577,7 +581,7 @@ function setupDraggable() {
                 }
                 return accepting;
             },
-            tolerance: "fit",
+            tolerance: "intersect",
             drop: function(event, ui) {
                 var thing = ui.draggable;
                 var bid = $(thing).attr("bid");
@@ -1378,7 +1382,7 @@ function setupTabclick() {
     });
 }
 
-function timerSetup(hubs) {
+function setupTimer(hubs) {
 
     // loop through every hub
     $.each(hubs, function (hubnum, hub) {
@@ -1460,6 +1464,75 @@ function timerSetup(hubs) {
         
     });
     
+}
+
+// this is similar to the above function but operates only on tiles that
+// can be refreshed very frequently without a call back to a hub
+// this updates image and custom tiles every 5 seconds with whatever content is on server
+function setupFastTimer(timerval) {
+
+    var updarray = ["fast", timerval];
+    updarray.fastMethod = function() {
+
+        var that = this;
+        var err;
+
+        // skip if not in operation mode or if inside a modal dialog box
+        if ( priorOpmode !== "Operate" || modalStatus ) { 
+            // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+            // repeat the method above indefinitely
+            setTimeout(function() {updarray.fastMethod();}, this[1]);
+            return; 
+        }
+
+        try {
+            $.post(returnURL, 
+                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: -1},
+                function (presult, pstatus) {
+                    if (pstatus==="success" && presult!==undefined ) {
+
+                        // console.log("Success polling fast. Returned: " + Object.keys(presult).length+ " items");
+                            
+                        // go through all tiles and update
+                        try {
+                        $('div.panel div.thing').each(function() {
+                            var aid = $(this).attr("id");
+                            if ( aid.startsWith("t-") ) {
+                                aid = aid.substring(2);
+                                var tileid = $(this).attr("tile");
+                                tileid = parseInt(tileid, 10);
+                                
+                                if ( presult[tileid] !== undefined ) {
+
+                                    var thevalue;
+                                    try {
+                                        thevalue = presult[tileid];
+                                    } catch (err) { }
+                                    
+                                    // handle both direct values and bundled values
+                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
+                                        thevalue = thevalue.value;
+                                    }
+                                    
+                                    if ( thevalue && thevalue!==undefined ) { updateTile(aid,thevalue); }
+                                }
+                            }
+                        });
+                        } catch (err) { console.error("Polling error", err.message); }
+                    }
+                }, "json"
+            );
+        } catch(err) {
+            console.error ("Polling error", err.message);
+        }
+
+        // repeat the method above indefinitely
+        setTimeout(function() {updarray.fastMethod();}, this[1]);
+    };
+
+    // wait before doing first one
+    setTimeout(function() {updarray.fastMethod();}, timerval);
+
 }
 
 function updateMode() {

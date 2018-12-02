@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 12/01/2018 - hub prefix option implemented for unique tiles with multiple hubs
  * 11/24/2018 - implement workaround hack to dimmer light inconsistency
  * 11/21/2018 - add routine to return location name
  * 11/19/2018 - thermostat tweaks to support new custom tile feature 
@@ -67,6 +68,8 @@ preferences {
                   "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
                   "actions will be slower than local installations."
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true)
+        paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "h_")
         paragraph "Enable this to use Pistons. You must have WebCore installed locally for this to work (Beta)."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         input (name: "dologging", type: "bool", multiple: false, title: "Do logging?", required: false, defaultValue: true)
@@ -473,37 +476,37 @@ def getModes(resp) {
         log.debug "Getting 4 Hubitat mode tiles"
     }
     def val = getmyMode(0)
-    resp << [name: "Mode hm1x1", id: "hm1x1", value: val, type: "mode"]
-    resp << [name: "Mode hm1x2", id: "hm1x2", value: val, type: "mode"]
-    resp << [name: "Mode hm2x1", id: "hm2x1", value: val, type: "mode"]
-    resp << [name: "Mode hm2x2", id: "hm2x2", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m1x1", id: "${hubprefix}m1x1", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m1x2", id: "${hubprefix}m1x2", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m2x1", id: "${hubprefix}m2x1", value: val, type: "mode"]
+    resp << [name: "Mode ${hubprefix}m2x2", id: "${hubprefix}m2x2", value: val, type: "mode"]
     return resp
 }
 
 def getHsmStates(resp) {
     def val = getHsmState(0)
     if ( val ) {
-        resp << [name: "Hubitat Safety Monitor", id: "hsm", value: val, type: "hsm"]
+        resp << [name: "Hubitat Safety Monitor", id: "${hubprefix}hsm", value: val, type: "hsm"]
     }
     return resp
 }
 
 def getBlanks(resp) {
-    def vals = ["hb1x1","hb1x2","hb2x1","hb2x2"]
+    def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
     vals.each {
         val = getBlank(it)
-        resp << [name: "Blank ${it}", id: "${it}", value: val, type: "blank"]
+        resp << [name: "Blank ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "blank"]
     }
     return resp
 }
 
 def getImages(resp) {
-    def vals = ["himg1","himg2","himg3","himg4"]
+    def vals = ["img1","img2","img3","img4"]
     def val
     vals.each {
         val = getImage(it)
-        resp << [name: "Image ${it}", id: "${it}", value: val, type: "image"]
+        resp << [name: "Image ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "image"]
     }
     return resp
 }
@@ -658,10 +661,10 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
-    else if ( swid=="hsm" ) { swtype= "hsm" }
-    else if ( swid=="hm1x1" || swid=="hm1x2" || swid=="hm2x1" || swid=="hm2x2" ) { swtype= "mode" }
-    else if ( swid=="hb1x1" || swid=="hb1x2" || swid=="hb2x1" || swid=="hb2x2" ) { swtype= "blank" }
-    else if ( swid=="himg1" || swid=="himg2" || swid=="himg3" || swid=="himg4" ) { swtype= "image" }
+    else if ( swid=="${hubprefix}hsm" ) { swtype= "hsm" }
+    else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
+    else if ( swid=="${hubprefix}b1x1" || swid=="${hubprefix}b1x2" || swid=="${hubprefix}b2x1" || swid=="${hubprefix}b2x2" ) { swtype= "blank" }
+    else if ( swid=="${hubprefix}img1" || swid=="${hubprefix}img2" || swid=="${hubprefix}img3" || swid=="${hubprefix}img4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
     else { swtype = "" }
     return swtype
@@ -1175,8 +1178,8 @@ def setGenericLight(mythings, swid, cmd, swattr) {
             } else {
                 item.off()
                 // address Hubitat bug to set level zero
-                if ( item.hasCommand("setLevel") ) {
-                    item.setLevel(0)
+                if ( item.hasCommand("stopLevelChange") ) {
+                    item.stopLevelChange()
                 }
             }
             skiponoff = true

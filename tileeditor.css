@@ -1043,18 +1043,23 @@ div.thing.catalog-thing {
 }
 /* the name of the thing - must be after the above heights */
 /* added catalog-thing div.thingname to ensure catalog shows properly */
-div.thingname, div.catalog-thing div.thingname {
+div.thing div.thingname, div.catalog-thing div.thingname {
     background-color: rgba(0, 50, 100,1);
     font-size: 11pt;
     text-align: center;
     color: #ffffff;
     border-bottom: 2px solid rgba(0,0,0,1);
+    width: 100%;
     height: 30px;
     cursor: default;
 }
 div.thingname:hover {
     background-color: #5050a0; 
     color: #cccccc;
+}
+
+div.music-thing div.thingname.music {
+    width: 100%;
 }
 
 /* blank tiles styling */
@@ -1146,22 +1151,27 @@ div.clock.tzone, div.thingname.mode
     display:none;
 }
 
-// by default put digital stuff in analog clock as an overlay
-div.clock-thing.analog div.overlay.time,
-div.clock-thing.analog div.overlay.weekday,
-div.clock-thing.analog div.overlay.tzone {
-    display: none;
+/* by default put digital stuff in analog clock as an overlay*/
+div.clock-thing.analog div.overlay {
     position: absolute;
+    top: 0px;
+    left: 0px;
 }
-div.clock.analog.time, div.clock.analog.weekday, div.clock.analog.tzone {
-    display: none;
+div.clock-thing div.clock.time,
+div.clock-thing div.clock.weekday,
+div.clock-thing div.clock.date,
+div.clock-thing div.clock.tzone {
+    display: block;
+    position: relative;
 }
+
 div.clock-thing.digital div.overlay.skin {
     display: none;
     position: absolute;
 }
 
 div.clock-thing.analog div.overlay.skin {
+    display: inline-block;
     position: absolute;
     top: -4px;
     left: -4px;
@@ -1277,4 +1287,7 @@ div.custom-thing {
 }
 div.custom-thing div.post, div.custom-thing div.text {
     overflow-wrap: break-word;
+}
+div.video-thing div.thingname.video {
+    display: none;
 }
