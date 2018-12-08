@@ -222,7 +222,7 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     modalcontent = modalcontent + "</div>";
     
     // console.log("modalcontent = " + modalcontent);
-    modalhook.prepend(modalcontent);
+    modalhook.append(modalcontent);
     modalStatus = 1;
     
     // call post setup function if provided
@@ -1669,7 +1669,14 @@ function setupPage(trigger) {
         var bidupd = bid;
         var thetype = $(tile).attr("type");
         var hubnum = $(tile).attr("hub");
-        var targetid = '#a-'+aid+'-'+subid;
+        var targetid;
+        if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {  // heat-dn
+            var slen = subid.length;
+            targetid = '#a-'+aid+'-'+subid.substring(0,slen-3);
+            // console.log("slen = ",slen," target= ", targetid);
+        } else {
+            targetid = '#a-'+aid+'-'+subid;
+        }
         
         // set the action differently for Hubitat
         var ajaxcall = "doaction";

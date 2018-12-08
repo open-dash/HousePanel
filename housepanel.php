@@ -7,6 +7,9 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.930      Fix thermostat and video tag obscure bugs and more
+ *            - chnage video to inherit size
+ *            - change tile editor to append instead of prepend to avoid overlaps
  * 1.928      Disallow hidden whole tiles and code cleanup
  * 1.927      Added flourescent graphic to default skin, fix edit of active tile
  * 1.926      Doc update to describe video tiles and minor tweaks, added help button
@@ -141,7 +144,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.928');
+define('HPVERSION', 'Version 1.930');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -903,6 +906,8 @@ function getAllThings($reset = false) {
 
     $options = readOptions();
     $configoptions = $options["config"];
+    $tz = $configoptions["timezone"];
+    date_default_timezone_set($tz);
     
     if ( !$reset && isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
@@ -1073,7 +1078,7 @@ function processName($thingname, $thingtype) {
 // this function reflects whatever you put in the maketile routine
 // it must be an existing video file of type mp4
 function returnVideo($vidname) {
-    $v= "<video width=\"240px\" height=\"147px\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
+    $v= "<video width=\"inherit\" height=\"inherit\" autoplay><source src=$vidname type=\"video/mp4\"></video>";
     return $v;
 }
 
@@ -1193,14 +1198,14 @@ function makeThing($i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $
 
         $tkey = "name";
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"video $tkey\" id=\"a-$i"."-$tkey\">";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"video $tkey p_$kindex\" id=\"a-$i"."-$tkey\">";
         $tc.= $thingpr;
         $tc.= "</div>";
         $tc.= "</div>";
         
         $tkey = "url";
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video $tkey\" id=\"a-$i"."-$tkey\">";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$vidname\" class=\"video $tkey p_$kindex\" id=\"a-$i"."-$tkey\">";
         $tc.= returnVideo($vidname);
         $tc.= "</div>";
         $tc.= "</div>";
@@ -1278,7 +1283,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
     $tc = "";
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
-    if ( in_array($tkey, array("heat", "cool", "vol", "hue", "saturation") )) {
+    if ( in_array($tkey, array("heat", "cool", "hue", "saturation") )) {
 //    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
 //        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
@@ -1287,10 +1292,13 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         } else {
             $colorval = "";
         }
+        
+        // fix thermostats to have proper consistent tags
+        // this is supported by changes in the .js file and .css file
         $tc.= "<div class=\"overlay $tkey" . $subtype . " v_$kindex\">";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype down\" class=\"$thingtype $tkey-dn p_$kindex\"></div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype $tkey\" class=\"$thingtype $tkeyval p_$kindex\"$colorval id=\"a-$i"."-$tkey\">" . $tval . "</div>";
-        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype up\" class=\"$thingtype $tkey-up p_$kindex\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey-dn\" title=\"$thingtype down\" class=\"$thingtype $tkey-dn p_$kindex\"></div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey\" title=\"$thingtype $tkey\" class=\"$thingtype $tkey p_$kindex\"$colorval id=\"a-$i"."-$tkey\">" . $tval . "</div>";
+        $tc.= "<div aid=\"$i\" subid=\"$tkey-up\" title=\"$thingtype up\" class=\"$thingtype $tkey-up p_$kindex\"></div>";
         $tc.= "</div>";
     
     // process analog clocks signalled by use of a skin with a valid name other than digital
@@ -2985,15 +2993,6 @@ function is_ssl() {
         unset( $options["timezone"] );
         unset( $options["skin"] );
         unset( $options["kiosk"] );
-        
-//        echo "hubnum = $hubnum <br><pre>";
-//        print_r($hub);
-//        echo "</pre>";
-//        echo "<br>userAccess = $userAccess userEndpt = $userEndpt <br>";
-//        echo "<pre>";
-//        print_r($options);
-//        echo "</pre>";
-//        exit(0);
         
         // save options for now
         writeOptions($options);

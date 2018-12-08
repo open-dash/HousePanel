@@ -359,7 +359,7 @@ div.saturation-up, div.saturation-dn
     border: 0px; padding: 0px;
     cursor: pointer;
 }
-div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn, div.music div.vol-dn,
+div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
@@ -370,7 +370,7 @@ div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
     -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
-div.heat-up, div.cool-up, div.level-up, div.switchlevel-up, div.music div.vol-up,
+div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
 div.colorTemperature-up, div.hue-up, div.saturation-up {
     background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
@@ -438,8 +438,8 @@ div.weather.temperature, div.weather.feelsLike {
     -moz-border-radius: 50%;
 }
 
-div.thermomode.off, div.thermofan.off,
-div.thermomode.on, div.thermofan.on,
+div.thermofan.off, div.thermofan.on,
+div.thermomode.auto,div.thermomode.heat, div.thermomode.cool, div.thermomode.off,
 div.thermostate, div.thermostat.humidity  {
 	background-color: #333333;
 	font-size: 11pt;
@@ -484,8 +484,10 @@ div.custom.humidity::after {
 }
 
 /* values of the adjustable items */
+/* include legacy and updated corrected names */
 div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
-div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
+div.colorTemperature-val, div.hue-val, div.saturation-val,
+div.heat, div.cool, div.hue, div.saturation  {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -494,17 +496,16 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.vol-val {
     font-size: 18px;
     width: 72px;
     height: 26px;
-    padding-top: 6px;
     color: rgba(255, 255, 255, 1);
     border: 0px;
 }
-div.heat-val {
+div.heat-val, div.heat {
     background-color: #cc3300;
 }
-div.cool-val {
+div.cool-val, div.cool {
     background-color: #0033cc;
 }
-div.colorTemperature-val, div.hue-val, div.saturation-val {
+div.colorTemperature-val, div.hue-val, div.saturation-val, div.hue, div.saturation {
     background-color: #ffffff;
     color: #000000;
 }
@@ -523,7 +524,6 @@ div.switchlevel-up:hover, div.switchlevel-dn:hover,
 div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
 div.hue-up:hover, div.hue-dn:hover,
 div.saturation-up:hover, div.saturation-dn:hover,
-div.vol-up:hover, div.vol-dn:hover,
 div.level-up:hover, div.level-dn:hover {
     border: 2px solid #303030;
     width: 28px;
