@@ -10,6 +10,8 @@
  * 1.930      Fix thermostat and video tag obscure bugs and more
  *            - chnage video to inherit size
  *            - change tile editor to append instead of prepend to avoid overlaps
+ *            - increase default polling speed
+ *            - first release of install script install.sh
  * 1.928      Disallow hidden whole tiles and code cleanup
  * 1.927      Added flourescent graphic to default skin, fix edit of active tile
  * 1.926      Doc update to describe video tiles and minor tweaks, added help button

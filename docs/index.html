@@ -162,16 +162,29 @@ sudo raspi-config
 
 I recommend changing the default password from "raspberry" to whatever you want.
 Then you should "ssh" into your rPi as username = pi and password = your-password
-modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".
-Enter the next several lines to install the Apache and PHP applications onto the rPi.<br/><br/>
+modify /etc/defaults/keyboard to be a "us" keyboard and not the default "gb".<br/><br/>
+
+A new install script is available. To use this, log into your rPI with SSH and enter this:
+
+<blockquote><pre>
+cd ~
+wget https://raw.githubusercontent.com/kewashi/HousePanel/master/install.sh
+bash ./install.sh
+ </pre></blockquote>
+
+This should configure Apache, PHP, cURL, download HousePanel, set permissions, and
+restart Apache. Once you do this you should be all set and ready to run HousePanel<br /><br />
+
+You can also do a manual install following the steps below. To do this, 
+enter the next several lines to install the Apache and PHP applications onto the rPi.<br/><br/>
 
 For PHP 5 use the following commands:<br/><br/>
 <blockquote><pre>
 sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get -y install apache2 php5 php5-gd wiringpi raspi-gpio rpi-update --fix-missing
+sudo apt-get -y install apache2 libapache2-mod-php5 php5 php5-gd wiringpi raspi-gpio rpi-update --fix-missing
 sudo apt-get -y install curl
-sudo apt-get -y install php-curl
+sudo apt-get -y install php5-curl
 sudo rpi-update
 </pre></blockquote>
 
@@ -179,14 +192,14 @@ For PHP 7 use the following:<br/><br/>
 <blockquote><pre>
 sudo apt-get update
 sudo apt-get -y upgrade
-sudo apt-get -y install apache2 php php-gd wiringpi raspi-gpio rpi-update --fix-missing
+sudo apt-get -y install apache2 libapache2-mod-php php php-gd wiringpi raspi-gpio rpi-update --fix-missing
 sudo apt-get -y install curl
 sudo apt-get -y install php-curl
 sudo rpi-update
 </pre></blockquote>
 
-Next, you need to configure PHP to use cUrl. This should be on by default, 
-but check php.ini to be sure.
+Next, you need to confirm that PHP is setup to use cUrl. This should be on by default 
+because of the install lines above, but check php.ini to be sure.
 Look for your php.ini file and then edit it using nano or vim. Within php.ini
 search for "curl". You should find a line that loads the curl library. Sometimes
 that line is commented out with a "#" in the first column. If your file has this,

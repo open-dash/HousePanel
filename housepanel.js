@@ -12,6 +12,8 @@ var pagename = "main";
 // use the timers options to turn off polling
 var disablepub = false;
 var disabletimers = false;
+var st_timer = 30000;
+var he_timer = 10000;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -1389,9 +1391,9 @@ function setupTimer(hubs) {
 
         var hubType = hub.hubType;
         var token = hub.hubAccess;
-        var timerval = 60000;
+        var timerval = st_timer;
         if ( hubType==="Hubitat" ) {
-            timerval = 10000;
+            timerval = he_timer;
         }
         // console.log("hub #" + hubnum + " timer = " + timerval + " hub = " + strObject(hub));
 
@@ -1459,8 +1461,10 @@ function setupTimer(hubs) {
             setTimeout(function() {updarray.myMethod();}, this[1]);
         };
 
-        // wait before doing first one
-        setTimeout(function() {updarray.myMethod();}, timerval);
+        // wait before doing first one - or skip this hub if requested
+        if ( timerval && timerval >= 1000 ) {
+            setTimeout(function() {updarray.myMethod();}, timerval);
+        }
         
     });
     
