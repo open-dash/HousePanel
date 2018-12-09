@@ -35,19 +35,26 @@ echo -e "$Cyan Enter below the directory name beneath this location where you wa
 echo -e "$Cyan If you want HP installed in /var/www/html/housepanel, enter $Color_Off housepanel $Cyan below. $Color_Off"
 echo -e "$Cyan or... if you prefer a different name, like $Color_Off mypanel $Cyan , enter $Color_Off mypanel $Cyan below. $Color_Off"
 read -p ' Directory name for HousePanel: ' hpdir
+read -p ' Enter 5 for php5 ... anything else will install php7 or the default: ' phpver
 
 # Update packages and Upgrade system
 echo -e "$Cyan \nUpdating System. This may take awhile so please be patient.. $Color_Off"
-# sudo apt-get update -y
+sudo apt-get update -y
 # sudo apt-get upgrade -y
 echo -e "$Green \nSystem was updated $Color_Off"
 
 ## Install Apache and PHP
-echo -e "$Cyan \nInstalling Apache and PHP $Color_Off"
-# sudo apt-get install apache2 libapache2-mod-php5 php5 php5-common curl php5-curl php5-gd --fix-missing -y
+echo -e "$Cyan \nInstalling Apache and PHP $phpver $Color_Off"
+
+if [ $phpver -eq 5 ];
+then
+    sudo apt-get install apache2 libapache2-mod-php5 php5 curl php5-curl php5-gd --fix-missing -y
+else
+    sudo apt-get install apache2 libapache2-mod-php php php-mbstring curl php-curl php-gd --fix-missing -y
+fi
 
 echo -e "$Cyan \nInstalling optional rpi settings for use as a thing $Color_Off"
-# sudo apt-get install wiringpi raspi-gpio rpi-update -y
+sudo apt-get install wiringpi raspi-gpio rpi-update -y
 echo -e "$Green \nApache, PHP, and Optional settings installed $Color_Off"
 
 # Getting raw files from HousePanel master branch
@@ -59,16 +66,15 @@ fi
 sudo wget -r -nd https://github.com/kewashi/HousePanel/archive/master.zip
 sudo unzip master.zip
 sudo mv HousePanel-master /var/www/html/$hpdir
-# sudo rm -f master.zip
+sudo rm -f master.zip
 
 echo -e "$Cyan \nSetting permissions for /var/www/html/$hpdir $Color_Off"
 sudo chown -R www-data:www-data /var/www/html/$hpdir
 sudo chmod -R 777 /var/www/html/$hpdir
 echo -e "$Green \nHousePanel has been downloaded and installed in /var/www/html/$hpdir $Color_Off"
 
-# Enabling Mod Rewrite, required for WordPress permalinks and .htaccess files
-echo -e "$Cyan \nEnabling Modules... $Color_Off"
-sudo php5enmod mcrypt
+# Create a default index file to show php info
+echo "<?php phpinfo ();?>" > /var/www/html/$hpdir/index.php
 
 # Restart Apache
 echo -e "$Cyan \nRestarting Apache $Color_Off"
