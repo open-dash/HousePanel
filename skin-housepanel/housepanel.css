@@ -495,7 +495,7 @@ div.heat, div.cool, div.hue, div.saturation  {
     vertical-align: top;
     font-size: 18px;
     width: 72px;
-    height: 26px;
+    height: 32px;
     color: rgba(255, 255, 255, 1);
     border: 0px;
 }

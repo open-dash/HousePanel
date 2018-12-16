@@ -31,11 +31,11 @@ $.fn.isAuto = function(dimension){
         }
     } else if (dimension == 'height'){
         var originalHeight = this.height();
-        this.append('<div id="testzzz"></div>');
-        var testHeight = originalHeight+500;
-        $('#testzzz').css({height: testHeight});
+        // this.append('<div id="testzzz"></div>');
+        // var testHeight = originalHeight+500;
+        // $('#testzzz').css({height: testHeight});
         var newHeight = this.height();
-        $('#testzzz').remove();
+        // $('#testzzz').remove();
         if( newHeight > originalHeight ) {
             return true;    
         } else{
@@ -227,8 +227,8 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
              subid==="cool" || subid==="heat" || subid==="stream" ) {
             on = "";
         } else {
-            var onofftarget = "div.overlay." + subid + '.v_' + thingindex + " div."+str_type + subidtag + '.p_'+thingindex;
-            var on = $(onofftarget).html();
+            // var onofftarget = "div.overlay." + subid + '.v_' + thingindex + " div."+str_type + subidtag + '.p_'+thingindex;
+            var on = $("#onoffTarget").html();
             if ( on && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
                 on = "."+on;
             } else {
@@ -243,10 +243,16 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
     return target;
 }
 
-function toggleTile(target, str_type, thingindex) {
+// function toggleTile(target, str_type, thingindex) {
+// function toggleTile(str_type, subid, thingindex) {
+function toggleTile(target, str_type, subid, thingindex) {
+    // alert(subid);
+    // var target = "#tileDialog " + getCssRuleTarget(str_type, subid, thingindex);
+    // var target = "#tileDisplay " + getCssRuleTarget(str_type, subid, thingindex);
     var swval = $(target).html();
-    var subid = $(target).attr("subid");
-    // alert("tile type= "+str_type+" subid= "+subid);
+    // var subid = $(target).attr("subid");
+    console.log("toggleTile: target= " + target + " tile type= "+str_type+" subid= "+subid + " swval= "+swval);
+    $('#onoffTarget').html("");
     
     // activate the icon click to use this
     var onoff = getOnOff(str_type, subid);
@@ -256,21 +262,23 @@ function toggleTile(target, str_type, thingindex) {
             var oldsub = onoff[i];
             if ( $(target).hasClass(oldsub) ) { 
                 $(target).removeClass(oldsub); 
-                console.log("Removing attribute (" + oldsub + ") from wysiwyg display for tile: " + str_type);
+                console.log("Removing attribute (" + oldsub + ") from wysiwyg display for tile: " + str_type + " swval = " + swval);
             }
             if ( oldsub === swval ) {
                 newsub = i+1;
                 if ( newsub >= onoff.length ) { newsub= 0; }
+                $(target).addClass( onoff[newsub] ); 
                 $(target).html( onoff[newsub] );
+                $('#onoffTarget').html(onoff[newsub]);
                 console.log("Adding attribute (" + onoff[newsub] + ") to wysiwyg display for tile: " + str_type);
                 break;
             }
         }
-        $(target).addClass( onoff[newsub] );
+        // $(target).addClass( onoff[newsub] );
+        // $('#onoffTarget').html(onoff[newsub]);
+        
+        // alert(onoff[newsub]);
     }
-    
-    // initColor(str_type, subid, thingindex);
-    // loadSubSelect(str_type, subid, thingindex);
 };
 
 // activate ability to click on icons
@@ -284,7 +292,7 @@ function setupIcons(category, old_str_type, old_thingindex) {
         var img = $(this).attr("src");
         var subid = $("#subidTarget").html();
         var strIconTarget = getCssRuleTarget(str_type, subid, thingindex);
-        console.log("Clicked on img= "+img+" Category= "+category+" icontarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
+        console.log("Clicked on img= "+img+" Category= "+category+" strIconTarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
         iconSelected(category, strIconTarget, img, str_type, subid, thingindex);
     });
 }
@@ -338,7 +346,7 @@ function initDialogBinds(str_type, thingindex) {
     $("#editName").val(newname);
     
     // set the scope dropdown list
-    var newscope = getScope(str_type, false);
+    // var newscope = getScope(str_type, false);
     // $("#scopeEffect").html(newscope);
     
     $("#bgSize").on('change', function(event) {
@@ -809,7 +817,15 @@ function colorpicker(str_type, thingindex) {
     
     // this section is loaded later with a bunch of color pickers
     // including script to respond to picked color
-    dh += "<div id='colorpicker'></div>";
+    dh += "<div id='colorpicker'>";
+    // dh += "<button id='editReset' type='button'>Reset</button>";
+    dh += "<div class='colorgroup'><label>Feature Selected:</label>";
+    var firstsub = setsubid(str_type);
+    var onoff = getOnOff(str_type, firstsub);
+    dh += "<div id='subidTarget' class='dlgtext'>" + firstsub + "</div>";
+    dh += "<div id='onoffTarget' class='dlgtext'>" + onoff[0] + "</div>";
+    dh+= "</div></div>";
+    // alert(firstsub + " " + onoff);
     return dh;
 }
 
@@ -923,22 +939,12 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
 
 function setupClicks(str_type, thingindex) {
     var firstsub = setsubid(str_type);
+    // toggleTile(str_type, firstsub, thingindex);
     initColor(str_type, firstsub, thingindex);
     initDialogBinds(str_type, thingindex);
     loadSubSelect(str_type, firstsub, thingindex);
     getIcons(str_type, thingindex);	
             
-    var newtitle;
-    if ( str_type==="page" ) {
-        newtitle = "Editing Page with Name: " + thingindex;
-        $("#labelName").html("Page Name:");
-    } else {
-        newtitle = "Editing Tile #" + thingindex + " of Type: " + str_type;
-        $("#labelName").html("Tile Name:");
-    }
-    newtitle+= " (editing " + tileCount + " items)";
-    $("#editheader").html(newtitle);
-    
     var trigger = "div"; // div." + str_type + ".p_"+thingindex;
     $("#wysiwyg").on('click', trigger, function(event) {
         // load up our silent tags
@@ -948,17 +954,16 @@ function setupClicks(str_type, thingindex) {
         // alert("toggling class= " + $(event.target).attr("class") + " id= " + $(event.target).attr("id") );
         // if ( $(event.target).attr("id") &&  $(event.target).attr("subid") ) {
         var subid = $(event.target).attr("subid");
-        if ( subid ) {
-            toggleTile(event.target, str_type, thingindex);
-        } else if ( $(event.target).hasClass("thingname") || $(event.target).hasClass("original")  ) {
-            subid = "head";
-            // loadSubSelect(str_type, "head", thingindex);
-        } else {
-            subid = "wholetile";
-            // loadSubSelect(str_type, "wholetile", thingindex);
+        if ( !subid || subid===undefined ) {
+            if ( $(event.target).hasClass("thingname") || $(event.target).hasClass("original")  ) {
+                subid = "head";
+            } else {
+                subid = "wholetile";
+            }
         }
         
         // update everything to reflect current tile
+        toggleTile(event.target, str_type, subid, thingindex);
         initColor(str_type, subid, thingindex);
         initDialogBinds(str_type, thingindex);
         loadSubSelect(str_type, subid, thingindex);
@@ -999,7 +1004,7 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         subcontent += "<option value='head' selected>Page Name</option>";
         subcontent += "<option value='panel'>Panel</option>";
         subcontent += "<option value='tab'>Tab Inactive</option>";
-        subcontent += "<option value='tabon'>Tab Selected</option>";
+        subcontent += "<option value='tabon'>Tab Active</option>";
     } else {
     
         if ( firstsub === "wholetile" ) {
@@ -1057,9 +1062,13 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         var str_type = $("#tileDialog").attr("str_type");
         var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $(event.target).val();
+        
+        // set the first onoff state
+        var onoff = getOnOff(str_type, subid);
+        $("#onoffTarget").html(onoff[0]);
+        
         initColor(str_type, subid, thingindex);
         initDialogBinds(str_type, thingindex);
-        // loadSubSelect(str_type, firstsub, thingindex);
         event.stopPropagation();
     });
     
@@ -1184,46 +1193,34 @@ function resetInverted(selector) {
 // add all the color selectors to the colorpicker div
 function initColor(str_type, subid, thingindex) {
   
-    var target;
-    var generic;
-    var newonoff;
     var onstart;
 
     // selected background color
-    target = getCssRuleTarget(str_type, subid, thingindex, 0);
-    generic = getCssRuleTarget(str_type, subid, thingindex, 1);
-    newonoff = "";
-
-    var swval;
-    var onoff;
+    var target = getCssRuleTarget(str_type, subid, thingindex, 0);
+    var generic = getCssRuleTarget(str_type, subid, thingindex, 1);
+    var icontarget = "#tileDisplay " + target;
     
-    try {
-        swval = $(target).html();
-        onoff = getOnOff(str_type, subid);
-        if ( onoff && onoff.length > 0 ) {
-            for ( var i=0; i < onoff.length; i++ ) {
-                var oldsub = onoff[i];
-                if ( swval === oldsub ) {
-                    newonoff = oldsub;
-                    break;
-                }
-            }
-        }
-    } catch (e) {
-        swval = "Unknown";
-        onoff = "";
-        newonoff = "";
+    console.log ("initcolor: str_type= " + str_type + " subid= " + subid + " thingindex= " + thingindex + " target= " + target);
+    priorIcon = $(target).css("background-image");
+        
+    // set the first onoff state
+    var onoff = getOnOff(str_type, subid);
+    
+    // set the active value
+    var onoffval = $("#onoffTarget").html();
+    if ( onoffval && !$.isNumeric(onoffval) && (onoffval.indexOf(" ") === -1) ) {
+        $(icontarget).addClass(onoffval);
+        $(icontarget).html(onoffval);
     }
     
-    var icontarget = target;
-    
-    console.log ("initcolor: str_type= " + str_type + " subid= " + subid + " thingindex= " + thingindex + " target= " + icontarget);
-    // 
-    // set the default icon to last one
-    priorIcon = $(icontarget).css("background-image");
-
+    $.each(onoff, function() {
+        if ( this && $(icontarget).hasClass(this) ) {
+            $(icontarget).removeClass(this);
+        }
+    });
+   
     // set the background size
-    var iconsize = $(icontarget).css("background-size");
+    var iconsize = $(target).css("background-size");
     // if ( str_type==="page" ) { alert("iconsize= " + iconsize); }
     
     if ( iconsize==="auto" || iconsize==="cover" ) {
@@ -1293,13 +1290,13 @@ function initColor(str_type, subid, thingindex) {
     
     // set the text height and width parameters
     if ( subid!=="wholetile" && subid!=="head" ) {
-        var editwidth = $(icontarget).css("width");
-        var editheight = $(icontarget).css("height");
+        var editwidth = $(target).css("width");
+        var editheight = $(target).css("height");
         
 //        alert("width = " + editwidth + " height= " + editheight + " autoH? " +
-//                $(icontarget).isAuto("height") + " autoW? " + $(icontarget).isAuto('width') );
+//                $(target).isAuto("height") + " autoW? " + $(target).isAuto('width') );
         
-        if ( $(icontarget).isAuto("height") ) {
+        if ( $(target).isAuto("height") ) {
             $("#autoHeight").prop("checked", true);
             $("#editHeight").prop("disabled", true);
             $("#editHeight").css("background-color","gray");
@@ -1318,7 +1315,7 @@ function initColor(str_type, subid, thingindex) {
             $("#editHeight").val(editheight);
         }
         
-        if ( $(icontarget).isAuto("width") ) {
+        if ( $(target).isAuto("width") ) {
             $("#autoWidth").prop("checked", true);
             $("#editWidth").prop("disabled", true);
             $("#editWidth").css("background-color","gray");
@@ -1356,7 +1353,8 @@ function initColor(str_type, subid, thingindex) {
     // dh += "<button id='editReset' type='button'>Reset</button>";
     dh += "<div class='colorgroup'><label>Feature Selected:</label>";
     dh += "<div id='subidTarget' class='dlgtext'>" + subid + "</div>";
-    dh += "<div id='onoffTarget' class='dlgtext'>" + newonoff + "</div>";
+    var subonoff = $('#onoffTarget').html();
+    dh += "<div id='onoffTarget' class='dlgtext'>" + subonoff + "</div>";
     dh += "</div>";
     
     // $("#editReset").off('change');
@@ -1369,18 +1367,18 @@ function initColor(str_type, subid, thingindex) {
         event.stopPropagation;
     });
 
-    onstart = $(icontarget).css("background-color");
+    onstart = $(target).css("background-color");
     if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
         onstart = $(generic).css("background-color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("background-color"); }
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(0, 0, 0, 1)"; }
     }
     
-    // alert("icontarget= " + icontarget+" generic= "+generic+" onstart= "+onstart);
-    console.log("target= "+ icontarget+ " initial background-color= "+onstart);
+    // alert("target= " + target+" generic= "+generic+" onstart= "+onstart);
+    // console.log("target= "+ target+ " initial background-color= "+onstart);
     var iconback = '<div class="colorgroup"> \
                   <label for="iconColor">Background Color</label> \
-                  <input type="text" id="iconColor" caller="background" target="' + icontarget + '" \
+                  <input type="text" id="iconColor" caller="background" target="' + target + '" \
                   class="colorset" value="' + onstart + '"> \
                   </div>';
     
@@ -1390,7 +1388,7 @@ function initColor(str_type, subid, thingindex) {
     } else {
 
         // background effect
-        var oneffect = $(icontarget).css("background-image");
+        var oneffect = $(target).css("background-image");
         var dirright = false;
         var isdark = false;
         var iseffect = -1;
@@ -1431,19 +1429,19 @@ function initColor(str_type, subid, thingindex) {
         ceffect += "</select>";
         ceffect += "</div>";
 
-        var sliderbox = icontarget;
+        var sliderbox = target;
         if ( subid==="level" ) {
             sliderbox+= " .ui-slider";
             generic+= " .ui-slider";
         }
         
-        var onstart = $(sliderbox).css("color");
+        onstart = $(sliderbox).css("color");
         if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) {
             onstart = $(generic).css("color");
             if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = $("div.thing").css("color"); }
             if ( !onstart || onstart==="rgba(0, 0, 0, 0)" ) { onstart = "rgba(255, 255, 255, 1)"; }
         }
-        console.log("target= "+ icontarget+ ", initial color= "+onstart);
+        // console.log("target= "+ target+ ", initial color= "+onstart);
         var iconfore = '<div class="colorgroup"> \
                       <label for="iconFore">Text Font Color</label> \
                       <input type="text" id="iconFore" \
@@ -1474,7 +1472,7 @@ function initColor(str_type, subid, thingindex) {
         if ( fstyle!=="normal") {
             fontdef+= "i";
         }
-        console.log("strtype= " + str_type + " ffamily= " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle + " fontdef = "+ fontdef);
+        // console.log("strtype= " + str_type + " ffamily= " + ffamily + " fweight= " + fweight + " fstyle= " + fstyle + " fontdef = "+ fontdef);
 
         var fe = "";
         fe += "<div class='colorgroup font'><label>Font Type:</label>";
@@ -1495,7 +1493,7 @@ function initColor(str_type, subid, thingindex) {
         fe += "</select>";
         fe += "</div>";
 
-        var f = $(icontarget).css("font-size");
+        var f = $(target).css("font-size");
         f = parseInt(f);
 
         fe += "<div class='colorgroup font'><label>Font Size (px):</label>";
@@ -1741,21 +1739,21 @@ function initColor(str_type, subid, thingindex) {
     $("#editReset").on('click', function (event) {
         var str_type = $("#tileDialog").attr("str_type");
         var thingindex = $("#tileDialog").attr("thingindex");
-        alert("Reset type= "+str_type+" thingindex= "+thingindex);
+        // alert("Reset type= "+str_type+" thingindex= "+thingindex);
         var subid = $("#subidTarget").html();
         resetCSSRules(str_type, subid, thingindex);
         event.stopPropagation;
     });
 
     // set the initial invert check box
-    if ( $(icontarget).css("filter") && $(icontarget).css("filter").includes("invert(1)") ) {
+    if ( $(target).css("filter") && $(target).css("filter").includes("invert(1)") ) {
         $("#invertIcon").prop("checked",true);
     } else {
         $("#invertIcon").prop("checked",false);
     }
     
     // set the initial icon none check box
-    var isicon = $(icontarget).css("background-image");
+    var isicon = $(target).css("background-image");
     if ( isicon === "none") {
         $("#noIcon").prop("checked", true);
     } else {
@@ -1763,7 +1761,7 @@ function initColor(str_type, subid, thingindex) {
     }
     
     // set the initial alignment
-    var initalign = $(icontarget).css("text-align");
+    var initalign = $(target).css("text-align");
     if ( initalign === "left") {
         $("#alignleft").prop("checked", true);
     } else if (initalign === "right") {
@@ -1773,7 +1771,7 @@ function initColor(str_type, subid, thingindex) {
     }
     
     // set the initial alignment
-    initalign = $(icontarget).css("background-position-x");
+    initalign = $(target).css("background-position-x");
     if ( initalign === "left") {
         $("#iconleft").prop("checked", true);
     } else if (initalign === "right") {
@@ -1784,7 +1782,7 @@ function initColor(str_type, subid, thingindex) {
     
     // set initial hidden status
     if ( subid!=="wholetile" ) {
-        var ish1= $(icontarget).css("display");
+        var ish1= $(target).css("display");
         var ish2= $("div.overlay."+str_type+".v_"+thingindex).css("display");
         if ( ish1 === "none" || ish2 === "none") {
             $("#isHidden").prop("checked", true);
@@ -1942,8 +1940,8 @@ function iconSelected(category, cssRuleTarget, imagePath, str_type, subid, thing
     addCSSRule(cssRuleTarget, imgurl + strEffect + ";");
 
     // set new icons to default size
-    $("#autoBgSize").prop("checked", false);
-    updateSize(str_type, subid, thingindex);
+    // $("#autoBgSize").prop("checked", false);
+    // updateSize(str_type, subid, thingindex);
 }
 
 function updateSize(str_type, subid, thingindex) {
