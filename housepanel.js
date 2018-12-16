@@ -12,8 +12,8 @@ var pagename = "main";
 // use the timers options to turn off polling
 var disablepub = false;
 var disabletimers = false;
-var st_timer = 30000;
-var he_timer = 10000;
+var st_timer = 60000;
+var he_timer = 30000;
 
 Number.prototype.pad = function(size) {
     var s = String(this);

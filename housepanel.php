@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.940      Fix bug in Tile Editor for rotating icon setting and slower timers
  * 1.930      Fix thermostat and video tag obscure bugs and more
  *            - chnage video to inherit size
  *            - change tile editor to append instead of prepend to avoid overlaps
@@ -146,7 +147,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.930');
+define('HPVERSION', 'Version 1.940');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
