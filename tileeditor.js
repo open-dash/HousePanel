@@ -188,34 +188,40 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
         // target += " div.overlay";
         if ( subid.startsWith("music-") ) {
             target += " div.overlay.music-controls";
-            if ( useall === 0 ) { target+= '.v_'+thingindex; }
 //        } else if ( subid==="forecastIcon" || subid==="weatherIcon" )  {
 //            target += " div.weather_icons";
 //        } else if ( subid==="feelsLike" || (str_type==="weather" && subid==="temperature") )  {
 //            target += " div.weather_temps";
+        } else if ( subid.endsWith("-dn") || subid.endsWith("-up") ) {
+            target += " div.overlay." + subid.substring(0,subid.length-3);
         } else {
             target += " div.overlay." + subid;
-            if ( useall === 0 ) { target+= '.v_'+thingindex; }
         }
+        if ( useall === 0 ) { target+= '.v_'+thingindex; }
 
         // for everything other than levels, set the subid target
         // levels use the overlay layer only
         // set the subid which is blank if it matches the tile type
-        var subidtag = "." + subid;
-        if ( subid===str_type ) {
-            subidtag = "";
-        }
+        // edit... changed to only use the subid since that is all we need
+        //         this enables custom tile editing to work properly
+        //         since the str_type can be any linked item for those
+//        var subidtag = "." + subid;
+//        if ( subid===str_type ) {
+//            subidtag = "";
+//        }
         if ( subid!=="level" && subid!=="head" ) {
             // target+= " div."+str_type;
 
             // handle special thermostat wrapper case
             if ( useall===2 ){
                 target+= " div";
-            } else if ( subid === "cool" || subid==="heat" ) { 
-                target+= " div." + subid + "-val"; 
+            // } else if ( subid === "cool" || subid==="heat" ) { 
+            //    target+= " div." + subid + "-val"; 
             } else {
-                target+= " div."+str_type + subidtag;
+                // target+= " div."+str_type + subidtag;
+                target+= " div." + subid;
             }
+            
             if ( useall === 0 ) target+= '.p_'+thingindex;
         }
 

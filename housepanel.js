@@ -12,8 +12,10 @@ var pagename = "main";
 // use the timers options to turn off polling
 var disablepub = false;
 var disabletimers = false;
+var disablefast = false;
 var st_timer = 60000;
 var he_timer = 30000;
+var fast_timer = 5000;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -125,9 +127,12 @@ $(document).ready(function() {
                 console.log ("hub raw str = " + hubstr);
             }
             
-            // every 5 seconds update fast tiles
-            // this is experimental code for now and is disabled
-            // setupFastTimer(5000);
+        }
+        
+        // every 5 seconds update fast tiles
+        // this can be disabled using the disablefast global variable
+        if ( !disablefast ) {
+            setupFastTimer(fast_timer);
         }
 
         cancelDraggable();
@@ -295,10 +300,10 @@ function setupColors() {
                 var bidupd = bid;
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
-                if ( bid.startsWith("h_") ) {
-                    // ajaxcall = "dohubitat";
-                    bid = bid.substring(2);
-                }
+//                if ( bid.startsWith("h_") ) {
+//                    // ajaxcall = "dohubitat";
+//                    bid = bid.substring(2);
+//                }
 //                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
                 $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubnum: hubnum},
@@ -333,17 +338,31 @@ function setupSliders() {
             var ajaxcall = "doaction";
             var subid = thing.attr("subid");
             var thevalue = parseInt(ui.value);
-            if ( bid.startsWith("h_") ) {
-                // ajaxcall = "dohubitat";
-                bid = bid.substring(2);
-            }
             var thetype = $(tile).attr("type");
-            console.log(ajaxcall + " : id= "+bid+" type= "+thetype+ " subid= " + subid + " value= "+thevalue);
+            
+            var usertile = thing.siblings(".user_hidden");
+            var command = "";
+            var linktype = thetype;
+            var linkval = "";
+            if ( usertile && $(usertile).attr("command")!==undefined ) {
+                command = $(usertile).attr("command");    // command type
+                if ( !thevalue ) {
+                    thevalue = $(usertile).attr("value");      // raw user provided val
+                }
+                linkval = $(usertile).attr("linkval");    // urlencooded val
+                linktype = $(usertile).attr("linktype");  // type of tile linked to
+            }
+            
+//            if ( bid.startsWith("h_") ) {
+//                // ajaxcall = "dohubitat";
+//                bid = bid.substring(2);
+//            }
+            console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
             
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum},
+                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -353,7 +372,7 @@ function setupSliders() {
                 );
             } else {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum},
+                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -390,14 +409,30 @@ function setupSliders() {
             var hubnum = $(tile).attr("hub");
             var bidupd = bid;
             var ajaxcall = "doaction";
-            if ( bid.startsWith("h_") ) {
-                // ajaxcall = "dohubitat";
-                bid = bid.substring(2);
-            }
+//            if ( bid.startsWith("h_") ) {
+//                // ajaxcall = "dohubitat";
+//                bid = bid.substring(2);
+//            }
+            var subid = thing.attr("subid");
+            var thevalue = parseInt(ui.value);
             var thetype = $(tile).attr("type");
+            var usertile = thing.siblings(".user_hidden");
+            var command = "";
+            var linktype = thetype;
+            var linkval = "";
+            if ( usertile ) {
+                command = $(usertile).attr("command");    // command type
+                if ( !thevalue ) {
+                    thevalue = $(usertile).attr("value");      // raw user provided val
+                }
+                linkval = $(usertile).attr("linkval");    // urlencooded val
+                linktype = $(usertile).attr("linktype");  // type of tile linked to
+            }
+            
+            console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
             
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubnum: hubnum },
+                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubnum: hubnum, command: command, linkval: linkval },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -492,6 +527,10 @@ function setupPagemove() {
 }
 
 function setupSortable() {
+    
+    // add link to add a new page
+    var editdiv = "<div class=\"addpage\">Sort</div>";
+    $("#roomtabs").append(editdiv);
 
     $("div.panel").sortable({
         containment: "parent",
@@ -736,7 +775,7 @@ function setupDraggable() {
 
 function dynoForm(ajaxcall, content, idval, typeval) {
     idval = idval ? idval : 0;
-    typeval = typeval ? typeval : "none";
+    typeval = typeval ? typeval : "dynoform";
     content = content ? content : "";
     
     var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
@@ -758,32 +797,75 @@ function dynoForm(ajaxcall, content, idval, typeval) {
     return controlForm;
 }
 
-function setupButtons() {
+function execButton(buttonid) {
+    
+    // alert("prior= " + priorOpmode + " buttonid= " + buttonid);
+    // blank out screen with a black box size of the window and pause timers
+    if ( buttonid === "blackout") {
+        var w = window.innerWidth;
+        var h = window.innerHeight;            
+        priorOpmode = "Sleep";
+        $("div.maintable").after("<div id=\"blankme\"></div>");
+        $("#blankme").css( {"height":h+"px", "width":w+"px", 
+                            "position":"absolute", "background-color":"black",
+                            "left":"0px", "top":"0px", "z-index":"9999" } );
 
-    function execButton(buttonid) {
-        // blank out screen with a black box size of the window and pause timers
-        if ( buttonid === "blackout") {
-            var w = window.innerWidth;
-            var h = window.innerHeight;            
-            priorOpmode = "Sleep";
-            $("div.maintable").after("<div id=\"blankme\"></div>");
-            $("#blankme").css( {"height":h+"px", "width":w+"px", 
-                                "position":"absolute", "background-color":"black",
-                                "left":"0px", "top":"0px", "z-index":"9999" } );
-            
-            // clicking anywhere will restore the window to normal
-            $("#blankme").on("click", function(event) {
-               $("#blankme").remove(); 
-                priorOpmode = "Operate";
-                event.stopPropagation();
-            });
-        } else if ( buttonid === "restoretabs") {
-            toggleTabs();
-        } else {
-            var newForm = dynoForm(buttonid);
-            newForm.submit();
+        // clicking anywhere will restore the window to normal
+        $("#blankme").on("click", function(event) {
+           $("#blankme").remove(); 
+            priorOpmode = "Operate";
+            event.stopPropagation();
+        });
+    } else if ( buttonid === "toggletabs") {
+        toggleTabs();
+    } else if ( buttonid === "reorder" ) {
+        if ( priorOpmode==="Operate") {
+            setupSortable();
+            setupPagemove();
+            $("#mode_Reorder").prop("checked",true);
+            priorOpmode = "Reorder";
         }
+    } else if ( buttonid === "edit" ) {
+        // show the skin for swapping on main screen
+        if ( priorOpmode==="Operate") {
+            $("div.skinoption").show();
+            setupDraggable();
+            addEditLink();
+            $("#mode_Edit").prop("checked",true);
+            priorOpmode = "DragDrop";
+        }
+    } else if ( buttonid==="name" ) {
+        return;
+    } else if ( buttonid==="operate" ) {
+        if ( priorOpmode === "Reorder" ) {
+            cancelSortable();
+            cancelPagemove();
+            delEditLink();
+            // location.reload(true);
+        } else if ( priorOpmode === "DragDrop" ) {
+            var filters = [];
+            $('input[name="useroptions[]"').each(function(){
+                if ( $(this).prop("checked") ) {
+                    filters.push($(this).attr("value")); 
+                }
+            });
+            var newskin = $("#skinid").val();
+            $.post(returnURL, 
+                {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
+            );
+            cancelDraggable();
+            delEditLink();
+            // location.reload(true);
+        }
+        $("#mode_Operate").prop("checked",true);
+        priorOpmode = "Operate";
+    } else {
+        var newForm = dynoForm(buttonid);
+        newForm.submit();
     }
+}
+
+function setupButtons() {
 
     if ( pagename==="main" && !disablepub ) {
         $("#controlpanel").on("click", "div.formbutton", function() {
@@ -794,54 +876,18 @@ function setupButtons() {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(buttonid);
+                        $(this).stopPropagation();
                     }
                 });
             } else {
                 execButton(buttonid);
+                // $(this).stopPropagation();
             }
         });
 
         $("div.modeoptions").on("click","input.radioopts",function(evt){
             var opmode = $(this).attr("value");
-            if ( opmode !== priorOpmode ) {
-                if ( priorOpmode === "Reorder" ) {
-                    cancelSortable();
-                    cancelPagemove();
-                    delEditLink();
-                } else if ( priorOpmode === "DragDrop" ) {
-                    var filters = [];
-                    $('input[name="useroptions[]"').each(function(){
-                        if ( $(this).prop("checked") ) {
-                            filters.push($(this).attr("value")); 
-                        }
-                    });
-                    var newskin = $("#skinid").val();
-                    $.post(returnURL, 
-                        {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
-                    );
-                    cancelDraggable();
-                    delEditLink();
-                }
-
-                if ( opmode==="Reorder" ) {
-                    setupSortable();
-                    setupPagemove();
-                    delEditLink();
-                } else if ( opmode==="DragDrop" ) {
-                    // show the skin for swapping on main screen
-                    $("div.skinoption").show();
-                    
-                    // set up draggable things and add edit links
-                    setupDraggable();
-                    addEditLink();
-
-                // reload page fresh if we are returning from drag mode to operate mode
-                } else if ( opmode==="Operate" ) {
-                    location.reload(true);
-                }
-
-                priorOpmode = opmode;
-            }
+            execButton(opmode);
         });
     }
 
@@ -891,7 +937,7 @@ function addEditLink() {
     })
     
     // add link to add a new page
-    var editdiv = "<div class=\"addpage\" roomnum=\"new\">Add</div>";
+    var editdiv = "<div id=\"addpage\" class=\"addpage\" roomnum=\"new\">Add</div>";
     $("#roomtabs").append(editdiv);
     
     $("div.editlink").on("click",function(evt) {
@@ -984,8 +1030,8 @@ function addEditLink() {
         editTile("page", roomname, thingclass, roomnum, "");
     });
    
-    $("#roomtabs div.addpage").off("click");
-    $("#roomtabs div.addpage").on("click",function(evt) {
+    $("#addpage").off("click");
+    $("#addpage").on("click",function(evt) {
         var clickid = $(evt.target).attr("aria-labelledby");
         var pos = {top: 100, left: 10};
         createModal("Add New Room to HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
@@ -1021,50 +1067,13 @@ function delEditLink() {
     $("div.delpage").each(function() {
        $(this).remove();
     });
+    $("div.addpage").each(function() {
+       $(this).remove();
+    });
     // hide the skin and 
     $("div.skinoption").hide();
     
     closeModal();
-}
-
-
-// work in progress - this will eventually be a room editor
-function pageEdit() {
-
-    var tc = "";
-    var goodrooms = false;
-    tc = tc + "<div id='dynocontent'><h2>Page Editor</h2>";
-    tc = tc + "<div>With this module you can rename, delete, or add new pages</div>";
-    var pos = {top: 100, left: 100};
-    
-    $("#roomtabs > li.ui-tab").each(function() {
-        var roomname = $(this).text();
-        var roomid = $(this).attr("roomnum");
-        tc = tc + "<div class='roomedit'>";
-        tc = tc + "<input type='number' min=0 step=1 max=20 size='4' name='id-" + roomid+"' value='" + roomid+"' /><input name='rn-"+roomid+"' value='"+roomname+"'/>";
-        tc = tc + "<button roomid='" + roomid + "' class='roomdel'>Del</button>";
-        tc = tc + "</div>";
-        goodrooms = true;
-    });
-    tc = tc + "</div>";
-    
-    if ( goodrooms ) {
-        createModal(tc,"#roomtabs", true, pos, function(ui, content) {
-            var clk = $(ui).attr("name");
-            if ( clk=="okay" ) {
-                
-                tc = "test";
-                
-                var newForm = dynoForm("editpage",content);
-
-                alert(content);
-                newForm.submit();
-            }
-        });
-        $("#modalid").draggable();
-    }
-    
-    
 }
 
 function setupSaveButton() {
@@ -1228,7 +1237,7 @@ function setupCustomCount() {
 }
 
 function toggleTabs() {
-    var hidestatus = $("#restoretabs");
+    var hidestatus = $("#toggletabs");
     if ( $("#roomtabs").hasClass("hidden") ) {
         $("#roomtabs").removeClass("hidden");
         if ( hidestatus ) hidestatus.html("Hide Tabs");
@@ -1358,10 +1367,10 @@ function updateTile(aid, presult) {
 // it then calls the updateTile function to update each subitem in the tile
 function refreshTile(aid, bid, thetype, hubnum) {
     var ajaxcall = "doquery";
-    if ( bid.startsWith("h_") ) {
-        // ajaxcall = "queryhubitat";
-        bid = bid.substring(2);
-    }
+//    if ( bid.startsWith("h_") ) {
+//        // ajaxcall = "queryhubitat";
+//        bid = bid.substring(2);
+//    }
     $.post(returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubnum: hubnum},
         function (presult, pstatus) {
@@ -1493,9 +1502,10 @@ function setupFastTimer(timerval) {
             $.post(returnURL, 
                 {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: -1},
                 function (presult, pstatus) {
-                    if (pstatus==="success" && presult!==undefined ) {
+                    if (pstatus==="success" ) {
 
-                        // console.log("Success polling fast. Returned: " + Object.keys(presult).length+ " items");
+//                        console.log("Success polling fast. Returned: " + Object.keys(presult).length+ " items ");
+//                        console.log( strObject(presult) );
                             
                         // go through all tiles and update
                         try {
@@ -1659,57 +1669,115 @@ function setupPage(trigger) {
     $("div.overlay > div").on("click.tileactions", function(event) {
         
         var aid = $(this).attr("aid");
-        var theclass = $(this).attr("class");
+        var theattr = $(this).attr("class");
         var subid = $(this).attr("subid");
         
         // avoid doing click if the target was the title bar
-        // or if not in Operate mode; also skip sliders tied to subid === level
-        if ( aid===undefined || priorOpmode!=="Operate" || modalStatus ||
-             subid==="level" ||
-             ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) return;
+        // also skip sliders tied to subid === level or colorTemperature
+        if ( aid===undefined || modalStatus || 
+             subid==="level" || subid==="colorTemperature" ||
+             ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) {
+            return;
+        }
         
         var tile = '#t-'+aid;
-        var bid = $(tile).attr("bid");
-        var bidupd = bid;
         var thetype = $(tile).attr("type");
+        var linktype = thetype;
+        var linkval = "";
+        var command = "";
+        
+        // handle special control type tiles that perform javascript actions
+        // if we are not in operate mode only do this if click is on operate
+        // this is the only type tile that cannot be customized
+        if ( thetype==="control" && (priorOpmode==="Operate" || subid==="operate") ) {
+            if ( $(this).hasClass("confirm") ) {
+                var pos = {top: 100, left: 100};
+                createModal("Perform " + subid + " operation... Are you sure?", "body", true, pos, function(ui) {
+                    var clk = $(ui).attr("name");
+                    if ( clk==="okay" ) {
+                        execButton(subid);
+                    }
+                });
+            } else {
+                execButton(subid);
+            }
+            return;
+        }
+
+        // ignore all other tiles if not in operate mode
+        if ( priorOpmode!=="Operate" ) {
+            return;
+        }
+
+        // get the targetid used to aim values at
+        var bid = $(tile).attr("bid");
         var hubnum = $(tile).attr("hub");
         var targetid;
-        if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {  // heat-dn
+        if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {
             var slen = subid.length;
             targetid = '#a-'+aid+'-'+subid.substring(0,slen-3);
-            // console.log("slen = ",slen," target= ", targetid);
         } else {
             targetid = '#a-'+aid+'-'+subid;
         }
-        
-        // set the action differently for Hubitat
+
+        // all hubs now use the same doaction call name
         var ajaxcall = "doaction";
-//        if ( bid.startsWith("h_") ) {
-//            ajaxcall = "dohubitat";
-//        }
-
-        var thevalue;
-        // for switches and locks set the command to toggle
-        // for most things the behavior will be driven by the class value = swattr
-        if (subid==="switch" || subid==="lock" || (thetype==="door" && subid==="door") ) {
-            thevalue = "toggle";
-        // handle shm special case
-        } else if ( (thetype=="shm" || thetype=="custom") && subid=="state" )  {
-            thevalue = $(targetid).html();
-            if ( thevalue=="off" ) { thevalue = "stay"; }
-            else if ( thevalue=="stay") { thevalue = "away"; }
-            else { thevalue = "off"; }
-        } else if ( thetype=="custom" && subid=="post") {
-            thevalue = "";
-        } else {
-            thevalue = $(targetid).html();
-            if ( !thevalue && thetype=="thermostat") {
-                thevalue = $("#a-"+aid+"-temperature").html();
-            }
+        var thevalue = $(targetid).html();
+        var presult = {};
+        
+        // moved switch toggle treatment to the groovy code to detect swattr
+        // moved the special case for SHM to the groovy code so it only impacts SHM tiles
+        // 
+        // special case of thermostat clicking on things without values
+        // send the temperature as the value - think we can remove this
+        if ( !thevalue && thetype=="thermostat" &&
+             ( subid.endsWith("-up") || subid.endsWith("-dn") ) ) {
+            thevalue = $("#a-"+aid+"-temperature").html();
         }
-
-        // turn momentary items on or off temporarily
-        if (thetype==="momentary" || thetype==="piston") {
+        
+        // check for companion sibling element for handling customizations
+        // this includes easy references for a URL or TEXT link
+        // using jQuery sibling feature and check for valid http string
+        // if found then switch the type to the linked type for calls
+        // and grab the proper hub number
+        var usertile = $(this).siblings(".user_hidden");
+        var userval = "";
+        if ( usertile && $(usertile).attr("command") ) {
+            command = $(usertile).attr("command");    // command type
+            userval = $(usertile).attr("value");      // raw user provided val
+            linkval = $(usertile).attr("linkval");    // urlencooded val
+            linktype = $(usertile).attr("linktype");  // type of tile linked to
+            
+            // handle redirects to a user provided web page
+            if ( ( command==="URL" || command==="TEXT" ) 
+                   && userval.startsWith("http") ) {
+                window.open(userval,'_blank');
+                return;
+                
+            // handle replacing text with user provided text that isn't a URL
+            // for this case there is nothing to do on the server so we just
+            // update the text on screen and return it to the log
+            } else if ( command==="TEXT" ) {
+                presult[subid] = userval;
+                console.log( "Clicked on custom TEXT tile with: "+ strObject(presult) );
+                
+                // just update this customized tile since clicking on text doesn't really do anything
+                updateTile(aid, presult);
+                return;
+            }
+            
+            // all the other command types are handled on the PHP server side
+            // this is enabled by the settings above for command, linkval, and linktype
+        } else {
+            linkval = "";
+            command = "";
+            linktype = thetype;
+        }
+        
+        // turn momentary and piston items on or off temporarily
+        // but only for the subid items that expect it
+        // and skip if this is a custom action since it could be anything
+        if ( command==="" && ( (thetype==="momentary" && subid==="switch") || (thetype==="piston" && subid==="pistonName") ) ) {
             var tarclass = $(targetid).attr("class");
             var that = targetid;
             // define a class with method to reset momentary button
@@ -1720,7 +1788,8 @@ function setupPage(trigger) {
             };
             
             $.post(returnURL, 
-                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: subid, subid: subid, hubnum: hubnum},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
+                    attr: subid, subid: subid, hubnum: hubnum},
                 function(presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -1731,7 +1800,7 @@ function setupPage(trigger) {
                             $(that).removeClass("on");
                             $(that).addClass("off");
                             $(that).html("off");
-                        } else {
+                        } else if ( $(that).hasClass("off") )  {
                             $(that).removeClass("off");
                             $(that).addClass("on");
                             $(that).html("on");
@@ -1740,28 +1809,29 @@ function setupPage(trigger) {
                         updateMode();
                     }
                 });
-        } else if ( thetype==="video" ) {
-            if ( subid === "url" ) {
-                console.log("Replaying latest embedded video: " + thevalue);
-                $(targetid).html(thevalue);
-            } else {
-                console.log("Video actions require you to click on the video");
-            }
-        } else if ( thetype==="weather") {
-            console.log("Weather tiles have no actions...");
+                
+        // for clicking on the video link simply reload the video which forces a replay
+        } else if ( thetype==="video" && subid==="video" ) {
+            console.log("Replaying latest embedded video: " + thevalue);
+            $(targetid).html(thevalue);
+        
+        // for clicking on the frame link simply reload the frame
+        } else if ( thetype==="frame" && subid==="frame" ) {
+            console.log("Reloading the frame: " + thevalue);
+            $(targetid).html(thevalue);
+
         } else {
-            // alert("ajax= "+ajaxcall+" id= "+bid+" value= "+thevalue+" attr= "+subid+" subid= "+subid+" class="+theclass);
-            console.log(ajaxcall + ": id= "+bid+" hub= " + hubnum + " type= "+thetype+ " subid= " + subid + " value= "+thevalue+" class="+theclass);
+            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, attr: theclass, subid: subid, hubnum: hubnum},
+                   {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, 
+                    attr: theattr, subid: subid, hubnum: hubnum, command: command, linkval: linkval},
                    function (presult, pstatus) {
-                        if (pstatus==="success" ) {
-                            // alert(bid);
+                        if (pstatus==="success" && presult ) {
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
                                     console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                                     updAll(subid,aid,bidupd,thetype,hubnum,presult);
+                                    updAll(subid,aid,bid,thetype,hubnum,presult);
                                 } else {
                                     console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                                 }

@@ -952,6 +952,24 @@ div#opmode {
 }
 
 /* mini colors */
+div.thing div.overlay.color {
+    position: absolute;
+    right: -2px;
+    top: 25px;
+    z-index: 999;
+}
+
+/* this makes cirles for color selections */
+div.overlay.color div.color {
+    position: absolute;
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    display: none;
+    cursor: pointer;
+    z-index: 9999;
+}
+
 div.overlay.color .minicolors-theme-default.minicolors {
     z-index: 999;
 }
@@ -1143,10 +1161,12 @@ div.switch.colorTemperature, div.lock.checkInterval,
 div.lock.codeChanged, div.lock.lockCodes, div.lock.scanCodes,
 div.lock.codeReport, div.lock.maxCodes, div.lock.maxCodeLength,
 div.lock.minCodeLength, div.lock.codeLength,
-div.thingname.blank, div.thingname.clock,
+div.thingname.blank, div.thingname.clock, div.thingname.video,
 div.thingname.image, div.thingname.routine, div.overlay.healthStatus,
+div.thing.frame-thing div.overlay.status,
 div.valve.switch, div.valve.contact, div.valve.stopWatering, div.valve.log,
-div.clock.tzone, div.thingname.mode
+div.clock.tzone, div.thingname.mode, div.bulb.colorMode, div.light.colorMode,
+div.illuminance-thing .overlay.temperature 
 {
     display:none;
 }
@@ -1177,6 +1197,9 @@ div.clock-thing.analog div.overlay.skin {
     left: -4px;
     border: none;
 }
+div.clock-thing div.overlay.fmt_date, div.clock-thing div.overlay.fmt_time {
+    display: none;
+}
 
 /* hide hue & sat & level for bulbs because we now have color pickers */
 div.overlay.hue, div.overlay.saturation, 
@@ -1199,12 +1222,16 @@ div.overlay.name {
     color: rgba(255, 255, 255, 0.01);
     width: auto;
 }
+div.config-thing div.overlay.name {
+    position: relative;
+    display: none;
+    color: rgba(255, 255, 255, 1);
+}
 
 /* sliders */
 .ui-slider-horizontal {
     height: 0.3em; 
 }
-
 
 /* battery display */
 div.overlay.battery div.battery {
@@ -1288,6 +1315,122 @@ div.custom-thing {
 div.custom-thing div.post, div.custom-thing div.text {
     overflow-wrap: break-word;
 }
-div.video-thing div.thingname.video {
+div.video-thing div.thingname.video, 
+div.video.width, div.video.height,
+div.frame.width, div.frame.height {
+    display: none;
+}
+iframe body {
+    margin: 0px;
+}
+
+div.weather-thing div.overlay {
+    display: inline;
+}
+div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
+    background-position-y: 8px;
+    width: 80px;
+    height: 74px;
+    padding-top: 6px;
+    margin-left: 8px; margin-right: 8px;
+    color: rgba(0, 0, 0, 1);
+    background-size: 80px;
+}
+
+/* default weather name and city to not show */
+div.weather-thing div.overlay.name, div.weather-thing div.overlay.city {
+    display: none;
+    position: relative;
+}
+/* weather styling */
+div.thing.weather-thing {
+    background-color: rgba(0,0,0,0.01);
+    width: 240px;
+    text-align: center;
+    height: auto;
+}
+div.thing div.thingname.weather {
+    width: 92%;
+    padding-left: 4%; 
+    padding-right: 4%;
+}
+div.overlay.temperature div.weather.temperature, div.overlay.feelsLike div.weather.feelsLike {
+    display: inline-block;
+    width: 118px;
+    background-color: #006666;
+    color: #ffffee;
+    border: 2px solid white;
+    cursor: default;
+    text-align: center;
+    height: 70px;
+    width: 70px;
+    padding: 4px 3px 0 3px;
+    margin: 10px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 55px;
+}
+div.weather.feelsLike::before {
+    content: "Like: ";
+    font-size: 8pt;
+}
+div.weather img {
+    margin-left: 15px;
+    margin-right: 15px;
+}
+div.weather.wind::before {
+    content: "Wind: ";
+}
+div.weather.wind::after {
+    content: " mph";
+}
+div.weather.humidity::before {
+    content: "Humidity: ";
+}
+div.weather.percentPrecip::before {
+    content: "Rain: ";
+}
+div.weather.humidity::after, div.weather.percentPrecip::after {
+    content: "%";
+}
+div.weather.illuminance::after {
+    content: " Lux";
+}
+div.weather.sunriseset {
+    margin-top: 10px;
+}
+div.weather.sunriseset, div.weather.humidity,
+div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
+    background-color: rgba(51, 51, 51, 1);
+    margin: 0px;
+}
+div.weather.timeZoneOffset, div.weather.alertKeys,
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.localSunrise, div.weather.localSunset,
+div.weather.ultravioletIndex, div.weather.lastUpdate {
+    display: none;
+}
+div.weather_icons {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+div.weather.weatherIcon, div.weather.forecastIcon {
+    display: inline-block;
+}
+div.thing.control-thing {
+    width: 130px;
+    height: auto;
+}
+
+/* make all control items look right */
+div.thing.control-thing div.overlay {
+    
+}
+
+div.thing.frame-thing div.frame.width, 
+div.thing.frame-thing div.frame.height {
+    display: none;
+}
+div.thing div.user_hidden {
     display: none;
 }

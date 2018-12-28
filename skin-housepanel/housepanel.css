@@ -541,9 +541,9 @@ div.music.track, div.custom.track {
     font-family: "Raleway",serif;
     font-size: 11pt;
     font-style: italic;
-    height: 48px;
+    height: 40px;
     width: 180px;
-    padding-top: 2px;
+    padding-top: 10px;
     border-bottom: none;
     background-color: rgba(80, 80, 80, 0.7);
 }
@@ -623,13 +623,11 @@ div.weather.illuminance::after,
 div.custom.illuminance::after {
     content: " Lux";
 }
-div.weather.sunrise {
-    margin-top: 10px;
-}
-div.weather.humidity, div.weather.sunrise, div.weather.sunset,
+div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
 div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
-    background-color: #333333;
+    background-color: rgba(100, 100, 100, 1);
     margin-bottom: 0px;
+    display: block;
 }
 div.weather.sunriseset, div.weather.timeZoneOffset, div.weather.alertKeys,
 div.weather.sunriseDate, div.weather.sunsetDate,
@@ -646,15 +644,6 @@ div.weather-thing div.overlay {
 div.weather-thing div.overlay.temperature, div.weather-thing div.overlay.feelsLike {
     display: inline;
     padding-right: 4px;
-}
-div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
-    background-position-y: 8px;
-    width: 80px;
-    height: 74px;
-    padding-top: 6px;
-    margin-left: 8px; margin-right: 8px;
-    color: rgba(0, 0, 0, 1);
-    background-size: 80px;
 }
 div.weather-thing div.overlay.name, div.weather-thing div.overlay.city {
     display: none;
@@ -806,40 +795,13 @@ div.presence.absent, div.custom.absent {
     color: rgba(255, 255, 255, 0.01);
 }
 
-div.bulb.color, div.light.color, div.custom.color {
-    position: absolute;
-    left: 8px;
-    top: 44px;
-    height: 32px;
-    width: 32px;
-    font-size: 12px;
-    display: none;
-    cursor: pointer;
-    z-index: 9999;
-}
 div.bulb.colorMode {
     display: none;
-}
-
-div.bulb-thing div.overlay.color {
-    position: absolute;
-    right: -2px;
 }
 
 div.custom-thing {
     height: 150px;
     width: 120px;
-}
-div.custom.post {
-    height: 80px;
-    color: rgba(255, 255, 255, 1);
-}
-div.custom.text {
-    height: 30px;
-    color: rgba(255, 255, 255, 1);
-}
-div.custom.name {
-    display: none;
 }
 
 /* for weather illuminance avoid showing T and fix humidity */
