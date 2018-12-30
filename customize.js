@@ -1,254 +1,16 @@
-/* Tile Editor for HousePanel
+/* Tile Customizer Editor for HousePanel
  * 
- * Original version by @nitwit on SmartThings forum
- * heavily modified by Ken Washington @kewashi on the forum
- * 
+ * written by Ken Washington @kewashi on the forum
  * Designed for use only with HousePanel for Hubitat and SmartThings
- * (c) Ken Washington 2017, 2018
+ * (c) Ken Washington 2017, 2018, 2019
  * 
+ * WARNING - still a work in progress - do not use
  */
 var savedSheet;
 var priorIcon = "none";
 var defaultShow = "block";
 var defaultOverlay = "block";
 var tileCount = 0;
-
-$.fn.isAuto = function(dimension){
-    // will detect auto widths including percentage changes
-    if (dimension == 'width'){
-        var originalWidth = this.css("width");
-        var parentWidth = this.parent().css("width");
-        // pick some weird big number
-        var testWidth = 2000;
-        this.parent().css({width: testWidth});
-        var newWidth = this.css("width");
-        this.parent().css({width: parentWidth});
-        // console.log(originalWidth, newWidth, parentWidth);
-        if ( newWidth > originalWidth ) {
-            return true;    
-        } else{
-            return false;
-        }
-    } else if (dimension == 'height'){
-        var originalHeight = this.height();
-        // this.append('<div id="testzzz"></div>');
-        // var testHeight = originalHeight+500;
-        // $('#testzzz').css({height: testHeight});
-        var newHeight = this.height();
-        // $('#testzzz').remove();
-        if( newHeight > originalHeight ) {
-            return true;    
-        } else{
-            return false;
-        }
-    } else {
-        return false;
-    }
-};
-
-function getOnOff(str_type, subid) {
-    var onoff = ["",""];
-    
-    switch (subid) {
-        case "switch" :
-        case "switchlevel":
-        case "bulb":
-        case "light":
-        case "momentary":
-            onoff = ["on","off"];
-            break;
-        case "contact":
-        case "door":
-        case "valve":
-            onoff = ["open","closed"];
-            break;
-        case "motion":
-            onoff = ["active","inactive"];
-            break;
-        case "lock":
-            onoff = ["locked","unlocked"];
-            break;
-        case "pistonName":
-            onoff = ["firing","idle"];
-            break;
-        case "thermofan":
-            onoff = ["auto","on"];
-            break;
-        case "thermomode":
-            onoff = ["heat","cool","auto","off"];
-            break;
-        case "thermostate":
-            onoff = ["idle","heating","cooling","off"];
-            break;
-        case "musicstatus":
-            onoff = ["stopped","paused","playing"];
-            break;
-        case "musicmute":
-            onoff = ["muted","unmuted"];
-            break;
-        case "presence":
-            onoff = ["present","absent"];
-            break;
-        case "state":
-            if ( str_type==="shm" ) {
-                onoff = ["off","stay","away"];
-            } else if ( str_type==="hsm" ) {
-                onoff = ["armedAway","armedHome","armedNight","disarmed","allDisarmed"];
-            }
-            break;
-            
-    }
-    
-    return onoff;
-}
-
-function getCssRuleTarget(str_type, subid, thingindex, useall) {
-
-    // get the scope to use
-    var scope = $("#scopeEffect").val();
-//    if ( useall!==0 && useall!==1 && useall!==2 ) {
-        if ( scope=== "alltypes") { useall= 1; }
-        else if ( scope=== "alltiles") { useall= 2; }
-        else { useall = 0; }
-//    }
-    
-    if ( useall!==0 && useall!==1 && useall!==2 ) { 
-        useall= 0; 
-    }
-    
-    var target = "";
-
-    if ( str_type==="page" || str_type==="panel" ) {
-        
-        if ( subid==="tab" ) {
-            target = "li.ui-tabs-tab.ui-state-default";
-            if ( useall===0 ) { target+= '.tab-'+thingindex; }
-            // target+= ",.tab-" +thingindex + ">a.ui-tabs-anchor";
-        } else if ( subid==="tabon" ) {
-            target = "li.ui-tabs-tab.ui-state-default.ui-tabs-active";
-            if ( useall===0 ) { target+= '.tab-'+thingindex; }
-            // target+= ",.tab-" +thingindex + ">a.ui-tabs-anchor";
-        } else if ( subid==="head" ) {
-            target = "div.thingname";
-            if ( useall < 2 ) { target+= "." + str_type; }
-            if ( useall < 1 ) { 
-                target+= '.t_'+thingindex;
-            }
-        } else {
-            target = "div.panel"
-            if ( useall < 1 ) { target+= '.panel-'+thingindex; }
-        }
-        
-    // if a tile isn't specified we default to changing all things
-    } else if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
-        target = "div.thing";
-        if ( str_type && useall!==2 ) {
-            target+= "." + str_type + "-thing";
-        }
-    } else if ( subid==="head" ) {
-        target = "div.thingname";
-        if ( useall < 2 ) { target+= "." + str_type; }
-        if ( useall < 1 ) { 
-            target+= '.t_'+thingindex;
-            // target+= " span.n_"+thingindex;
-        }
-
-    // handle special case when whole tile is being requested
-    } else if ( subid==="wholetile"  || subid==="tile" ) {
-        target = "div.thing";
-        if ( useall < 2 ) { target+= "." + str_type + "-thing"; }
-        if ( useall < 1 ) { target+= '.p_'+thingindex; }
-    
-    } else if ( subid==="overlay" ) {
-        target = "div.overlay";
-        if ( useall < 2 ) {
-            if ( subid.startsWith("music-") ) {
-                target+= ".music-controls";
-            } else {
-                target+= "." + subid;
-            }
-        }
-        if ( useall < 1 ) { target+= '.v_'+thingindex; }
-    
-    // main handling of type with subid specific case
-    // starts just like overlay but adds all the specific subid stuff
-    } else {
-
-        // handle music controls special case
-        // target = "div." + str_type + "-thing div.overlay";
-        if ( useall===2 ) {
-            target = "div.thing";
-        } else if ( useall===1 ) {
-            target = "div.thing." + str_type + "-thing";
-        } else {
-            target = "div.thing." + str_type + "-thing." + "p_" + thingindex;
-        }
-        
-        // set the overlay wrapper
-        // target += " div.overlay";
-        if ( subid.startsWith("music-") ) {
-            target += " div.overlay.music-controls";
-//        } else if ( subid==="forecastIcon" || subid==="weatherIcon" )  {
-//            target += " div.weather_icons";
-//        } else if ( subid==="feelsLike" || (str_type==="weather" && subid==="temperature") )  {
-//            target += " div.weather_temps";
-        } else if ( subid.endsWith("-dn") || subid.endsWith("-up") ) {
-            target += " div.overlay." + subid.substring(0,subid.length-3);
-        } else {
-            target += " div.overlay." + subid;
-        }
-        if ( useall === 0 ) { target+= '.v_'+thingindex; }
-
-        // for everything other than levels, set the subid target
-        // levels use the overlay layer only
-        // set the subid which is blank if it matches the tile type
-        // edit... changed to only use the subid since that is all we need
-        //         this enables custom tile editing to work properly
-        //         since the str_type can be any linked item for those
-//        var subidtag = "." + subid;
-//        if ( subid===str_type ) {
-//            subidtag = "";
-//        }
-        if ( subid!=="level" && subid!=="head" ) {
-        // if ( subid!=="head" ) {
-            // target+= " div."+str_type;
-
-            // handle special thermostat wrapper case
-            if ( useall===2 ){
-                target+= " div";
-            // } else if ( subid === "cool" || subid==="heat" ) { 
-            //    target+= " div." + subid + "-val"; 
-            } else {
-                // target+= " div."+str_type + subidtag;
-                target+= " div." + subid;
-            }
-            
-            if ( useall === 0 ) target+= '.p_'+thingindex;
-        }
-
-        // get the on/off state
-        // set the target to determine on/off status
-        // we always use the very specific target to this tile
-        if ( subid==="name" || subid==="track" || subid==="weekday" || 
-             subid==="color" || subid==="level" || 
-             subid==="cool" || subid==="heat" || subid==="stream" ) {
-            on = "";
-        } else {
-            // var onofftarget = "div.overlay." + subid + '.v_' + thingindex + " div."+str_type + subidtag + '.p_'+thingindex;
-            var on = $("#onoffTarget").html();
-            if ( on && !$.isNumeric(on) && (on.indexOf(" ") === -1) ) {
-                on = "."+on;
-            } else {
-                on = "";
-            }
-        }
-
-        // if ( on==="." ) { on= ""; }
-        target = target + on;
-    }
-
-    return target;
-}
 
 // function toggleTile(target, str_type, thingindex) {
 // function toggleTile(str_type, subid, thingindex) {
@@ -287,22 +49,6 @@ function toggleTile(target, str_type, subid, thingindex) {
         // alert(onoff[newsub]);
     }
 };
-
-// activate ability to click on icons
-function setupIcons(category, old_str_type, old_thingindex) {
-
-    $("#iconList").off("click","img");
-    $("#iconList").on("click","img", function() {
-        var str_type = $("#tileDialog").attr("str_type");
-        var thingindex = $("#tileDialog").attr("thingindex");
-        
-        var img = $(this).attr("src");
-        var subid = $("#subidTarget").html();
-        var strIconTarget = getCssRuleTarget(str_type, subid, thingindex);
-        console.log("Clicked on img= "+img+" Category= "+category+" strIconTarget= "+strIconTarget+" type= "+str_type+" subid= "+subid+" index= "+thingindex);
-        iconSelected(category, strIconTarget, img, str_type, subid, thingindex);
-    });
-}
 
 function initDialogBinds(str_type, thingindex) {
 	
@@ -640,14 +386,20 @@ function initDialogBinds(str_type, thingindex) {
     
 }
 
-function iconlist() {
+// far left panel showing the customization type selector
+function customTypePanel(tileidx) {
     var dh = "";
-	dh += "<div id='editicon'>";
-	dh += "<div id='iconChoices'>";
-	dh += "<select name=\"iconSrc\" id=\"iconSrc\" class=\"ddlDialog\"></select>";
-	dh += "<input type='checkbox' id='noIcon'>";
-	dh += "<label class=\"iconChecks\" for=\"noIcon\">None</label>";
-	dh += "</div>";
+    dh += "<div id='cm_typepanel'>";
+
+    dh += "<select id='cm_typepick' name='cm_customtype'>"; 
+        dh += "<option value='TEXT' selected>TEXT</option>";
+        dh += "<option value='POST'>POST</option>";
+        dh += "<option value='GET'>GET</option>";
+        dh += "<option value='PUT'>PUT</option>";
+        dh += "<option value='URL'>URL</option>";
+        dh += "<option value='LINK'>LINK</option>";
+    dh += "</div>";
+    
         var align = "";
         align += "<div id='alignIcon' class='radiogroup'>";
         align+= '<input id="iconleft" type="radio" name="alignicon" value="left"><label for="iconleft">Left</label>';

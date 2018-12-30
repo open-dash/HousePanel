@@ -1232,6 +1232,9 @@ div.config-thing div.overlay.name {
 .ui-slider-horizontal {
     height: 0.3em; 
 }
+div.thing div.overlay.level .ui-slider.slider-horizontal {
+    width: 100%;
+}
 
 /* battery display */
 div.overlay.battery div.battery {
@@ -1418,13 +1421,27 @@ div.weather.weatherIcon, div.weather.forecastIcon {
     display: inline-block;
 }
 div.thing.control-thing {
-    width: 130px;
+    width: 150px;
     height: auto;
+    font-size: 24px;
 }
 
 /* make all control items look right */
-div.thing.control-thing div.overlay {
-    
+div.thing.control-thing div.control {
+    background-color: rgba(80, 110, 110, 1);
+    padding-top: 3px; padding-bottom: 3px;
+    cursor: pointer;
+}
+div.thing.control-thing div.thingname.control {
+    background-color: rgba(50, 50, 100, 1);
+    padding-top: 3px; padding-bottom: 0px;
+}
+
+div.control.name {
+    display: none;
+}
+div.thing.control-thing div.overlay:hover {
+    filter: invert(1);
 }
 
 div.thing.frame-thing div.frame.width, 

@@ -11,11 +11,19 @@ var pagename = "main";
 // end-users are welcome to use this but it is intended for development only
 // use the timers options to turn off polling
 var disablepub = false;
-var disabletimers = false;
-var disablefast = false;
+
+// smart things timer once a minute
 var st_timer = 60000;
+
+// hubitat timer once every 30 seconds
 var he_timer = 30000;
-var fast_timer = 5000;
+
+// fast timer is every 10 seconds
+var fast_timer = 10000;
+
+// slow timer is once an hour
+var slow_timer = 3600000;
+
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -114,25 +122,35 @@ $(document).ready(function() {
         // if you do this manual controls will not be reflected in panel
         // but you can always run a refresh to update the panel manually
         // or you can run it every once in a blue moon too
-        // any value less than 5000 (5 sec) will be interpreted as never
+        // any value less than 1000 (1 sec) will be interpreted as never
         // note - with multihub we now use hub type to set the timer
+        var hubstr = $("input[name='allHubs']").val();
+        try {
+            var hubs = JSON.parse(hubstr);
+        } catch(e) {
+            console.log ("Couldn't find any hubs; hub raw str = " + hubstr);
+        }
 
-        if ( !disabletimers ) {
-            var hubstr = $("input[name='allHubs']").val();
-            try {
-                var hubs = JSON.parse(hubstr);
-                setupTimer(hubs);
-            } catch(e) {
-                console.log ("Couldn't find any hubs");
-                console.log ("hub raw str = " + hubstr);
-            }
-            
+        if ( hubs && typeof hubs === "object" ) {
+            // loop through every hub
+            $.each(hubs, function (hubnum, hub) {
+                var hubType = hub.hubType;
+                var timerval = st_timer;
+                if ( hubType==="Hubitat" ) {
+                    timerval = he_timer;
+                }
+                if ( timerval && timerval >= 1000 ) {
+                    setupTimer(timerval, "all", hubnum);
+                }
+            });
         }
         
-        // every 5 seconds update fast tiles
-        // this can be disabled using the disablefast global variable
-        if ( !disablefast ) {
-            setupFastTimer(fast_timer);
+        // this can be disabled by setting anything less than 1000
+        if ( fast_timer && fast_timer >= 1000 ) {
+            setupTimer(fast_timer, "fast", -1);
+        }
+        if ( slow_timer && slow_timer >= 1000 ) {
+            setupTimer(slow_timer, "slow", -1);
         }
 
         cancelDraggable();
@@ -834,6 +852,9 @@ function execButton(buttonid) {
             $("#mode_Edit").prop("checked",true);
             priorOpmode = "DragDrop";
         }
+    } else if ( buttonid==="showdoc" ) {
+        window.open("docs/index.html",'_blank');
+        return;
     } else if ( buttonid==="name" ) {
         return;
     } else if ( buttonid==="operate" ) {
@@ -1393,30 +1414,20 @@ function setupTabclick() {
     });
 }
 
-function setupTimer(hubs) {
+function setupTimer(timerval, timertype, hubnum) {
 
-    // loop through every hub
-    $.each(hubs, function (hubnum, hub) {
-
-        var hubType = hub.hubType;
-        var token = hub.hubAccess;
-        var timerval = st_timer;
-        if ( hubType==="Hubitat" ) {
-            timerval = he_timer;
-        }
-        // console.log("hub #" + hubnum + " timer = " + timerval + " hub = " + strObject(hub));
-
-        var updarray = ["all", timerval, hubnum, token];
+        // console.log("hub #" + hubnum + " timer = " + timerval);
+        var updarray = [timertype, timerval, hubnum];
         updarray.myMethod = function() {
 
             var that = this;
             var err;
 
             // skip if not in operation mode or if inside a modal dialog box
-            if ( priorOpmode !== "Operate" || modalStatus  || !token) { 
-                // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+            if ( priorOpmode !== "Operate" || modalStatus ) { 
+                // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus);
                 // repeat the method above indefinitely
-                setTimeout(function() {updarray.myMethod();}, this[1]);
+                setTimeout(function() {updarray.myMethod();}, that[1]);
                 return; 
             }
 
@@ -1432,15 +1443,13 @@ function setupTimer(hubs) {
 //                            }
                             // go through all tiles and update
                             try {
-                            $('div.panel div.thing').each(function() {
-                                var aid = $(this).attr("id");
-                                // skip the edit in place tile
-                                if ( aid.startsWith("t-") ) {
-                                    aid = aid.substring(2);
-                                    var tileid = $(this).attr("tile");
-                                    var bid = $(this).attr("bid");
-                                    
-                                    if ( bid!=="clockanalogxxx" ) {
+                                $('div.panel div.thing').each(function() {
+                                    var aid = $(this).attr("id");
+                                    // skip the edit in place tile
+                                    if ( aid.startsWith("t-") ) {
+                                        aid = aid.substring(2);
+                                        var tileid = $(this).attr("tile");
+
                                         var thevalue;
                                         try {
                                             thevalue = presult[tileid];
@@ -1448,16 +1457,15 @@ function setupTimer(hubs) {
                                             tileid = parseInt(tileid, 10);
                                             try {
                                                 thevalue = presult[tileid];
-                                            } catch (err) {}
+                                            } catch (err) { thevalue = null; }
                                         }
                                         // handle both direct values and bundled values
                                         if ( thevalue && thevalue.hasOwnProperty("value") ) {
                                             thevalue = thevalue.value;
                                         }
-                                        if ( thevalue && thevalue!==undefined ) { updateTile(aid,thevalue); }
+                                        if ( thevalue && typeof thevalue==="object" ) { updateTile(aid,thevalue); }
                                     }
-                                }
-                            });
+                                });
                             } catch (err) { console.error("Polling error", err.message); }
                         }
                     }, "json"
@@ -1467,7 +1475,7 @@ function setupTimer(hubs) {
             }
 
             // repeat the method above indefinitely
-            setTimeout(function() {updarray.myMethod();}, this[1]);
+            setTimeout(function() {updarray.myMethod();}, that[1]);
         };
 
         // wait before doing first one - or skip this hub if requested
@@ -1475,16 +1483,16 @@ function setupTimer(hubs) {
             setTimeout(function() {updarray.myMethod();}, timerval);
         }
         
-    });
+//    });
     
 }
 
 // this is similar to the above function but operates only on tiles that
 // can be refreshed very frequently without a call back to a hub
 // this updates image and custom tiles every 5 seconds with whatever content is on server
-function setupFastTimer(timerval) {
+function setupFastTimer(timerval, timertype) {
 
-    var updarray = ["fast", timerval];
+    var updarray = [timertype, timerval];
     updarray.fastMethod = function() {
 
         var that = this;
@@ -1492,7 +1500,7 @@ function setupFastTimer(timerval) {
 
         // skip if not in operation mode or if inside a modal dialog box
         if ( priorOpmode !== "Operate" || modalStatus ) { 
-            // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus+" token= " + token);
+            // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus);
             // repeat the method above indefinitely
             setTimeout(function() {updarray.fastMethod();}, this[1]);
             return; 
@@ -1500,6 +1508,7 @@ function setupFastTimer(timerval) {
 
         try {
             $.post(returnURL, 
+//                    {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
                 {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: -1},
                 function (presult, pstatus) {
                     if (pstatus==="success" ) {
@@ -1516,20 +1525,26 @@ function setupFastTimer(timerval) {
                                 var tileid = $(this).attr("tile");
                                 tileid = parseInt(tileid, 10);
                                 
-                                if ( presult[tileid] !== undefined ) {
+                                // start by assuming we returned a thing or a value array
+                                var thevalue = presult;
+                                
+                                // now check if we have an array of things or values instead
+                                if ( typeof presult[tileid] !== "undefined" ) {
 
-                                    var thevalue;
                                     try {
                                         thevalue = presult[tileid];
-                                    } catch (err) { }
-                                    
-                                    // handle both direct values and bundled values
-                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
-                                        thevalue = thevalue.value;
+                                    } catch (err) {
+                                        thevalue = null;
                                     }
-                                    
-                                    if ( thevalue && thevalue!==undefined ) { updateTile(aid,thevalue); }
+                                }    
+                                
+                                // if this is a thing then grab the value element
+                                if ( thevalue && thevalue.hasOwnProperty("type") && thevalue.hasOwnProperty("value") ) {
+                                    thevalue = thevalue.value;
                                 }
+
+                                if ( thevalue ) { updateTile(aid,thevalue); }
+                                
                             }
                         });
                         } catch (err) { console.error("Polling error", err.message); }
@@ -1545,7 +1560,9 @@ function setupFastTimer(timerval) {
     };
 
     // wait before doing first one
-    setTimeout(function() {updarray.fastMethod();}, timerval);
+    if ( timerval >= 1000 ) {
+        setTimeout(function() {updarray.fastMethod();}, timerval);
+    }
 
 }
 

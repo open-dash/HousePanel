@@ -7,6 +7,10 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.951      Bug fixes while testing major 1.950 update
+ *            - fix bug that made kiosk mode setting not work in the Options page
+ *            - fix bug that broke skin media in tile edit while in kiosk mode
+ *            - use the user config date formats before setting up clock in a refresh
  * 1.950      Major new update with general customizations for any tile
  *            - this is a major new feature that gives any tile the ability to
  *              add any element from any other tile or any user provided text
@@ -164,7 +168,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.950');
+define('HPVERSION', 'Version 1.951');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -967,16 +971,24 @@ function getAllThings($reset = false) {
         $dclock = array("name" => $clockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>"M d, Y", "fmt_time"=> "g:i:s a");
         $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+        $dateofmonth = date($dclock["fmt_date"]);
+        $timeofday = date($dclock["fmt_time"]);
+        $dclock["date"] = $dateofmonth;
+        $dclock["time"] = $timeofday;
         $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => $dclock["name"], 
             "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "value" => $dclock);
 
-        // add analog clock tile if not there
+        // add analog clock tile - uses dclock settings by default
         $clockname = "Analog Clock";
         // $clockskin = "CoolClock:classic";
         $clockskin = "CoolClock:swissRail:72";
         $aclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>"M d, Y", "fmt_time"=> "g:i:s a");
+                        "fmt_date"=>$dclock["fmt_date"], "fmt_time"=> $dclock["fmt_time"]);
         $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+        $dateofmonth = date($aclock["fmt_date"]);
+        $timeofday = date($aclock["fmt_time"]);
+        $aclock["date"] = $dateofmonth;
+        $aclock["time"] = $timeofday;
         $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => $aclock["name"], 
              "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "value" => $aclock);
 
@@ -1827,6 +1839,33 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         } else {
             $response = array();
         }
+
+    // if the new slow type is requested return things that can be updated seldomly
+    // without making a call out to the hub
+    // this is used by frames but others can be added later
+    // all things must be in session for this to work
+    // and slow actions are only supported in query mode
+    } else if ( $swtype==="slow" ) {
+
+        if ( $allthings && $path==="doquery" ) {
+            $response = array();
+            $indexoptions = $options["index"];
+
+            // go through all the tiles available in the system
+            // and return those that are updated slowly
+            // these are also ignored in the main query loop
+            foreach ($allthings as $fidx => $thing) {
+                $type = $thing["type"];
+                $tileid = $indexoptions[$fidx];
+                if ( $type==="frame" ) {
+                    $thing["value"] = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                    $response[$tileid] = $thing;
+                }
+            }
+          
+        } else {
+            $response = array();
+        }
         
     // the final default is for "all" doaction and doquery calls
     } else {
@@ -1951,11 +1990,13 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 $respvals = array();
                 foreach($response as $thing) {
                     $idx = $thing["type"] . "|" . $thing["id"];
-                    $oldthing = $allthings[$idx];
-                    $newvalue = array_merge($oldthing["value"], $thing["value"]);
-                    $newthing = array_merge($oldthing, $thing);
-                    $newthing["value"] = $newvalue;
-                    $allthings[$idx] = $newthing;
+                    if ( $thing["type"] !== "frame" && array_key_exists($idx, $allthings) ) {
+                        $oldthing = $allthings[$idx];
+                        $newvalue = array_merge($oldthing["value"], $thing["value"]);
+                        $newthing = array_merge($oldthing, $thing);
+                        $newthing["value"] = $newvalue;
+                        $allthings[$idx] = $newthing;
+                    }
                 }
                 
                 // update our clocks -- this is duplicative if we use fast also
@@ -1976,8 +2017,9 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 // we use two passes to make links work properly
                 // this pass also ensures we update clocks and other manual tiles
                 // custom tiles are included in this loop too
+                // but skip frames because they are in the slow update
                 foreach($allthings as $idx => $thing) {
-                    if ( array_key_exists($idx, $options["index"]) ) {
+                    if ( $thing["type"] !== "frame" && array_key_exists($idx, $options["index"]) ) {
                         $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
                         $thing["value"] = $thevalue;
                         $allthings[$idx] = $thing;
@@ -2767,6 +2809,7 @@ function processOptions($optarray) {
 
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
+    $options["config"]["kiosk"] = "false";
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
         if ($key=="options" || $key=="submitoption" || $key=="submitrefresh" ||
@@ -2778,11 +2821,7 @@ function processOptions($optarray) {
             $skin = $val;
         }
         else if ( $key=="kiosk") {
-            if ( $val ) {
-                $options["config"]["kiosk"] = "true";
-            } else {
-                $options["config"]["kiosk"] = "false";
-            }
+            $options["config"]["kiosk"] = "true";
         }
         else if ( $key=="customcnt" ) {
             $customcnt = intval($val);
@@ -3072,10 +3111,15 @@ function is_ssl() {
 //    echo "</pre>";
 //    exit(0);
     
+    $useajax= false;
+    
+    // add "api" as an alternative keyword for using the api to useajax
+    if ( isset($_GET["api"]) ) { $useajax = $_GET["api"]; }
+    else if ( isset($_POST["api"]) ) { $useajax = $_POST["api"]; }
+    
     if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
     else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
-    else { $useajax = false; }
-    
+
     if ( $useajax==="cancelauth" ) { 
         unset($_SESSION["hpcode"]);
         $allthings = getAllThings(true);
@@ -3821,6 +3865,25 @@ function is_ssl() {
                 header("Location: $returnURL");
                 break;
             
+            // new API call to return the options as a json string
+            // this is needed for the customization js file but...
+            // end users can also use this to read the options file
+            case "getoptions":
+                $allthings = getAllThings(true);
+                $options= getOptions($options, $allthings);
+                echo json_encode($options);
+                exit;
+                break;
+            
+            // another new API call to return all the loaded things
+            // not intended for end user use, but can be for power users
+            // the customization js file uses this to perform LINK connections
+            case "getthings":
+                $allthings = getAllThings(true);
+                echo json_encode($allthings);
+                exit;
+                break;
+            
             case "reauth":
                 unset($_SESSION["allthings"]);
                 unset($_SESSION["hmoptions"]);
@@ -4116,6 +4179,8 @@ function is_ssl() {
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
                 $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+            } else {
+                $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
             }
             $tc.= "</form>";
         }
