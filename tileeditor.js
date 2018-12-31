@@ -848,11 +848,11 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
 	
     // header
     if ( str_type==="page" ) {
-        dialog_html += "<div id='editheader'>Editing Page#" + hubnum + 
+        dialog_html += "<div class='editheader' id='editheader'>Editing Page#" + hubnum + 
                    " of Name: " + thingindex + "</div>";
         
     } else {
-        dialog_html += "<div id='editheader'>Editing Tile #" + thingindex + 
+        dialog_html += "<div class='editheader' id='editheader'>Editing Tile #" + thingindex + 
                    " of Type: " + str_type + " From hub #" + hubnum + "</div>";
     }
 
@@ -908,7 +908,7 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
     // create a function to display the tile
     var dodisplay = function() {
         var pos = {top: 100, left: 200};
-        createModal( dialog_html, "body", true, pos, 
+        createModal("modalid", dialog_html, "body", true, pos, 
             // function invoked upon leaving the dialog
             function(ui, content) {
                 var clk = $(ui).attr("name");
@@ -1004,6 +1004,7 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         
     // get list of all the subs this tile supports
     var subcontent = "";
+    subcontent += "<br><div class='editInfo'><button class='cm_button' id='cm_activateCustomize'>Customize</button></div>";
     subcontent += "<br><div class='editInfo'>Select Feature:</div>";
     subcontent += "<select id='subidselect' name='subselect'>";
     
@@ -1079,6 +1080,10 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         event.stopPropagation();
     });
     
+    $("#cm_activateCustomize").off('click');
+    $("#cm_activateCustomize").on('click', function(event) {
+        customizeTile(thingindex);
+    });
 }
 
 function setsubid(str_type) {
@@ -1182,7 +1187,10 @@ function saveTileEdit(str_type, thingindex, newname) {
 
 function cancelTileEdit(str_type, thingindex) {
     document.getElementById('customtiles').sheet = savedSheet;
-    location.reload(true);
+    // alert( modalWindows["modalcustom"] );
+    if ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) {
+        location.reload(true);
+    }
 }
 
 function resetInverted(selector) {

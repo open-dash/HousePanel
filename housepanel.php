@@ -228,6 +228,9 @@ function htmlHeader($skin="skin-housepanel") {
     $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js?v=" . $tejshash . "\"></script>";
     $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css?v=" . $tecsshash . "\">";	
     
+    $cm_hash = md5_file("customize.js");
+    $tc.= "<script type=\"text/javascript\" src=\"customize.js?v=" . $cm_hash . "\"></script>";
+    
     // load custom .css and the main script file
     if (!$skin) {
         $skin = "skin-housepanel";
@@ -1759,6 +1762,10 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
         $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+        $fmt_date = $dclock["fmt_date"];
+        $fmt_time = $dclock["fmt_time"];
+        $dclock["date"] = date($fmt_date);
+        $dclock["time"] = date($fmt_time);
         $response = $dclock;
     } else if ( $swid==="clockanalog" ) {
         $aclockname = "Analog Clock";
@@ -1766,6 +1773,10 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
         $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+        $fmt_date = $aclock["fmt_date"];
+        $fmt_time = $aclock["fmt_time"];
+        $aclock["date"] = date($fmt_date);
+        $aclock["time"] = date($fmt_time);
         $response = $aclock;
     } else if ($swtype==="video" && $subid==="video") {
         if ( $allthings ) {
@@ -1824,15 +1835,23 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     
                     // update any thing that has time elements
                     if ( array_key_exists("time", $thing["value"]) ) {
-                        $thing["value"]["time"] = $timeofday;
+                        if ( array_key_exists("fmt_time", $thing["value"]) ) {
+                            $fmt_time = $thing["value"]["fmt_time"];
+                            $thing["value"]["time"] = date($fmt_time);
+                        } else {
+                            $thing["value"]["time"] = $timeofday;
+                        }
                     }
                     if ( array_key_exists("date", $thing["value"]) ) {
-                        $thing["value"]["date"] = $dateofmonth;
-                    }
-                    if ( array_key_exists("weekday", $thing["value"]) ) {
-                        $thing["value"]["weekday"] = $weekday;
+                        if ( array_key_exists("fmt_date", $thing["value"]) ) {
+                            $fmt_date = $thing["value"]["fmt_date"];
+                            $thing["value"]["date"] = date($fmt_date);
+                        } else {
+                            $thing["value"]["date"] = $dateofmonth;
+                        }
                     }
                     $response[$tileid] = $thing;
+                    
                 }
             }
           

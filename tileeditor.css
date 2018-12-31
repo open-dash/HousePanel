@@ -503,6 +503,7 @@ div.modalbox {
     text-align: left;
     padding: 5px;
     background-color: rgba(255, 255, 246, 1);
+    border: 2px solid rgba(0, 0, 0, 1);
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
     position: absolute; 
@@ -520,15 +521,22 @@ div.modalbuttons {
     margin-top: 5px;
 }
 
-button.dialogbtn {
+button.dialogbtn, button.cm_button {
     background-color: #3a5795;
     display: inline;
     width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
-    cursor: pointer;    border: none;
-    color: #eeeeee;    text-align: center;    font-weight: normal;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.8); 
-    border-right: 2px solid rgba(0, 0, 0, 0.8); 
+    cursor: pointer;
+    color: #eeeeee;
+    text-align: center;
+    font-weight: normal;
+    border-left: 2px solid #cccccc; 
+    border-top: 2px solid #cccccc; 
+    border-bottom: 2px solid black; 
+    border-right: 2px solid black; 
     font-size: 12pt;
+}
+button.dialogbtn:hover, button.cm_button:hover {
+    filter: invert(1);
 }
 
 input.editinp {
@@ -591,7 +599,7 @@ div.formbutton a {
     overflow: hidden;
 }
 
-#editheader {
+div.editheader {
     border-bottom: 2px solid rgba(255, 255, 255, 1);
     background-color: #000066;
     color:#ffffff;
@@ -618,17 +626,17 @@ div.formbutton a {
 .modalshow {
     display: block;
 }
-
 #wysiwyg {
     display: inline-block;
     margin-left: 5px;
 }
 
-#wysiwyg > div.editlink, #wysiwyg > div.dellink {
+#wysiwyg > div.editlink, #wysiwyg > div.dellink, #wysiwyg > div.cmzlink {
     display: none;
 }
 
-div.editlink, div.dellink, div.editpage, div.delpage, div.addpage {
+div.editlink, div.cmzlink, div.dellink, div.sortnum,
+div.editpage, div.delpage, div.addpage {
     border: 2px solid white; 
     color: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
@@ -639,16 +647,23 @@ div.editlink, div.dellink, div.editpage, div.delpage, div.addpage {
     cursor: pointer;
 }
 div.editpage, div.editlink {
-    background-color: rgba(0, 102, 102, 0.5);
+    background-color: rgba(0, 102, 102, 0.6);
     left: 0px;
 }
 div.delpage, div.dellink {
-    background-color: rgba(255, 0, 0, 0.5);
+    background-color: rgba(255, 0, 0, 0.6);
     right: 0px;
 }
-div.editlink, div.dellink {
+div.cmzlink {
+    background-color: rgba(0, 0, 102, 0.6);
+    right: 0px;
+}
+div.editlink, div.dellink, div.cmzlink {
     top: 12px;
-    width: 32px; height: 32px;
+    width: 28px; height: 28px;
+}
+div.cmzlink {
+    left: 36px;
 }
 div.addpage {
     font-size: 14px;
@@ -657,6 +672,17 @@ div.addpage {
     width: 40px; height: 24px;
     background-color: rgba(0, 102, 102, 1);
     right: 2px;
+}
+div.sortnum {
+    top: 12px;
+    width: 28px;
+    height: 23px;
+    padding-top: 5px;
+    background-color: rgba(230, 240, 240, 1);
+    border: 2px solid black; 
+    color: black;
+    font-weight: bold;
+    left: 0px;
 }
 
 div.wholetile {
@@ -1338,6 +1364,13 @@ div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
     margin-left: 8px; margin-right: 8px;
     color: rgba(0, 0, 0, 1);
     background-size: 80px;
+    
+    /* hide the icons for now until we figure out new format */
+    display: none;
+}
+
+div.weather.forecastToday, div.weather.forecastTonight, div.weather.forecastTomorrow {
+    display: none;
 }
 
 /* default weather name and city to not show */
@@ -1450,4 +1483,42 @@ div.thing.frame-thing div.frame.height {
 }
 div.thing div.user_hidden {
     display: none;
+}
+
+div.cm_group {
+    display: block;
+    margin-top: 10px;
+    margin-left: 5px;
+}
+#cm_linkfields {
+    width: 300px;
+}
+
+div.cm_preview {
+    width: 350px;
+    height: 200px;
+    background-color: white;
+    border-top: 3px solid #cccccc;
+    border-left: 3px solid #cccccc;
+    border-right: 3px solid black;
+    border-bottom: 3px solid black;
+}
+
+#cm_dynoInfo {
+    background-color: white;
+    border-top: 3px solid #cccccc;
+    border-left: 3px solid #cccccc;
+    border-right: 3px solid black;
+    border-bottom: 3px solid black;
+}
+
+div.cm_group label {
+    margin-right: 4px;
+}
+#cm_linkidx {
+    margin-bottom: 10px;
+    border: 1px solid black;
+    background-color: #cccccc;
+    padding: 4px;
+    width: 600px; height: 15px;
 }

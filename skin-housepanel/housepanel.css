@@ -173,7 +173,7 @@ div.door.closed, div.contact.door.closed {
     background-size: 40px;
 }
 /* hide the contact part of garage doors that include an embedded contact sensor */
-div.door-thing.garage div.contact {
+div.door-thing.garage div.overlay.contact {
     display: none;
 }
 div.contact.window.open, div.custom.window.open {
@@ -624,7 +624,7 @@ div.custom.illuminance::after {
     content: " Lux";
 }
 div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
-div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
+div.weather.wind, div.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: rgba(100, 100, 100, 1);
     margin-bottom: 0px;
     display: block;

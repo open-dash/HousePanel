@@ -1,5 +1,6 @@
 // jquery functions to do Ajax on housepanel.php
 var modalStatus = 0;
+var modalWindows = [];
 var priorOpmode = "Operate";
 var returnURL = "housepanel.php";
 var dragZindex = 1;
@@ -211,17 +212,25 @@ function getMaxZindex() {
     });
 }
 
-function convertToModal(modalcontent) {
-    modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
-    modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
+function convertToModal(modalcontent, addok) {
+    if ( typeof addok === "string" ) {
+        modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">' + addok + '</button>';
+    } else {
+        modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
+        modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
+    }
     return modalcontent;
 }
 
-function createModal(modalcontent, modaltag, addok,  pos, responsefunction, loadfunction) {
-    var modalid = "modalid";
+function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunction, loadfunction) {
+    // var modalid = "modalid";
     
     // skip if a modal is already up...
-    if ( modalStatus ) { return; }
+    if ( modalWindows[modalid]!==null && modalWindows[modalid]>0 ) { return; }
+    
+    modalWindows[modalid] = 1;
+    modalStatus = modalStatus + 1;
+    
     var modaldata = modalcontent;
     var modalhook;
     
@@ -242,13 +251,12 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     
     modalcontent = "<div id='" + modalid +"' class='modalbox'" + styleinfo + ">" + modalcontent;
     if ( addok ) {
-        modalcontent = convertToModal(modalcontent);
+        modalcontent = convertToModal(modalcontent, addok);
     }
     modalcontent = modalcontent + "</div>";
     
     // console.log("modalcontent = " + modalcontent);
     modalhook.append(modalcontent);
-    modalStatus = 1;
     
     // call post setup function if provided
     if ( loadfunction ) {
@@ -259,11 +267,10 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     if ( addok ) {
         $("#"+modalid).on("click",".dialogbtn", function(evt) {
             // alert("clicked on button");
-            modalStatus = 0;
             if ( responsefunction ) {
                 responsefunction(this, modaldata);
             }
-            closeModal();
+            closeModal(modalid);
         });
     } else {
         $("body").on("click",function(evt) {
@@ -271,10 +278,10 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
                 evt.stopPropagation();
                 return;
             } else {
-                closeModal();
                 if ( responsefunction ) {
                     responsefunction(evt.target, modaldata);
                 }
+                closeModal(modalid);
             }
         });
         
@@ -282,9 +289,11 @@ function createModal(modalcontent, modaltag, addok,  pos, responsefunction, load
     
 }
 
-function closeModal() {
-    $("#modalid").remove();
-    modalStatus = 0;
+function closeModal(modalid) {
+    $("#"+modalid).remove();
+    modalWindows[modalid] = 0;
+    modalStatus = modalStatus - 1;
+    // alert("Closing modal. modalstatus = " + modalStatus);
 }
 
 function setupColors() {
@@ -501,6 +510,9 @@ function cancelSortable() {
             $(this).sortable("destroy");
         }
     });
+    $("div.sortnum").each(function() {
+       $(this).remove();
+    });
 }
 
 function cancelPagemove() {
@@ -546,9 +558,17 @@ function setupPagemove() {
 
 function setupSortable() {
     
-    // add link to add a new page
-    var editdiv = "<div class=\"addpage\">Sort</div>";
-    $("#roomtabs").append(editdiv);
+    // loop through each room panel
+    $("div.panel").each( function() {
+        var roomtitle = $(this).attr("title");
+        
+        // loop through each thing in this room and number it
+        var num = 0;
+        $("div.thing[panel="+roomtitle+"]").each(function(){
+            num++;
+            addSortNumber(this, num.toString());
+        });
+    });
 
     $("div.panel").sortable({
         containment: "parent",
@@ -560,19 +580,31 @@ function setupSortable() {
             // var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
             var things = [];
+            var num = 0;
             $("div.thing[panel="+roomtitle+"]").each(function(){
                 var tilename = $(this).find("span").text();
                 var tile = $(this).attr("tile");
                 things.push([tile, tilename]);
+                num++;
+                
+                // update the sorting numbers to show new order
+                updateSortNumber(this, num.toString());
             });
-            console.log("reordered tiles: " + things);
+            console.log("reordered " + num + " tiles:\n" + strObject(things));
             $.post(returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
             );
         }
     });
-        
-    
+}
+
+function addSortNumber(thetile, num) {
+   var sortdiv = "<div class=\"sortnum\">" + num + "</div>";
+   $(thetile).append(sortdiv);
+}
+
+function updateSortNumber(thetile, num) {
+   $(thetile).children(".sortnum").html(num);
 }
 
 var startPos = {top: 0, left: 0, zindex: 0};
@@ -659,7 +691,7 @@ function setupDraggable() {
                             var panel = $("#"+clickid).text();
                             var lastthing = $("div.panel-"+panel+" div.thing").last();
                             var pos = {left: 400, top: 100};
-                            createModal("Add: "+ thingname + " of Type: "+thingtype+" to Room: "+panel+"?<br />Are you sure?","body", true, pos, function(ui, content) {
+                            createModal("modaladd","Add: "+ thingname + " of Type: "+thingtype+" to Room: "+panel+"?<br />Are you sure?","body", true, pos, function(ui, content) {
                                 var clk = $(ui).attr("name");
                                 if ( clk==="okay" ) {
                                     // add it to the system
@@ -736,14 +768,6 @@ function setupDraggable() {
         // enable dropping things from panel into catalog to remove
         $("#catalog").droppable({
             accept: "div.panel div.thing",
-    //        accept: function(thing) {
-    //            var accepting = false;
-    //            if ( thing.hasClass("panel") && modalStatus===0 ) {
-    //                accepting = true;
-    //            }
-    ////            alert("modalStatus = " + modalStatus);
-    //            return accepting;
-    //        },
             tolerance: "fit",
             drop: function(event, ui) {
                 var thing = ui.draggable;
@@ -757,7 +781,7 @@ function setupDraggable() {
                 var tilename = $("span.original.n_"+tile).html();
                 var pos = {top: 100, left: 10};
 
-                createModal("Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+                createModal("modaladd","Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
                     var clk = $(ui).attr("name");
                     if ( clk=="okay" ) {
                         // remove it from the system
@@ -837,21 +861,26 @@ function execButton(buttonid) {
     } else if ( buttonid === "toggletabs") {
         toggleTabs();
     } else if ( buttonid === "reorder" ) {
-        if ( priorOpmode==="Operate") {
-            setupSortable();
-            setupPagemove();
-            $("#mode_Reorder").prop("checked",true);
-            priorOpmode = "Reorder";
+        if ( priorOpmode === "DragDrop" ) {
+            updateFilters();
+            cancelDraggable();
+            delEditLink();
         }
+        setupSortable();
+        setupPagemove();
+        $("#mode_Reorder").prop("checked",true);
+        priorOpmode = "Reorder";
     } else if ( buttonid === "edit" ) {
         // show the skin for swapping on main screen
-        if ( priorOpmode==="Operate") {
-            $("div.skinoption").show();
-            setupDraggable();
-            addEditLink();
-            $("#mode_Edit").prop("checked",true);
-            priorOpmode = "DragDrop";
+        if ( priorOpmode === "Reorder" ) {
+            cancelSortable();
+            cancelPagemove();
         }
+        $("div.skinoption").show();
+        setupDraggable();
+        addEditLink();
+        $("#mode_Edit").prop("checked",true);
+        priorOpmode = "DragDrop";
     } else if ( buttonid==="showdoc" ) {
         window.open("docs/index.html",'_blank');
         return;
@@ -861,19 +890,10 @@ function execButton(buttonid) {
         if ( priorOpmode === "Reorder" ) {
             cancelSortable();
             cancelPagemove();
-            delEditLink();
+            // delEditLink();
             // location.reload(true);
         } else if ( priorOpmode === "DragDrop" ) {
-            var filters = [];
-            $('input[name="useroptions[]"').each(function(){
-                if ( $(this).prop("checked") ) {
-                    filters.push($(this).attr("value")); 
-                }
-            });
-            var newskin = $("#skinid").val();
-            $.post(returnURL, 
-                {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
-            );
+            updateFilters();
             cancelDraggable();
             delEditLink();
             // location.reload(true);
@@ -886,6 +906,19 @@ function execButton(buttonid) {
     }
 }
 
+function updateFilters() {
+    var filters = [];
+    $('input[name="useroptions[]"').each(function(){
+        if ( $(this).prop("checked") ) {
+            filters.push($(this).attr("value")); 
+        }
+    });
+    var newskin = $("#skinid").val();
+    $.post(returnURL, 
+        {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
+    );
+}
+
 function setupButtons() {
 
     if ( pagename==="main" && !disablepub ) {
@@ -893,7 +926,7 @@ function setupButtons() {
             var buttonid = $(this).attr("id");
             if ( $(this).hasClass("confirm") ) {
                 var pos = {top: 100, left: 100};
-                createModal("Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
+                createModal("modalexec","Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(buttonid);
@@ -945,8 +978,9 @@ function addEditLink() {
     // add links to edit and delete this tile
     $("div.panel > div.thing").each(function() {
        var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + "> </div>";
+       var cmzdiv = "<div class=\"cmzlink\" aid=" + $(this).attr("id") + "> </div>";
        var deldiv = "<div class=\"dellink\" aid=" + $(this).attr("id") + "> </div>";
-       $(this).append(editdiv).append(deldiv);
+       $(this).append(editdiv).append(cmzdiv).append(deldiv);
     });
     
     // add links to edit page tabs
@@ -963,10 +997,6 @@ function addEditLink() {
     
     $("div.editlink").on("click",function(evt) {
         var thing = "#" + $(evt.target).attr("aid");
-//        $(thing + ">div.editlink").remove();
-//        $(thing + ">div.dellink").remove();
-//        $(thing).draggable("destroy");
-        
         var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");
         var strhtml = $(thing).html();
@@ -976,6 +1006,12 @@ function addEditLink() {
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
         editTile(str_type, tile, thingclass, hubnum, strhtml);
+    });
+    
+    $("div.cmzlink").on("click",function(evt) {
+        var thing = "#" + $(evt.target).attr("aid");
+        var tile = $(thing).attr("tile");
+        customizeTile(tile);
     });
     
     $("div.dellink").on("click",function(evt) {
@@ -988,7 +1024,7 @@ function addEditLink() {
         var tilename = $("span.original.n_"+tile).html();
         var pos = {top: 100, left: 10};
 
-        createModal("Remove: "+ tilename + " of type: "+str_type+" from hub #" + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("modaladd","Remove: "+ tilename + " of type: "+str_type+" from hub #" + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 // remove it from the system
@@ -1015,7 +1051,7 @@ function addEditLink() {
         var roomname = $(evt.target).attr("roomname");
         var clickid = $(evt.target).parent().attr("aria-labelledby");
         var pos = {top: 100, left: 10};
-        createModal("Remove Room #" + roomnum + " with Name: " + roomname +" from HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("modaladd","Remove Room #" + roomnum + " with Name: " + roomname +" from HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 // remove it from the system
@@ -1055,7 +1091,7 @@ function addEditLink() {
     $("#addpage").on("click",function(evt) {
         var clickid = $(evt.target).attr("aria-labelledby");
         var pos = {top: 100, left: 10};
-        createModal("Add New Room to HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("modaladd","Add New Room to HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 $.post(returnURL, 
@@ -1079,6 +1115,9 @@ function delEditLink() {
     $("div.editlink").each(function() {
        $(this).remove();
     });
+    $("div.cmzlink").each(function() {
+       $(this).remove();
+    });
     $("div.dellink").each(function() {
        $(this).remove();
     });
@@ -1094,7 +1133,7 @@ function delEditLink() {
     // hide the skin and 
     $("div.skinoption").hide();
     
-    closeModal();
+    // closeModal();
 }
 
 function setupSaveButton() {
@@ -1275,10 +1314,11 @@ function strObject(o, level) {
   if ( typeof o !== "object") { return o + '\n'; }
   
   for (var p in o) {
-    out += p + ': ';
+    out += '  ' + p + ': ';
     if (typeof o[p] === "object") {
-        if ( level > 10 ) {
-            out+= ' [more beyond 10 levels...] \n';
+        if ( level > 6 ) {
+            out+= ' ...more beyond level 6 \n';
+            out+= JSON.stringify(o);
         } else {
             out += strObject(o[p], level+1);
         }
@@ -1691,7 +1731,7 @@ function setupPage(trigger) {
         
         // avoid doing click if the target was the title bar
         // also skip sliders tied to subid === level or colorTemperature
-        if ( aid===undefined || modalStatus || 
+        if ( aid===undefined || // modalStatus || 
              subid==="level" || subid==="colorTemperature" ||
              ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) {
             return;
@@ -1709,7 +1749,7 @@ function setupPage(trigger) {
         if ( thetype==="control" && (priorOpmode==="Operate" || subid==="operate") ) {
             if ( $(this).hasClass("confirm") ) {
                 var pos = {top: 100, left: 100};
-                createModal("Perform " + subid + " operation... Are you sure?", "body", true, pos, function(ui) {
+                createModal("modalexec","Perform " + subid + " operation... Are you sure?", "body", true, pos, function(ui) {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(subid);
@@ -1794,7 +1834,10 @@ function setupPage(trigger) {
         // turn momentary and piston items on or off temporarily
         // but only for the subid items that expect it
         // and skip if this is a custom action since it could be anything
-        if ( command==="" && ( (thetype==="momentary" && subid==="switch") || (thetype==="piston" && subid==="pistonName") ) ) {
+        // also, for momentary buttons we don't do any tile updating
+        // other than visually pushing the button by changing the class for 1.5 seconds
+        console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+        if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid==="pistonName") ) ) {
             var tarclass = $(targetid).attr("class");
             var that = targetid;
             // define a class with method to reset momentary button
@@ -1809,7 +1852,8 @@ function setupPage(trigger) {
                     attr: subid, subid: subid, hubnum: hubnum},
                 function(presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
-                        console.log( ajaxcall + " POST returned: "+ strObject(presult) );
+                        console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
+                        // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
                         if (thetype==="piston") {
                             $(that).addClass("firing");
                             $(that).html("firing");
@@ -1825,7 +1869,7 @@ function setupPage(trigger) {
                         setTimeout(function(){classarray.myMethod();}, 1500);
                         updateMode();
                     }
-                });
+                }, "json");
                 
         // for clicking on the video link simply reload the video which forces a replay
         } else if ( thetype==="video" && subid==="video" ) {
@@ -1838,7 +1882,7 @@ function setupPage(trigger) {
             $(targetid).html(thevalue);
 
         } else {
-            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+            // onsole.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, 
                     attr: theattr, subid: subid, hubnum: hubnum, command: command, linkval: linkval},
@@ -1847,7 +1891,8 @@ function setupPage(trigger) {
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
-                                    console.log( ajaxcall + " POST returned: "+ strObject(presult) );
+                                    console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
+                                    // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
                                     updAll(subid,aid,bid,thetype,hubnum,presult);
                                 } else {
                                     console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
