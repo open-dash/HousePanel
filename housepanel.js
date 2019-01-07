@@ -213,7 +213,8 @@ function getMaxZindex() {
 }
 
 function convertToModal(modalcontent, addok) {
-    if ( typeof addok === "string" ) {
+    if ( typeof addok === "string" )
+    {
         modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">' + addok + '</button>';
     } else {
         modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
@@ -996,22 +997,28 @@ function addEditLink() {
     $("#roomtabs").append(editdiv);
     
     $("div.editlink").on("click",function(evt) {
-        var thing = "#" + $(evt.target).attr("aid");
+        var aid = $(evt.target).attr("aid");
+        var thing = "#" + aid;
         var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");
         var strhtml = $(thing).html();
         var thingclass = $(thing).attr("class");
+        var bid = $(thing).attr("bid");
         var hubnum = $(thing).attr("hub");
         
         // replace all the id tags to avoid dynamic updates
         strhtml = strhtml.replace(/ id="/g, " id=\"x_");
-        editTile(str_type, tile, thingclass, hubnum, strhtml);
+        editTile(str_type, tile, aid, bid, thingclass, hubnum, strhtml);
     });
     
     $("div.cmzlink").on("click",function(evt) {
-        var thing = "#" + $(evt.target).attr("aid");
+        var aid = $(evt.target).attr("aid");
+        var thing = "#" + aid;
+        var str_type = $(thing).attr("type");
         var tile = $(thing).attr("tile");
-        customizeTile(tile);
+        var bid = $(thing).attr("bid");
+        var hubnum = $(thing).attr("hub");
+        customizeTile(tile, aid, bid, str_type, hubnum);
     });
     
     $("div.dellink").on("click",function(evt) {
@@ -1084,7 +1091,7 @@ function addEditLink() {
         var roomnum = $(evt.target).attr("roomnum");
         var roomname = $(evt.target).attr("roomname");
         var thingclass = $(evt.target).attr("class");
-        editTile("page", roomname, thingclass, roomnum, "");
+        editTile("page", roomname, 0, 0, thingclass, roomnum, "");
     });
    
     $("#addpage").off("click");
@@ -1407,12 +1414,12 @@ function updateTile(aid, presult) {
                 
             }
 
-                // update the content 
-                if (oldvalue || value) {
-                    $(targetid).html(value);
-                    // if ( aid=="91" ) { alert("key= " + key + " changed value to: " + value); }
-                }
+            // update the content 
+            if (oldvalue || value) {
+                $(targetid).html(value);
+                // if ( aid=="91" ) { alert("key= " + key + " changed value to: " + value); }
             }
+        }
     });
     
     if ( isclock ) {
@@ -1435,7 +1442,8 @@ function refreshTile(aid, bid, thetype, hubnum) {
     $.post(returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubnum: hubnum},
         function (presult, pstatus) {
-            if (pstatus==="success" && presult!==undefined ) {
+            if (pstatus==="success") {
+                // console.log( "presult from refreshTile: ", strObject(presult) );
                 updateTile(aid, presult);
             }
         }, "json"
@@ -1792,6 +1800,11 @@ function setupPage(trigger) {
             thevalue = $("#a-"+aid+"-temperature").html();
         }
         
+        // handle music commands
+        if ( subid.startsWith("music-" ) ) {
+            thevalue = subid.substring(6);
+        }
+        
         // check for companion sibling element for handling customizations
         // this includes easy references for a URL or TEXT link
         // using jQuery sibling feature and check for valid http string
@@ -1882,7 +1895,7 @@ function setupPage(trigger) {
             $(targetid).html(thevalue);
 
         } else {
-            // onsole.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+            // console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, 
                     attr: theattr, subid: subid, hubnum: hubnum, command: command, linkval: linkval},

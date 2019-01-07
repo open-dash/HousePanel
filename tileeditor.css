@@ -499,14 +499,13 @@ div.modeoptions {
 }
 
 div.modalbox {
-    display: inline-block;
+    display: block;
     text-align: left;
     padding: 5px;
+    border-top: 2px solid rgba(0, 0, 0, 1);
     background-color: rgba(255, 255, 246, 1);
-    border: 2px solid rgba(0, 0, 0, 1);
     color: rgba(0, 0, 0, 1);
     font-size: 12pt;
-    position: absolute; 
     z-index: 99999;
 }
 
@@ -521,7 +520,7 @@ div.modalbuttons {
     margin-top: 5px;
 }
 
-button.dialogbtn, button.cm_button {
+button.dialogbtn, button.cm_button, button.disabled {
     background-color: #3a5795;
     display: inline;
     width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
@@ -537,6 +536,13 @@ button.dialogbtn, button.cm_button {
 }
 button.dialogbtn:hover, button.cm_button:hover {
     filter: invert(1);
+}
+button.disabled {
+    background-color: #cccccc;
+    cursor: default;
+}
+button.disabled:hover {
+    filter: invert(0);
 }
 
 input.editinp {
@@ -626,12 +632,14 @@ div.editheader {
 .modalshow {
     display: block;
 }
-#wysiwyg {
+#wysiwyg, #wysiwyg2 {
     display: inline-block;
     margin-left: 5px;
 }
-
-#wysiwyg > div.editlink, #wysiwyg > div.dellink, #wysiwyg > div.cmzlink {
+#wysiwyg div.editlink, #wysiwyg div.dellink, #wysiwyg div.cmzlink {
+    display: none;
+}
+#wysiwyg2 div.editlink, #wysiwyg2 div.dellink, #wysiwyg2 div.cmzlink {
     display: none;
 }
 
@@ -1491,20 +1499,29 @@ div.cm_group {
     margin-left: 5px;
 }
 #cm_linkfields {
-    width: 300px;
+    width: 400px;
 }
 
 div.cm_preview {
-    width: 350px;
-    height: 200px;
-    background-color: white;
+    width: auto;
+    height: auto;
+    background-color: black;
     border-top: 3px solid #cccccc;
     border-left: 3px solid #cccccc;
-    border-right: 3px solid black;
-    border-bottom: 3px solid black;
+    border-right: 3px solid #333333;
+    border-bottom: 3px solid #333333;
+}
+
+#cm_text {
+    width: 400px;
+}
+
+.readonly {
+    background-color: #cccccc;
 }
 
 #cm_dynoInfo {
+    width: 725px;
     background-color: white;
     border-top: 3px solid #cccccc;
     border-left: 3px solid #cccccc;
@@ -1515,10 +1532,27 @@ div.cm_preview {
 div.cm_group label {
     margin-right: 4px;
 }
-#cm_linkidx {
+#cm_linkbid {
     margin-bottom: 10px;
     border: 1px solid black;
     background-color: #cccccc;
     padding: 4px;
-    width: 600px; height: 15px;
+    width: 400px; height: 15px;
+}
+
+#cm_builtinfields option, #cm_userfield {
+    width: 300px;
+}
+
+table.cm_table {
+    border: none;
+    background-color: #b0b099;
+}
+
+table.cm_table td {
+    vertical-align: top;
+}
+
+#cm_subheader {
+    font-size: 20pt; color: #000000;
 }

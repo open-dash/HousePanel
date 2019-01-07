@@ -7,6 +7,7 @@
  * (c) Ken Washington 2017, 2018
  * 
  */
+var et_Globals = {};
 var savedSheet;
 var priorIcon = "none";
 var defaultShow = "block";
@@ -837,7 +838,18 @@ function colorpicker(str_type, thingindex) {
 }
 
 // popup dialog box now uses createModal
-function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {  
+function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlcontent) {  
+    var returnURL;
+    try {
+        returnURL = $("input[name='returnURL']").val();
+    } catch(e) {
+        returnURL = "housepanel.php";
+    }
+    
+    et_Globals.aid = aid;
+    et_Globals.id = bid;
+    et_Globals.hubnum = hubnum;
+    et_Globals.reload = false;
 
     // save the sheet upon entry for cancel handling
     savedSheet = document.getElementById('customtiles').sheet;
@@ -875,7 +887,7 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
         // thingindex = 1000 + parseInt(roomnum,10);
         // dialog_html += "<div class=\"" + thingclass + "\" id='wysiwyg'></div>";
         // dialog_html += "<div class=\"thing " + str_type + "-thing\" id='wysiwyg'></div>";
-        jqxhr = $.post("housepanel.php", 
+        jqxhr = $.post(returnURL, 
             {useajax: "wysiwyg", id: roomnum, type: 'page', tile: thingindex, value: roomname, attr: ''},
             function (presult, pstatus) {
                 if (pstatus==="success" ) {
@@ -890,7 +902,7 @@ function editTile(str_type, thingindex, thingclass, hubnum, htmlcontent) {
     } else {
         // put placeholder and populate after Ajax finishes retrieving true wysiwyg content
         // dialog_html += "<div class=\"thing " + str_type + "-thing p_"+thingindex+"\" id='wysiwyg'></div>";
-        jqxhr = $.post("housepanel.php", 
+        jqxhr = $.post(returnURL, 
             {useajax: "wysiwyg", id: '', type: '', tile: thingindex, value: '', attr: ''},
             function (presult, pstatus) {
                 if (pstatus==="success" ) {
@@ -1004,9 +1016,6 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         
     // get list of all the subs this tile supports
     var subcontent = "";
-    subcontent += "<br><div class='editInfo'><button class='cm_button' id='cm_activateCustomize'>Customize</button></div>";
-    subcontent += "<br><div class='editInfo'>Select Feature:</div>";
-    subcontent += "<select id='subidselect' name='subselect'>";
     
     if ( str_type==="page" ) {
         subcontent += "<option value='head' selected>Page Name</option>";
@@ -1014,6 +1023,9 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         subcontent += "<option value='tab'>Tab Inactive</option>";
         subcontent += "<option value='tabon'>Tab Active</option>";
     } else {
+        subcontent += "<br><div class='editInfo'><button class='cm_button' id='cm_activateCustomize'>Customize</button></div>";
+        subcontent += "<br><div class='editInfo'>Select Feature:</div>";
+        subcontent += "<select id='subidselect' name='subselect'>";
     
         if ( firstsub === "wholetile" ) {
             subcontent += "<option value='wholetile' selected>Whole Tile</option>";
@@ -1080,10 +1092,13 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         event.stopPropagation();
     });
     
-    $("#cm_activateCustomize").off('click');
-    $("#cm_activateCustomize").on('click', function(event) {
-        customizeTile(thingindex);
-    });
+    if ( str_type !== "page" ) {
+        $("#cm_activateCustomize").off('click');
+        $("#cm_activateCustomize").on('click', function(event) {
+            customizeTile(thingindex, et_Globals.aid, et_Globals.id, str_type, et_Globals.hubnum);
+            event.stopPropagation();
+        });
+    }
 }
 
 function setsubid(str_type) {
@@ -1175,6 +1190,9 @@ function saveTileEdit(str_type, thingindex, newname) {
             if (pstatus==="success" ) {
                 results = "success: msg = " + presult;
                 console.log("POST " + results);
+                if ( cm_Globals.reload && ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) ) {
+                    location.reload(true);
+                }
             } else {
                 results = "error: pstatus = " + pstatus + " msg = " + presult;
                 console.log("POST " + results);
@@ -1188,7 +1206,7 @@ function saveTileEdit(str_type, thingindex, newname) {
 function cancelTileEdit(str_type, thingindex) {
     document.getElementById('customtiles').sheet = savedSheet;
     // alert( modalWindows["modalcustom"] );
-    if ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) {
+    if ( (et_Globals.reload || cm_Globals.reload) && ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) ) {
         location.reload(true);
     }
 }
@@ -1998,6 +2016,7 @@ function updateSize(str_type, subid, thingindex) {
 function addCSSRule(selector, rules, resetFlag){
     //Searching of the selector matching cssRules
     // alert("Adding rules: " + rules);
+    cm_Globals.reload = true;
     
     var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
     var index = -1;
@@ -2030,6 +2049,7 @@ function addCSSRule(selector, rules, resetFlag){
 
 function resetCSSRules(str_type, subid, thingindex){
 
+        cm_Globals.reload = true;
         var ruletypes = ['wholetile','head'];
         ruletypes.forEach( function(rule, idx, arr) {
             var subtarget = getCssRuleTarget(str_type, rule, thingindex);

@@ -7,6 +7,9 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.952      Finalize GUI for tile customization (wicked cool)
+ *            - fix bug in Music player for controls
+ *            - revert to old light treatment in Hubitat
  * 1.951      Bug fixes while testing major 1.950 update
  *            - fix bug that made kiosk mode setting not work in the Options page
  *            - fix bug that broke skin media in tile edit while in kiosk mode
@@ -168,7 +171,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.951');
+define('HPVERSION', 'Version 1.952');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -3131,6 +3134,7 @@ function is_ssl() {
 //    exit(0);
     
     $useajax= false;
+    $reserved = array("index","rooms","things","config","control","time","useroptions");
     
     // add "api" as an alternative keyword for using the api to useajax
     if ( isset($_GET["api"]) ) { $useajax = $_GET["api"]; }
@@ -3700,7 +3704,7 @@ function is_ssl() {
         } 
 
         // handle special non-groovy based tile types
-        if ( $swtype==="auto" && $swid) {
+        if ( $swtype==="auto" && $swid && $useajax!=="addcustom") {
             if ( substr($swid,0,5)=="clock") {
                 $swtype = "clock";
             } else if ( substr($swid,0,3)=="vid") {
@@ -3780,20 +3784,21 @@ function is_ssl() {
                     echo $nothing;
                 }
                 break;
-        
+
+            case "wysiwyg2":
             case "wysiwyg":
-                if ( $swtype==="page" ) {
+                if ( $swtype==="page" && $useajax==="wysiwyg" ) {
                     // make the fake tile for the room for editing purposes
                     $faketile = array("panel" => "Panel", "tab" => "Tab Inactive", "tabon" => "Tab Selected" );
                     $thesensor = array("id" => "r_".strval($swid), "name" => $swval, 
                         "hubnum" => -1, "hubtype" => "None", "type" => "page", "value" => $faketile);
-                    echo makeThing(0, $tileid, $tileid, $thesensor, $swval, 0, 0, 99, "", "wysiwyg" );
+                    echo makeThing(0, $tileid, $tileid, $thesensor, $swval, 0, 0, 99, "", $useajax );
                     
                 } else {
                     $idx = $swtype . "|" . $swid;
                     $allthings = getAllThings();
                     $thesensor = $allthings[$idx];
-                    echo makeThing($idx, 0, $tileid, $thesensor, "Options", 0, 0, 99, "", "wysiwyg");
+                    echo makeThing($idx, 0, $tileid, $thesensor, "Options", 0, 0, 99, "", $useajax);
                 }
                 break;
         
@@ -3888,8 +3893,9 @@ function is_ssl() {
             // this is needed for the customization js file but...
             // end users can also use this to read the options file
             case "getoptions":
-                $allthings = getAllThings(true);
-                $options= getOptions($options, $allthings);
+//                $allthings = getAllThings(true);
+//                $options= getOptions($options, $allthings);
+                $options = readOptions();
                 echo json_encode($options);
                 exit;
                 break;
@@ -4020,6 +4026,58 @@ function is_ssl() {
             case "cancelauth":
                 unset($_SESSION["hpcode"]);
                 echo "success";
+                break;
+            
+            case "addcustom":
+                $options = readOptions();
+                $userid = "user_" . $swid;
+                if ( array_key_exists($swid, $options) && 
+                        !in_array ($swid, $reserved) && 
+                        !array_key_exists($userid, $options) ) {
+                    $userid = $swid;
+                }
+                if ( !array_key_exists($userid, $options) ) {
+                    $options[$userid] = array();
+                }
+    
+                $newitem = array($swtype, strval($swattr), strval($subid));
+                $options[$userid][] = $newitem;
+                writeOptions($options);
+                $allthings = getAllThings(true);
+                echo json_encode($options[$userid]);
+                break;
+                
+            case "delcustom":
+                $options = readOptions();
+                $userid = "user_" . $swid;
+                if ( array_key_exists($swid, $options) && 
+                        !in_array ($swid, $reserved) && 
+                        !array_key_exists($userid, $options) ) {
+                    $userid = $swid;
+                }
+                
+                if ( array_key_exists($userid, $options) ) {
+                    $lines = $options[$userid];
+                    if ( ! is_array($lines[0]) ) {
+                        $lines = array($lines);
+                    }
+                    foreach ($lines as $k => $newitem) {
+                        if ( strval($newitem[2]) === strval($subid) ) {
+                            unset( $lines[$k] );
+                            break;
+                        }
+                    }
+                    if ( count($lines) === 0 ) {
+                        unset( $options[$userid] );
+                    } else {
+                        $options[$userid] = $lines;
+                    }
+                    writeOptions($options);
+                    $allthings = getAllThings(true);
+                } else {
+                    $lines = array();
+                }
+                echo json_encode($lines);
                 break;
                 
             default:

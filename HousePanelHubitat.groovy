@@ -1,7 +1,7 @@
 /**
  *  HousePanel (Hubitat Version)
  *
- *  Copyright 2016, 2017, 2018 Kenneth Washington
+ *  Copyright 2016, 2017, 2018, 2019 Kenneth Washington
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/05/2019 - fix music controls to work again after separating icons out
  * 12/01/2018 - hub prefix option implemented for unique tiles with multiple hubs
  * 11/24/2018 - implement workaround hack to dimmer light inconsistency
  * 11/21/2018 - add routine to return location name
@@ -1177,10 +1178,6 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 item.on()
             } else {
                 item.off()
-                // address Hubitat bug to set level zero
-                if ( item.hasCommand("stopLevelChange") ) {
-                    item.stopLevelChange()
-                }
             }
             skiponoff = true
             break               
@@ -1192,11 +1189,6 @@ def setGenericLight(mythings, swid, cmd, swattr) {
                 item.on()
             } else {
                 item.off()
-                
-                // address Hubitat bug to set level zero
-                if ( item.hasCommand("setLevel") ) {
-                    item.setLevel(0)
-                }
             }
         }
         
@@ -1488,73 +1480,58 @@ def setMusic(swid, cmd, swattr, subid) {
     def item  = mymusics.find {it.id == swid }
     def newsw
     if (item) {
+    if ( dologging ) {
+        log.debug "setMusic: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
+    }
         resp = getMusic(swid, item)
         
         // fix old bug from addition of extra class stuff
-        if ( swattr.contains("musicmute") && swattr.endsWith("unmuted" )) {
+        // had to fix this for all settings
+        if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains("unmuted" )) {
             newsw = "muted"
             item.mute()
             resp['musicmute'] = newsw
-        } else if ( swattr.contains("musicmute") && swattr.endsWith("muted" )) {
+        } else if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains(" muted" )) {
             newsw = "unmuted"
             item.unmute()
             resp['musicmute'] = newsw
-        } else {
-        
-            switch(swattr) {
-
-                case "level-up":
-                case "vol-up":
-                      newsw = cmd.toInteger()
-                      newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
-                      item.setLevel(newsw)
-                      resp['level'] = newsw
-                      break
-
-                case "level-dn":
-                case "vol-dn":
-                      newsw = cmd.toInteger()
-                      def del = (newsw % 5) == 0 ? 5 : newsw % 5
-                      newsw = (newsw <= 5) ? 5 : newsw - del
-                      item.setLevel(newsw)
-                      resp['level'] = newsw
-                      break
-
-                case "level":
-                      newsw = cmd.toInteger()
-                      item.setLevel(newsw)
-                      resp['level'] = newsw
-                      break
-
-                case "music-play":
-                      newsw = "playing"
-                      item.play()
-                      resp['musicstatus'] = newsw
-                      break
-
-                case "music-stop":
-                      newsw = "stopped"
-                      item.stop()
-                      resp['musicstatus'] = newsw
-                      break
-
-                case "music-pause":
-                      newsw = "paused"
-                      item.pause()
-                      resp['musicstatus'] = newsw
-                      break
-
-                case "music-previous":
-                      item.previousTrack()
-                      resp['track'] = item.currentValue("trackDescription")
-                      break
-
-                case "music-next":
-                      item.nextTrack()
-                      resp['track'] = item.currentValue("trackDescription")
-                      break
-            }
+        } else if ( subid=="level-up" || swattr.contains("level-up") ) {
+            newsw = cmd.toInteger()
+            newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
+            item.setLevel(newsw)
+            resp['level'] = newsw
+        } else if ( subid=="level-dn" || swattr.contains("level-dn") ) {
+            newsw = cmd.toInteger()
+            def del = (newsw % 5) == 0 ? 5 : newsw % 5
+            newsw = (newsw <= 5) ? 5 : newsw - del
+            item.setLevel(newsw)
+            resp['level'] = newsw
+        } else if ( subid=="level" || swattr.contains("level") ) {
+            newsw = cmd.toInteger()
+            item.setLevel(newsw)
+            resp['level'] = newsw
+        } else if ( subid=="music-play" || swattr.contains("music-play") ) {
+            newsw = "playing"
+            item.play()
+            resp['musicstatus'] = newsw
+        } else if ( subid=="music-stop" || swattr.contains("music-stop") ) {
+            newsw = "stopped"
+            item.stop()
+            resp['musicstatus'] = newsw
+        } else if ( subid=="music-pause" || swattr.contains("music-pause") ) {
+            newsw = "paused"
+            item.pause()
+            resp['musicstatus'] = newsw
+        } else if ( subid=="music-previous" || swattr.contains("music-previous") ) {
+            item.previousTrack()
+            resp['track'] = item.currentValue("trackDescription")
+        } else if ( subid=="music-next" || swattr.contains("music-next") ) {
+            item.nextTrack()
+            resp['track'] = item.currentValue("trackDescription")
+        } else if ( cmd && item.hasCommand(cmd) ) {
+            item."$cmd"()
         }
+         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
     return resp
 }
