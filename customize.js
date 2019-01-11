@@ -589,8 +589,8 @@ function initExistingFields(idx) {
     $("#cm_userfield").prop("value",results.firstitem);
     $("#cm_userfield").val(results.firstitem);
     
-    $("#cm_userfield").off('change');
-    $("#cm_userfield").on('change', function(event) {
+    $("#cm_userfield").off('input');
+    $("#cm_userfield").on('input', function(event) {
         var subid = $("#cm_userfield").val();
         console.log("subid = " + subid);
         

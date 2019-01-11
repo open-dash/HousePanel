@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.953      Fix room delete bug - thanks to @hefman for flagging this
  * 1.952      Finalize GUI for tile customization (wicked cool)
  *            - fix bug in Music player for controls
  *            - revert to old light treatment in Hubitat
@@ -171,7 +172,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.952');
+define('HPVERSION', 'Version 1.953');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1586,7 +1587,10 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
         $tc.= "<form title=\"" . $roomtitle . "\" action=\"#\">";
         
         // add room index to the id so can be style by number and names can duplicate
-        $tc.= "<div id=\"panel-$kroom\" title=\"" . $roomtitle . "\" class=\"panel panel-$kroom panel-$roomname\">";
+        // no longer use room number for id since it can change around
+        // switched this to name - not used anyway other than manual custom user styling
+        // if one really wants to style by room number use the class which includes it
+        $tc.= "<div id=\"panel-$roomname\" title=\"" . $roomtitle . "\" class=\"panel panel-$kroom panel-$roomname\">";
         // $tc.= hidden("panelname",$keyword);
 
         $thiscnt = 0;
@@ -2606,15 +2610,16 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         
         $tc.="<td>$hubStr</td>";
 
-        // loop through all the rooms in proper order
-        // add the order to the thingid to use later
-        for ($k=0; $k < count($roomoptions); $k++) {
+        // loop through all the rooms
+        // this addresses room bug
+        // for ($k=0; $k < count($roomoptions); $k++) {
+        foreach ($roomoptions as $roomname => $k) {
             
             // get the name of this room for this oclumn
-            $roomname = array_search($k, $roomoptions);
+            // $roomname = array_search($k, $roomoptions);
             // $roomlist = array_keys($roomoptions, $k);
             // $roomname = $roomlist[0];
-            if ( $roomname && array_key_exists($roomname, $thingoptions) ) {
+            if ( array_key_exists($roomname, $thingoptions) ) {
                 $things = $thingoptions[$roomname];
                                 
                 // now check for whether this thing is in this room
@@ -2746,20 +2751,17 @@ function delPage($pagenum, $pagename) {
     
     $pagenum = intval($pagenum);
     $options = readOptions();
-    $retcode = "error $pagenum = $pagename";
 
-    // check if room exists and number matches
+    // check if room exists - ignore number matches
     if ( array_key_exists($pagename, $options["rooms"]) &&
-         intval($options["rooms"][$pagename]) === $pagenum &&
          array_key_exists($pagename, $options["things"]) ) {
 
         unset( $options["rooms"][$pagename] );
         unset( $options["things"][$pagename] );
-        
-        $retcode = "success";
         writeOptions($options);
+        $retcode = "success";
     } else {
-        $retcode .= " = " . $options["rooms"][$pagename];
+        $retcode = "error - cannot find $pagename to delete.";
     }
     return $retcode;
 }
@@ -2768,13 +2770,15 @@ function addPage() {
     
     $pagenum = 0;
     $options = readOptions();
+    
+    // get the largest room number
     foreach ($options["rooms"] as $roomname => $roomnum ) {
         $roomnum = intval($roomnum);
         $pagenum = $roomnum > $pagenum ? $roomnum : $pagenum;
     }
     $pagenum++;
 
-    $clockid = $options["index"]["clock|clockdigital"];
+    // get new room default name in sequential order
     $newname = "Newroom1";
     $num = 1;
     while ( array_key_exists($newname, $options["rooms"]) ) {
@@ -2783,6 +2787,9 @@ function addPage() {
     }
     $options["rooms"][$newname] = $pagenum;
     $options["things"][$newname] = array();
+    
+    // put a digital clock in all new rooms so they are not empty
+    $clockid = $options["index"]["clock|clockdigital"];
     $options["things"][$newname][] = array($clockid, 0, 0, 1, "");
     writeOptions($options);
     
@@ -3038,27 +3045,6 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
         $tc.="</div>";
     }
     return $tc;
-}
-
-function editPage($pagenum, $pagename) {
-    
-    $options = readOptions();
-    $oldname = array_search($pagenum, $options["rooms"]);
-    if ( $oldname && $pagename ) {
-        $retcode = "success";
-        $roomthings = $options["things"][$oldname];
-        unset( $options["rooms"][$oldname] );
-        unset( $options["things"][$oldname] );
-        $options["rooms"][$pagename] = $pagenum;
-        $options["things"][$pagename] = $roomthings;
-        $prooms = $options["rooms"];
-        asort($prooms);
-        $options["rooms"] = $prooms;
-        writeOptions($options);
-    } else {
-        $retcode = "error - page not found";
-    }
-    return $retcode;
 }
 
 function changePageName($oldname, $pagename) {
@@ -3848,16 +3834,6 @@ function is_ssl() {
                 echo $retcode;
                 break;
             
-            // modify name of an existing page
-            case "pageedit":
-                if ( $swid && $swval ) {
-                    $retcode = editPage($swid, $swval);
-                } else {
-                    $retcode = "error - invalid parameters for tile delete function";
-                }
-                echo $retcode;
-                break;
-                
             case "getcatalog":
                 $allthings = getAllThings();
                 echo getCatalog($allthings);
@@ -4199,12 +4175,7 @@ function is_ssl() {
             $tc.= '<div id="tabs"><ul id="roomtabs">';
             // show all room with whatever index number assuming unique
             foreach ($roomoptions as $room => $k) {
-
-                // get name of the room in this column
-                // $room = array_search($k, $roomoptions);
-
-                // use the list of things in this room
-                if ($room) {
+                if ( array_key_exists($room, $thingoptions)) {
                     $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
                 }
             }
@@ -4214,10 +4185,10 @@ function is_ssl() {
 
             // changed this to show rooms in the order listed
             // this is so we just need to rewrite order to make sortable permanent
-            foreach ($roomoptions as $room => $kroom) {
-                if ( key_exists($room, $thingoptions)) {
+            foreach ($roomoptions as $room => $k) {
+                if ( array_key_exists($room, $thingoptions)) {
                     $things = $thingoptions[$room];
-                    $tc.= getNewPage($cnt, $allthings, $room, $kroom, $things, $indexoptions, $kioskmode);
+                    $tc.= getNewPage($cnt, $allthings, $room, $k, $things, $indexoptions, $kioskmode);
                 }
             }
             
@@ -4241,7 +4212,6 @@ function is_ssl() {
             if ( !$kioskmode ) {
                 $tc.= "<div id=\"controlpanel\">";
                 $tc.='<div id="showoptions" class="formbutton">Options</div>';
-                // $tc.='<div id="editpage" class="formbutton">Edit Tabs</div>';
                 $tc.='<div id="refresh" class="formbutton">Refresh</div>';
                 $tc.='<div id="refactor" class="formbutton confirm">Reset</div>';
                 $tc.='<div id="reauth" class="formbutton confirm">Re-Auth</div>';

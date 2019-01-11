@@ -331,13 +331,23 @@ function initDialogBinds(str_type, thingindex) {
 
         var newname = $("#editName").val();
         $(target1).html(newname);
-        // addCSSRule(target2, "content: " + newname + ";" );
-        // event.stopPropagation;
+        cm_Globals.reload = true;
+    });
+    
+    // new button to process the name change
+    $("#editName").on('change', function () {
+        var newname = $("#editName").val();
+        $(target1).html(newname);
+        cm_Globals.reload = true;
+        saveTileEdit(str_type, thingindex, newname);
+        event.stopPropagation;
     });
     
     // new button to process the name change
     $("#processName").on("click", function (event) {
         var newname = $("#editName").val();
+        $(target1).html(newname);
+        cm_Globals.reload = true;
         saveTileEdit(str_type, thingindex, newname);
         event.stopPropagation;
     });
