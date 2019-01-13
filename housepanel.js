@@ -79,7 +79,13 @@ $(document).ready(function() {
     if ( defaultTab ) {
         try {
             $("#"+defaultTab).click();
-        } catch (e) {}
+        } catch (e) {
+            defaultTab = $("#roomtabs").children().first().attr("aria-labelledby");
+            setCookie('defaultTab', defaultTab, 30);
+            try {
+                $("#"+defaultTab).click();
+            } catch (f) {}
+        }
     }
 
     // hide the skin and 
@@ -957,11 +963,84 @@ function setupButtons() {
                 }
             });
             $(target).removeClass("hidden");
+            $("#newthingcount").html("");
+        });
+        
+        // handle auth submissions
+        // add on one time info from user
+        $("input.hubauth").click(function(evt) {
+            var hubnum = $(this).attr("hub");
+//            var request = new XMLHttpRequest();
+//            request.open("POST", returnURL, false);
+            var myform = document.getElementById("hubform_"+hubnum);
+            var formData = new FormData(myform);
+            
+            var tz = $("#newtimezone").val();
+            var skindir = $("#newskindir").val();
+            var uname = $("#uname").val();
+            var pword = $("#pword").val();
+            var kiosk = "false";
+            var attrdata = {timezone: tz, skindir: skindir, uname: uname, pword: pword, kiosk: kiosk};
+            console.log ( attrdata );
+
+            // **********************************************
+            // TODO - add input checking
+            // **********************************************
+            
+            formData.append("timezone", tz);
+            formData.append("skindir", skindir);
+            formData.append("uname", uname);
+            formData.append("pword", pword);
+            formData.append("use_kiosk", kiosk);
+            var defhub = formData.get("hubnum");
+            var hubHost = formData.get("hubHost");
+            var clientId = formData.get("clientId");
+
+            // console.log ( myform );
+            // alert("hubHost= " + formData.get("hubHost"));
+            // netbeans thinks this is bad js syntax but it isn't
+            var values = {};
+            for (var vals of formData.entries()) {
+                var key = vals[0];
+                values[key] = vals[1];
+            }
+            console.log( values );
+            $.post(returnURL, values, function(presult, pstatus) {
+                console.log( presult );
+                var obj = presult;
+                if ( obj.action === "things" ) {
+                    var ntc = "Hub #" + defhub + " was authorized and " + obj.count + " devices were retrieved.";
+                    $("#newthingcount").html(ntc);
+                }
+
+                // if oauth flow then start the process
+                if ( obj.action === "oauth" ) {
+                    var nvpreq= "response_type=code&client_id=" + encodeURI(clientId) + "&scope=app&redirect_uri=" + encodeURI(returnURL);
+                    var location = hubHost + "/oauth/authorize?" + nvpreq;
+                    window.location.href = location;
+                }
+            },"json");
+            // request.send(formData);
+            
+                        
+            
+            evt.stopPropagation(); 
         });
 
         $("#cancelauth").click(function(evt) {
+            var tz = $("#newtimezone").val();
+            var skindir = $("#newskindir").val();
+            var uname = $("#uname").val();
+            var pword = $("#pword").val();
+            var kiosk = $("#use_kiosk").val();
+
+            // **********************************************
+            // TODO - add input checking
+            // **********************************************
+            
+            var attrdata = {timezone: tz, skindir: skindir, uname: uname, pword: pword, kiosk: kiosk};
             $.post(returnURL, 
-                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: "none"},
+                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
                 function (presult, pstatus) {
                     if (pstatus==="success" && presult==="success") {
                         window.location.href = returnURL;
@@ -1803,6 +1882,12 @@ function setupPage(trigger) {
         // handle music commands
         if ( subid.startsWith("music-" ) ) {
             thevalue = subid.substring(6);
+        }
+        
+        // doors only use value field when used in the api
+        // switches used to work like this - TODO - change doors in groovy code
+        if ( thetype=="door" && subid=="door" ) {
+            thevalue = "";
         }
         
         // check for companion sibling element for handling customizations

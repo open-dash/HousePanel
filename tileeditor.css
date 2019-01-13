@@ -42,9 +42,25 @@ div.greetingopts div {
     margin-bottom: 10px;
 }
 div.greetingopts div.hubopt {
-    margin-top: 20px; margin-bottom: 20px;
+    margin-top: 0px;
+    margin-bottom: 0px;
     width: 1020px;
-    border-bottom: 2px solid black;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border: 2px solid black;
+    border-bottom: none;
+    background-color: #ccffff;
+}
+#newthingcount {
+    width: 1020px; height: 30px;
+    border: 2px solid black;
+    border-bottom: none;
+    background-color: #eeeeee;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 0px;
 }
 
 #showdocs {
@@ -78,7 +94,8 @@ label.highlight {
     color: #ffffee;
 }
 
-div.authhub {
+div.greetingopts div.authhub {
+    margin-top: 0px;
     border: 2px solid black;
     background-color: rgba(240, 240, 220, 1);
     width: 1020px;
@@ -410,7 +427,7 @@ div.returninfo a {
 }
 span.typeopt {
     font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;
-    color: #666666;
+    color: #666666; margin-left: 5px;
 }
 div.processoptions {
     margin-left: 0px; margin-top: 0px;    
