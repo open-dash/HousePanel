@@ -1724,7 +1724,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
     }
     
     // for music and lock tiles, wait few seconds and refresh again to get new info
-    if (thetype==="music" || thetype==="lock") {
+    if (thetype==="music") {
         setTimeout(function() {
             refreshTile(aid, bid, thetype, hubnum);
         }, 3000);
@@ -1882,12 +1882,6 @@ function setupPage(trigger) {
         // handle music commands
         if ( subid.startsWith("music-" ) ) {
             thevalue = subid.substring(6);
-        }
-        
-        // doors only use value field when used in the api
-        // switches used to work like this - TODO - change doors in groovy code
-        if ( thetype=="door" && subid=="door" ) {
-            thevalue = "";
         }
         
         // check for companion sibling element for handling customizations

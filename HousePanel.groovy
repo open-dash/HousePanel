@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
  * 01/05/2019 - fix music controls to work again after separating icons out
  * 12/01/2018 - hub prefix option implemented for unique tiles with multiple hubs
  * 11/21/2018 - add routine to return location name
@@ -337,7 +338,7 @@ def setOther(swid, cmd, attr, subid ) {
     }
     
     else if ( subid == "switch" ) {
-        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr)
+        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr, subid)
         resp = onoff ? [switch: onoff] : false
     }
     return resp
@@ -701,10 +702,6 @@ def doAction() {
     def cmdresult = false
     // sendLocationEvent( [name: "housepanel", value: "touch", isStateChange:true, displayed:true, data: [id: swid, type: swtype, attr: swattr, cmd: cmd] ] )
    
-    if ( dologging ) {
-        log.debug "doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid"
-    }
-
     // get the type if auto is set
     if (swtype=="auto" || swtype=="none" || swtype=="") {
         swtype = autoType(swid)
@@ -712,27 +709,27 @@ def doAction() {
 
     switch (swtype) {
       case "switch" :
-      	 cmdresult = setSwitch(swid, cmd, swattr)
+      	 cmdresult = setSwitch(swid, cmd, swattr, subid)
          break
          
       case "bulb" :
-      	 cmdresult = setBulb(swid, cmd, swattr)
+      	 cmdresult = setBulb(swid, cmd, swattr, subid)
          break
          
       case "light" :
-      	 cmdresult = setLight(swid, cmd, swattr)
+      	 cmdresult = setLight(swid, cmd, swattr, subid)
          break
          
       case "switchlevel" :
-         cmdresult = setDimmer(swid, cmd, swattr)
+         cmdresult = setDimmer(swid, cmd, swattr, subid)
          break
          
       case "momentary" :
-         cmdresult = setMomentary(swid, cmd, swattr)
+         cmdresult = setMomentary(swid, cmd, swatt, subid)
          break
       
       case "lock" :
-         cmdresult = setLock(swid, cmd, swattr)
+         cmdresult = setLock(swid, cmd, swattr, subid)
          break
          
       case "thermostat" :
@@ -745,23 +742,23 @@ def doAction() {
          
       // note: this requires a special handler for motion to manually set it
       case "motion" :
-    	cmdresult = setSensor(swid, cmd, swattr)
+    	cmdresult = setSensor(swid, cmd, swattr, subid)
         break
 
       case "mode" :
-         cmdresult = setMode(swid, cmd, swattr)
+         cmdresult = setMode(swid, cmd, swattr, subid)
          break
          
       case "shm" :
-         cmdresult = setSHMState(swid, cmd, swattr)
+         cmdresult = setSHMState(swid, cmd, swattr, subid)
          break
 		 
       case "valve" :
-      	 cmdresult = setValve(swid, cmd, swattr)
+      	 cmdresult = setValve(swid, cmd, swattr, subid)
          break
 
       case "door" :
-      	 cmdresult = setDoor(swid, cmd, swattr)
+      	 cmdresult = setDoor(swid, cmd, swattr, subid)
          break
 
       case "piston" :
@@ -772,7 +769,7 @@ def doAction() {
          break;
       
       case "routine" :
-        cmdresult = setRoutine(swid, cmd, swattr)
+        cmdresult = setRoutine(swid, cmd, swattr, subid)
         break;
         
       case "other" :
@@ -782,7 +779,7 @@ def doAction() {
     }
    
     if ( dologging ) {
-        log.debug "doAction: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult"
+        log.debug "doAction: cmd= $cmd type= $swtype id= $swid attr= $swattr subid= $subid cmdresult= $cmdresult"
     }
     return cmdresult
 
@@ -794,7 +791,7 @@ def doQuery() {
     def swtype = params.swtype
     def cmdresult = false
 
-	// get the type if auto is set
+    // get the type if auto is set
     if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
         swtype = autoType(swid)
     }
@@ -889,46 +886,51 @@ def doQuery() {
     }
    
     if ( dologging ) {
-        log.debug "doQuery: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult"
+        log.debug "doQuery: type = $swtype id = $swid result = $cmdresult"
     }
     return cmdresult
 }
 
 // changed these to just return values of entire tile
-def setOnOff(items, itemtype, swid, cmd, swattr) {
+def setOnOff(items, itemtype, swid, cmd, swattr, subid) {
     def newonoff = false
     def item  = items.find {it.id == swid }
     if (item) {
-        if (cmd=="on" || cmd=="off") {
+        if ( subid=="switch" && swattr.endsWith("on") ) {
+            newonoff = "off"
+        } else if ( subid=="switch" && swattr.endsWith("off") ) {
+            newonoff = "on"
+        } else if (cmd=="on" || cmd=="off") {
             newonoff = cmd
         } else if ( cmd=="toggle" ) {
             newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
-        } else if ( swattr.endsWith("on") ) {
-            newonoff = "off"
-        } else if ( swattr.endsWith("off") ) {
-            newonoff = "on"
         } else {
             newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
         }
         newonoff=="on" ? item.on() : item.off()
     }
     return newonoff
-    
 }
 
-def setSwitch(swid, cmd, swattr) {
-    def onoff = setOnOff(myswitches, "switch", swid,cmd,swattr)
+def setSwitch(swid, cmd, swattr, subid) {
+    def onoff = setOnOff(myswitches, "switch", swid, cmd, swattr, subid)
     def resp = onoff ? [switch: onoff] : false
     return resp
 }
 
-def setDoor(swid, cmd, swattr) {
+def setDoor(swid, cmd, swattr, subid) {
     def newonoff
     def resp = false
     def item  = mydoors.find {it.id == swid }
     if (item) {
-        if (cmd=="open" || cmd=="close") {
+        if ( subid=="door" && ( swattr.endsWith("closed") || swattr.endsWith("closing") ) ) {
+            newonoff = "open";
+        } else if ( subid=="door" && ( swattr.endsWith("open") || swattr.endsWith("opening") ) ) {
+            newonoff = "closed";
+        } else if (cmd=="open") {
             newonoff = cmd
+        } else if (cmd=="close") {
+            newonoff = "closed"
         } else {
             newonoff = (item.currentValue("door")=="closed" ||
                         item.currentValue("door")=="closing" )  ? "open" : "closed"
@@ -943,7 +945,7 @@ def setDoor(swid, cmd, swattr) {
 }
 
 // special function to set motion status
-def setSensor(swid, cmd, swattr) {
+def setSensor(swid, cmd, swattr, subid) {
     def resp = false
     def newsw
     def item  = mysensors.find {it.id == swid }
@@ -963,22 +965,19 @@ def setSensor(swid, cmd, swattr) {
 }
 
 // replaced this code to treat bulbs as Hue lights with color controls
-def setBulb(swid, cmd, swattr) {
-    // def onoff = setOnOff(mybulbs, "bulb", swid,cmd,swattr)
-    def resp = setGenericLight(mybulbs, swid, cmd, swattr)
+def setBulb(swid, cmd, swattr, subid) {
+    def resp = setGenericLight(mybulbs, swid, cmd, swattr, subid)
     
     return resp
 }
 
 // changed these to just return values of entire tile
-def setLight(swid, cmd, swattr) {
-    // def onoff = setOnOff(mylights, "light", swid,cmd,swattr)
-    // def resp = onoff ? [light: onoff] : false
-    def resp = setGenericLight(mylights, swid, cmd, swattr)
+def setLight(swid, cmd, swattr, subid) {
+    def resp = setGenericLight(mylights, swid, cmd, swattr, subid)
     return resp
 }
 
-def setMode(swid, cmd, swattr) {
+def setMode(swid, cmd, swattr, subid) {
     def resp
     def themode = swattr.substring(swattr.lastIndexOf(" ")+1)
     def newsw = themode
@@ -994,7 +993,7 @@ def setMode(swid, cmd, swattr) {
     }
 
     if ( dologging ) {
-        log.debug "Mode changed from $themode to $newsw index = $idx "
+        log.debug "Mode changed from $themode to $newsw index = $idx subid = $subid"
     }
     location.setMode(newsw);
     resp =  [   name: swid, 
@@ -1005,7 +1004,7 @@ def setMode(swid, cmd, swattr) {
     return resp
 }
 
-def setSHMState(swid, cmd, swattr){
+def setSHMState(swid, cmd, swattr, subid){
     if (cmd == "away") sendLocationEvent(name: "alarmSystemStatus" , value : "away" )
     else if (cmd == "stay") sendLocationEvent(name: "alarmSystemStatus" , value : "stay" )
     else if (cmd == "off") sendLocationEvent(name: "alarmSystemStatus" , value : "off" )
@@ -1018,12 +1017,12 @@ def setSHMState(swid, cmd, swattr){
     return resp
 }
 
-def setDimmer(swid, cmd, swattr) {
-    def resp = setGenericLight(mydimmers, swid, cmd, swattr)
+def setDimmer(swid, cmd, swattr, subid) {
+    def resp = setGenericLight(mydimmers, swid, cmd, swattr, subid)
     return resp
 }
 
-def setGenericLight(mythings, swid, cmd, swattr) {
+def setGenericLight(mythings, swid, cmd, swattr, subid) {
     def resp = false
 
     def item  = mythings.find {it.id == swid }
@@ -1037,14 +1036,14 @@ def setGenericLight(mythings, swid, cmd, swattr) {
     
         def newonoff = item.currentValue("switch")
         if ( dologging ) {
-            log.debug "setGenericLight: swid = $swid cmd = $cmd swattr = $swattr"
+            log.debug "setGenericLight: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
         }
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
-        if ( swattr.endsWith(" on" ) ) {
+        if ( subid=="switch" && swattr.endsWith(" on" ) ) {
             swattr = "on"
-        } else if ( swattr.endsWith(" off" ) ) {
+        } else if ( subid=="switch" && swattr.endsWith(" off" ) ) {
             swattr = "off"
         }
         
@@ -1263,31 +1262,27 @@ def hsv2rgb(h, s, v) {
   return "#"+rhex+ghex+bhex
 }
 
-def setMomentary(swid, cmd, swattr) {
+def setMomentary(swid, cmd, swattr, subid) {
     def resp = false
 
     def item  = mymomentaries.find {it.id == swid }
     if (item) {
         if ( dologging ) {
-            log.debug "setMomentary: swid = $swid cmd = $cmd swattr = $swattr"
+            log.debug "setMomentary: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
         }
         def newsw = item.currentSwitch
         item.push()
         resp = getMomentary(swid, item)
-        // resp = [name: item.displayName, value: item.currentSwitch, id: swid, type: swtype]
     }
     return resp
 
 }
 
-def setLock(swid, cmd, swattr) {
+def setLock(swid, cmd, swattr, subid) {
     def resp = false
     def newsw
     def item  = mylocks.find {it.id == swid }
-    
-    if ( dologging ) {
-        log.debug "setLock: swid = $swid cmd = $cmd swattr = $swattr"
-    }
+
     if (item) {
         if (cmd=="toggle") {
             newsw = item.currentLock=="locked" ? "unlocked" : "locked"
@@ -1296,12 +1291,16 @@ def setLock(swid, cmd, swattr) {
             } else {
                item.unlock()
             }
+        } else if ( subid=="lock" && swattr.endsWith("unlocked") ) {
+            item.lock()
+            newsw = "locked";
+        } else if ( subid=="lock" && swattr.endsWith("locked") ) {
+            item.unlock()
+            newsw = "unlocked";
         } else if ( cmd=="unknown" ) {
             newsw = item.currentLock
-//    	    log.debug "Ignoring unknown status..."
         } else if ( cmd=="move" ) {
             newsw = item.currentLock
-//    	    log.debug "Ignoring move command for lock..."
         } else if (cmd=="unlock") {
             item.unlock()
             newsw = "unlocked"
@@ -1314,22 +1313,37 @@ def setLock(swid, cmd, swattr) {
     return resp
 
 }
-def setValve(swid, cmd, swattr) {
+def setValve(swid, cmd, swattr, subid) {
     def resp = false
-    def newsw
     def item  = myvalves.find {it.id == swid }
     if (item) {
-        if (cmd!="open" && cmd!="close") {
-            cmd = item.currentValue=="closed" ? "open" : "close"
-        }
-        if (cmd=="open") {
-            item.open()
-            newsw = "open"
-        } else {
+        def newsw = item.currentValue
+        if ( subid=="valve" && swattr.endsWith("open") ) {
             item.close()
-            newsw = "closed"
+        } else if ( subid=="valve" && swattr.endsWith("closed") ) {
+            item.open()
+        } else if ( subid=="switch" && swattr.endsWith("on") ) {
+            item.off()
+        } else if ( subid=="switch" && swattr.endsWith("off") ) {
+            item.on()
+        } else if (cmd=="open") {
+            item.open()
+        } else if (cmd=="close") {
+            item.close()
+        } else if (cmd=="on") {
+            item.on()
+        } else if (cmd=="off") {
+            item.off()
+        } else if ( subid.startsWith("_") ) {
+            subid = subid.substring(1)
+            resp = [:]
+            if ( item.hasCommand(subid) ) {
+                item."$subid"()
+            }
         }
-        resp = [valve: newsw]
+     
+//        resp = [valve: newsw]
+        resp = getThing(myvalves, swid, item)
     }
     return resp
 }
@@ -1342,9 +1356,6 @@ def setThermostat(swid, curtemp, swattr, subid) {
     def cmd = curtemp
     def item  = mythermostats.find {it.id == swid }
     if (item) {
-    if ( dologging ) {
-        log.debug "setThermostat: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
-    }
         
           resp = getThermostat(swid, item)
           // switch (swattr) {
@@ -1512,9 +1523,6 @@ def setMusic(swid, cmd, swattr, subid) {
     def item  = mymusics.find {it.id == swid }
     def newsw
     if (item) {
-    if ( dologging ) {
-        log.debug "setMusic: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
-    }
         resp = getMusic(swid, item)
         
         // fix old bug from addition of extra class stuff
@@ -1568,10 +1576,12 @@ def setMusic(swid, cmd, swattr, subid) {
     return resp
 }
 
-def setRoutine(swid, cmd, swattr) {
+def setRoutine(swid, cmd, swattr, subid) {
     def routine = location.helloHome?.getPhrases().find{ it.id == swid }
-    if (routine) {
+    if (subid=="label" && routine) {
         location.helloHome?.execute(routine.label)
+    } else if (cmd) {
+        location.helloHome?.execute(cmd)
     }
     return routine
 }

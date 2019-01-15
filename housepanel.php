@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.961      Important bug fixes to groovy code for switches, locks, valves
  * 1.960      New username feature and change how auth dialog box works
  *            - fixed error in door controller
  * 1.953      Fix room delete bug - thanks to @hefman for flagging this
