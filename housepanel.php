@@ -7,6 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.962      Bring Hubitat and SmartThigns groovy files into sync with each other
+ *            and in the process found a few minor bugs and fixed them
  * 1.961      Important bug fixes to groovy code for switches, locks, valves
  * 1.960      New username feature and change how auth dialog box works
  *            - fixed error in door controller
@@ -175,7 +177,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.961');
+define('HPVERSION', 'Version 1.962');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
