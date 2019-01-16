@@ -887,7 +887,7 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
     
     // tileEdit display on the far right side 
     dialog_html += "<div id='tileDisplay' class='tileDisplay'>";
-    dialog_html += "<div id='editInfo' class='editInfo'>Click to Select or Change State</div>";
+    dialog_html += "<div id='editInfo' class='editInfo'>Select or Change State</div>";
     
     // we either use the passed in content or make an Ajax call to get the content
     var jqxhr = null;

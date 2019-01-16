@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018, 2019</i><br/>
-<i>Version 1.952 as of January 6, 2019</i>
+<i>Version 1.964 as of January 16, 2019</i>
 </p>
 </div>
 
@@ -24,16 +24,26 @@ House Panel Open Source Web App for SmartThings and Hubitat<br/>
 
     
 <h1>Introduction</h1>
-<p>HousePanel (HP) is the highly customizable open source
+<p>HousePanel (HP) is a user-hosted (typically local) highly customizable open source
 web application dashboard for accessing and
 controlling a SmartThings or Hubitat equipped smart home from a Tablet, 
 Computer, or even Smart Phone.</p>
 
+<a href="https://github.com/kewashi/HousePanel" target="_blank">Download</a> a copy of 
+HousePanel from the <a href="https://github.com/kewashi/HousePanel" target="_blank">
+    HousePanel GitHub repository here.</a>
+
 <p>HP is designed to give the user full control over the look and feel of their panel controller.
 It does require some effort to install and configure, but once set up, making fine tunings
 and adjustments are relatively simple.  Most customizations can be done from within
-the built-in web-based user interface, which includes a full featured tile editor, but
-major modifications involve editing a CSS file using industry standard protocols.</p>
+the built-in web-based user interface, which includes a full featured tile editor and
+a tile customizer for modifying content shown on any tile. Power users can also make
+major modifications by editing a CSS file using industry standard protocols.</p>
+
+<p>HousePanel now supports multiple user configurations. Any number of users
+    can be defined with their own password. Each user's setup can be customized
+    individually to meet their needs. When a user logs in, only their configuration
+    will be shown on the tablet.</p>
 
 <p>HP runs on a customer-provided web server and does not expose your personal data
 nor any details about your environment to the developer or any other party.
@@ -54,7 +64,7 @@ ecosystem, including:
     <li>switches 
     <li>dimmers 
     <li>bulbs 
-    <li>lights 
+    <li>lights (deprecated)
     <li>momentary buttons
     <li>contact
     <li>doors 
@@ -78,7 +88,7 @@ A number of special tiles are also supported, including:
     <li>mode
     <li>routines
     <li>weather
-    <li>forecast (frame)
+    <li>frame (great for weather forecasts)
     <li>WebCoRE pistons,
     <li>video
     <li>custom
@@ -361,26 +371,8 @@ hubs can be connected to the panel. Hooks are there for Wink and OpenHab support
 come with time. I'm excited about this because I wrote this generally enough to 
 make future hub bindings easy to add.<br/><br/>
 
-Other updates included in Version 1.80 are:
-
-<ul>
-<li>New analog clock (uses the CoolClock javascript plugin)
-<li>Music tiles now work on the Hubitat side
-<li>Authentication flow on Hubitat now uses standard OAUTH
-    <ul>
-       <li>support both local and cloud end point flow options
-       <li>the API URL will dictate which version you get
-   </ul>
-<li>Info page now shows hub details for each connected hub
-<li>New graphics included for use in the Tile Editor
-<li>Squashed numerous bugs including a long-standing empty page bug
-</ul>
-
-If you are upgrading from a prior version, Version 1.80 implements a new format for the hmoptions.cfg file.  
-Code is included to read and translate an old hmoptions.cfg file but it is probably not perfect, 
-so you may need to redo some of your setup.<br/><br/>
-
 <h3>Install PHP Code on Web Server</h3>
+
 In this step you will install the PHP application by copying the
 files from the following GitHub into a directory of your choice:
 <br/><br/>
@@ -390,9 +382,19 @@ files from the following GitHub into a directory of your choice:
     <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
     </pre>
 </blockquote>
-<br/><br/>
+<br/>
 
-A typical place would be in its own directory called /housepanel. Be sure 
+If you used the new install script to set up your rPI, then this step is already done.
+<blockquote><pre>
+cd ~
+wget https://raw.githubusercontent.com/kewashi/HousePanel/master/install.sh
+bash ./install.sh
+ </pre></blockquote>
+
+Once you have done this you should be all set and ready to run HousePanel.
+The following is only if you want or need to do a manual install.<br /><br />
+
+A typical place to install HP is in its own directory called /housepanel. Be sure 
 to preserve the directory structure when you download and then upload the 
 files to your web server. Please ensure that you copy ALL of the files to
 your web server. The .groovy files, python examples, LICENSE, and README files are not 
@@ -418,38 +420,21 @@ and create this file, it will supercede any parameters you provide in the app.
 The following documentation is for legacy support reasons only
 and should simply be ignored by all new users.<br/><br/>
 
+<div style="color: #cccccc">
 The clientinfo.php file will look like this:<br/>
 
-<blockquote><pre>
+<pre>
 &lt;?php
 define('TIMEZONE', 'America/Detroit');
 define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
 define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
 define('ST_WEB','https://graph.api.smartthings.com');
-
-// define these to use a locally hosted Hubitat hub
-// the first is the Host IP number or name
-// the ID should replace ## and can be obtained from your hubitat login page
-// if you don't have a hubitat hub leave these set to false
 //define('HUBITAT_HOST',"http://192.168.1.50");
 //define('HUBITAT_ID',"##");
 //define('HUBITAT_ACCESS_TOKEN',"1234blahblahblah");
-
-// provide the access_token and endpt values below if your browser does not support cookies
-// this can also be used to skip the authentication step if you are operating in a secure internal environment
-// *** WARNING *** do not do this if your website is exposed to the world and discoverable via search
-//                              doing so will enable anyone in the world to control your home
-// the access_token and endpt information can be obtained by going through authentication once
-// and then loading your webpage using mypanel.com/housepanel.php?useajax=showid
-// this will return a page with the access_point and endpt data plus other info about your devices
-define('USER_ACCESS_TOKEN',FALSE);
-define('USER_ENDPT',FALSE);
-define('USER_SITENAME',FALSE);
-
-</pre></blockquote>
+</pre>
 <br/><br/>
 
-<div style="color: #cccccc">
 The first parameter to set is TIMEZONE to reflect where your house 
 is located. The times displayed will always be shown in this time zone.<br /><br />
 
@@ -474,15 +459,7 @@ If you want HousePanel to read your Hubitat devices, you must provide
 valid values for the following parameters: 
 HUBITAT_HOST, HUBITAT_ID, and HUBITAT_ACCESS_TOKEN. These are obtained
 from the Hubitat webpage on your mobile. The only tricky one is the last one
-which is displayed once you activate Hubitat..<br/><br/>
-
-For now you can ignore the last three variables. These will be discussed
-later when we explain how to customize HousePanel or how to use it as
-a <a href="www.ghostscript.com">GhostScript</a> endpoint or as a 
-generic SmartThings web service. The comments
-provided in the sample file above should give you a pretty good hint as to what
-these options are for and how they are used, but don't worry, we will
-explain this in detail later.
+which is displayed once you activate Hubitat.<br/><br/>
 </div>
 
 <h3>Set Server Permissions</h3>
@@ -515,9 +492,9 @@ and complete that step:<br/><br/>
     <li>and/or... HousePanelHubitat.groovy installed in your Hubitat IDE with OAUTH activated
     <li>known values of Client ID and Client Secret for all hubs you want to activate
     <li>known value of API host for all hubs you want to activate and Hub ID for Hubitat
-    <li>HousePanel files from https://github.com/kewashi/HousePanel uploaded to its own directory on your web server
+    <li>HousePanel files from <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a> uploaded to its own directory on your web server
     <li>the directory above configured to read/write using "chmod 777 yourdirectory"
-    <li>Web browser with javascrpt and cookies enabled
+    <li>HTML5 capable Web browser with javascrpt and cookies enabled
 </ul>
 <br/><br/>
 
@@ -551,16 +528,27 @@ If this happens, congratulations - you are ready to proceed.
 
 <h2>First Time Launch - Authenticating</h2>
 
-If you have used other Web-based SmartThings apps HousePanel should look familiar
-to you. The authentication page is where you provide your credentials.  It looks as follows:
+When you first launch HousePanel, the following authentication page 
+will be displayed for you to provide your credentials and other setup information:
 
 <div> <img src="authpage.png"> </div>
 
-This authentication page is where you will provide the API Url,
+The first input section is where you specify your timezone, your default skin
+directory, your username, and a password. If you don't want to use passwords
+to protect your panel, leave it blank. Empty passwords mean anyone with physical
+access to your home panel can load HousePanel and control your home.
+Multiple users can be defined, each with their own unique Username. If this
+is your first time running HP, use admin and proceed with authenticating your hubs.
+You can return to this page later to add additional usernames. When you add a new
+username later, you can skip the hub auth step and go to the Done button. For now,
+proceed with identifying your default main user (I recommend leaving it as admin)
+and giving a password. Then proceed with selecting your first hub and hub info below.<br><br>
+
+This authentication page is also where you will provide the API Url,
 Client ID and Client Secret information from the OAUTH settings noted earlier.
 Note that if you provided a clientinfo.php file, these values will be pre-populated.
-The Hub Name field is optional and will be filled in automatically for SmartThings.
-Hubitat does not support this so you might want to name your panel here.
+The Hub Name field is optional and will be filled in automatically for SmartThings
+and Hubitat.
 Hub ID is only used on the Hubitat side and then only if you want HP to automatically
 determine your user-provided end point. Most users can ignore this and use the
 normal OAUTH flow which doesn't use the Hub ID. <br/><br/>
@@ -726,12 +714,13 @@ Edit mode will look something like this:<br/><br/>
 
 <div><img src="editmode.png"></div>
 
-The green dots on the page tabs are used to edit the page names. The red dots are
+The green dots on the page tabs are used to edit the page in the Tile Editor. The red dots are
 clicked on to delete a page. Similar green and red dots are shown on each tile 
 for entering edit mode or to delete that tile. If you select a red dot to
 delete a tile or page, you will be prompted to confirm. Upon confirmation the tile will be
-removed from the room being displayed. If you select a green dot the Tile Editor will launch.
-Use of the tile editor is documented elsewhere. 
+removed from the room being displayed. If you select a green dot on a tile, the Tile Editor will launch.
+The blue dot will launch the Tile Customizer. 
+Tile Editor and Tile Customizer are documented in later sections.  
 
 <h2>Reorder Mode: Changing Order of Rooms and Tiles</h2>
 You can select Reorder mode to enable the reordering of tiles and rooms.
@@ -777,12 +766,18 @@ in this table.<br/><br/>
 
 <h1>Customizing HousePanel</h1>
 
-<h2>Styling Things Using TileEdit</h2>
+<h2>Styling Tiles Using TileEdit</h2>
 Some amazing work done by @nitwit in the SmartThings community inspired the
 development of a robust tile editor in HousePanel that can be used to modify
 the look of just about every element of every tile. To use the editor, select
 "Edit" mode in the radio buttons near the bottom of the page. Each tile will then
-show a green Edit link and a red Delete link. The Edit link will open the following editor page.
+show a green, blue, and red dots. 
+
+<div><img src="editdots.png"></div>
+
+Red will delete the tile,
+Blue will open the Tile Customizer described in the next section,
+and Green will open the following Tile Editor page.
 
 <div><img src="tileedit.png"></div>
 
@@ -814,8 +809,68 @@ and create a library of profiles for later use. There are lots of options here.
 If you want to customize your setup, you should make those custom edits in
 the housepanel.css file in your skins directory following the instructions below.
 
+<h2>Styling Pages Using Tile Editor</h2>
+Pages can now be edited using the Tile Editor, so strictly speaking the Tile
+Editor is now both a tile and a page editor. To use this feature click on the
+green dot next to a page tab when in Edit mode. When the editor launches for a page
+a simple box is shown with the name of the page and two links for styling
+the tab itself. The tab color when selected and when not selected can be changed
+here. You can also put an icon in the tab using this feature and change its outline.<br><br>
+
+If you select whole tile option then the page background image or color can be selected.
+You can also change the border, apply gradients, and other effects as you wish.
+You can also still manually edit page backgrounds in the CSS using the
+directions below.<br><br>
+
+<h2>Customizing Tile Content</h2>
+Tile content can also be altered using the built in Tile Customizer in HousePanel.
+To use the customizer, select "Edit" mode in the radio buttons near the bottom of the page. 
+Clicking on the blue circle will open the Tile Customizer page that looks as follows:
+
+<div><img src="customize.png"></div>
+
+The Custom Type option in the upper left is used to pick what type of customization
+you are performing. Four options are available: TEXT, POST, GET, PUT, URL, and LINK.
+TEXT links are used to add any user provided text to the tile. When adding anything
+to the tile, you must name the field in the User Field Name area on the left.
+You can also select an existing field, in which case your text will show up
+instead of the default behavior that this tile normally shows. Be careful with
+this feature because it can remove important functionality. Then again, this flexibility
+means you can make all sorts of creative effects.<br><br>
+
+POST, GET, and PUT types are used to add a user-specified web service to the tile
+being customized using the method selected. In the top of the right column, 
+enter a valid URL to the web service. You must also either pick the field 
+this will override OR give a new user-defined field name using the entry 
+box on the left. Click the "Add" button and this field will be added to the 
+list of "Existing Fields" shown on the left side of this dialog box. 
+You can mix and match this with any other addition.<br><br>
+
+URL types are similar to POST, GET, and PUT except it opens the given URL
+in a new window.<br><br>
+
+LINK types enable you to add any other field in any other tile in your smart home 
+to the tile being customized. In the top of the right column, select the tile to 
+link to, and then select which field of this tile to link into the customized tile 
+using the "Available Fields" list above on the right. Once you are happy with your 
+selection, click the "Add" button and this field will be added to the list of "Existing Fields" 
+shown on the left side of this dialog box. You can mix and match this with any other addition.
+Note that with LINK customizations the field name must be taken from the linked tile.
+This means you can only show one version of any pre-defined field. For example, if
+you link in a switch field from another tile, it will replace the existing switch field.
+And if you attempt to link in another switch field, it will overwrite any existing one.<br><br>
+
+The Tile Customizer is a powerful tool for making custom panels. The tile shown
+above for example was made by adding a switch, a slider, a smart home monitor,
+and a close time field to a blank tile. Once these fields are added they take on
+the style of their parent, but that can be modified using the Tile Editor 
+described in the prior section.
+
 <h2>Styling Things Using CSS</h2>
-The most important type of customization is performed by either creating your
+
+The following several sections are legacy methods for styling HousePanel. 
+These methods should only be used if you can't get the Tile Editor to do what you want.<br /><br />
+An important type of customization is performed by either creating your
 own custom style sheet or editing the provided one in the "skin-housepanel"
 directory. When you unpack or clone the master source files this directory
 will exist underneath the master root location where you installed
@@ -829,17 +884,6 @@ editor. That file will have many well designed defaults for most types of
 HTML classes and tags that you will find in the displayed webpage. In the
 following sections we define how you would alter some of these settings.
 
-<h3>Background Images on Tab Pages</h3>
-Pages can now be edited using the Tile Editor, so strictly speaking the Tile
-Editor is now both a tile and a page editor. When the editor launches for a page
-a simple box is shown with the name of the page and two links for styling
-the tab itself. The tab color when selected and when not selected can be changed
-here. If you select whole tile then the page background or color can be selected.
-You can also still manually edit page backgrounds in the CSS using the
-following directions. In fact, the following several sections are all holdover
-legacy methods for styling HousePanel. These methods should only be used
-if you can't get the Tile Editor to do what you want.<br /><br />
-
 All tabbed pages inherit the property of the "div.panel" style that is
 defined in the default CSS file. The default should look something like this:
 <br/><br/>
@@ -852,8 +896,6 @@ div.panel {
     position:relative;    background-repeat: no-repeat;
     background-position: left;
     box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-    -moz-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
-    -webkit-box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.50);
 }
 </pre></blockquote>
 <br/><br/>
@@ -1080,9 +1122,17 @@ div.clock.time
 </pre></blockquote>
 <br/><br/>
 
-Unfortunately the actual format of the sub-item fields cannot be modified, 
-without editing the source code, but
-their font, color, size, and placement are all fair game. The overall
+The actual format of the sub-item fields cannot be modified using CSS, 
+but it can be changed using the Tile Customizer by editing the 
+fmt_date and fmt_time fields. These fields are not displayed but contain
+text telling HousePanel how to format the date and time fields that
+are displayed. Their contents can be adjusted using the TEXT feature
+of the Tile Customizer. For example, you can specify "g:i:s" as the
+fmt_time field and time will show seconds and drop the AM/PM.
+The default fmt_time value is "g:i A"<br><br>
+
+The font, color, size, and placement are all fair game to change in the 
+Tile Editor. The overall
 tile size can be styled using div.thing.clock-thing. Finally
 this tile has a name bar just like all others, but by default it is
 hidden. It can be displayed and uniquely styled using the tag name of
@@ -1390,9 +1440,21 @@ because it will be more stable as you add and remove items.
 
 <h2>Manually Renaming, Adding and Deleting Pages</h2>
 
-Power users can also edit room names manually by editing the hmoption.cfg file. 
-You will find this file in the home directory of your HousePanel configuration. This
-file is a direct write of the room options in "json" format so care must
+NOTE: This is no longer necessary because pages can be edited now
+using the TileEditor, and multiple user configurations are handled automatically.
+The following instructions will still work
+for those wanting more fine grained control.<br><br>
+
+Power users can also edit room names manually by editing the hmoptions.cfg file
+and the default users hm_admin.cfg file. You will find these files in the 
+home directory of your HousePanel configuration. 
+If you are using multiple users, there will be a room configuration file
+for each user that contains a subset of the master hmoptions.cfg file.
+That user's file should be edited, not the master. The default user name is admin
+so if you are ignoring multiple users, edit the hm_admin.cfg file. Otherwise
+edit the hm_xxx.cfg file where xxx is the username's configuration you want to modify.<br><br>
+
+This file is a direct write of the room and thing options in "json" format so care must
 be taken to ensure that your edited file follows 
 strict "json" formatting rules. Note that this file will not exist on
 your local machine unless you download it first, because it is
@@ -1419,20 +1481,6 @@ The file looks like this.
     "Thermostats":6, 
     "Music":7
   },
-
-  "index": 
-  {
-    "routine|01234717-1234-1244-1234-abcd12341234":197,
-    "routine|12341234-abcd-1234-abcd-123412341234":193,
-    "switch|abcdabcd-1234-1234-abcd-123412341234":0,
-    "switch|1234abcd-1234-abcd-1234-abcd12341234":1,
-
-    ...
-
-    "image|img3":116,
-    "image|img4":117
-  },
-
   "things":
   {
     "Kitchen":[113,107,193,47,16,50,25,79,87,104,103,139,109,102,168],
@@ -1444,27 +1492,26 @@ The file looks like this.
     "Music":[60,63,64,68,70,99,100,101,166],
     "Thermostats":[102,167,168]
   },
-
-  "skin":"skin-housepanel"
-  "kiosk":"false"
 }    
 </pre></blockquote>
 <br/><br/>
 
 Actually, the "things" section now looks far more complex because it has
-tile location and custom names in each item. If you don't know how to preserve
-this then you should just stick with using the visual editor.
-The part not shown and represented by "..." is a long list of things with their
-corresponding unique hub ID's. These should not be edited manually.
-Finally, each item in the "things" list can be a single
-integer or an array of four integers plus a string. If the latter, the next two integers
-are offsets where the icon is physically displayed, the last integer is the z-index
+tile location and custom names in each item. The "rooms" info will be shown
+on a single line, and the "things" info will be shown on a second single line,
+so you need to preserve that too. If you don't know how to preserve
+this then you should just stick with using the visual TileEditor.<br><br>
+
+Each item in the "things" list can be a single
+integer or an array of four integers plus a string. 
+The first integer is the thing index in the master list. If there is an array then
+the next two integers are offsets where the icon is physically displayed, the last integer is the z-index
 and the string is the custom tile name. This is normally established
 dynamically when tiles are dragged around screen but the user is free to edit
-these in the hmoptions.cfg file if wanted.<br/><br/>
+these.<br/><br/>
 
 Important!!! Please be sure to confirm that your uploaded
-hmoptions.cfg file retains read/write privileges after you upload it.
+hm_xxx.cfg and hmoptions.cfg files retain read/write privileges after you upload it.
 Many FTP programs do not retain the permissions of files when they
 are overwritten. Once you have made this change, you will need to force
 a re-read of your things and the room configuration. The easiest way
@@ -1480,11 +1527,9 @@ Fully Kiosk Browser</a> for Android or Amazon Fire tablets. For iOS iPAD tablets
 have to research other options. You can also use Safari to then put the
 page on the iOS desktop to create a Kiosk effect. Once you have that then
 turning on kiosk mode will remove the Options button from the bottom of the
-options page. On the options page, type in "true" for the kiosk option text.
-Only this word "true" will be recognized to turn on kiosk mode. Any other word
-will leave the Options button active. Be aware that once you turn kiosk mode
-on the only way to turn it back off is to force HousePanel to display the
-options page again by entering:
+options page. On the options page, select the Kiosk option box.
+Be aware that once you turn kiosk mode on the only way to turn it back off 
+is to force HousePanel to display the options page again by entering:
 <br/><br/>
 
 <blockquote><pre>

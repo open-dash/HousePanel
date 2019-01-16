@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.964      Updated documentation and tweak CSS for Edge browser
  * 1.963      Improved user guidance for Hubitat installations
  * 1.962      Bring Hubitat and SmartThigns groovy files into sync with each other
  *            and in the process found a few minor bugs and fixed them
@@ -178,7 +179,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.963');
+define('HPVERSION', 'Version 1.964');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
