@@ -152,23 +152,32 @@ def configureHub() {
     }
     
     // get the cloud and local access points
-    def hubip;
+    def hubip
     def endpt
+    def installtype
     if ( cloudcalls ) {
         hubip = "https://oauth.cloud.hubitat.com";
         endpt = "${hubip}/${hubUID}/apps/${app.id}/"
-        log.debug "Cloud installation was requested and is reflected in the hubip and endpt above"
+        installtype = "Cloud"
     } else {
-        hubip = location.hubs[0].getDataValue("localIP")
+        hubip = "http://" + location.hubs[0].getDataValue("localIP")
         endpt = "${hubip}/apps/api/${app.id}/"
+        installtype = "Local"
     }
+    def hubname = location.getName()
 
-    log.debug "Use this information on the Auth page of House Panel."
-    log.debug "Hubitat IP = ${hubip}"
+    // write in reverse order so it looks right
+    log.debug "Endpoint = ${endpt}"
+    log.debug "Access Token = ${state.accessToken}"
     log.debug "Hub ID = ${app.id}"
-    log.debug "accessToken = ${state.accessToken}"
-    log.debug "Hubitat endpt = ${endpt}"
-
+    log.debug "Hub Name = ${hubname}"
+    log.debug "Fixed Endpoint = ${endpt} or leave blank to force reauth each time"
+    log.debug "Fixed Access Token = ${state.accessToken} or leave blank to force reauth each time"
+    log.debug "Client Secret: Get from the OAuth page"
+    log.debug "Client ID: Get from the OAuth page"
+    log.debug "API Url = ${hubip}"
+    log.debug "Use this information on the Auth page of House Panel."
+    log.debug "${installtype} installation was requested and is reflected in hubip and endpt"
 }
 
 def getSwitch(swid, item=null) {
