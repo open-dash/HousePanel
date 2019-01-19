@@ -598,17 +598,6 @@ div.custom.feelsLike::before {
     content: "Like: ";
     font-size: 8pt;
 }
-div.weather img, div.custom img {
-    margin-left: 15px;
-    margin-right: 15px;
-}
-div.weather.wind::before,
-div.custom.wind::before {
-    content: "Wind: ";
-}
-div.weather.wind::after {
-    content: " mph";
-}
 div.weather.humidity::before {
     content: "Humidity: ";
 }
@@ -624,7 +613,7 @@ div.custom.illuminance::after {
     content: " Lux";
 }
 div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
-div.weather.wind, div.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
+div.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: rgba(100, 100, 100, 1);
     margin-bottom: 0px;
     display: block;

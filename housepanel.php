@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.965      Restored weather icons using new mapping info
  * 1.964      Updated documentation and tweak CSS for Edge browser
  * 1.963      Improved user guidance for Hubitat installations
  * 1.962      Bring Hubitat and SmartThigns groovy files into sync with each other
@@ -179,7 +180,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.964');
+define('HPVERSION', 'Version 1.965');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1317,6 +1318,20 @@ function returnFrame($framename, $width, $height) {
     return $f;
 }
 
+function getWeatherIcon($num) {
+    $num = strval($num);
+    if ( strlen($num) < 2 ) {
+        $num = "0" . $num;
+    }
+    
+    // uncomment this to use ST's copy. Default is to use local copy
+    // so everything stays local
+    // $iconimg = "https://smartthings-twc-icons.s3.amazonaws.com/" . $num . ".png";
+    $iconimg = "media/weather/" . $num . ".png";
+    $iconstr = "<img src=\"$iconimg\" alt=\"$num\" width=\"80\" height=\"80\">";
+    return $iconstr;
+}
+
 // the primary tile generation function
 // all tiles on screen are created using this call
 // some special cases are handled such as clocks, weather, and video tiles
@@ -1397,21 +1412,17 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
         $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["temperature"], "temperature");
         $tc.= putElement($kindex, $i, 3, $thingtype, $thingvalue["feelsLike"], "feelsLike");
         $tc.= "</div>";
+        
+        // use new weather icon mapping
         $tc.= "<div class=\"weather_icons\">";
-        $wiconstr = $thingvalue["weatherIcon"];
-        if (substr($wiconstr,0,3) === "nt_") {
-            $wiconstr = substr($wiconstr,3);
-        }
-        $ficonstr = $thingvalue["forecastIcon"];
-        if (substr($ficonstr,0,3) === "nt_") {
-            $ficonstr = substr($ficonstr,3);
-        }
+        $wiconstr = getWeatherIcon($thingvalue["weatherIcon"]);
+        $ficonstr = getWeatherIcon($thingvalue["forecastIcon"]);
         $tc.= putElement($kindex, $i, 4, $thingtype, $wiconstr, "weatherIcon");
         $tc.= putElement($kindex, $i, 5, $thingtype, $ficonstr, "forecastIcon");
         $tc.= "</div>";
-        $tc.= putElement($kindex, $i, 7, $thingtype, "Sunrise: " . $thingvalue["localSunrise"], "localSunrise");
-        $tc.= putElement($kindex, $i, 8, $thingtype, "Sunset: " . $thingvalue["localSunset"], "localSunset");
         $tc.= putElement($kindex, $i, 6, $thingtype, "Sunrise: " . $thingvalue["localSunrise"] . " Sunset: " . $thingvalue["localSunset"], "sunriseset");
+        $tc.= putElement($kindex, $i, 7, $thingtype, $thingvalue["localSunrise"], "localSunrise");
+        $tc.= putElement($kindex, $i, 8, $thingtype, $thingvalue["localSunset"], "localSunset");
         $j = 9;
         foreach($thingvalue as $tkey => $tval) {
             if ($tkey!=="temperature" &&

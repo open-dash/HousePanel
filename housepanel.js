@@ -980,9 +980,6 @@ function setupButtons() {
             var uname = $("#uname").val();
             var pword = $("#pword").val();
             var kiosk = "false";
-            var attrdata = {timezone: tz, skindir: skindir, uname: uname, pword: pword, kiosk: kiosk};
-            console.log ( attrdata );
-
             // **********************************************
             // TODO - add input checking
             // **********************************************
@@ -1000,9 +997,19 @@ function setupButtons() {
             // alert("hubHost= " + formData.get("hubHost"));
             // netbeans thinks this is bad js syntax but it isn't
             var values = {};
-            for (var vals of formData.entries()) {
+//            for (var vals of formData.entries()) {
+//                var key = vals[0];
+//                values[key] = vals[1];
+//            }
+            // loop through results avoiding for/of since Netbeans doesn't know that language construct
+            // the above works too and is more elegant but it flags an editor error
+            var entries = formData.entries();
+            var result = entries.next();
+            while( !result.done ) {
+                var vals = result.value;
                 var key = vals[0];
                 values[key] = vals[1];
+                result = entries.next();
             }
             console.log( values );
             $.post(returnURL, values, function(presult, pstatus) {
@@ -1458,16 +1465,19 @@ function updateTile(aid, presult) {
                 value = fixTrack(value);
             }
             // handle weather icons
+            // updated to address new integer indexing method in ST
             else if ( key==="weatherIcon" || key==="forecastIcon") {
-                if ( value.substring(0,3) === "nt_") {
-                    value = value.substring(3);
-                }
                 if ( oldvalue != value ) {
                     $(targetid).removeClass(oldvalue);
                     $(targetid).addClass(value);
                 }
-//                value = "<img src=\"media/" + iconstr + ".png\" alt=\"" + iconstr + "\" width=\"60\" height=\"60\">";
-//                value += "<br />" + iconstr;
+                var icondigit = parseInt(value,10);
+                var iconstr = icondigit.toString();
+                if ( icondigit < 10 ) {
+                    iconstr = "0" + iconstr;
+                }
+                var iconimg = "media/weather/" + iconstr + ".png"
+                value = "<img src=\"" + iconimg + "\" alt=\"" + iconstr + "\" width=\"80\" height=\"80\">";
             } else if ( (key === "level" || key === "colorTemperature") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);

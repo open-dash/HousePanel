@@ -1398,7 +1398,7 @@ div.overlay.weatherIcon div.weather, div.overlay.forecastIcon div.weather {
     background-size: 80px;
     
     /* hide the icons for now until we figure out new format */
-    display: none;
+    /*display: none;*/
 }
 
 div.weather.forecastToday, div.weather.forecastTonight, div.weather.forecastTomorrow {
@@ -1442,15 +1442,14 @@ div.weather.feelsLike::before {
     content: "Like: ";
     font-size: 8pt;
 }
-div.weather img {
-    margin-left: 15px;
-    margin-right: 15px;
-}
 div.weather.wind::before {
     content: "Wind: ";
 }
 div.weather.wind::after {
     content: " mph";
+}
+div.weather.windVector::before {
+    content: "Wind: ";
 }
 div.weather.humidity::before {
     content: "Humidity: ";
@@ -1461,19 +1460,25 @@ div.weather.percentPrecip::before {
 div.weather.humidity::after, div.weather.percentPrecip::after {
     content: "%";
 }
-div.weather.illuminance::after {
-    content: " Lux";
+div.weather.illuminance::before {
+    content: "Lux: ";
+}
+div.weather.localSunrise::before {
+    content: "Sunrise: ";
+}
+div.weather.localSunset::before {
+    content: "Sunset: ";
 }
 div.weather.sunriseset {
     margin-top: 10px;
 }
 div.weather.sunriseset, div.weather.humidity,
-div.weather.wind, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
+div.weather.wind, div.weather.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: rgba(51, 51, 51, 1);
     margin: 0px;
 }
 div.weather.timeZoneOffset, div.weather.alertKeys,
-div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.sunriseset, div.weather.wind,
 div.weather.localSunrise, div.weather.localSunset,
 div.weather.ultravioletIndex, div.weather.lastUpdate {
     display: none;
