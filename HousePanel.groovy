@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/19/2019 - added power and begin prepping for push notifications
  * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
  * 01/05/2019 - fix music controls to work again after separating icons out
  * 12/01/2018 - hub prefix option implemented for unique tiles with multiple hubs
@@ -95,6 +96,7 @@ preferences {
     }
     section ("Music & Other Sensors") {
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
+        input "mypower", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
 }
@@ -130,7 +132,7 @@ def updated() {
 
 def initialize() {
     state.usepistons = usepistons
-    state.dologgin = dologging
+    state.dologging = dologging
     if ( state.usepistons ) {
         webCoRE_init()
     }
@@ -270,6 +272,10 @@ def getWeather(swid, item=null) {
 
 def getOther(swid, item=null) {
     getThing(myothers, swid, item)
+}
+
+def getPower(swid, item=null) {
+    getThing(mypower, swid, item)
 }
 
 def getmyMode(swid, item=null) {
@@ -436,6 +442,7 @@ def getAllThings() {
     resp = getOthers(resp)
     resp = getBlanks(resp)
     resp = getImages(resp)
+    resp = getPowers(resp)
 
     // optionally include pistons based on user option
     if (state.usepistons) {
@@ -664,6 +671,19 @@ def getOthers(resp) {
     return resp
 }
 
+def getPowers(resp) {
+    def n  = mypower ? mypower.size() : 0
+    if ( state.dologging ) {
+        log.debug "Number of selected power things = ${n}"
+    }
+    mypower?.each {
+        def thatid = it.id;
+        def multivalue = getThing(mypower, thatid, it)
+        resp << [name: it.displayName, id: thatid, value: multivalue, type: "power"]
+    }
+    return resp
+}
+
 def getHubInfo() {
     def resp =  [ sitename: location.getName(),
                   hubtype: "SmartThings" ]
@@ -691,6 +711,7 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
+    else if ( mypower?.find {it.id == swid } ) { swtype= "power" }
     else if ( swid=="${hubprefix}shm" ) { swtype= "shm" }
     else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
     else if ( swid=="${hubprefix}b1x1" || swid=="${hubprefix}b1x2" || swid=="${hubprefix}b2x1" || swid=="${hubprefix}b2x2" ) { swtype= "blank" }
@@ -889,6 +910,9 @@ def doQuery() {
     case "other" :
     	cmdresult = getOther(swid)
         break
+        
+    case "power":
+        cmdresult = getPower(swid)
         
     case "mode" :
         cmdresult = getmyMode(swid)

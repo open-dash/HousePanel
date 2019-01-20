@@ -228,39 +228,6 @@ div.panel {
     min-height: 600px;
 }
 
-div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {
-    background-image: url('media/family.jpg');
-}
-div.panel-Kitchen, div.panel-kitchen, div.panel-Dinette, div.panel-dinette {
-    background-image: url('media/kitchenroom.jpg');
-}
-div.panel-Living, div.panel-living, div.panel-Livingroom, div.panel-livingroom {
-    background-image: url('media/formal.jpg');
-}
-div.panel-Outside, div.panel-outside, div.panel-Garage, div.panel-garage {
-    background-image: url('media/outside.jpg');
-
-}
-div.panel-Office, div.panel-office, div.panel-Library, div.panel-library {
-    background-image: url('media/office.jpg');
-}
-div.panel-Bedroom, div.panel-bedroom, div.panel-Bedrooms, div.panel-bedrooms {
-    background-image: url('media/bedroom.jpg');
-}
-div.panel-Music, div.panel-music, div.panel-Theater, div.panel-theater, 
-div.panel-Entertainment {
-    background-image: url('media/music.jpg');
-
-}
-div.panel-Thermostats, div.panel-thermostats {
-    background-image: url('media/thermostat.jpg');
-}
-
-/* style the panel with all things listed */
-div.panel-All, div.panel-None, div.panel-Blank {
-    background-image: none;
-}
-
 /* formatting for endpoint mode query of access id information */
 table.showid {
     background-color: white;
@@ -693,7 +660,9 @@ table.headoptions {
 }
 table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
     border-bottom: 5px solid rgba(0, 0, 80, 1);    border-left: 1px solid #ffffff;
-    background-color: #3a5795;    color:#ffffff;
+    /*background-color: #3a5795;*/    
+    background-color: #757575;
+    color:#ffffff;
     font-weight: bold;    padding: 2px;    width: 100px;
     text-align: center;    line-height: 1.5;    height: 30px;
 }
@@ -773,17 +742,16 @@ input.submitbutton, input.resetbutton, input.authbutton, div.restoretabs, div.fo
     /* border-right: 4px solid rgba(0, 0, 0, 0.8); */
     /* background-color: #ababab; */
     /* font-size: 14pt; */
-    color: #757575;
-    background-color: #fff;
+    background-color: #757575;
     transition-duration: 0.5s;
     transition-property: background-color, color;
     border: none;
     cursor: pointer;
     display: inline-block;
     border-radius: 0.125em;
-    min-height: 1.5em;
-    padding: 0.5em 1.25em;
-    margin: 0 1em;
+    min-height: 2.5em;
+    padding: 0.5em 0.5em;
+    margin: 0 1em 0.5em 0;
     -webkit-box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
     box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 }
@@ -817,7 +785,8 @@ input.authbutton {
     margin-left: 10px;
 }
 input.submitbutton:hover, input.resetbutton:hover, 
-input.authbutton:hover, div.restoretabs:hover, .button-default:hover {
+input.authbutton:hover, div.restoretabs:hover, .button-default:hover,
+div.formbutton:hover {
     /*font-weight: bold;    color: #ffffff;
     border-left: 4px solid rgba(126, 126, 126, 0.8);
     border-bottom: 0px; 
@@ -892,15 +861,22 @@ div.lock, div.mode.themode, div.piston, div.valve, div.routine.label {
 }
 
 /* the name of the thing - must be after the above heights */
-div.thingname, div.thingname.motion, div.thingname.contact, 
+div.thing div.thingname, div.catalog-thing div.thingname,
+div.thingname.motion, div.thingname.contact, 
 div.thingname.lock, div.thingname.piston, div.thingname.temperature,
 div.routine {
     text-align: center;
+    background-color: rgba(50, 50, 50, 0.01);
     color: #ffffff;
     cursor: move;
     padding: 0.5em 0.75em;
     font-size: 1.25em;
 }
+
+div.thing div.thingname, div.catalog-thing div.thingname {
+    border: none;
+}
+
 div.thingname:hover {
     /*background-color: #5050a0; 
     color: #cccccc;*/
@@ -1489,23 +1465,6 @@ div.thing.blank-thing:hover {
     -webkit-transition-duration: .2s;*/
 }
 
-/* clock styling */
-div.thing.clock-thing {
-    height: 160px;
-    width: 246px;
-    cursor: move;
-}
-div.clock.weekday {
-    margin-top: 10px;
-    margin-bottom: 2px;
-}
-div.clock.time {
-    font-size: 36pt;
-    margin-top: 12px;
-}
-div.clock.tzone{
-    display:none;
-}
 
 /* mode and routine styling */
 div.thing.mode-thing {
@@ -2132,6 +2091,11 @@ div.switch.power, div.switch.energy {
 .radioopts {
     margin: 1em;
 }
+div.modeoptions {
+    background-color: #757575;
+    padding-top: 0px;
+    height: 50px;
+}
 
 .overlay.level, .overlay.colorTemperature {
     padding: 0 1.5em;
@@ -2254,4 +2218,11 @@ div.switch.power, div.switch.energy {
 
 .mdc-switch-label {
     margin: 0 0.5em;
+}
+.mdc-dialog {
+    z-index: 999;
+}
+
+div.filteroption, div.smallbutton {
+    height: 2em;
 }

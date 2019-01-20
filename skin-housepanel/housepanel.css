@@ -283,35 +283,21 @@ div.switch.level {
     display: none;
 }
 
-/* new style uses overlay to put in bottom right corner */
-div.overlay.power, div.overlay.energy {
-	position: absolute; top: 32px; left: 0px;
-	z-index: 100;
-        border: none;
-        background: none;
-	height: auto;
-}
-div.overlay.power div.switch.power {
-    z-index: 101;
-    display: block;
-    float: left;
-    height: 12px;
+/* change power and energy default style */
+div.overlay.power div.power,
+div.overlay.energy div.energy {
     text-align: left;
-    color: rgba(10,96,10,1);
+    background-color: rgba(204, 0, 51, 1);
+    color: rgba(255, 255, 255, 1);
     font-weight: bold;
-    font-size: 10pt;
-    margin-left: 5px;
 }
-div.overlay.energy div.switch.energy {
-    z-index: 101;
-    display: block;
-    float: right;
-    height: 12px;
-    text-align: right;
-    color: rgba(10,96,10,1);
-    font-weight: bold;
-    font-size: 10pt;
+div.overlay.energy div.energy::after, div.overlay.switch div.energy::after {
+    content: " (kWh)";
 }
+div.overlay.power div.power::after, div.overlay.switch div.power::after {
+    content: " (Watts)";
+}
+
 
 /* switchlevel / dimmer styling - make room for the dimmer controls */
 /* if you have a dimmer with power and energy controls - see custom below */

@@ -83,16 +83,16 @@ $( document ).ready(function() {
 
 	toggles.each(function() {
 		toggleStatusToggle(this);
-	 	$(this).on( 'DOMSubtreeModified', function() {
-	 		toggleStatusToggle(this);
-	 	});
+//	 	$(this).on( 'DOMSubtreeModified', function() {
+//	 		toggleStatusToggle(this);
+//	 	});
 	});
 
 	presence.each(function() {
 		toggleStatusPresence(this);
-	 	$(this).on( 'DOMSubtreeModified', function() {
-	 		toggleStatusPresence(this);
-	 	});
+//	 	$(this).on( 'DOMSubtreeModified', function() {
+//	 		toggleStatusPresence(this);
+//	 	});
 	});
 
 	musicThings.each(function() {
@@ -101,16 +101,16 @@ $( document ).ready(function() {
 
 	musicStatus.each(function() {
 		toggleStatusMusicStatus(this);
-	 	$(this).on( 'DOMSubtreeModified', function() {
-	 		toggleStatusMusicStatus(this);
-	 	});
+//	 	$(this).on( 'DOMSubtreeModified', function() {
+//	 		toggleStatusMusicStatus(this);
+//	 	});
 	});
 
 	musicMutes.each(function() {
 		toggleMuteMusicMute(this);
-	 	$(this).on( 'DOMSubtreeModified', function() {
-	 		toggleMuteMusicMute(this);
-	 	});
+//	 	$(this).on( 'DOMSubtreeModified', function() {
+//	 		toggleMuteMusicMute(this);
+//	 	});
 	});
 });
 
@@ -339,7 +339,17 @@ function zoomResetTiles() {
 }
 
 function addFab() {
-	$('.maintable').append('<button class="mdc-fab material-icons" aria-label="Favorite" id="hp-material-fab" data-mdc-auto-init="MDCRipple" onClick="settingsDialog.show();"><span class="mdc-fab__icon"><i class="material-icons">settings</i></span></button>');
+	$('.maintable').append('<button class="mdc-fab material-icons" aria-label="Favorite" id="hp-material-fab" data-mdc-auto-init="MDCRipple"><span class="mdc-fab__icon"><i class="material-icons">settings</i></span></button>');
+        $("#hp-material-fab").on("click",function(evt) {
+           $("#mdc-dialog-with-list-description").show();
+           $("aside.mdc-dialog").show().css("z-index","999");
+           evt.stopPropagation();
+        });
+        $("#mdc-dialog-with-list").on("click",function(evt) {
+           $("aside.mdc-dialog").hide();
+           $("#mdc-dialog-with-list-description").hide();
+           evt.stopPropagation();
+        });
 }
 
 function addSettingsDialog() {

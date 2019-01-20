@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.966      Enable duplicate LINK items and add power meter things
  * 1.965      Restored weather icons using new mapping info
  * 1.964      Updated documentation and tweak CSS for Edge browser
  * 1.963      Improved user guidance for Hubitat installations
@@ -1204,13 +1205,35 @@ function getCustomTile($custom_val, $customid, $options, $allthings=false) {
                         // if the subid exists in our linked tile add it
                         // this can replace existing fields with linked value
                         // if an error exists show text of intended link
+                        $usubid = "user_" . $subid;
+                        
+                        // first case is if link is valid and not an existing field
                         if ( array_key_exists($subid, $thevalue) ) {
                             $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
                             $custom_val[$subid]= $thevalue[$subid];
+                            
+                        // final two cases are if link tile wasn't found
+                        // first sub-case is if subid begins with the text of a valid key
                         } else {
-                            $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
+                            // handle user provided names that start with a valid link subid
+                            // and there is more beyond the start than numbers
+                            $realsubid = false;
+                            foreach ($custom_val as $key => $val) {
+                                if ( strpos($subid, $key) === 0 ) {
+                                    $realsubid = $key;
+                                    break;
+                                }
+                            }
+                            if ( $realsubid ) {
+                                $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                                $custom_val[$subid]= $thevalue[$realsubid];
+                            } else {
+                                $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                                $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
+                            }
                         }
                     } else {
+                        $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
                         $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
                     }
 
@@ -2016,31 +2039,45 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                         $linked_host = $linked_endpt . "/" . $path;
                         $linked_swtype = $allthings[$lidx]["type"];
                         $linked_swid = $allthings[$lidx]["id"];
-
+                        $linked_val = $allthings[$lidx]["value"];
+                        
+                        if ( array_key_exists($subid, $linked_val) ) {
+                            $realsubid = $subid;
+                        } else {
+                            $realsubid = $subid;
+                            foreach ($linked_val as $key => $val) {
+                                if ( strpos($subid, $key) === 0 ) {
+                                    $realsubid = $key;
+                                    break;
+                                }
+                            }
+                        }
+                        
                         // make the action call on the linked thing
                         $headertype = array("Authorization: Bearer " . $linked_access);
                         $nvpreq = "swid=" . urlencode($linked_swid) . 
                                   "&swattr=" . urlencode($swattr) . 
                                   "&swvalue=" . urlencode($swval) . 
                                   "&swtype=" . urlencode($linked_swtype);
-                        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
+                        if ( $realsubid ) { $nvpreq.= "&subid=" . urlencode($realsubid); }
                         $response = curl_call($linked_host, $headertype, $nvpreq, "POST");
                         
                         // return json_encode($response);
     
                         // if nothing returned and an action request, act like a query
-                        if ( !$response && $path==="doaction" && array_key_exists($lidx, $allthings) ) {
-                            $thevalue = $allthings[$lidx]["value"];
-                            $response = array($subid => $thevalue[$subid]);
+                        if ( (!$response || count($response)===0) && $path==="doaction" && $realsubid ) {
+                            // $thevalue = $allthings[$lidx]["value"];
+                            $response = array($subid => $linked_val[$realsubid]);
                         }
 
                         // update the linked item in the main array
-                        else if ( $response && count($response)>0 && array_key_exists($lidx, $allthings) ) {
+                        else if ( $response && count($response)>0 ) {
                             // unset the name if returned because we want custom name to stay intact
                             unset( $response["name"] );
-                            $thevalue = array_merge($allthings[$lidx]["value"], $response);
+                            $thevalue = array_merge($linked_val, $response);
                             $allthings[$lidx]["value"] = $thevalue;
-                            $response = array($subid => $thevalue[$subid]);
+                            
+                            $response = array($subid => $thevalue[$realsubid]);
                         }
 
                     // if not hub then just grab the as-is value of the linked item
@@ -2131,7 +2168,11 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     $allthings[$mainidx]["value"] = $newval;
                     
                     // now we return entire tile status not just the requested item
-                    $response = $newval;
+                    if ( $command === "LINK" ) {
+                        $response = array($subid => $linked_val[$realsubid]);
+                    } else {
+                        $response = $newval;
+                    }
                 }
             }
             $_SESSION["allthings"] = $allthings;
@@ -2286,8 +2327,13 @@ function writeOptions($options) {
     $options["time"] = HPVERSION . " @ " . strval(time());
 //    $_SESSION["hmoptions"] = $options;
     $f = fopen("hmoptions.cfg","wb");
-    $str =  json_encode($options);
-    fwrite($f, cleanupStr($str));
+//    if ( (PHP_MAJOR_VERSION === 5 && PHP_MINOR_VERSION >= 4) || PHP_MAJOR_VERSION > 5 ) {
+//        $str =  json_encode($options, JSON_PRETTY_PRINT);
+//        fwrite($f, $str);
+//    } else {
+        $str =  json_encode($options);
+        fwrite($f, cleanupStr($str));
+//    }
     fflush($f);
     fclose($f);
 //    chmod($f, 0777);
@@ -2558,7 +2604,7 @@ function getTypes() {
                         "motion", "lock", "thermostat", "temperature", "music", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "shm", "hsm", "piston", "other",
-                        "clock","blank","image","frame","video","custom","control");
+                        "clock", "blank", "image", "frame", "video", "custom", "control", "power");
     return $thingtypes;
 }
 
@@ -4195,14 +4241,15 @@ function is_ssl() {
                 }
                 
                 if ( array_key_exists($userid, $options) ) {
-                    $lines = $options[$userid];
-                    if ( ! is_array($lines[0]) ) {
-                        $lines = array($lines);
+                    $oldlines = $options[$userid];
+                    if ( ! is_array($oldlines[0]) ) {
+                        $oldlines = array($oldlines);
                     }
-                    foreach ($lines as $k => $newitem) {
-                        if ( strval($newitem[2]) === strval($subid) ) {
-                            unset( $lines[$k] );
-                            break;
+                    // make new list of customs without the deleted item
+                    $lines = array();
+                    foreach ($oldlines as $newitem) {
+                        if ( strval($newitem[2]) !== strval($subid) ) {
+                            $lines[] = $newitem;
                         }
                     }
                     if ( count($lines) === 0 ) {
