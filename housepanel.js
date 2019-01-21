@@ -84,7 +84,9 @@ $(document).ready(function() {
             setCookie('defaultTab', defaultTab, 30);
             try {
                 $("#"+defaultTab).click();
-            } catch (f) {}
+            } catch (f) {
+                console.log(f);
+            }
         }
     }
 
@@ -1986,7 +1988,7 @@ function setupPage(trigger) {
         } else {
             // console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, 
+                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                     attr: theattr, subid: subid, hubnum: hubnum, command: command, linkval: linkval},
                    function (presult, pstatus) {
                         if (pstatus==="success" && presult ) {
@@ -1994,12 +1996,26 @@ function setupPage(trigger) {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
                                     console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
-                                    // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
+                                    
+                                    // update the linked item
+                                    if ( command=="LINK" ) {
+                                        var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
+                                        linkaid = linkaid.substring(2);
+                                        var realsubid = presult["LINK"]["realsubid"];
+                                        var linkbid = presult["LINK"]["linked_swid"];
+                                        var linkvalue = presult["LINK"]["linked_val"];
+                                        delete presult["LINK"];
+                                        // updateTile(linkaid, linkvalue);
+                                        updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
+                                    }
                                     updAll(subid,aid,bid,thetype,hubnum,presult);
+                                    
                                 } else {
                                     console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                                 }
-                            } catch (e) { }
+                            } catch (e) { 
+                                console.log(e);
+                            }
                         }
                    }, "json"
             );

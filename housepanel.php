@@ -7,6 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.971      Fix clicking on linked tiles so it updates the linked to tile
+ *            - also fixes an obscure bug with user linked query tiles
  * 1.970      Tidy up customizer dialog to give existing info
  * 1.966      Enable duplicate LINK items and add power meter things
  * 1.965      Restored weather icons using new mapping info
@@ -182,7 +184,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.970');
+define('HPVERSION', 'Version 1.971');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2031,6 +2033,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 $lidx = array_search($tileid, $options["index"]);
                 if ( $allthings && array_key_exists($lidx, $allthings) ) {
                     $hubnum = $allthings[$lidx]["hubnum"];
+                    $thingvalue = $allthings[$mainidx]["value"];
 
                     // make hub call if requested and if the linked tile has one
                     if ( $path==="doaction" && $hubnum >= 0 && $hubs[$hubnum] && is_array($hubs[$hubnum]) ) {
@@ -2067,24 +2070,29 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     
                         // if nothing returned and an action request, act like a query
                         if ( (!$response || count($response)===0) && $path==="doaction" && $realsubid ) {
-                            // $thevalue = $allthings[$lidx]["value"];
-                            $response = array($subid => $linked_val[$realsubid]);
-                        }
-
-                        // update the linked item in the main array
-                        else if ( $response && count($response)>0 ) {
+                            $response = array($subid => $thingvalue[$subid]);
+                            
+                            // include a special return for linked tile update
+                            $response["LINK"] = array("realsubid"=>$realsubid, "linked_swid"=>$linked_swid, "linked_val"=>$linked_val);
+                        } else if ( $response && count($response)>0 ) {
                             // unset the name if returned because we want custom name to stay intact
                             unset( $response["name"] );
                             $thevalue = array_merge($linked_val, $response);
                             $allthings[$lidx]["value"] = $thevalue;
                             
-                            $response = array($subid => $thevalue[$realsubid]);
+                            // update the user tile doing the linking
+                            $thingvalue[$subid] = $response[$realsubid];
+                            $allthings[$mainidx]["value"] = $thingvalue;
+                            $response = array($subid => $thingvalue[$subid]);
+                            
+                            // include a special return for linked tile update
+                            $response["LINK"] = array("realsubid"=>$realsubid, "linked_swid"=>$linked_swid, "linked_val"=>$thevalue);
+                            // $response = array($subid => "test1");
                         }
 
-                    // if not hub then just grab the as-is value of the linked item
+                    // if not hub or a query just grab the as-is value of the linked item
                     } else {
-                        $thevalue = $allthings[$lidx]["value"];
-                        $response = array($subid => $thevalue[$subid]);
+                        $response = array($subid => $thingvalue[$subid]);
                     }
                 }
                 break;
@@ -2164,16 +2172,10 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
             // not doing an all query - this is an individual click
             // or a query of an individual tile
             } else {
-                if ( array_key_exists($lidx, $allthings) ) {
+                if ( $command !== "LINK" && array_key_exists($lidx, $allthings) ) {
                     $newval = array_merge($allthings[$lidx]["value"], $response);
                     $allthings[$mainidx]["value"] = $newval;
-                    
-                    // now we return entire tile status not just the requested item
-                    if ( $command === "LINK" ) {
-                        $response = array($subid => $linked_val[$realsubid]);
-                    } else {
-                        $response = $newval;
-                    }
+                    $response = $newval;
                 }
             }
             $_SESSION["allthings"] = $allthings;
