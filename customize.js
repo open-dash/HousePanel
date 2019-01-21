@@ -84,11 +84,12 @@ function getDefaultSubids() {
     cm_Globals.id = idx.substring(n+1);
     console.log("tile= " + thingindex + " idx= " + cm_Globals.thingidx + " id= " + cm_Globals.id);
     
+    loadExistingFields(cm_Globals.thingidx);
     $("#cm_customtype option[value='TEXT']").prop('selected',true);
+    
     var pc = loadTextPanel();
     $("#cm_dynoContent").html(pc);
-    
-    initExistingFields(cm_Globals.thingidx);
+    initExistingFields();
 }
 
 // popup dialog box now uses createModal
@@ -197,7 +198,7 @@ function customTypePanel() {
     // or a user entry box for a custom name
     // this whole section will be hidden with LINK types
     dh+= "<div id='cm_existingpick' class='cm_group'>";
-        dh+= "<div>Existing Fields:</div>";
+        dh+= "<div>Existing Fields: <span class='ital'>(* custom fields)</span></div>";
         dh+= "<select size='6' class='cm_builtinfields' id='cm_builtinfields' name='cm_builtinfields'>"; 
         dh+="</select>";
         
@@ -281,7 +282,9 @@ function loadLinkPanel(thingindex) {
         "In the top of the right column, select the tile to link to, and then select which field " +
         "of this tile to link into the customized tile using the \"Available Fields\" list above on the right. Once you are happy with " +
         "your selection, click the \"Add\" button and this field will be added to the list of \"Existing Fields\" " +
-        "shown on the left side of this dialog box. You can mix and match this with any other addition.";
+        "shown on the left side of this dialog box. You can mix and match this with any other addition. " +
+        "You can add text or numbers to the end of the field name to make the link subid unique, or you can " +
+        "leave it as-is. If the field name exists in the list on the left it will be replaced.";
     $("#cm_dynoInfo").html(infotext);
     
     return dh;
@@ -410,27 +413,56 @@ function loadLinkItem(idx, allowuser) {
     return {fields: results, num: numthings, firstitem: firstitem};
 }
  
- function initLinkActions() {
+ function initLinkActions(linkid, subid) {
     // get our fields and load them into link list box
     // and select the first item
+
+    var options = cm_Globals.options;
+    
+    // if we pass an existing link, start with that
+    if ( linkid ) {
+        for ( var idx in options.index ) {
+            if ( options.index[idx] == linkid ) {
+                cm_Globals.currentidx = idx;
+                console.log("Found linked idx: ", idx, " = ", linkid);
+                break;
+            }
+        }
+    }
+    
     var linkidx = cm_Globals.currentidx;
     var n = linkidx.indexOf("|");
     var bid = linkidx.substring(n+1);
-    var options = cm_Globals.options;
-    var linkid = options.index[cm_Globals.currentidx];
+    linkid = options.index[cm_Globals.currentidx];
+    
+    // set the drop down list to the linked item
+    $("#cm_link").prop("value", linkidx);
+    $("#cm_link option[value='" + linkidx + "']").prop('selected',true);
+                
     $("#cm_linkbid").html(bid + " => Tile #" + linkid);
+    
+    // read the existing fields of the linked tile, excluded user items
     var results = loadLinkItem(linkidx, false);
     $("#cm_linkfields").html(results.fields);
-    $("#cm_linkfields option[value='" + results.firstitem + "']").prop('selected',true);
     
-    $("#cm_userfield").attr("value",results.firstitem);
-    $("#cm_userfield").prop("readonly",true).addClass("readonly");
-    
-    initExistingFields(cm_Globals.thingidx);
-    $("#cm_builtinfields").prop("readonly",true).addClass("readonly");
-    $("#cm_builtinfields").off('change');
+    // highlight the selected item. if nothing preselected use first item
+    if ( !subid ) {
+        subid = results.firstitem;
+    }
+    $("#cm_linkfields option[value='" + subid + "']").prop('selected',true);
 
-    // get the id of the item selected and save it in our global for later use 
+    // initExistingFields();
+    $("#cm_builtinfields").prop("readonly",true).prop("disabled",true).addClass("readonly");
+    $("#cm_builtinfields option").off('click');
+
+    // put this in the user field on the left for editing
+    $("#cm_userfield").attr("value",results.firstitem);
+    $("#cm_userfield").prop("value",results.firstitem);
+    $("#cm_userfield").val(subid);
+    // $("#cm_userfield").prop("readonly",true).addClass("readonly");
+    
+    // activate clicking on item by getting the id of the item selected
+    // and save it in our global for later use 
     // then fill the list box with the subid's available
     $("#cm_link").off('change');
     $("#cm_link").on('change', function(event) {
@@ -444,15 +476,17 @@ function loadLinkItem(idx, allowuser) {
         var results = loadLinkItem(linkidx, false);
         $("#cm_linkfields").html(results.fields);
         initLinkSelect();
-        $("#cm_linkfields option[value='" + results.firstitem + "']").prop('selected',true);
-        $("#cm_userfield").attr("value",results.firstitem);
-        $("#cm_userfield").prop("value",results.firstitem);
-        $("#cm_userfield").val(results.firstitem);
+        $("#cm_linkfields option[value='" + results.firstitem + "']").prop('selected',true).click();
+//        $("#cm_userfield").attr("value",results.firstitem);
+//        $("#cm_userfield").prop("value",results.firstitem);
+//        $("#cm_userfield").val(results.firstitem);
         
         event.stopPropagation();
     });
  
     initLinkSelect();
+    
+    showPreview();
 }
 
 function initLinkSelect() {
@@ -516,7 +550,10 @@ function initCustomActions() {
                 customType = "TEXT";
                 content = loadTextPanel();
                 $("#cm_dynoContent").html(content);
-                initExistingFields(cm_Globals.thingidx);
+                initExistingFields();
+                
+                // auto select the first item
+                $("#cm_builtinfields > option").first().prop('selected',true).click();
             } else {
                 content = loadLinkPanel(thingindex);
                 $("#cm_dynoContent").html(content);
@@ -525,15 +562,15 @@ function initCustomActions() {
         } else if ( customType ==="URL" ) {
             content = loadUrlPanel();
             $("#cm_dynoContent").html(content);
-            initExistingFields(cm_Globals.thingidx);
+            initExistingFields();
         } else if ( customType === "POST" || customType === "GET" || customType === "PUT" ) {
             content = loadServicePanel(customType);
             $("#cm_dynoContent").html(content);
-            initExistingFields(cm_Globals.thingidx);
-        } else {
+            initExistingFields();
+        } else {cm_Globals
             content = loadTextPanel();
             $("#cm_dynoContent").html(content);
-            initExistingFields(cm_Globals.thingidx);
+            initExistingFields();
         }
         
         // $("#cm_selectedtype").html(customType);
@@ -565,21 +602,12 @@ function initCustomActions() {
         event.stopPropagation;
     });
     
-//    $("#cm_testButton").on("click", function(event) {
-//        showPreview();
-//        event.stopPropagation;
-//    });
-    
     $("#cm_text").on("change", function(event) {
         cm_Globals.usertext = $(this).val();
     });
  }
-
-function initExistingFields(idx) {
-    // re-enable the user and build in fields
-    $("#cm_userfield").prop("readonly",false).removeClass("readonly");
-    $("#cm_builtinfields").prop("readonly",true).removeClass("readonly");
-
+ 
+function loadExistingFields(idx) {
     // show the existing fields
     var results = loadLinkItem(idx, true);
     $("#cm_builtinfields").html(results.fields);
@@ -589,6 +617,17 @@ function initExistingFields(idx) {
     $("#cm_userfield").prop("value",results.firstitem);
     $("#cm_userfield").val(results.firstitem);
     
+    // emulate a click
+    // $("#cm_builtinfields > option").first().prop('selected',true).click();
+}
+
+function initExistingFields() {
+    var idx = cm_Globals.thingidx;
+    
+    // re-enable the user and build in fields
+    $("#cm_userfield").prop("readonly",false).removeClass("readonly");
+    $("#cm_builtinfields").prop("readonly",false).prop("disabled",false).removeClass("readonly");
+
     $("#cm_userfield").off('input');
     $("#cm_userfield").on('input', function(event) {
         var subid = $("#cm_userfield").val();
@@ -613,23 +652,53 @@ function initExistingFields(idx) {
     $("#cm_builtinfields option").off('click');
     $("#cm_builtinfields option").on('click', function(event) {
         var subid = $(this).val();
-        $("#cm_userfield").attr("value",subid);
-        $("#cm_userfield").prop("value",subid);
-        $("#cm_userfield").val(subid);
-        
         var allthings = cm_Globals.allthings;
         var thing = allthings[idx];
         var value = thing.value;
         var subids = Object.keys(value);
+        var companion = "user_" + subid;
+
+        // put the field clicked on in the input box
+        $("#cm_userfield").attr("value",subid);
+        $("#cm_userfield").prop("value",subid);
+        $("#cm_userfield").val(subid);
         
         // disable or enable the Del button based on user status
-        var companion = "user_" + subid;
         if ( subids.includes(companion) ) {
             $("#cm_delButton").addClass("cm_button");
             $("#cm_delButton").removeClass("disabled");
+            
+            // fill in existing user info
+            var helperval = value[companion];
+            var helpers = helperval.split("::");
+            console.log(helperval, helpers);
+            if ( helpers.length ===3 ) {
+                var cmtype = helpers[1];
+                var cmtext = decodeURIComponent(helpers[2]);
+                if ( cmtype==="TEXT" ) {
+                    cmtext = cmtext.replace( /\+/g, ' ' );
+                }
+                $("#cm_customtype").prop("value", cmtype);
+                $("#cm_customtype option[value='" + cmtype + "']").prop('selected',true)
+                $("#cm_text").val(cmtext);
+                cm_Globals.usertext = cmtext;
+            } else if ( helpers.length===4 && helpers[2]==="LINK" ) {
+                var oldval = $("#cm_customtype").val();
+                var linktype = helpers[1];
+                var linkid = helpers[3];
+                if ( oldval!== "LINK" ) {
+                    $("#cm_customtype").prop("value", "LINK");
+                    $("#cm_customtype option[value='LINK']").prop('selected',true)
+                    var content = loadLinkPanel(cm_Globals.thingindex);
+                    $("#cm_dynoContent").html(content);
+                }
+                initLinkActions(linkid, subid);
+            }
+            
         } else {
             $("#cm_delButton").addClass("disabled"); // prop("disabled", true).css("background-color","#cccccc").css("cursor","default");
             $("#cm_delButton").removeClass("cm_button");
+            $("#cm_text").val("");
         }
         
         // change button label to Add or Replace based on existing or not
@@ -643,7 +712,7 @@ function initExistingFields(idx) {
    });
     
     // auto select the first item
-    $("#cm_builtinfields > option").first().prop('selected',true).click();
+    // $("#cm_builtinfields > option").first().prop('selected',true).click();
    
     $("#cm_text").on("change", function(event) {
         cm_Globals.usertext = $(this).val();
@@ -651,12 +720,6 @@ function initExistingFields(idx) {
 
     // show the preview
     showPreview();
-    
-//    $("#cm_testButton").on("click", function(event) {
-//        showPreview();
-//        event.stopPropagation;
-//    });
-    
 }
 
 // function uses php to save the custom info to hmoptions.cfg

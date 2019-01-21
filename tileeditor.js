@@ -50,54 +50,39 @@ $.fn.isAuto = function(dimension){
 function getOnOff(str_type, subid) {
     var onoff = ["",""];
     
-    switch (subid) {
-        case "switch" :
-        case "switchlevel":
-        case "bulb":
-        case "light":
-        case "momentary":
-            onoff = ["on","off"];
-            break;
-        case "contact":
-        case "door":
-        case "valve":
-            onoff = ["open","closed"];
-            break;
-        case "motion":
-            onoff = ["active","inactive"];
-            break;
-        case "lock":
-            onoff = ["locked","unlocked"];
-            break;
-        case "pistonName":
-            onoff = ["firing","idle"];
-            break;
-        case "thermofan":
-            onoff = ["auto","on"];
-            break;
-        case "thermomode":
-            onoff = ["heat","cool","auto","off"];
-            break;
-        case "thermostate":
-            onoff = ["idle","heating","cooling","off"];
-            break;
-        case "musicstatus":
-            onoff = ["stopped","paused","playing"];
-            break;
-        case "musicmute":
-            onoff = ["muted","unmuted"];
-            break;
-        case "presence":
-            onoff = ["present","absent"];
-            break;
-        case "state":
-            if ( str_type==="shm" ) {
-                onoff = ["off","stay","away"];
-            } else if ( str_type==="hsm" ) {
-                onoff = ["armedAway","armedHome","armedNight","disarmed","allDisarmed"];
-            }
-            break;
-            
+    // handle the cases for custom tiles that could have any subid starting with valid names
+    if ( subid.startsWith("switch" ) ) {
+        onoff = ["on","off"];
+    } else if ( (str_type==="momentary") && subid.startsWith("momentary" ) ) {
+        onoff = ["on","off"];
+    } else if ( subid.startsWith("contact" ) || subid.startsWith("door" ) || subid.startsWith("valve" ) ) {
+        onoff = ["open","closed"];
+    } else if ( subid.startsWith("lock" ) ) {
+        onoff = ["locked","unlocked"];
+    } else if ( subid.startsWith("motion") ) {
+        onoff = ["active","inactive"];
+    } else if ( subid.startsWith("pistonName" ) ) {
+        onoff = ["firing","idle"];
+    } else if ( subid.startsWith("thermofan" ) ) {
+        onoff = ["auto","on"];
+    } else if ( subid.startsWith("thermomode" ) ) {
+        onoff = ["active","inactive"];
+    } else if ( subid.startsWith("thermostate" ) ) {
+        onoff = ["active","inactive"];
+    } else if ( subid.startsWith("thermomode" ) ) {
+        onoff = ["heat","cool","auto","off"];
+    } else if ( subid.startsWith("thermostate" ) ) {
+        onoff = ["idle","heating","cooling","off"];
+    } else if ( subid.startsWith("musicstatus" ) ) {
+        onoff = ["stopped","paused","playing"];
+    } else if ( subid.startsWith("musicmute" ) ) {
+        onoff = ["muted","unmuted"];
+    } else if ( subid.startsWith("presence" ) ) {
+        onoff = ["present","absent"];
+    } else if ( str_type==="shm" && subid.startsWith("state" ) ) {
+        onoff = ["off","stay","away"];
+    } else if ( str_type==="hsm" && subid.startsWith("state" ) ) {
+        onoff = ["armedAway","armedHome","armedNight","disarmed","allDisarmed"];
     }
     
     return onoff;
@@ -258,6 +243,7 @@ function toggleTile(target, str_type, subid, thingindex) {
     // var target = "#tileDialog " + getCssRuleTarget(str_type, subid, thingindex);
     // var target = "#tileDisplay " + getCssRuleTarget(str_type, subid, thingindex);
     var swval = $(target).html();
+    // var currentclass = $(target).attr("class");
     // var subid = $(target).attr("subid");
     console.log("toggleTile: target= " + target + " tile type= "+str_type+" subid= "+subid + " swval= "+swval);
     $('#onoffTarget').html("");
@@ -2072,7 +2058,7 @@ function resetCSSRules(str_type, subid, thingindex){
             onoff.forEach( function(rule, idx, arr) {
                 var subtarget = getCssRuleTarget(str_type, rule, thingindex);
                 removeCSSRule(subtarget, thingindex, null, 0);
-            })
+            });
         }
 }
 

@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.970      Tidy up customizer dialog to give existing info
  * 1.966      Enable duplicate LINK items and add power meter things
  * 1.965      Restored weather icons using new mapping info
  * 1.964      Updated documentation and tweak CSS for Edge browser
@@ -181,7 +182,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.965');
+define('HPVERSION', 'Version 1.970');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1252,7 +1253,7 @@ function getCustomTile($custom_val, $customid, $options, $allthings=false) {
                     if ( ($content === "-" . $subid) && array_key_exists($subid, $custom_val)  ) {
                         unset($custom_val[$subid]);
                     } else {
-                        $custom_val["user_" . $subid] = "::" . $calltype . "::" . $posturl;
+                        $custom_val["user_" . $subid] = "::" . $calltype . "::" . $content;
                         $custom_val[$subid] = $content;
                     }
                 }

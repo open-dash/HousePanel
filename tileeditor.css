@@ -425,7 +425,7 @@ div.returninfo a {
         padding-right: 12px;
     }
 }
-span.typeopt {
+span.typeopt, span.ital {
     font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;
     color: #666666; margin-left: 5px;
 }
