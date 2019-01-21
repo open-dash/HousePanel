@@ -262,7 +262,7 @@ form.houseauth {
 table.showid {
     background-color: white;
     color: #000000;
-    width: 90%;
+    width: 98%;
     text-align: left;
     
 }
@@ -361,7 +361,8 @@ table.roomoptions tr.hiderow {
     display: none;
 }
 
-table.showid .thingname, table.showid .thingarr, table.showid .infotype, table.showid .infoid, table.showid .infonum {
+table.showid .thingname, table.showid .thingarr, table.showid .infotype, 
+table.showid .infoid, table.showid .hubid, table.showid .infonum {
     padding-left: 5px;
     text-align: center; 
     width: 10%;  
@@ -376,7 +377,9 @@ table.showid td.thingname {
 }
 table.showid td.thingarr {
     text-align: left; 
-    width: 30%;  
+    width: 30%;
+    max-width: 250px;
+    overflow-x: auto;
 }
 table.showid td.infotype {
     text-align: center; 
@@ -384,12 +387,19 @@ table.showid td.infotype {
 }
 table.showid td.infoid {
     text-align: left; 
-    width: 30%;  
+    max-width: 150px;
+    width: 25%;  
+}
+table.showid td.hubid {
+    text-align: left; 
+    max-width: 100px;
+    width: 25%;  
 }
 table.showid td.infonum, table.showid th.infonum {
     border-right: 1px solid #999999;
 }
-table.showid th.thingname, table.showid th.thingarr, table.showid th.infotype, table.showid th.infoid, table.showid th.infonum {
+table.showid th.thingname, table.showid th.thingarr, table.showid th.infotype, 
+table.showid th.infoid, table.showid th.hubid, table.showid th.infonum {
     font-weight: bold;
     font-size: 14pt;
     border-top: 1px solid #999999;

@@ -3193,7 +3193,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
     $tc.= "<thead><tr><th class=\"thingname\">" . "Name" . "</th><th class=\"thingarr\">" . "Value Array" . 
           "</th><th class=\"infotype\">" . "Type" . 
           "</th><th class=\"infoid\">" . "Thing id" .
-          "</th><th class=\"infoid\">" . "Hub" .
+          "</th><th class=\"hubid\">" . "Hub" .
           "</th><th class=\"infonum\">" . "Tile Num" . "</th></tr></thead>";
     foreach ($allthings as $bid => $thing) {
         if (is_array($thing["value"])) {
@@ -3224,7 +3224,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
               "</td><td class=\"thingarr\">" . $value . 
               "</td><td class=\"infotype\">" . $thing["type"] .
               "</td><td class=\"infoid\">" . $thing["id"] . 
-              "</td><td class=\"infoid\">" . $hubstr . 
+              "</td><td class=\"hubid\">" . $hubstr . 
               "</td><td class=\"infonum\">" . $options["index"][$bid] . 
               "</td></tr>";
     }
