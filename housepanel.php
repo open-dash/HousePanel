@@ -1080,8 +1080,8 @@ function getAllThings($reset = false) {
                 $fh = "200";
             } else {
                 $defaultname = "Forecast";
-                $fw = "520";
-                $fh = "230";
+                $fw = "480";
+                $fh = "212";
             }
             $frameid = "frame" . $i;
             
@@ -2328,18 +2328,19 @@ function writeOptions($options) {
     $options["time"] = HPVERSION . " @ " . strval(time());
 //    $_SESSION["hmoptions"] = $options;
     $f = fopen("hmoptions.cfg","wb");
-//    if ( (PHP_MAJOR_VERSION === 5 && PHP_MINOR_VERSION >= 4) || PHP_MAJOR_VERSION > 5 ) {
-//        $str =  json_encode($options, JSON_PRETTY_PRINT);
-//        fwrite($f, $str);
-//    } else {
+    if ( defined(JSON_PRETTY_PRINT) ) {
+        $str =  json_encode($options, JSON_PRETTY_PRINT);
+        fwrite($f, $str);
+    } else {
         $str =  json_encode($options);
         fwrite($f, cleanupStr($str));
-//    }
+    }
     fflush($f);
     fclose($f);
 //    chmod($f, 0777);
     
     // make the room config file to support custom users
+    // important!!! do not pretty print this file
     if ( isset($_COOKIE["uname"]) ) {
         $uname = trim($_COOKIE["uname"]);
         if ( $uname ) {
@@ -2436,72 +2437,112 @@ function refactorOptions($allthings) {
     
     $options = readOptions();
     $oldoptions = $options;
-    // $options = setDefaults($oldoptions, $allthings);
     
     $options["useroptions"] = $thingtypes;
     $options["things"] = array();
     $options["index"] = array();
 
-
     foreach ($oldoptions["index"] as $thingid => $idxarr) {
-        $cnt++;
-        // fix the old system that could have an array for idx
-        // discard any position that was saved under that system
-        if ( is_array($idxarr) ) {
-            $idx = intval($idxarr[0]);
-        } else {
-            $idx = intval($idxarr);
-        }
         
-        foreach ($oldoptions["things"] as $room => $thinglist) {
-            foreach ($thinglist as $key => $pidpos) {
-                $zindex = 1;
-                $customname = "";
-                if ( is_array($pidpos) ) {
-                    $pid = intval($pidpos[0]);
-                    $postop = intval($pidpos[1]);
-                    $posleft = intval($pidpos[2]);
-                    if ( count($pidpos) > 4 ) {
-                        $zindex = intval($pidpos[3]);
-                        $customname = $pidpos[4];
-                    }
-                } else {
-                    $pid = intval($pidpos);
-                    $postop = 0;
-                    $posleft = 0;
-                }
-                if ( $idx === $pid ) {
+        // only keep items that are in our current set of hubs
+        if ( array_key_exists($thingid, $allthings) ) {
+        
+            $cnt++;
+            // fix the old system that could have an array for idx
+            // discard any position that was saved under that system
+            if ( is_array($idxarr) ) {
+                $idx = intval($idxarr[0]);
+            } else {
+                $idx = intval($idxarr);
+            }
 
-//  use the commented code below if you want to preserve any user movements
-//  otherwise a refactor call resets all tiles to their baseeline position  
-//                  $options["things"][$room][$key] = array($cnt,$postop,$posleft,$zindex,"");
-                    $options["things"][$room][$key] = array($cnt,0,0,1,$customname);
+            // replace all instances of the old "idx" with the new "cnt" in customtiles
+            if ( $customcss && $idx!==$cnt ) {
+                $customcss = str_replace("p_$idx.", "p_$cnt.", $customcss);
+                $customcss = str_replace("p_$idx ", "p_$cnt ", $customcss);
+
+                $customcss = str_replace("v_$idx.", "v_$cnt.", $customcss);
+                $customcss = str_replace("v_$idx ", "v_$cnt ", $customcss);
+
+                $customcss = str_replace("t_$idx.", "t_$cnt.", $customcss);
+                $customcss = str_replace("t_$idx ", "t_$cnt ", $customcss);
+
+                $customcss = str_replace("n_$idx.", "n_$cnt.", $customcss);
+                $customcss = str_replace("n_$idx ", "n_$cnt ", $customcss);
+
+                $updatecss = true;
+            }
+
+            // save the index number - fixed prior bug that only did this sometimes
+            $options["index"][$thingid] = $cnt;
+        }
+    }
+
+    // now replace all the room configurations
+    // this is done separately now which is much faster and less prone to error
+    foreach ($oldoptions["things"] as $room => $thinglist) {
+        $options["things"][$room] = array();
+        foreach ($thinglist as $key => $pidpos) {
+            $zindex = 1;
+            $customname = "";
+            if ( is_array($pidpos) ) {
+                $pid = intval($pidpos[0]);
+                $postop = intval($pidpos[1]);
+                $posleft = intval($pidpos[2]);
+                if ( count($pidpos) > 4 ) {
+                    $zindex = intval($pidpos[3]);
+                    $customname = $pidpos[4];
                 }
+            } else {
+                $pid = intval($pidpos);
+                $postop = 0;
+                $posleft = 0;
+            }
+
+            $thingid = array_search($pid, $oldoptions["index"]);
+            if ( $thingid!==false && array_key_exists($thingid, $options["index"]) ) {
+                $newid = $options["index"][$thingid];
+                // use the commented code below if you want to preserve any user movement
+                // otherwise a refactor call resets all tiles to their baseeline position  
+                // $options["things"][$room][$key] = array($newid,$postop,$posleft,$zindex,"");
+                $options["things"][$room][$key] = array($newid,0,0,1,$customname);
             }
         }
-        
-        // replace all instances of the old "idx" with the new "cnt" in customtiles
-        if ( $customcss && $idx!==$cnt ) {
-            $customcss = str_replace("p_$idx.", "p_$cnt.", $customcss);
-            $customcss = str_replace("p_$idx ", "p_$cnt ", $customcss);
+    }
+    
+    // now adjust all custom configurations
+    // this will only work for new types of user_ customizations
+    // it will not adjust old school custom_ manual ones other than custom_
+    foreach ($oldoptions as $key => $lines) {
+        if ( ( substr($key,0,5)==="user_" || substr($key,0,7)==="custom_" ) &&
+               is_array($lines) ) {
             
-            $customcss = str_replace("v_$idx.", "v_$cnt.", $customcss);
-            $customcss = str_replace("v_$idx ", "v_$cnt ", $customcss);
-
-            $customcss = str_replace("t_$idx.", "t_$cnt.", $customcss);
-            $customcss = str_replace("t_$idx ", "t_$cnt ", $customcss);
-            
-            $updatecss = true;
+            // allow user to skip wrapping single entry in an array
+            if ( !is_array($lines[0]) ) {
+                $lines = array($lines);
+            }
+            $newlines = array();
+            foreach ($lines as $msgs) {
+                $calltype = trim(strtoupper($msgs[0]));
+                
+                // switch to new index for links
+                // otherwise we just copy the info over to options
+                if ( $calltype==="LINK" ) {
+                    $linkid = intval(trim($msgs[1]));
+                    $thingid = array_search($linkid, $oldoptions["index"]);
+                    if ( $thingid!==false && array_key_exists($thingid, $options["index"]) ) {
+                        $msgs[1] = $options["index"][$thingid];
+                    }
+                }
+                $newlines[] = $msgs;
+            }
+            $options[$key] = $newlines;
         }
-        
-        // save the index number - fixed prior bug that only did this sometimes
-        $options["index"][$thingid] = $cnt;
     }
+    
     writeOptions($options);
-    if ( $updatecss ) {
-        $skin = $options["config"]["skin"];
-        writeCustomCss("customtiles.css",$customcss,$skin);
-    }
+    $skin = $options["config"]["skin"];
+    writeCustomCss("customtiles.css",$customcss,$skin);
     
 }
 
@@ -4064,6 +4105,11 @@ function is_ssl() {
                 $allthings = getAllThings(true);
                 $options= getOptions($options, $allthings);
                 writeOptions($options);
+                
+                $skin = $options["config"]["skin"];
+                $customcss = readCustomCss();
+                writeCustomCss("customtiles.css",$customcss,$skin);
+        
                 header("Location: $returnURL");
                 break;
             
