@@ -1595,3 +1595,11 @@ table.cm_table td {
 #cm_subheader {
     font-size: 20pt; color: #000000;
 }
+
+/* hide user selected refresh rates */
+div.overlay.refresh {
+    display: none;
+}
+div.control-thing div.overlay.refresh {
+    display: block;
+}

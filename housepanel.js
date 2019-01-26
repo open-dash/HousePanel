@@ -19,7 +19,7 @@ var st_timer = 60000;
 // hubitat timer once every 30 seconds
 var he_timer = 30000;
 
-// fast timer is every 10 seconds
+// fast timer is every 15 seconds
 var fast_timer = 10000;
 
 // slow timer is once an hour
@@ -161,6 +161,10 @@ $(document).ready(function() {
         if ( slow_timer && slow_timer >= 1000 ) {
             setupTimer(slow_timer, "slow", -1);
         }
+
+        // initialize the clock updater that runs every second
+        // unlike the timer routines this doesn't do any php callbacks
+        clockUpdater();
 
         cancelDraggable();
         cancelSortable();
@@ -1553,86 +1557,49 @@ function setupTabclick() {
     });
 }
 
-function setupTimer(timerval, timertype, hubnum) {
+function clockUpdater() {
 
-        // console.log("hub #" + hubnum + " timer = " + timerval);
-        var updarray = [timertype, timerval, hubnum];
-        updarray.myMethod = function() {
-
-            var that = this;
-            var err;
-
-            // skip if not in operation mode or if inside a modal dialog box
-            if ( priorOpmode !== "Operate" || modalStatus ) { 
-                // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus);
-                // repeat the method above indefinitely
-                setTimeout(function() {updarray.myMethod();}, that[1]);
-                return; 
-            }
-
-            try {
-                $.post(returnURL, 
-                    {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
-                    function (presult, pstatus) {
-                        if (pstatus==="success" && presult!==undefined ) {
-                            
-//                            if ( that[1] > 20000 ) {
-//                                console.log("Success polling hub #" + that[2] + ". Returned "+ 
-//                                        Object.keys(presult).length+ " items");
-//                            }
-                            // go through all tiles and update
-                            try {
-                                $('div.panel div.thing').each(function() {
-                                    var aid = $(this).attr("id");
-                                    // skip the edit in place tile
-                                    if ( aid.startsWith("t-") ) {
-                                        aid = aid.substring(2);
-                                        var tileid = $(this).attr("tile");
-
-                                        var thevalue;
-                                        try {
-                                            thevalue = presult[tileid];
-                                        } catch (err) {
-                                            tileid = parseInt(tileid, 10);
-                                            try {
-                                                thevalue = presult[tileid];
-                                            } catch (err) { thevalue = null; }
-                                        }
-                                        // handle both direct values and bundled values
-                                        if ( thevalue && thevalue.hasOwnProperty("value") ) {
-                                            thevalue = thevalue.value;
-                                        }
-                                        if ( thevalue && typeof thevalue==="object" ) { updateTile(aid,thevalue); }
-                                    }
-                                });
-                            } catch (err) { console.error("Polling error", err.message); }
-                        }
-                    }, "json"
-                );
-            } catch(err) {
-                console.error ("Polling error", err.message);
-            }
-
-            // repeat the method above indefinitely
-            setTimeout(function() {updarray.myMethod();}, that[1]);
-        };
-
-        // wait before doing first one - or skip this hub if requested
-        if ( timerval && timerval >= 1000 ) {
-            setTimeout(function() {updarray.myMethod();}, timerval);
+    setInterval(function() {
+        var d = new Date();
+        var ds = d.toString().split(" ");    
+        var timestr = ds[4];
+        var hour = d.getHours();
+        var sec = d.getSeconds();
+        
+        if ( hour=== 0 ) {
+            timestr = "12" + timestr.substring(2);
+            timestr+= " AM";
+        } else if ( hour === 12 ) {
+            timestr+= " PM";
+        } else if ( hour > 12 ) {
+            hour = (hour - 12).toLocaleString();
+            timestr = hour + timestr.substring(2);
+            timestr+= " PM";
+        } else {
+            timestr+= " AM";
         }
         
-//    });
-    
+        // update the time of all things on the main page
+        // this skips the wysiwyg items in edit boxes
+        // only update times that have a :s format type or has nothing specified
+        $("div.panel div.clock.time").each(function() {
+            if ( $(this).parent().siblings("div.overlay.fmt_time").length > 0 ) {
+                var fmt = $(this).parent().siblings("div.overlay.fmt_time").children("div.fmt_time").html();
+                if ( (fmt && fmt.includes(":s")) || !fmt ) {
+                    $(this).html(timestr);
+                }
+            } else {
+                $(this).html(timestr);
+            }
+        });
+    }, 1050);
 }
 
-// this is similar to the above function but operates only on tiles that
-// can be refreshed very frequently without a call back to a hub
-// this updates image and custom tiles every 5 seconds with whatever content is on server
-function setupFastTimer(timerval, timertype) {
+function setupTimer(timerval, timertype, hubnum) {
 
-    var updarray = [timertype, timerval];
-    updarray.fastMethod = function() {
+    // console.log("hub #" + hubnum + " timer = " + timerval);
+    var updarray = [timertype, timerval, hubnum];
+    updarray.myMethod = function() {
 
         var that = this;
         var err;
@@ -1641,51 +1608,47 @@ function setupFastTimer(timerval, timertype) {
         if ( priorOpmode !== "Operate" || modalStatus ) { 
             // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus);
             // repeat the method above indefinitely
-            setTimeout(function() {updarray.fastMethod();}, this[1]);
+            setTimeout(function() {updarray.myMethod();}, that[1]);
             return; 
         }
 
         try {
             $.post(returnURL, 
-//                    {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
-                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: -1},
+                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
                 function (presult, pstatus) {
-                    if (pstatus==="success" ) {
+                    if (pstatus==="success" && typeof presult==="object" ) {
 
-//                        console.log("Success polling fast. Returned: " + Object.keys(presult).length+ " items ");
-//                        console.log( strObject(presult) );
-                            
+//                            if ( timertype==="fast" ) {
+//                                console.log("Fast poll returned: ", presult); 
+//                            }
                         // go through all tiles and update
                         try {
-                        $('div.panel div.thing').each(function() {
-                            var aid = $(this).attr("id");
-                            if ( aid.startsWith("t-") ) {
-                                aid = aid.substring(2);
-                                var tileid = $(this).attr("tile");
-                                tileid = parseInt(tileid, 10);
-                                
-                                // start by assuming we returned a thing or a value array
-                                var thevalue = presult;
-                                
-                                // now check if we have an array of things or values instead
-                                if ( typeof presult[tileid] !== "undefined" ) {
+                            $('div.panel div.thing').each(function() {
+                                var aid = $(this).attr("id");
+                                // skip the edit in place tile
+                                if ( aid.startsWith("t-") ) {
+                                    aid = aid.substring(2);
+                                    var tileid = $(this).attr("tile");
 
+                                    var thevalue;
                                     try {
                                         thevalue = presult[tileid];
                                     } catch (err) {
-                                        thevalue = null;
+                                        tileid = parseInt(tileid, 10);
+                                        try {
+                                            thevalue = presult[tileid];
+                                        } catch (err) { 
+                                            thevalue = null; 
+                                            console.log(err.message);
+                                        }
                                     }
-                                }    
-                                
-                                // if this is a thing then grab the value element
-                                if ( thevalue && thevalue.hasOwnProperty("type") && thevalue.hasOwnProperty("value") ) {
-                                    thevalue = thevalue.value;
+                                    // handle both direct values and bundled values
+                                    if ( thevalue && thevalue.hasOwnProperty("value") ) {
+                                        thevalue = thevalue.value;
+                                    }
+                                    if ( thevalue && typeof thevalue==="object" ) { updateTile(aid,thevalue); }
                                 }
-
-                                if ( thevalue ) { updateTile(aid,thevalue); }
-                                
-                            }
-                        });
+                            });
                         } catch (err) { console.error("Polling error", err.message); }
                     }
                 }, "json"
@@ -1695,14 +1658,14 @@ function setupFastTimer(timerval, timertype) {
         }
 
         // repeat the method above indefinitely
-        setTimeout(function() {updarray.fastMethod();}, this[1]);
+        setTimeout(function() {updarray.myMethod();}, that[1]);
     };
 
-    // wait before doing first one
-    if ( timerval >= 1000 ) {
-        setTimeout(function() {updarray.fastMethod();}, timerval);
+    // wait before doing first one - or skip this hub if requested
+    if ( timerval && timerval >= 1000 ) {
+        setTimeout(function() {updarray.myMethod();}, timerval);
     }
-
+    
 }
 
 function updateMode() {
@@ -2000,13 +1963,17 @@ function setupPage(trigger) {
                                     // update the linked item
                                     if ( command=="LINK" ) {
                                         var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
-                                        linkaid = linkaid.substring(2);
-                                        var realsubid = presult["LINK"]["realsubid"];
-                                        var linkbid = presult["LINK"]["linked_swid"];
-                                        var linkvalue = presult["LINK"]["linked_val"];
-                                        delete presult["LINK"];
-                                        // updateTile(linkaid, linkvalue);
-                                        updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
+//                                        alert(linkaid+ " lt= " + linktype + " lv= "+linkval);
+//                                        alert(strObject(presult));
+                                        if ( linkaid && realsubid ) {
+                                            linkaid = linkaid.substring(2);
+                                            var realsubid = presult["LINK"]["realsubid"];
+                                            var linkbid = presult["LINK"]["linked_swid"];
+                                            var linkvalue = presult["LINK"]["linked_val"];
+                                            delete presult["LINK"];
+                                            // updateTile(linkaid, linkvalue);
+                                            updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
+                                        }
                                     }
                                     updAll(subid,aid,bid,thetype,hubnum,presult);
                                     

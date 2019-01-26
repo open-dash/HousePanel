@@ -7,6 +7,11 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.972      Add ability to tailor fast polling to include any tile
+ *            by adding a "refresh" user field with name fast, slow, or never
+ *            - also added built-in second refresh for clock tiles
+ *            - two new floor lamp icons added to main skin
+ *            - fix bug so that hidden items in editor now indicate hidden initially
  * 1.971      Fix clicking on linked tiles so it updates the linked to tile
  *            - also fixes an obscure bug with user linked query tiles
  * 1.970      Tidy up customizer dialog to give existing info
@@ -184,7 +189,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.971');
+define('HPVERSION', 'Version 1.972');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -363,12 +368,24 @@ function getDevices($allthings, $options, $hubnum, $hubType, $hubAccess, $hubEnd
             $id = $content["id"];
             $thetype = $content["type"];
             
+            // ** IMPT ** Users can hack the code here and add other types to fast poll
+            // like what is shown in comments below will fast poll all bulb types
+            // be careful with this feature because polling is cloud intensive
+            // so you should only activate a small number of devices
+            // the default blank and image fast polls do not require a hub call
+            // if ( $thetype==="blank" || $thetype==="image" || $thetype==="bulb" ) {
+            if ( $thetype==="blank" || $thetype==="image" ) {
+                $reftype = "fast";
+            } else {
+                $reftype = "normal";
+            }
+           
             // make a unique index for this thing based on id and type
             // new to this array is the hub number and hub type
             $idx = $thetype . "|" . $id;
             $custom_val = $content["value"];
             $allthings[$idx] = array("id" => $id, "name" => $content["name"], "hubnum" => $hubnum,
-                                     "hubtype" => $hubType, "type" => $thetype, "value" => $custom_val );
+                                     "hubtype" => $hubType, "type" => $thetype, "refresh"=>$reftype, "value" => $custom_val );
         }
     }
     return $allthings;
@@ -998,16 +1015,16 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 // endpt and access_token are now arrays supporting multiple hubs
 function getAllThings($reset = false) {
 
-    $options = readOptions();
-    $configoptions = $options["config"];
-    $tz = $configoptions["timezone"];
-    date_default_timezone_set($tz);
-    
     if ( !$reset && isset($_SESSION["allthings"]) ) {
         $allthings = $_SESSION["allthings"];
         $insession = true;
     } else {
     
+        $options = readOptions();
+        $configoptions = $options["config"];
+        $tz = $configoptions["timezone"];
+        date_default_timezone_set($tz);
+
         $insession = false;
         $allthings = array();
 
@@ -1044,7 +1061,7 @@ function getAllThings($reset = false) {
         $dclock["date"] = $dateofmonth;
         $dclock["time"] = $timeofday;
         $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => $dclock["name"], 
-            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "value" => $dclock);
+            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"fast", "value" => $dclock);
 
         // add analog clock tile - uses dclock settings by default
         $clockname = "Analog Clock";
@@ -1058,7 +1075,7 @@ function getAllThings($reset = false) {
         $aclock["date"] = $dateofmonth;
         $aclock["time"] = $timeofday;
         $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => $aclock["name"], 
-             "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "value" => $aclock);
+             "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"fast", "value" => $aclock);
 
         // add video and frame tiles with customization
         // the file must exist as a playable mp4 video file - name can be customized now in TileEditor
@@ -1071,7 +1088,7 @@ function getAllThings($reset = false) {
             $fval = returnVideo($vidurl, $fw, $fh);
             $vidtile = array("name"=>$vidurl, "video"=>$fval, "width"=> $fw, "height"=>$fh);
             $allthings["video|$vidid"] = array("id" => $vidid, "name" => $vidtile["name"], 
-                "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "value" => $vidtile);
+                "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "refresh"=>"fast", "value" => $vidtile);
 
             // we now create the frame item dynamically upon render
             // so we can take into account user adjusted names and sizes
@@ -1091,7 +1108,7 @@ function getAllThings($reset = false) {
             $fval = returnFrame($fn, $fw, $fh);
             $frametile = array("name"=>$fn, "frame"=>$fval, "width"=> $fw, "height"=>$fh);
             $allthings["frame|$frameid"] = array("id" => $frameid, "name" => $frametile["name"], "hubnum" => $hubnum, 
-                "hubtype" => $hubType, "type" => "frame", "value" => $frametile);
+                "hubtype" => $hubType, "type" => "frame", "refresh"=>"slow", "value" => $frametile);
         }
     
         // create the new controller tile
@@ -1103,7 +1120,7 @@ function getAllThings($reset = false) {
                      "showdoc"=>"Documentation",
                      "blackout"=>"Blackout","operate"=>"Operate","reorder"=>"Reorder","edit"=>"Edit");
         $allthings["control|control_1"] = array("id" => "control_1", "name" => $controlval["name"], "hubnum" => $hubnum, 
-                    "hubtype" => $hubType, "type" => "control", "value" => $controlval);
+                    "hubtype" => $hubType, "type" => "control", "refresh"=>"never", "value" => $controlval);
 
         // add custom ad-hoc tiles
         // custom tiles can only reference things in the first hub
@@ -1113,24 +1130,30 @@ function getAllThings($reset = false) {
             $custom_val = array("name"=> $customname);
             // $custom_val = getCustomTile($custom_val, $customid, $options, $allthings);
             $allthings["custom|$customid"] = array("id" => $customid, "name" => $custom_val["name"], 
-                "hubnum" => -1, "hubtype" => "None", "type" => "custom",
+                "hubnum" => -1, "hubtype" => "None", "type" => "custom", "refresh"=>"fast",
                 "value" => $custom_val);
         }
         
         // now loop through all things and all all customizations
         // we do it here in a second loop instead of inside getDevices
         // so that references between tiles work
+        // we skip the control tile since it has its own refresh field that means something else
         foreach ($allthings as $idx => $thing) {
             if ( $thing["type"]!=="control" ) {
                 $thing["value"] = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                
+                // adjust refresh if user gave a custom refresh type
+                if ( array_key_exists("refresh",$thing["value"]) ) {
+                   $thing["refresh"] = $thing["value"]["refresh"];
+                }
+                
                 $allthings[$idx] = $thing;
             }
         }
-        
-    }
 
-    // save the things
-    $_SESSION["allthings"] = $allthings;
+        // save the things
+        $_SESSION["allthings"] = $allthings;
+    }
     
     if ( DEBUG7 ) {
         echo "<div class='debug'>things retrieved";
@@ -1151,7 +1174,7 @@ function getAllThings($reset = false) {
 // the last parameter is only needed for LINK customizations
 function getCustomTile($custom_val, $customid, $options, $allthings=false) {
     
-    $reserved = array("index","rooms","things","config","control","time","useroptions");
+    $reserved = array("index","rooms","things","config","control","useroptions");
     
     // see if a section for this id is in options file
     if (array_key_exists("user_" . $customid, $options) ) {
@@ -1383,6 +1406,11 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     } else {
         $hubt = "SmartThings";
     }
+    if ( array_key_exists("refresh", $thesensor) ) {
+        $refresh = $thesensor["refresh"];
+    } else {
+        $refresh = "normal";
+    }
 
     $pnames = processName($thesensor["name"], $thingtype);
     $thingname = $pnames[0];
@@ -1414,6 +1442,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     //             so one must now use the id to get the value of "i" to find elements
     $tc=  "<div id=\"$idtag\" hub=\"$hubnum\" hubtype=\"$hubt\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
     $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing" . $subtype . " p_$kindex\" "; 
+    $tc.= "refresh=\"$refresh\" ";
     if ( ($postop!==0 && $posleft!==0) || $zindex>1 ) {
         $tc.= "style=\"position: relative; left: $posleft" . "px" . "; top: $postop" . "px" . "; z-index: $zindex" . ";\"";
     }
@@ -1513,7 +1542,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
                 // this is what enables customization of any tile to happen
                 // ::type::LINK::tval  or ::LINK::tval
                 // this special element is not displayed and sits inside the overlay
-                // we only process theh non helpers and look for helpers in same list
+                // we only process the non helpers and look for helpers in same list
                 if ( substr($tkey,0,5)!=="user_" && substr($tval,0,2)!=="::" && 
                      (strpos($tkey, "DeviceWatch-") === false) &&
                      (strpos($tkey, "checkInterval") === false) 
@@ -1914,7 +1943,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     // image, blank, or custom tiles updated frequently
     // all things must be in session for this to work
     // and fast actions are only supported in query mode
-    } else if ( $swtype==="fast" ) {
+    } else if ( $swid==="fast" && $swtype==="fast" ) {
 
         if ( $allthings && $path==="doquery" ) {
             $response = array();
@@ -1930,26 +1959,41 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
             foreach ($allthings as $fidx => $thing) {
                 $type = $thing["type"];
                 $tileid = $indexoptions[$fidx];
-                if ( $type==="image" || $type==="blank" || $type==="clock" || $type==="custom" ) {
+                $hubnum2 = intval($thing["hubnum"]);
+                
+                if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="fast" ) {
+                // if ( $type==="image" || $type==="blank" || $type==="clock" || $type==="custom" ) {
+                    
+                    // check if this fast thing requires a hub call other than blanks and images
+                    // this is basically the old individual polling method and will be slow
+                    // so you should not enable very many tiles to be polled in the fast loop
+                    if ( $hubnum2>=0 && $type!=="blank" && $type!=="image" ) {
+                        $hub = $hubs[$hubnum2];
+                        $access_token2 = $hub["hubAccess"];
+                        $endpt2 = $hub["hubEndpt"];
+                        $host2 = $endpt2 . "/doquery";
+                        $headertype = array("Authorization: Bearer " . $access_token2);
+                        $nvpreq = "swid=" . urlencode($thing["id"]) . 
+                                  "&swattr=" . urlencode("") . 
+                                  "&swvalue=" . urlencode("") . 
+                                  "&swtype=" . urlencode($type);
+                        $response2 = curl_call($host2, $headertype, $nvpreq, "POST");
+                        $thing["value"] = $response2;
+                    }
                     $thing["value"] = getCustomTile($thing["value"],$thing["id"],$options, $allthings);
                     
                     // update any thing that has time elements
-                    if ( array_key_exists("time", $thing["value"]) ) {
-                        if ( array_key_exists("fmt_time", $thing["value"]) ) {
-                            $fmt_time = $thing["value"]["fmt_time"];
-                            $thing["value"]["time"] = date($fmt_time);
-                        } else {
-                            $thing["value"]["time"] = $timeofday;
-                        }
-                    }
-                    if ( array_key_exists("date", $thing["value"]) ) {
-                        if ( array_key_exists("fmt_date", $thing["value"]) ) {
-                            $fmt_date = $thing["value"]["fmt_date"];
-                            $thing["value"]["date"] = date($fmt_date);
-                        } else {
-                            $thing["value"]["date"] = $dateofmonth;
-                        }
-                    }
+                    // for speed sake we skip dates since they don't change that fast
+                    // this is disabled because I added a specific clock timer in js
+                    // that updates all clocks every second and normal does every minute
+//                    if ( array_key_exists("time", $thing["value"]) ) {
+//                        if ( array_key_exists("fmt_time", $thing["value"]) ) {
+//                            $fmt_time = $thing["value"]["fmt_time"];
+//                            $thing["value"]["time"] = date($fmt_time);
+//                        } else {
+//                            $thing["value"]["time"] = $timeofday;
+//                        }
+//                    }
                     $response[$tileid] = $thing;
                     
                 }
@@ -1964,7 +2008,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     // this is used by frames but others can be added later
     // all things must be in session for this to work
     // and slow actions are only supported in query mode
-    } else if ( $swtype==="slow" ) {
+    } else if ( $swid==="slow" && $swtype==="slow" ) {
 
         if ( $allthings && $path==="doquery" ) {
             $response = array();
@@ -1976,7 +2020,8 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
             foreach ($allthings as $fidx => $thing) {
                 $type = $thing["type"];
                 $tileid = $indexoptions[$fidx];
-                if ( $type==="frame" ) {
+                if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="slow" ) {
+                // if ( $type==="frame" ) {
                     $thing["value"] = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
                     $response[$tileid] = $thing;
                 }
@@ -1994,7 +2039,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         // this requires alloptions to be loaded which is true if an active session
         // which is fine because linked tiles don't make sense for API calls anyway
         // use command to signal this - HUB is usual case which makes hub call
-        if ( $command==="" || !$command || $swtype==="all" ) {
+        if ( $command==="" || !$command || ($swid==="all" && $swtype==="all") ) {
             $content = "";
             $command = "HUB";
         }
@@ -2034,6 +2079,9 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 if ( $allthings && array_key_exists($lidx, $allthings) ) {
                     $hubnum = $allthings[$lidx]["hubnum"];
                     $thingvalue = $allthings[$mainidx]["value"];
+                    $linked_swtype = $allthings[$lidx]["type"];
+                    $linked_swid = $allthings[$lidx]["id"];
+                    $linked_val = $allthings[$lidx]["value"];
 
                     // make hub call if requested and if the linked tile has one
                     if ( $path==="doaction" && $hubnum >= 0 && $hubs[$hubnum] && is_array($hubs[$hubnum]) ) {
@@ -2041,9 +2089,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                         $linked_access = $hub["hubAccess"];
                         $linked_endpt = $hub["hubEndpt"];
                         $linked_host = $linked_endpt . "/" . $path;
-                        $linked_swtype = $allthings[$lidx]["type"];
-                        $linked_swid = $allthings[$lidx]["id"];
-                        $linked_val = $allthings[$lidx]["value"];
                         
                         if ( array_key_exists($subid, $linked_val) ) {
                             $realsubid = $subid;
@@ -2092,7 +2137,9 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
 
                     // if not hub or a query just grab the as-is value of the linked item
                     } else {
+                        $realsubid = $subid;
                         $response = array($subid => $thingvalue[$subid]);
+                        $response["LINK"] = array("realsubid"=>$realsubid, "linked_swid"=>$linked_swid, "linked_val"=>$linked_val);
                     }
                 }
                 break;
@@ -2111,7 +2158,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
     
                 // if nothing returned and an action request, act like a query
-                if ( !$response && $path==="doaction" && array_key_exists($mainidx, $allthings) && $allthings ) {
+                if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $thing = $allthings[$mainidx];
                     $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
                     $response = array($subid => $thevalue[$subid]);
@@ -2125,11 +2172,15 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         if ( $response && count($response)>0 && $allthings ) {
             
             // update session with new status and pick out all if needed
-            if ( $path==="doquery" && $swtype=="all" ) {
+            if ( $path==="doquery" && ($swid==="all" && $swtype=="all") ) {
                 $respvals = array();
                 foreach($response as $thing) {
                     $idx = $thing["type"] . "|" . $thing["id"];
-                    if ( $thing["type"] !== "frame" && array_key_exists($idx, $allthings) ) {
+                    if ( ( !array_key_exists("refresh", $thing) || 
+                           $thing["refresh"]==="normal" || 
+                           $thing["refresh"]==="slow" || 
+                           $thing["refresh"]==="fast" ) && 
+                          array_key_exists($idx, $allthings) ) {
                         $oldthing = $allthings[$idx];
                         $newvalue = array_merge($oldthing["value"], $thing["value"]);
                         $newthing = array_merge($oldthing, $thing);
@@ -2138,18 +2189,26 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     }
                 }
                 
-                // update our clocks -- this is duplicative if we use fast also
-                // but we don't know that here so do it anyway
-                // they get updated with customizations later in the second pass
+                // update our clocks taking into account custom formats
                 $dclockname = "Digital Clock";
                 $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                                 "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
+                $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+                $fmt_date = $dclock["fmt_date"];
+                $fmt_time = $dclock["fmt_time"];
+                $dclock["date"] = date($fmt_date);
+                $dclock["time"] = date($fmt_time);
                 $allthings["clock|clockdigital"]["value"] = $dclock;
 
                 $aclockname = "Analog Clock";
                 $clockskin = "CoolClock:swissRail:72";
                 $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                                 "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
+                $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+                $fmt_date = $aclock["fmt_date"];
+                $fmt_time = $aclock["fmt_time"];
+                $aclock["date"] = date($fmt_date);
+                $aclock["time"] = date($fmt_time);
                 $allthings["clock|clockanalog"]["value"] = $aclock;
                 
                 // update custom links and save to allthings
@@ -2158,7 +2217,11 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 // custom tiles are included in this loop too
                 // but skip frames because they are in the slow update
                 foreach($allthings as $idx => $thing) {
-                    if ( $thing["type"] !== "frame" && array_key_exists($idx, $options["index"]) ) {
+                    if ( (!array_key_exists("refresh", $thing) || 
+                         ( $thing["refresh"]==="normal" || 
+                           $thing["refresh"]==="slow" || 
+                           $thing["refresh"]==="fast" ) ) && 
+                         array_key_exists($idx, $options["index"]) ) {
                         $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
                         $thing["value"] = $thevalue;
                         $allthings[$idx] = $thing;
@@ -4191,7 +4254,7 @@ function is_ssl() {
                     $newname = $swattr;
                     $newname = str_replace(" ", "_", $newname);
                     $oldname = $tileid;
-                    $updated = changePageName($oldname, $newname);
+                    $updcss = changePageName($oldname, $newname);
                     if ( $updated ) {
                         $result = "old page= $oldname new page = $newname";
                     } else {
@@ -4202,6 +4265,7 @@ function is_ssl() {
                     $options = readOptions();
                     $thingoptions = $options["things"];
                     $updated = false;
+                    $updcss = true;
                     $nupd = 0;
                     foreach ($thingoptions as $room => $things) {
                         foreach ($things as $k => $tiles) {
@@ -4220,9 +4284,20 @@ function is_ssl() {
                         $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
                     }
                 }
-                if ( $updated ) {
+                if ( $updcss ) {
                     $skin = $options["config"]["skin"];
                     writeCustomCss("customtiles.css",$swval,$skin);
+                    
+                    // update fast poll setting in allthings array
+//                    $fastpoll = $subid;
+//                    if ( strlen($fastpoll) > 0 ) {
+//                        $idx = array_search($tileid, $options["index"]);
+//                        if ( $idx!== false ) {
+//                            $allthings = getAllThings();
+//                            $allthings[$idx]["refresh"] = $fastpoll;
+//                            $_SESSION["allthings"] = $allthings;
+//                        }
+//                    }
                 }
                 echo $result;
                 break;

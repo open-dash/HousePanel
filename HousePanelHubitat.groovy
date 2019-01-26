@@ -1028,7 +1028,7 @@ def setHsmState(swid, cmd, swattr, subid){
     return resp
 }
 
-def setDimmer(swid, cmd, swattr) {
+def setDimmer(swid, cmd, swattr, subid) {
     def resp = setGenericLight(mydimmers, swid, cmd, swattr, subid)
     return resp
 }
@@ -1048,7 +1048,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
     
         def newonoff = item.currentValue("switch")
         if ( state.dologging ) {
-            log.debug "generic light cmd = $cmd swattr = $swattr"
+            log.debug "setGenericLight: swid = $swid cmd = $cmd swattr = $swattr subid = $subid"
         }
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
@@ -1216,6 +1216,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newcolor = hsv2rgb(hue, saturation, newsw)
                 newonoff = "on"
                 skiponoff = true
+                newsw = false
             }
             break
               
@@ -1225,28 +1226,16 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            if ( swattr.isNumber() && item.hasCommand("setLevel") ) {
+            if ( swattr.isNumber() ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
             }
-            if ( newonoff == "on" ) {
-                item.on()
-            } else {
-                item.off()
-            }
-            skiponoff = true
+            skiponoff = false
             break               
               
         }
         
-        if ( ! skiponoff ) {
-            if ( newonoff == "on" ) {
-                item.on()
-            } else {
-                item.off()
-            }
-        }
-        
+        newonoff=="on" ? item.on() : item.off()
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( newcolor ) { resp.put("color", newcolor) }

@@ -325,7 +325,7 @@ function initDialogBinds(str_type, thingindex) {
         var newname = $("#editName").val();
         $(target1).html(newname);
         cm_Globals.reload = true;
-        saveTileEdit(str_type, thingindex, newname);
+        saveTileEdit(str_type, thingindex, newname, "false");
         event.stopPropagation;
     });
     
@@ -334,7 +334,7 @@ function initDialogBinds(str_type, thingindex) {
         var newname = $("#editName").val();
         $(target1).html(newname);
         cm_Globals.reload = true;
-        saveTileEdit(str_type, thingindex, newname);
+        saveTileEdit(str_type, thingindex, newname, "false");
         event.stopPropagation;
     });
 
@@ -860,8 +860,13 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
                    " of Name: " + thingindex + "</div>";
         
     } else {
+        if ( hubnum < 0 ) {
+            var hubstr = " Hub not applicable";
+        } else {
+            hubstr = " From hub #" + hubnum;
+        }
         dialog_html += "<div class='editheader' id='editheader'>Editing Tile #" + thingindex + 
-                   " of Type: " + str_type + " From hub #" + hubnum + "</div>";
+                   " of Type: " + str_type + hubstr + "</div>";
     }
 
     // option on the left side - colors and options
@@ -923,7 +928,11 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
                 // alert("clk = "+clk);
                 if ( clk==="okay" ) {
                     var newname = $("#editName").val();
-                    saveTileEdit(str_type, thingindex, newname);
+                    var fastpoll = ""
+                    if ( $("#fastPoll").prop("checked") ) {
+                        fastpoll = "fast";
+                    }
+                    saveTileEdit(str_type, thingindex, newname, fastpoll);
                 } else if ( clk==="cancel" ) {
                     cancelTileEdit(str_type, thingindex);
                 }
@@ -1158,7 +1167,7 @@ function setsubid(str_type) {
     return subid;
 }
 
-function saveTileEdit(str_type, thingindex, newname) {
+function saveTileEdit(str_type, thingindex, newname, fastpoll) {
     var returnURL;
     try {
         returnURL = $("input[name='returnURL']").val();
@@ -1180,8 +1189,9 @@ function saveTileEdit(str_type, thingindex, newname) {
     var results = "";
     
     // post changes to save them in a custom css file
+    // send fastpoll in the subid
     $.post(returnURL, 
-        {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex},
+        {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex, subid: fastpoll},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
                 results = "success: msg = " + presult;
@@ -1550,6 +1560,7 @@ function initColor(str_type, subid, thingindex) {
         ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div><br />";
 
         var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
+        inverted += "<div class='editSection_input'><input type='checkbox' id='fastPoll'><label class=\"iconChecks\" for=\"fastPoll\">Fast Poll?</label></div>";
 
         var border = "<div class='editSection_input'><label>Border Type:</label>";
         border += "<select name=\"borderType\" id=\"borderType\" class=\"ddlDialog\">";
@@ -1623,6 +1634,12 @@ function initColor(str_type, subid, thingindex) {
             strInvert = "filter: invert(0);";
             addCSSRule(cssRuleTarget, strInvert, false);	
         }
+    });
+    
+    // if user changes polling, force page reload
+    $("#fastPoll").off('change');
+    $("#fastPoll").on("change",function() {
+        cm_Globals.reload = true;
     });
 
     $("#editEffect").off('change');
@@ -1739,7 +1756,6 @@ function initColor(str_type, subid, thingindex) {
     // determine hiding of element
     $("#isHidden").off('change');
     $("#isHidden").on('change', function(event) {
-        var str_type = $("#tileDialog").attr("str_type");
         var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
         var strCaller = $($(event.target)).attr("target");
@@ -1781,6 +1797,20 @@ function initColor(str_type, subid, thingindex) {
         $("#invertIcon").prop("checked",false);
     }
     
+    // set initial fast poll check box
+    // disable fast polling for pages, controller, and frames (they are slow polled)
+    if ( str_type==="blank" || str_type==="image" || str_type==="custom" || 
+         str_type==="video" || str_type==="clock" ) {
+        $("#fastPoll").prop("checked",true);
+        $("#fastPoll").prop("disabled",false);
+    } else if ( str_type==="page" || str_type==="control" || str_type==="frame" ) {
+        $("#fastPoll").prop("checked",false);
+        $("#fastPoll").prop("disabled",true);
+    } else {
+        $("#fastPoll").prop("checked",false);
+        $("#fastPoll").prop("disabled",false);
+    }
+    
     // set the initial icon none check box
     var isicon = $(target).css("background-image");
     if ( isicon === "none") {
@@ -1812,8 +1842,9 @@ function initColor(str_type, subid, thingindex) {
     // set initial hidden status
     if ( subid!=="wholetile" ) {
         var ish1= $(target).css("display");
-        var ish2= $("div.overlay."+str_type+".v_"+thingindex).css("display");
-        if ( ish1 === "none" || ish2 === "none") {
+        var ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");
+        var ish3 = $("div.overlay." + subid).css("display");
+        if ( ish1 === "none" || ish2 === "none" || ish3 ==="none") {
             $("#isHidden").prop("checked", true);
             defaultShow = "inline-block";
             defaultOverlay = "block";
