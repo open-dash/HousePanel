@@ -929,9 +929,9 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
                 if ( clk==="okay" ) {
                     var newname = $("#editName").val();
                     var fastpoll = ""
-                    if ( $("#fastPoll").prop("checked") ) {
-                        fastpoll = "fast";
-                    }
+//                    if ( $("#fastPoll").prop("checked") ) {
+//                        fastpoll = "fast";
+//                    }
                     saveTileEdit(str_type, thingindex, newname, fastpoll);
                 } else if ( clk==="cancel" ) {
                     cancelTileEdit(str_type, thingindex);
@@ -1560,7 +1560,7 @@ function initColor(str_type, subid, thingindex) {
         ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div><br />";
 
         var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
-        inverted += "<div class='editSection_input'><input type='checkbox' id='fastPoll'><label class=\"iconChecks\" for=\"fastPoll\">Fast Poll?</label></div>";
+        // inverted += "<div class='editSection_input'><input type='checkbox' id='fastPoll'><label class=\"iconChecks\" for=\"fastPoll\">Fast Poll?</label></div>";
 
         var border = "<div class='editSection_input'><label>Border Type:</label>";
         border += "<select name=\"borderType\" id=\"borderType\" class=\"ddlDialog\">";
@@ -1637,10 +1637,10 @@ function initColor(str_type, subid, thingindex) {
     });
     
     // if user changes polling, force page reload
-    $("#fastPoll").off('change');
-    $("#fastPoll").on("change",function() {
-        cm_Globals.reload = true;
-    });
+//    $("#fastPoll").off('change');
+//    $("#fastPoll").on("change",function() {
+//        cm_Globals.reload = true;
+//    });
 
     $("#editEffect").off('change');
     $("#editEffect").on('change', function (event) {
@@ -1799,17 +1799,17 @@ function initColor(str_type, subid, thingindex) {
     
     // set initial fast poll check box
     // disable fast polling for pages, controller, and frames (they are slow polled)
-    if ( str_type==="blank" || str_type==="image" || str_type==="custom" || 
-         str_type==="video" || str_type==="clock" ) {
-        $("#fastPoll").prop("checked",true);
-        $("#fastPoll").prop("disabled",false);
-    } else if ( str_type==="page" || str_type==="control" || str_type==="frame" ) {
-        $("#fastPoll").prop("checked",false);
-        $("#fastPoll").prop("disabled",true);
-    } else {
-        $("#fastPoll").prop("checked",false);
-        $("#fastPoll").prop("disabled",false);
-    }
+//    if ( str_type==="blank" || str_type==="image" || str_type==="custom" || 
+//         str_type==="video" || str_type==="clock" ) {
+//        $("#fastPoll").prop("checked",true);
+//        $("#fastPoll").prop("disabled",false);
+//    } else if ( str_type==="page" || str_type==="control" || str_type==="frame" ) {
+//        $("#fastPoll").prop("checked",false);
+//        $("#fastPoll").prop("disabled",true);
+//    } else {
+//        $("#fastPoll").prop("checked",false);
+//        $("#fastPoll").prop("disabled",false);
+//    }
     
     // set the initial icon none check box
     var isicon = $(target).css("background-image");
