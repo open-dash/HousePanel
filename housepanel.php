@@ -4198,6 +4198,13 @@ function is_ssl() {
                 exit;
                 break;
             
+            // return json string of all hubs
+            // this is in prep for the Node.js middleman
+            case "gethubs":
+                echo json_encode($hubs);
+                exit;
+                break;
+            
             case "reauth":
                 unset($_SESSION["allthings"]);
 //                unset($_SESSION["hmoptions"]);
