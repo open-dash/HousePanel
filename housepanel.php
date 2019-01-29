@@ -483,7 +483,7 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
     return $endpt;
 }
 
-function tsk($timezone, $skin, $kiosk, $uname) {
+function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort) {
 
     $tc= "";
     $tc.= "<div><label class=\"startupinp\">Timezone: </label>";
@@ -491,6 +491,12 @@ function tsk($timezone, $skin, $kiosk, $uname) {
 
     $tc.= "<div><label class=\"startupinp\">Skin Directory: </label>";
     $tc.= "<input id=\"newskindir\" class=\"startupinp\" name=\"skindir\" width=\"80\" type=\"text\" value=\"$skin\"/></div>"; 
+
+    $tc.= "<div><label class=\"startupinp\">Listen On Port: </label>";
+    $tc.= "<input id=\"newport\" class=\"startupinp\" name=\"port\" width=\"20\" type=\"text\" value=\"$port\"/></div>"; 
+
+    $tc.= "<div><label class=\"startupinp\">WebSocket Port: </label>";
+    $tc.= "<input id=\"newsocketport\" class=\"startupinp\" name=\"webSocketServerPort\" width=\"20\" type=\"text\" value=\"$webSocketServerPort\"/></div>"; 
 
     $tc.= "<div><label for=\"uname\" class=\"startupinp\">Username: </label>";
     $tc.= "<input id=\"uname\" class=\"startupinp\" name=\"uname\" width=\"20\" type=\"text\" value=\"$uname\"/></div>"; 
@@ -595,6 +601,18 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $skin = $configoptions["skin"];
         } else {
             $skin = "skin-housepanel";
+            $rewrite = true;
+        }
+        if (array_key_exists("port", $configoptions)) {
+            $port = $configoptions["port"];
+        } else {
+            $port = "19234";
+            $rewrite = true;
+        }
+        if (array_key_exists("webSocketServerPort", $configoptions)) {
+            $webSocketServerPort = $configoptions["webSocketServerPort"];
+        } else {
+            $webSocketServerPort = "1337";
             $rewrite = true;
         }
         
@@ -894,6 +912,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
+            "housepanel_url" => $returl,
+            "port" => $port,
+            "webSocketServerPort" => $webSocketServerPort,
             "hubs" => $hubs,
             "pword" => $pwords
         );
@@ -913,7 +934,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     
     // ------------------ general settings ----------------------------------
     $tc.= "<div>";
-    $tc.= tsk($timezone, $skin, $kiosk, $uname);
+    $tc.= tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort);
     $tc.= "</div>"; 
     
     if ( $hubset!==null && $newthings!==null && is_array($newthings) ) {
@@ -2156,6 +2177,10 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                           "&swtype=" . urlencode($swtype);
                 if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
+                
+                if ( $swtype==="all" ) {
+                    $response[] = $hubnum;
+                }
     
                 // if nothing returned and an action request, act like a query
                 if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
@@ -2178,7 +2203,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     $idx = $thing["type"] . "|" . $thing["id"];
                     if ( ( !array_key_exists("refresh", $thing) || 
                            $thing["refresh"]==="normal" || 
-                           $thing["refresh"]==="slow" || 
                            $thing["refresh"]==="fast" ) && 
                           array_key_exists($idx, $allthings) ) {
                         $oldthing = $allthings[$idx];
@@ -2219,7 +2243,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 foreach($allthings as $idx => $thing) {
                     if ( (!array_key_exists("refresh", $thing) || 
                          ( $thing["refresh"]==="normal" || 
-                           $thing["refresh"]==="slow" || 
                            $thing["refresh"]==="fast" ) ) && 
                          array_key_exists($idx, $options["index"]) ) {
                         $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
@@ -3351,11 +3374,14 @@ function is_ssl() {
     
     // get name of this webpage without any get parameters
     $serverName = $_SERVER['SERVER_NAME'];
-    if ( isset($_SERVER['SERVER_PORT']) ) {
-        $serverPort = ":" . $_SERVER['SERVER_PORT'];
-    } else {
-        $serverPort = "";
-    }
+    
+    // no longer include port here since sockets use different one
+//    if ( isset($_SERVER['SERVER_PORT']) ) {
+//        $serverPort = ":" . $_SERVER['SERVER_PORT'];
+//    } else {
+//        $serverPort = "";
+//    }
+    $serverPort = "";
     $uri = $_SERVER['PHP_SELF'];
     $url = is_ssl() . $serverName . $serverPort;
     $returnURL = $url . $uri;
@@ -3393,6 +3419,8 @@ function is_ssl() {
         $attr = $_POST["attr"];
         $timezone = $attr["timezone"];
         $skindir = $attr["skindir"];
+        $port = $attr["port"];
+        $webSocketServerPort = $attr["webSocketServerPort"];
         $uname = trim($attr["uname"]);
         if ( $uname!=="" ) {
             setcookie("uname",$uname, $expiry, "/");
@@ -3406,6 +3434,9 @@ function is_ssl() {
         date_default_timezone_set($timezone);
         $options["config"]["timezone"] = $timezone;
         $options["config"]["skin"] = $skindir;
+        $options["config"]["housepanel_url"] = $returnURL;
+        $options["config"]["port"] = $port;
+        $options["config"]["webSocketServerPort"] = $webSocketServerPort;
         if ( $uname!=="" && $pword!=="" ) {
             $pwords = $options["config"]["pword"];
             $pword = crypt($pword, CRYPTSALT);
@@ -3429,6 +3460,8 @@ function is_ssl() {
         
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
+        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_SPECIAL_CHARS);
+        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
         // $kiosk = false;
         // if ( isset( $_POST["use_kiosk"]) ) { $kiosk = true; }
         if ( isset( $_POST["use_kiosk"]) ) { 
@@ -3542,6 +3575,12 @@ function is_ssl() {
             $hubnum = count($hubs);
         }
         
+        if ( !$port ) {
+            $port = "19234";
+        }
+        if ( !$webSocketServerPort ) {
+            $webSocketServerPort = "1337";
+        }
 
         // save the hubs
         $hubs[$hubnum] = $hub;
@@ -3551,6 +3590,9 @@ function is_ssl() {
             "timezone" => $timezone,
             "skin" => $skin,
             "kiosk" => $kiosk,
+            "housepanel_url" => $returnURL,
+            "port" => $port,
+            "webSocketServerPort" => $webSocketServerPort,
             "hubs" => $hubs,
             "pword" => $pwords
         );
@@ -4419,6 +4461,7 @@ function is_ssl() {
     if ( $valid ) {
 
         $options = readOptions();
+        $rewriteoptions = false;
         $configoptions = $options["config"];
         $hubs = $configoptions["hubs"];
         $hubcount = count($hubs);

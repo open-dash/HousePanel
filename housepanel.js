@@ -1046,12 +1046,15 @@ function setupButtons() {
             var uname = $("#uname").val();
             var pword = $("#pword").val();
             var kiosk = $("#use_kiosk").val();
+            var port = $("#newport").val();
+            var webSocketServerPort = $("#newsocketport").val();
 
             // **********************************************
             // TODO - add input checking
             // **********************************************
             
-            var attrdata = {timezone: tz, skindir: skindir, uname: uname, pword: pword, kiosk: kiosk};
+            var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
+                            pword: pword, kiosk: kiosk, port: port, webSocketServerPort: webSocketServerPort };
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
                 function (presult, pstatus) {
