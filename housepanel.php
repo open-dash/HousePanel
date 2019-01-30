@@ -3385,7 +3385,7 @@ function is_ssl() {
     $uri = $_SERVER['PHP_SELF'];
     $url = is_ssl() . $serverName . $serverPort;
     $returnURL = $url . $uri;
-
+    
     // set default skin for handling errors
     $skin = "skin-housepanel";
 
@@ -4611,7 +4611,14 @@ function is_ssl() {
             $tc.= "<form>";
             $tc.= hidden("returnURL", $returnURL);
             $tc.= hidden("pagename", "main");
+
+            // save the host ip with socket port for use on js side
+            $webSocketUrl = is_ssl() . $serverName . ":" . $webSocketServerPort;
+            $tc.= hidden("webSocketUrl", $webSocketUrl);
+            
+            // save all the hubs data for use in js (could read options instead)
             $tc.= hidden("allHubs", json_encode($hubs));
+            
             if ( !$kioskmode ) {
                 $tc.= "<div id=\"controlpanel\">";
                 $tc.='<div id="showoptions" class="formbutton">Options</div>';

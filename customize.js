@@ -3,8 +3,6 @@
  * written by Ken Washington @kewashi on the forum
  * Designed for use only with HousePanel for Hubitat and SmartThings
  * (c) Ken Washington 2017, 2018, 2019
- * 
- * WARNING - still a work in progress - do not usegit a
  */
 
 // globals used by this module

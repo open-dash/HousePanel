@@ -6,6 +6,10 @@ var returnURL = "housepanel.php";
 var dragZindex = 1;
 var pagename = "main";
 
+// set a global socket variable to manage two-way handshake
+var wsSocket = null;
+var webSocketUrl = null;
+
 // set this global variable to true to disable actions
 // I use this for testing the look and feel on a public hosting location
 // this way the app can be installed but won't control my home
@@ -139,7 +143,11 @@ $(document).ready(function() {
         } catch(e) {
             console.log ("Couldn't find any hubs; hub raw str = " + hubstr);
         }
-
+        
+        // we could disable this timer loop
+        // becuase we now do on-demand updates via webSockets
+        // but for now we keep it just as a backup to keep things updates
+        // but we do slow down the default frequency in the above global variables
         if ( hubs && typeof hubs === "object" ) {
             // loop through every hub
             $.each(hubs, function (hubnum, hub) {
@@ -161,6 +169,12 @@ $(document).ready(function() {
         if ( slow_timer && slow_timer >= 1000 ) {
             setupTimer(slow_timer, "slow", -1);
         }
+        
+        // once a minute check for socket open
+        // and if not open reopen
+        webSocketUrl = $("input[name='webSocketUrl']").val();
+        wsSocketCheck();
+        setInterval(wsSocketCheck, 60000);
 
         // initialize the clock updater that runs every second
         // unlike the timer routines this doesn't do any php callbacks
@@ -172,6 +186,71 @@ $(document).ready(function() {
     }
 
 });
+
+// check to make sure we always have a websocket
+function wsSocketCheck() {
+    if ( webSocketUrl && ( wsSocket === null || wsSocket.readyState===3 )  ) {
+        setupWebsocket();
+    }
+}
+
+// new routine to set up and handle websockets
+// only need to do this once - I have no clue why it was done the other way before
+function setupWebsocket()
+{
+    try {
+        wsSocket = new WebSocket(webSocketUrl);
+    } catch(err) {
+        console.log("Error attempting to create webSocket for: ", webSocketUrl," error: ", err);
+        return;
+    }
+    
+    // upon opening a new socket notify user and do nothing else
+    wsSocket.onopen = function(){
+        console.log("webSocket connection opened for: ", webSocketUrl);
+    };
+    
+    wsSocket.onerror = function(event) {
+        console.error("webSocket error observed: ", event);
+    };
+
+    // received a message from housepanel-push
+    // this contains a single device object
+    wsSocket.onmessage = function (event) {
+        
+        try {
+            var presult = JSON.parse(event.data);
+            var pvalue = presult.value;
+            var bid = presult.id;
+            var thetype = presult.type;
+            console.log("Processing webSocket message from: ", webSocketUrl," data: ", event.data);
+        } catch (err) {
+            console.log("Error interpreting webSocket message. err: ", err);
+            return;
+        }
+
+        // check if we have valid info for this update item
+        if ( bid && thetype && pvalue && typeof pvalue==="object" ) {
+        
+            // update all the tiles that match this type and id
+            // notice we limit this to items on the actual panel
+            $('div.panel div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
+                try {
+                    var aid = $(this).attr("id").substring(2);
+                    updateTile(aid, pvalue);
+                } catch (e) {
+                    console.log("Error updating tile of type: "+ thetype + " and id: " + bid + " with value: ", pvalue);
+                }
+            });
+        }
+    };
+    
+    // if this socket connection closes then try to reconnect
+    wsSocket.onclose = function(){
+        console.log("webSocket connection closed for: ", webSocketUrl);
+        wsSocket = null;
+    };
+}
 
 function rgb2hsv(r, g, b) {
      //remove spaces from input RGB values, convert to int
@@ -325,8 +404,8 @@ function setupColors() {
                     that.css({"background-color": hex});
                     var huetag = $("#a-"+aid+"-hue");
                     var sattag = $("#a-"+aid+"-saturation");
-                    if ( huetag ) { huetag.css({"background-color": hex}); }
-                    if ( sattag ) { sattag.css({"background-color": hex}); }
+                    if ( huetag.length ) { huetag.css({"background-color": hex}); }
+                    if ( sattag.length ) { sattag.css({"background-color": hex}); }
                 } catch(e) {}
             },
             hide: function() {
@@ -340,11 +419,6 @@ function setupColors() {
                 var bidupd = bid;
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
-//                if ( bid.startsWith("h_") ) {
-//                    // ajaxcall = "dohubitat";
-//                    bid = bid.substring(2);
-//                }
-//                 alert("posting change to color= hsl= " + hslstr + " bid= " + bid);
                 $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubnum: hubnum},
                        function (presult, pstatus) {
@@ -360,7 +434,6 @@ function setupColors() {
 
 function setupSliders() {
     
-    // $("div.overlay.level >div.level").slider( "destroy" );
     $("div.overlay.level >div.level").slider({
         orientation: "horizontal",
         min: 0,
@@ -433,7 +506,6 @@ function setupSliders() {
     });
 
     // now set up all colorTemperature sliders
-    // $("div.overlay.colorTemperature >div.colorTemperature").slider( "destroy" );
     $("div.overlay.colorTemperature >div.colorTemperature").slider({
         orientation: "horizontal",
         min: 2000,
@@ -449,10 +521,6 @@ function setupSliders() {
             var hubnum = $(tile).attr("hub");
             var bidupd = bid;
             var ajaxcall = "doaction";
-//            if ( bid.startsWith("h_") ) {
-//                // ajaxcall = "dohubitat";
-//                bid = bid.substring(2);
-//            }
             var subid = thing.attr("subid");
             var thevalue = parseInt(ui.value);
             var thetype = $(tile).attr("type");
@@ -476,7 +544,7 @@ function setupSliders() {
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                            updAll("slider",aid,bidupd,thetype,hubnum,presult);
+                            updAll(subid,aid,bidupd,thetype,hubnum,presult);
                         }
                    }, "json"
             );
@@ -512,7 +580,6 @@ function cancelDraggable() {
         $("#catalog").droppable("destroy");
     }
     
-    // $("#catalog").hide();
     // remove the catalog
     $("#catalog").remove();
 }
@@ -529,11 +596,6 @@ function cancelSortable() {
 }
 
 function cancelPagemove() {
-//    $("ul.ui-tabs-nav").each(function(){
-//        if ( $(this).sortable("instance") ) {
-//            $(this).sortable("destroy");
-//        }
-//    });
     if ( $("#roomtabs").sortable("instance") ) {
         $("#roomtabs").sortable("destroy");
     }
