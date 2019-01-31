@@ -483,7 +483,7 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
     return $endpt;
 }
 
-function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort) {
+function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer) {
 
     $tc= "";
     $tc.= "<div><label class=\"startupinp\">Timezone: </label>";
@@ -497,6 +497,12 @@ function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort) {
 
     $tc.= "<div><label class=\"startupinp\">WebSocket Port: </label>";
     $tc.= "<input id=\"newsocketport\" class=\"startupinp\" name=\"webSocketServerPort\" width=\"20\" type=\"text\" value=\"$webSocketServerPort\"/></div>"; 
+
+    $tc.= "<div><label class=\"startupinp\">Fast Timer: </label>";
+    $tc.= "<input id=\"newfast_timer\" class=\"startupinp\" name=\"fast_timer\" width=\"20\" type=\"text\" value=\"$fast_timer\"/></div>"; 
+
+    $tc.= "<div><label class=\"startupinp\">Slow Timer: </label>";
+    $tc.= "<input id=\"newslow_timer\" class=\"startupinp\" name=\"slow_timer\" width=\"20\" type=\"text\" value=\"$slow_timer\"/></div>"; 
 
     $tc.= "<div><label for=\"uname\" class=\"startupinp\">Username: </label>";
     $tc.= "<input id=\"uname\" class=\"startupinp\" name=\"uname\" width=\"20\" type=\"text\" value=\"$uname\"/></div>"; 
@@ -615,6 +621,18 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $webSocketServerPort = "1337";
             $rewrite = true;
         }
+        if (array_key_exists("fast_timer", $configoptions)) {
+            $fast_timer = $configoptions["fast_timer"];
+        } else {
+            $fast_timer = 10000;
+            $rewrite = true;
+        }
+        if (array_key_exists("slow_timer", $configoptions)) {
+            $slow_timer = $configoptions["slow_timer"];
+        } else {
+            $slow_timer = 3600000;
+            $rewrite = true;
+        }
         
         // fix any legacy settings to put kiosk in the config section
         if ( array_key_exists("kiosk", $options) ) {
@@ -680,7 +698,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
                         "clientId"=>"", "clientSecret"=>"",
                         "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>1,
-                        "hubAccess"=>"", "hubEndpt"=>"");
+                        "hubTimer"=>60000, "hubAccess"=>"", "hubEndpt"=>"");
         
         // handle legacy hmoptions files that have the old setup without arrays
         // this will only work once - the first time used
@@ -718,6 +736,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                     "clientSecret"=>$configoptions["client_secret"],
                     "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
                     "hubName"=>$hubName, "hubId"=>1,
+                    "hubTimer"=>60000,
                     "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
                 $hubs[] = $sthub;
             }
@@ -753,6 +772,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                     "clientSecret"=>"",
                     "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
                     "hubName"=>$hubName, "hubId"=>$hubId,
+                    "hubTimer"=>10000,
                     "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
                 $hubs[] = $hehub;
             }
@@ -859,6 +879,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "clientSecret"=>$clientSecret,
             "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
             "hubName"=>$hubName, "hubId"=>$hubId,
+            "hubTimer"=>60000,
             "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
             
         if ( count($hubs)>=1 && $hubs[0]["hubType"]==="SmartThings") {
@@ -895,6 +916,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                 "clientSecret"=>$clientSecret,
                 "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
                 "hubName"=>$hubName, "hubId"=>$hubId,
+                "hubTimer"=>10000,
                 "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
             
             if ( count($hubs)>=2 && $hubs[1]["hubType"]==="Hubitat") {
@@ -915,6 +937,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "housepanel_url" => $returl,
             "port" => $port,
             "webSocketServerPort" => $webSocketServerPort,
+            "fast_timer" => $fast_timer,
+            "slow_timer" => $slow_timer,
             "hubs" => $hubs,
             "pword" => $pwords
         );
@@ -934,7 +958,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     
     // ------------------ general settings ----------------------------------
     $tc.= "<div>";
-    $tc.= tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort);
+    $tc.= tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer);
     $tc.= "</div>"; 
     
     if ( $hubset!==null && $newthings!==null && is_array($newthings) ) {
@@ -1011,6 +1035,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
         $tc.= "<div><label class=\"startupinp required\">Hub ID: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hub["hubId"] . "\"/></div>"; 
+
+        $tc.= "<div><label class=\"startupinp required\">Refresh Timer: </label>";
+        $tc.= "<input class=\"startupinp\" name=\"hubTimer\" width=\"10\" type=\"text\" value=\"" . $hub["hubTimer"] . "\"/></div>"; 
 
         $tc.= "<div><label class=\"startupinp\">Access Token: </label>";
         $tc.= "<input disabled class=\"startupinp\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $hub["hubAccess"] . "\"/></div>"; 
@@ -3375,13 +3402,15 @@ function is_ssl() {
     // get name of this webpage without any get parameters
     $serverName = $_SERVER['SERVER_NAME'];
     
+    if ( isset($_SERVER['SERVER_PORT']) ) {
+        $serverPort = ":" . $_SERVER['SERVER_PORT'];
+    } else {
+        $serverPort = "";
+    }
+    
     // no longer include port here since sockets use different one
-//    if ( isset($_SERVER['SERVER_PORT']) ) {
-//        $serverPort = ":" . $_SERVER['SERVER_PORT'];
-//    } else {
-//        $serverPort = "";
-//    }
-    $serverPort = "";
+    // $serverPort = "";
+    
     $uri = $_SERVER['PHP_SELF'];
     $url = is_ssl() . $serverName . $serverPort;
     $returnURL = $url . $uri;
@@ -3421,6 +3450,8 @@ function is_ssl() {
         $skindir = $attr["skindir"];
         $port = $attr["port"];
         $webSocketServerPort = $attr["webSocketServerPort"];
+        $fast_timer = $attr["fast_timer"];
+        $slow_timer = $attr["slow_timer"];
         $uname = trim($attr["uname"]);
         if ( $uname!=="" ) {
             setcookie("uname",$uname, $expiry, "/");
@@ -3436,6 +3467,8 @@ function is_ssl() {
         $options["config"]["skin"] = $skindir;
         $options["config"]["housepanel_url"] = $returnURL;
         $options["config"]["port"] = $port;
+        $options["config"]["fast_timer"] = $fast_timer;
+        $options["config"]["slow_timer"] = $slow_timer;
         $options["config"]["webSocketServerPort"] = $webSocketServerPort;
         if ( $uname!=="" && $pword!=="" ) {
             $pwords = $options["config"]["pword"];
@@ -3460,8 +3493,10 @@ function is_ssl() {
         
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
-        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_SPECIAL_CHARS);
-        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
+        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_NUMBER_INT);
+        $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_NUMBER_INT);
+        $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_NUMBER_INT);
+        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_NUMBER_INT);
         // $kiosk = false;
         // if ( isset( $_POST["use_kiosk"]) ) { $kiosk = true; }
         if ( isset( $_POST["use_kiosk"]) ) { 
@@ -3493,6 +3528,7 @@ function is_ssl() {
         $userEndpt = filter_input(INPUT_POST, "userEndpt", FILTER_SANITIZE_URL);
         $hubName = filter_input(INPUT_POST, "hubName", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
+        $hubTimer = filter_input(INPUT_POST, "hubTimer", FILTER_SANITIZE_NUMBER_INT);
         $hubAccess = $userAccess;
         $hubEndpt = $userEndpt;
         $hubName = trim($hubName);
@@ -3551,6 +3587,10 @@ function is_ssl() {
                 $hub["hubId"] = $hubIds[$i];
                 $hub["hubAccess"] = $hubAccesses[$i];
                 $hub["hubEndpt"] = $hubEndpts[$i];
+                $hub["hubTimer"] = 60000;
+                if ( $hub["hubType"] === "Hubitat" ) {
+                    $hub["hubTimer"] = 10000;
+                }
                 $hubs[] = $hub;
             }
         } else if (array_key_exists("hubs", $configoptions)) {
@@ -3569,6 +3609,7 @@ function is_ssl() {
         $hub["hubId"] = $hubId;
         $hub["hubAccess"] = $hubAccess;
         $hub["hubEndpt"] = $hubEndpt;
+        $hub["hubTimer"] = $hubTimer;
 
         // make sure we have continuous hub numbers
         if ( $hubnum > count($hubs) ) {
@@ -4336,17 +4377,6 @@ function is_ssl() {
                 if ( $updcss ) {
                     $skin = $options["config"]["skin"];
                     writeCustomCss("customtiles.css",$swval,$skin);
-                    
-                    // update fast poll setting in allthings array
-//                    $fastpoll = $subid;
-//                    if ( strlen($fastpoll) > 0 ) {
-//                        $idx = array_search($tileid, $options["index"]);
-//                        if ( $idx!== false ) {
-//                            $allthings = getAllThings();
-//                            $allthings[$idx]["refresh"] = $fastpoll;
-//                            $_SESSION["allthings"] = $allthings;
-//                        }
-//                    }
                 }
                 echo $result;
                 break;
@@ -4465,6 +4495,22 @@ function is_ssl() {
         $configoptions = $options["config"];
         $hubs = $configoptions["hubs"];
         $hubcount = count($hubs);
+        $newhubs = array();
+        foreach($hubs as $hub) {
+            if ( !array_key_exists("hubTimer", $hub) ) {
+                $hub["hubTimer"] = 60000;
+                if ( $hub["hubType"] === "Hubitat" ) {
+                    $hub["hubTimer"] = 10000;
+                }
+                $rewriteoptions = true;
+            }
+            $newhubs[] = $hub;
+        }
+        
+        if ( $rewriteoptions ) {
+            $configoptions["hubs"] = $newhubs;
+            $hubs = $newhubs;
+        }
         
         // set up time zone
         $timezone = $configoptions["timezone"];
@@ -4475,6 +4521,7 @@ function is_ssl() {
         if (! $skin || !file_exists("$skin/housepanel.css") ) {
             $skin = "skin-housepanel";
             $configoptions["skin"] = $skin;
+            $rewriteoptions = true;
         }
         
         $pwords = $configoptions["pword"];
@@ -4505,6 +4552,11 @@ function is_ssl() {
             } else {
                 $login = false;
             }
+        }
+        
+        if ( $rewriteoptions ) {
+            $options["config"] = $configoptions;
+            writeOptions($options);
         }
         
         if ( !$login ) {
@@ -4548,8 +4600,8 @@ function is_ssl() {
             }
 
             // if no room has more than 2 things setup defaults
-            // i picked 3 because clocks and weather are typically always there
-            if ( $maxroom < 3 ) {
+            // i picked 2 because clock is always there
+            if ( $maxroom < 2 ) {
                 $options = setDefaults($options, $allthings);
                 writeOptions($options);
             }
@@ -4615,6 +4667,8 @@ function is_ssl() {
             // save the host ip with socket port for use on js side
             $webSocketUrl = is_ssl() . $serverName . ":" . $webSocketServerPort;
             $tc.= hidden("webSocketUrl", $webSocketUrl);
+            $tc.= hidden("fast_timer", $fast_timer);
+            $tc.= hidden("slow_timer", $slow_timer);
             
             // save all the hubs data for use in js (could read options instead)
             $tc.= hidden("allHubs", json_encode($hubs));

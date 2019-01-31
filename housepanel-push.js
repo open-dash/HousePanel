@@ -37,8 +37,6 @@ function updateElements() {
     var request = require('request');
     var num;
     for (num= 0; num< hubs.length; num++) {
-    // hubs.forEach( function(hub) {
-        
         var numstr = num.toString();
         var parms = { url:config.housepanel_url, 
                       form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubnum:numstr}};
@@ -58,8 +56,6 @@ function updateElements() {
                 console.log('error attempting to read hub #', num,' statusCode:',response.statusCode);
             }
         });
-        
-    // });
     }
 }
 

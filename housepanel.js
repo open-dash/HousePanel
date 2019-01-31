@@ -17,19 +17,6 @@ var webSocketUrl = null;
 // use the timers options to turn off polling
 var disablepub = false;
 
-// smart things timer once a minute
-var st_timer = 60000;
-
-// hubitat timer once every 30 seconds
-var he_timer = 30000;
-
-// fast timer is every 15 seconds
-var fast_timer = 10000;
-
-// slow timer is once an hour
-var slow_timer = 3600000;
-
-
 Number.prototype.pad = function(size) {
     var s = String(this);
     while (s.length < (size || 2)) {s = "0" + s;}
@@ -103,7 +90,7 @@ $(document).ready(function() {
     }
     
     // disable return key
-    $("form.options").keypress(function(e) {
+    $("body").keypress(function(e) {
         if ( e.keyCode===13  ){
             return false;
         }
@@ -130,31 +117,46 @@ $(document).ready(function() {
 
         setupColors();
 
-        // invoke the new timer that updates everything at once
+        // try to get the hubs
+        try {
+            var hubstr = $("input[name='allHubs']").val();
+            var hubs = JSON.parse(hubstr);
+        } catch(err) {
+            console.log ("Couldn't retrieve any hubs. err: ", err);
+            hubs = null;
+        }
+        
+        // try to get timers
         // disable these if you want to minimize cloud web traffic
         // if you do this manual controls will not be reflected in panel
         // but you can always run a refresh to update the panel manually
         // or you can run it every once in a blue moon too
         // any value less than 1000 (1 sec) will be interpreted as never
         // note - with multihub we now use hub type to set the timer
-        var hubstr = $("input[name='allHubs']").val();
+        var fast_timer;
+        var slow_timer;
         try {
-            var hubs = JSON.parse(hubstr);
-        } catch(e) {
-            console.log ("Couldn't find any hubs; hub raw str = " + hubstr);
+            fast_timer = $("input[name='fast_timer']").val();
+            slow_timer = $("input[name='slow_timer']").val();
+        } catch(err) {
+            console.log ("Couldn't retrieve timers; using defaults. err: ", err);
+            fast_timer = 10000;
+            slow_timer = 3600000;
         }
         
         // we could disable this timer loop
+        // we also grab timer from each hub setting now
         // becuase we now do on-demand updates via webSockets
         // but for now we keep it just as a backup to keep things updates
-        // but we do slow down the default frequency in the above global variables
         if ( hubs && typeof hubs === "object" ) {
             // loop through every hub
             $.each(hubs, function (hubnum, hub) {
-                var hubType = hub.hubType;
-                var timerval = st_timer;
-                if ( hubType==="Hubitat" ) {
-                    timerval = he_timer;
+                // var hubType = hub.hubType;
+                var timerval;
+                if ( hub.hubTimer ) {
+                    timerval = hub.hubTimer;
+                } else {
+                    timerval = 60000;
                 }
                 if ( timerval && timerval >= 1000 ) {
                     setupTimer(timerval, "all", hubnum);
@@ -170,11 +172,19 @@ $(document).ready(function() {
             setupTimer(slow_timer, "slow", -1);
         }
         
-        // once a minute check for socket open
-        // and if not open reopen
-        webSocketUrl = $("input[name='webSocketUrl']").val();
-        wsSocketCheck();
-        setInterval(wsSocketCheck, 60000);
+        // get the webSocket info and the timers
+        try {
+            webSocketUrl = $("input[name='webSocketUrl']").val();
+        } catch(err) {
+            console.log("Error attempting to retrieve webSocket URL. err: ", err);
+            webSocketUrl = null;
+        }
+        
+        // once a minute check for socket open and if not open reopen
+        if ( webSocketUrl ) {
+            wsSocketCheck();
+            setInterval(wsSocketCheck, 60000);
+        }
 
         // initialize the clock updater that runs every second
         // unlike the timer routines this doesn't do any php callbacks
@@ -1110,13 +1120,16 @@ function setupButtons() {
             var kiosk = $("#use_kiosk").val();
             var port = $("#newport").val();
             var webSocketServerPort = $("#newsocketport").val();
+            var fast_timer = $("#newfast_timer").val();
+            var slow_timer = $("#newslow_timer").val();
 
             // **********************************************
             // TODO - add input checking
             // **********************************************
             
             var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
-                            pword: pword, kiosk: kiosk, port: port, webSocketServerPort: webSocketServerPort };
+                            pword: pword, kiosk: kiosk, port: port, webSocketServerPort: webSocketServerPort,
+                            fast_timer: fast_timer, slow_timer: slow_timer};
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
                 function (presult, pstatus) {
