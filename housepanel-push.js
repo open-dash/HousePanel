@@ -1,4 +1,4 @@
-// "use strict";
+"use strict";
 process.title = 'housepanel-push';
 
 // websocket and http servers

@@ -1,7 +1,7 @@
 /**
  *  HousePanel (Hubitat Version)
  *
- *  Copyright 2016, 2017, 2018 Kenneth Washington
+ *  Copyright 2016 to 2019 Kenneth Washington
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -47,7 +47,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.923" }
+public static String version() { return "v1.980" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -58,7 +58,7 @@ definition(
     iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
     iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
     iconX3Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon3x.png",
-    oauth: [displayName: "kewashi house panel", displayLink: ""])
+    oauth: [displayName: "HousePanel", displayLink: ""])
 
 
 preferences {
@@ -68,11 +68,11 @@ preferences {
         paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
                   "actions will be slower than local installations."
-        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true)
+        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "h_")
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "h_", displayDuringSetup: true, displayDuringSetup: true)
         paragraph "Enable this to use Pistons. You must have WebCore installed locally for this to work (Beta)."
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
     }
     section("Lights and Switches...") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"

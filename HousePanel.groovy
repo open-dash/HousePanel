@@ -1,7 +1,7 @@
 /**
  *  HousePanel
  *
- *  Copyright 2016, 2017, 2018, 2019 Kenneth Washington
+ *  Copyright 2016 to 2019 Kenneth Washington
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -44,7 +44,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.923" }
+public static String version() { return "v1.980" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -55,7 +55,7 @@ definition(
     iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
     iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
     iconX3Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon3x.png",
-    oauth: [displayName: "kewashi house panel", displayLink: ""])
+    oauth: [displayName: "HousePanel", displayLink: ""])
 
 
 preferences {
@@ -63,9 +63,9 @@ preferences {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "")
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "", displayDuringSetup: true)
         paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
     }
     section("Lights and Switches") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
