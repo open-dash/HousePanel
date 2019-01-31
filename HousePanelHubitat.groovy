@@ -408,7 +408,7 @@ def setOther(swid, cmd, attr, subid ) {
     }
     
     else if ( subid == "switch" ) {
-        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr)
+        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr, subid)
         resp = onoff ? [switch: onoff] : false
     }
     return resp
