@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/30/2019 - implement push notifications and logger
  * 01/19/2019 - added power and begin prepping for push notifications
  * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
  * 01/05/2019 - fix music controls to work again after separating icons out
@@ -99,7 +100,7 @@ preferences {
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
     section ("Websocket Updates") {
-        input "webSocketHost (rPI IP)", "text", title: "Host", defaultValue: "192.168.11.20", required: false
+        input "webSocketHost (rPI IP)", "text", title: "Host", defaultValue: "", required: false
         input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
     }
     section("Logging") {
@@ -1707,7 +1708,7 @@ def changeHandler(evt) {
     
     sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
 
-    if (state?.directIP && sendItems?.size()) {
+    if (state?.directIP && state?.directPort && sendItems?.size()) {
         //Send Using the Direct Mechanism
         sendItems.each { send->
             logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
@@ -1721,7 +1722,6 @@ def changeHandler(evt) {
                     'Content-Type': 'application/json'
                 ],
                 body: [
-                    hubtoken: state.accessToken,
                     msgtype: "update",
                     change_name: send?.evtDeviceName,
                     change_device: send?.evtDeviceId,
@@ -1738,7 +1738,7 @@ def changeHandler(evt) {
 
 def postHub(message) {
 
-    if ( message && state.directIP ) {
+    if ( message && state?.directIP && state?.directPort ) {
         //Send Using the Direct Mechanism
         logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
@@ -1747,7 +1747,7 @@ def postHub(message) {
             method: "POST",
             path: "/",
             headers: [
-                HOST: "${state.directIP}:${state?.directPort}",
+                HOST: "${state.directIP}:${state.directPort}",
                 'Content-Type': 'application/json'
             ],
             body: [

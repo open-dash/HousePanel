@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/30/2019 - implement push notifications and logger
  * 01/27/2019 - first draft of direct push notifications via hub post
  * 01/19/2019 - added power and begin prepping for push notifications
  * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
@@ -1799,7 +1800,7 @@ def changeHandler(evt) {
             break
     }
 
-    if (sendEvt && state?.directIP && sendItems?.size()) {
+    if (sendEvt && state?.directIP && state?.directPort && sendItems?.size()) {
         //Send Using the Direct Mechanism
         sendItems.each { send->
             logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
@@ -1809,7 +1810,7 @@ def changeHandler(evt) {
                 method: "POST",
                 path: "/",
                 headers: [
-                    HOST: "${state?.directIP}:${state?.directPort}",
+                    HOST: "${state.directIP}:${state.directPort}",
                     'Content-Type': 'application/json'
                 ],
                 body: [
@@ -1821,7 +1822,6 @@ def changeHandler(evt) {
                     change_date: send?.evtDate
                 ]
             ]
-            // def result = new physicalgraph.device.HubAction(params)
             def result = new hubitat.device.HubAction(params)
             sendHubCommand(result)
         }
@@ -1830,7 +1830,7 @@ def changeHandler(evt) {
 
 def postHub(message) {
 
-    if ( message && state.directIP ) {
+    if ( message && state?.directIP && state?.directPort) {
         //Send Using the Direct Mechanism
         logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
@@ -1839,7 +1839,7 @@ def postHub(message) {
             method: "POST",
             path: "/",
             headers: [
-                HOST: "${state.directIP}:${state?.directPort}",
+                HOST: "${state.directIP}:${state.directPort}",
                 'Content-Type': 'application/json'
             ],
             body: [
@@ -1847,7 +1847,6 @@ def postHub(message) {
                 message: message,
             ]
         ]
-        // def result = new physicalgraph.device.HubAction(params)
         def result = new hubitat.device.HubAction(params)
         sendHubCommand(result)
         
