@@ -4664,8 +4664,8 @@ function is_ssl() {
             $tc.= hidden("returnURL", $returnURL);
             $tc.= hidden("pagename", "main");
 
-            // save the host ip with socket port for use on js side
-            $webSocketUrl = is_ssl() . $serverName . ":" . $webSocketServerPort;
+            // save the socket address for use on js side
+            $webSocketUrl = "ws://" . $serverName . ":" . $webSocketServerPort;
             $tc.= hidden("webSocketUrl", $webSocketUrl);
             $tc.= hidden("fast_timer", $fast_timer);
             $tc.= hidden("slow_timer", $slow_timer);

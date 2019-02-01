@@ -183,7 +183,7 @@ $(document).ready(function() {
         // once a minute check for socket open and if not open reopen
         if ( webSocketUrl ) {
             wsSocketCheck();
-            setInterval(wsSocketCheck, 60000);
+            setInterval(wsSocketCheck, 30000);
         }
 
         // initialize the clock updater that runs every second
@@ -227,6 +227,18 @@ function setupWebsocket()
     // received a message from housepanel-push
     // this contains a single device object
     wsSocket.onmessage = function (event) {
+        
+        try {
+            pagename = $("input[name='pagename']").val();
+        } catch(e) {
+            pagename = "";
+        }
+        
+        // skip processing websocket if we are not on the main page
+        // when this happens the polling backup will save us
+        if ( pagename!=="main" ) {
+            return;
+        }
         
         try {
             var presult = JSON.parse(event.data);
