@@ -86,18 +86,19 @@ app.post("/", function (req, res) {
     } else if ( req.body['msgtype'] == "update" && elements ) {
 
         // loop through all the elements for this hub
-        console.log('device state change: ', req.body['change_device']);
+        // console.log('device state change: ', req.body['change_device']);
         // elements.forEach(function(entry) {
         for (var num= 0; num< elements.length; num++) {
             
             var entry = elements[num];
-            if (entry.id === req.body['change_device'].toString() )
+            if ( entry.id == req.body['change_device'].toString() &&
+                req.body['change_attribute']!=='trackData' &&
+                entry['value'][req.body['change_attribute']] !== req.body['change_value'] )
             {
-                console.log('updating tile #',entry['id']);
+                console.log('updating tile #',entry['id'],' from trigger:',req.body['change_attribute']);
                 // console.log(entry['value']);
                 entry['value'][req.body['change_attribute']] = req.body['change_value'];
                 if ( entry['value']['trackData'] ) { delete entry['value']['trackData']; }
-                // console.log('<--- ');
                 console.log(entry);
 
                 // send the updated element to all clients
@@ -167,3 +168,4 @@ wsServer.on('request', function(request) {
     });
 
 });
+

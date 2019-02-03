@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 02/03/2019 - switch thermostat and music tiles to use native key field names
+ * 02/01/2019 - added page structure to input
  * 01/30/2019 - implement push notifications and logger
  * 01/27/2019 - first draft of direct push notifications via hub post
  * 01/19/2019 - added power and begin prepping for push notifications
@@ -62,72 +64,80 @@ definition(
 
 
 preferences {
-    section("HousePanel Hubitat Configuration") {
-        paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
-                  "Only those things selected will be usable on your panel. First, a few options can be enabled. "
-        paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
-                  "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
-                  "actions will be slower than local installations."
-        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
-        paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "h_", displayDuringSetup: true, displayDuringSetup: true)
-        paragraph "Enable this to use Pistons. You must have WebCore installed locally for this to work (Beta)."
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
+    page(name: "optionspage", title: "Welcome to HousePanel", nextPage: "devicespage", uninstall: true) {
+        section("HousePanel Hubitat Options") {
+            paragraph "Set the Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
+                      "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
+                      "actions will be slower than local installations."
+            input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
+            paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
+            input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "h_", displayDuringSetup: true)
+            paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
+            input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
+            paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
+            input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
+            input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
+        }
     }
-    section("Lights and Switches...") {
-        input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
-        input "mydimmers", "capability.switchLevel", hideWhenEmpty: true, multiple: true, required: false, title: "Dimmers"
-        input "mymomentaries", "capability.momentary", hideWhenEmpty: true, multiple: true, required: false, title: "Momentary Buttons"
-        input "mylights", "capability.light", hideWhenEmpty: true, multiple: true, required: false, title: "Lights"
-        input "mybulbs", "capability.colorControl", hideWhenEmpty: true, multiple: true, required: false, title: "Bulbs"
+    page(name: "devicespage", title: "Specify Your Devices", hideWhenEmpty: true, nextPage: "logpage") {
+        section("Devices Setup") {
+            paragraph "Below you will authorize your things for HousePanel use. " +
+                      "Only those things selected will be usable on your panel."
+        }
+        section("Lights and Switches") {
+            input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
+            input "mydimmers", "capability.switchLevel", hideWhenEmpty: true, multiple: true, required: false, title: "Dimmers"
+            input "mymomentaries", "capability.momentary", hideWhenEmpty: true, multiple: true, required: false, title: "Momentary Buttons"
+            input "mylights", "capability.light", hideWhenEmpty: true, multiple: true, required: false, title: "Lights"
+            input "mybulbs", "capability.colorControl", hideWhenEmpty: true, multiple: true, required: false, title: "Bulbs"
+        }
+        section ("Motion and Presence") {
+            input "mypresences", "capability.presenceSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Presence"
+            input "mysensors", "capability.motionSensor", multiple: true, required: false, title: "Motion"
+        }
+        section ("Door and Contact Sensors") {
+            input "mycontacts", "capability.contactSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Contact Sensors"
+            input "mydoors", "capability.doorControl", hideWhenEmpty: true, multiple: true, required: false, title: "Doors"
+            input "mylocks", "capability.lock", hideWhenEmpty: true, multiple: true, required: false, title: "Locks"
+        }
+        section ("Thermostat & Environment") {
+            input "mythermostats", "capability.thermostat", hideWhenEmpty: true, multiple: true, required: false, title: "Thermostats"
+            input "mytemperatures", "capability.temperatureMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Temperature Measures"
+            input "myilluminances", "capability.illuminanceMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Illuminances"
+            // input "myweathers", "device.smartweatherStationTile", hideWhenEmpty: true, title: "Weather tile", multiple: false, required: false
+        }
+        section ("Water, Sprinklers & Smoke") {
+            input "mywaters", "capability.waterSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Water Sensors"
+            input "myvalves", "capability.valve", hideWhenEmpty: true, multiple: true, required: false, title: "Sprinklers"
+            input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
+        }
+        section ("Music & Other Sensors") {
+            input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
+            input "mypower", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
+            input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
+        }
     }
-    section ("Motion and Presence") {
-        input "mypresences", "capability.presenceSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Presence"
-        input "mysensors", "capability.motionSensor", multiple: true, required: false, title: "Motion"
-    }
-    section ("Door and Contact Sensors") {
-        input "mycontacts", "capability.contactSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Contact Sensors"
-        input "mydoors", "capability.doorControl", hideWhenEmpty: true, multiple: true, required: false, title: "Doors"
-        input "mylocks", "capability.lock", hideWhenEmpty: true, multiple: true, required: false, title: "Locks"
-    }
-    section ("Thermostat & Environment") {
-        input "mythermostats", "capability.thermostat", hideWhenEmpty: true, multiple: true, required: false, title: "Thermostats"
-        input "mytemperatures", "capability.temperatureMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Temperature Measures"
-        input "myilluminances", "capability.illuminanceMeasurement", hideWhenEmpty: true, multiple: true, required: false, title: "Illuminances"
-    }
-    section ("Water, Sprinklers & Smoke") {
-        input "mywaters", "capability.waterSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Water Sensors"
-        input "myvalves", "capability.valve", hideWhenEmpty: true, multiple: true, required: false, title: "Sprinklers"
-    	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
-    }
-    section ("Music & Other Sensors") {
-        input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
-        input "mypower", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
-        input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
-    }
-    section ("Websocket Updates") {
-        input "webSocketHost (rPI IP)", "text", title: "Host", defaultValue: "192.168.11.20", required: false
-        input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
+    page(name: "logpage", title: "Logging Options", install: true, uninstall: true) {
+        section("Logging") {
+            input (
+                name: "configLoggingLevelIDE",
+                title: "IDE Live Logging Level:\nMessages with this level and higher will be logged to the IDE.",
+                type: "enum",
+                options: [
+                    "0" : "None",
+                    "1" : "Error",
+                    "2" : "Warning",
+                    "3" : "Info",
+                    "4" : "Debug",
+                    "5" : "Trace"
+                ],
+                defaultValue: "3",
+                displayDuringSetup: true,
+                required: false
+            )
+        }
     }
 
-    section("Logging") {
-        input (
-            name: "configLoggingLevelIDE",
-            title: "IDE Live Logging Level:\nMessages with this level and higher will be logged to the IDE.",
-            type: "enum",
-            options: [
-                "0" : "None",
-                "1" : "Error",
-                "2" : "Warning",
-                "3" : "Info",
-                "4" : "Debug",
-                "5" : "Trace"
-            ],
-            defaultValue: "3",
-            displayDuringSetup: true,
-            required: false
-        )
-    }   
 }
 
 mappings {
@@ -260,24 +270,31 @@ def getLock(swid, item=null) {
     return resp
 }
 
+// this was updated to use the real key names so that push updates work
+// note -changes were also made in housepanel.php and elsewhere to support this
 def getMusic(swid, item=null) {
     item = item? item : mymusics.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, track: item.currentValue("trackDescription"),
-                              musicstatus: item.currentValue("status"),
+    def resp = item ?   [name: item.displayName, 
+                              trackDescription: item.currentValue("trackDescription"),
+                              status: item.currentValue("status"),
                               level: item.currentValue("level"),
-                              musicmute: item.currentValue("mute")
+                              mute: item.currentValue("mute")
                         ] : false
+    logger("Music response = ${resp}", "debug")
     return resp
 }
 
+// this was updated to use the real key names so that push updates work
+// note -changes were also made in housepanel.php and elsewhere to support this
 def getThermostat(swid, item=null) {
     item = item? item : mythermostats.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, temperature: item.currentValue("temperature"),
-                              heat: item.currentValue("heatingSetpoint"),
-                              cool: item.currentValue("coolingSetpoint"),
-                              thermofan: item.currentValue("thermostatFanMode"),
-                              thermomode: item.currentValue("thermostatMode"),
-                              thermostate: item.currentValue("thermostatOperatingState")
+    def resp = item ?   [name: item.displayName, 
+                              temperature: item.currentValue("temperature"),
+                              heatingSetpoint: item.currentValue("heatingSetpoint"),
+                              coolingSetpoint: item.currentValue("coolingSetpoint"),
+                              thermostatFanMode: item.currentValue("thermostatFanMode"),
+                              thermostatMode: item.currentValue("thermostatMode"),
+                              thermostatOperatingState: item.currentValue("thermostatOperatingState")
                          ] : false
     if ( item.hasAttribute("humidity") ) {
         resp.put("humidity", item.currentValue("humidity"))
@@ -293,6 +310,7 @@ def getThermostat(swid, item=null) {
 def getPresence(swid, item=null) {
     item = item ? item : mypresences.find {it.id == swid }
     def resp = item ? [name: item.displayName, presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
+    logger("Presence response = ${resp}", "debug")
     return resp
 }
 
@@ -311,6 +329,7 @@ def getIlluminance(swid, item=null) {
     // getThing(myilluminances, swid, item)
     item = item ? item : myilluminances.find {it.id == swid }
     def resp = item ? [name: item.displayName, illuminance : item.currentValue("illuminance")] : false
+    logger("Illuminance response = ${resp}", "debug")
     return resp
 }
 def getSmoke(swid, item=null) {
@@ -1426,7 +1445,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw > 85) newsw = 85
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
-              resp['heat'] = newsw
+              resp['heatingSetpoint'] = newsw
               // break
           }
           
@@ -1436,7 +1455,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw > 85) newsw = 85
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
-              resp['cool'] = newsw
+              resp['coolingSetpoint'] = newsw
               // break
           }
 
@@ -1446,7 +1465,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw < 50) newsw = 50
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
-              resp['heat'] = newsw
+              resp['heatingSetpoint'] = newsw
               // break
           }
           
@@ -1456,7 +1475,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw < 60) newsw = 60
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
-              resp['cool'] = newsw
+              resp['coolingSetpoint'] = newsw
               // break
           }
           
@@ -1464,52 +1483,52 @@ def setThermostat(swid, curtemp, swattr, subid) {
           else if ( swattr.contains("emergency")) {
               item.heat()
               newsw = "heat"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode heat":
-          else if ( swattr.contains("thermomode") && (cmd=="heat" || swattr.contains("heat")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="heat" || cmd=="heatingSetpoint" || swattr.contains("heat")) ) {
               item.cool()
               newsw = "cool"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode cool":
-          else if ( swattr.contains("thermomode") && (cmd=="cool" || swattr.contains("cool")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="cool" || cmd=="coolingSetpoint" || swattr.contains("cool")) ) {
               item.auto()
               newsw = "auto"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode auto":
-          else if ( swattr.contains("thermomode") && (cmd=="auto" || swattr.contains("auto")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="auto" || swattr.contains("auto")) ) {
               item.off()
               newsw = "off"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode off":
-          else if ( swattr.contains("thermomode") && (cmd=="off" || swattr.contains("off")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="off" || swattr.contains("off")) ) {
               item.heat()
               newsw = "heat"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanOn":
-          else if ( swattr.contains("thermofan") && (cmd=="on" || swattr.contains("on")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="on" || swattr.contains("on")) ) {
               item.fanAuto()
               newsw = "auto"
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.contains("thermofan") && (cmd=="auto" || swattr.contains("auto")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="auto" || swattr.contains("auto")) ) {
               if ( item.hasCommand("fanCirculate") ) {
                 item.fanCirculate()
                 newsw = "circulate"
@@ -1517,15 +1536,15 @@ def setThermostat(swid, curtemp, swattr, subid) {
                   item.fanOn()
                   newsw = "on"
               }
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.contains("thermofan") && (cmd=="circulate" || swattr.contains("circulate")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="circulate" || swattr.contains("circulate")) ) {
               item.fanOn()
               newsw = "on"
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
 
@@ -1534,17 +1553,17 @@ def setThermostat(swid, curtemp, swattr, subid) {
             resp = [temperature: subidval]
         }
           
-        else if ( subid=="heat" ) {
+        else if ( subid=="heatingSetpoint" ) {
             def subidval = resp[subid]
-            resp = [heat: subidval]
+            resp = [heatingSetpoint: subidval]
         }
           
-        else if ( subid=="cool" ) {
+        else if ( subid=="coolingSetpoint" ) {
             def subidval = resp[subid]
-            resp = [cool: subidval]
+            resp = [coolingSetpoint: subidval]
         }
           
-        else if ( subid=="state" ) {
+        else if ( subid=="state" || subid=="thermostatFanMode" ) {
             def subidval = resp[subid]
             resp = [state: subidval]
         }
@@ -1557,13 +1576,13 @@ def setThermostat(swid, curtemp, swattr, subid) {
           // define actions for python end points  
           else {
           // default:
-              if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
+              if ( (cmd=="heat" || cmd=="heatingSetpoint" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
-                  resp['heat'] = swattr
+                  resp['heatingSetpoint'] = swattr
               }
-              else if (cmd=="cool" && swattr.isNumber()) {
+              else if ( (cmd=="cool" || cmd=="coolingSetpoint") && swattr.isNumber()) {
                   item.setCoolingSetpoint(swattr)
-                  resp['cool'] = swattr
+                  resp['coolingSetpoint'] = swattr
               }
               else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
                   item.thermostatSetpoint(swattr)
@@ -1593,14 +1612,14 @@ def setMusic(swid, cmd, swattr, subid) {
         
         // fix old bug from addition of extra class stuff
         // had to fix this for all settings
-        if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains("unmuted" )) {
+        if ( subid=="mute" && swattr.contains("mute") && swattr.contains("unmuted" )) {
             newsw = "muted"
             item.mute()
-            resp['musicmute'] = newsw
-        } else if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains(" muted" )) {
+            resp['mute'] = newsw
+        } else if ( subid=="mute" && swattr.contains("mute") && swattr.contains(" muted" )) {
             newsw = "unmuted"
             item.unmute()
-            resp['musicmute'] = newsw
+            resp['mute'] = newsw
         } else if ( subid=="level-up" || swattr.contains("level-up") ) {
             newsw = cmd.toInteger()
             newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
@@ -1619,21 +1638,21 @@ def setMusic(swid, cmd, swattr, subid) {
         } else if ( subid=="music-play" || swattr.contains("music-play") ) {
             newsw = "playing"
             item.play()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-stop" || swattr.contains("music-stop") ) {
             newsw = "stopped"
             item.stop()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-pause" || swattr.contains("music-pause") ) {
             newsw = "paused"
             item.pause()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-previous" || swattr.contains("music-previous") ) {
             item.previousTrack()
-            resp['track'] = item.currentValue("trackDescription")
+            resp['trackDescription'] = item.currentValue("trackDescription")
         } else if ( subid=="music-next" || swattr.contains("music-next") ) {
             item.nextTrack()
-            resp['track'] = item.currentValue("trackDescription")
+            resp['trackDescription'] = item.currentValue("trackDescription")
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
         }
@@ -1687,7 +1706,8 @@ def ignoreTheseAttributes() {
         'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
         'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
         'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-        'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated'
+        'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated',
+        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy'
     ]
 }
 
@@ -1758,73 +1778,50 @@ def changeHandler(evt) {
     def dt = evt?.date
     def sendEvt = true
     
-    logger("changeHandler()", "trace")
-    switch(evt?.name) {
+    if ( ignoreTheseAttributes().contains(attr) ) {
+        return;
+    }
+    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
+    
+    switch(attr) {
         case "hsmStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = "alarmSystemStatus"
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
             break
+            
         case "hsmAlert":
-            if(evt?.value == "intrusion") {
-                deviceid = "alarmSystemStatus_${location?.id}"
-                attr = "alarmSystemStatus"
-                value = "alarm_active"
-                sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
-            } else { sendEvt = false }
-            break
         case "hsmRules":
         case "hsmSetArm":
             sendEvt = false
             break
+            
         case "alarmSystemStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
-            break
-        case "mode":
-            settings?.modeList?.each { id->
-                def md = getModeById(id)
-                if(md && md?.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md?.name}", evtDeviceId: md?.id, evtAttr: "switch", evtValue: modeSwitchState(md?.name), evtDate: dt]) }
-            }
-            break
-        case "routineExecuted":
-            settings?.routineList?.each { id->
-                def rt = getRoutineById(id)
-                if(rt && rt?.id) {
-                    sendItems?.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtDate: dt])
-                }
-            }
-            break
-        default:
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
             break
     }
 
-    if (sendEvt && state?.directIP && state?.directPort && sendItems?.size()) {
+    if (sendEvt && state.directIP && state.directPort && deviceName && deviceid && attr && value ) {
         //Send Using the Direct Mechanism
-        sendItems.each { send->
-            logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
-            
-            // set a hub action - include the access token so we know which hub this is
-            def params = [
-                method: "POST",
-                path: "/",
-                headers: [
-                    HOST: "${state.directIP}:${state.directPort}",
-                    'Content-Type': 'application/json'
-                ],
-                body: [
-                    msgtype: "update",
-                    change_name: send?.evtDeviceName,
-                    change_device: send?.evtDeviceId,
-                    change_attribute: send?.evtAttr,
-                    change_value: send?.evtValue,
-                    change_date: send?.evtDate
-                ]
+        logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
+
+        // set a hub action - include the access token so we know which hub this is
+        def params = [
+            method: "POST",
+            path: "/",
+            headers: [
+                HOST: "${state.directIP}:${state.directPort}",
+                'Content-Type': 'application/json'
+            ],
+            body: [
+                msgtype: "update",
+                change_name: deviceName,
+                change_device: deviceid,
+                change_attribute: attr,
+                change_value: value
             ]
-            def result = new hubitat.device.HubAction(params)
-            sendHubCommand(result)
-        }
+        ]
+        def result = new hubitat.device.HubAction(params)
+        sendHubCommand(result)
     }
 }
 

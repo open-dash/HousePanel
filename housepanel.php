@@ -1655,7 +1655,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
     $tc = "";
     // add a name specific tag to the wrapper class
     // and include support for hue bulbs - fix a few bugs too
-    if ( in_array($tkey, array("heat", "cool", "hue", "saturation") )) {
+    if ( in_array($tkey, array("heat", "cool", "heatingSetpoint", "coolingSetpoint", "hue", "saturation") )) {
 //    if ($tkey=="heat" || $tkey=="cool" || $tkey=="level" || $tkey=="vol" ||
 //        $tkey=="hue" || $tkey=="saturation" || $tkey=="colorTemperature") {
         $tkeyval = $tkey . "-val";
@@ -1692,7 +1692,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
                    strpos($tval," ") || strpos($tval,"\"") || strpos($tval,",") ) ? "" : " " . $tval;
         
         // fix track names for groups, empty, and super long
-        if ($tkey==="track") {
+        if ($tkey==="trackDescription" || $tkey==="track") {
             $tval = fixTrack($tval);
         } else if ( $tkey == "battery") {
             $powmod = intval($tval);
@@ -1701,7 +1701,8 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         }
         
         // for music status show a play bar in front of it
-        if ($tkey==="musicstatus") {
+        // now use the real item name and back enable old one
+        if ($tkey==="musicstatus" || ($thingtype==="music" && $tkey==="status") ) {
             // print controls for the player
             $tc.= "<div class=\"overlay music-controls" . $subtype . " v_$kindex\">";
             $tc.= "<div  aid=\"$i\" subid=\"music-previous\" title=\"Previous\" class=\"$thingtype music-previous p_$kindex\"></div>";
@@ -3493,10 +3494,10 @@ function is_ssl() {
         
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
-        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_NUMBER_INT);
-        $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_NUMBER_INT);
-        $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_NUMBER_INT);
-        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_NUMBER_INT);
+        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_SPECIAL_CHARS);
+        $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_SPECIAL_CHARS);
+        $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_SPECIAL_CHARS);
+        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
         // $kiosk = false;
         // if ( isset( $_POST["use_kiosk"]) ) { $kiosk = true; }
         if ( isset( $_POST["use_kiosk"]) ) { 
@@ -3737,7 +3738,14 @@ function is_ssl() {
     $timezone = $configoptions["timezone"];
     $skin = $configoptions["skin"];
     $kiosk = $configoptions["kiosk"];
-/* 
+    $webSocketServerPort = $configoptions["webSocketServerPort"];
+    if ( !$webSocketServerPort ) {
+        $webSocketServerPort = "1337";
+    }
+    $fast_timer = $configoptions["fast_timer"];
+    $slow_timer = $configoptions["slow_timer"];
+
+    /* 
  * *****************************************************************************
  * Handle user provided authentication including Smartthings OAUTH flow
  * *****************************************************************************

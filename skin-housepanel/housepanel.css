@@ -33,9 +33,6 @@ div.panel-Music, div.panel-music, div.panel-Theater, div.panel-theater,
 div.panel-Entertainment, div.panel-entertainment {
     background-image: url('media/music.jpg');
 }
-div.panel-Thermostats, div.panel-thermostats {
-    background-image: url('media/thermostat.jpg');
-}
 
 /* all things look like this */  
 /* the heights are set to auto for larger items like weather and thermostats */
@@ -131,11 +128,14 @@ div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
 }
 
 /* alter the thermostat on and off to show since we don't use an icon here */
+div.thermostat.thermostatMode, div.thermostat.thermostatFanMode, 
+div.thermostat.thermostatOperatingState, div.thermostat.humidity,
 div.thermomode.auto, div.thermomode.off,
 div.thermomode.heat, div.thermomode.cool,
 div.thermofan.off, div.thermofan.on, div.thermofan.circulate {
     font-size: 11pt;
     background-image: none;
+    background-color: #333333;
     background-position: center center;
     color: rgba(255, 255, 255, 1);
 }
@@ -338,33 +338,32 @@ div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
 div.colorTemperature-up, div.colorTemperature-dn,
 div.hue-up, div.hue-dn,
-div.saturation-up, div.saturation-dn
-{
+div.saturation-up, div.saturation-dn,
+div.heatingSetpoint-dn, div.coolingSetpoint-dn,
+div.heatingSetpoint-up, div.coolingSetpoint-up {
     display: inline-block;
     width: 32px; height: 32px;
     border: 0px; padding: 0px;
     cursor: pointer;
 }
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
-div.colorTemperature-dn, div.hue-dn, div.saturation-dn {
+div.colorTemperature-dn, div.hue-dn, div.saturation-dn,
+div.heatingSetpoint-dn, div.coolingSetpoint-dn {
     background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
     background-position: -32px 0px;
 	background-size: auto;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
-div.colorTemperature-up, div.hue-up, div.saturation-up {
+div.colorTemperature-up, div.hue-up, div.saturation-up,
+div.heatingSetpoint-up, div.coolingSetpoint-up {
     background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
     background-position: -272px -2px;
 	background-size: auto;
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -webkit-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
-    -moz-box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* music styling */
@@ -424,7 +423,7 @@ div.weather.temperature, div.weather.feelsLike {
     -moz-border-radius: 50%;
 }
 
-div.thermofan.off, div.thermofan.on,
+/*div.thermofan.off, div.thermofan.on,
 div.thermomode.auto,div.thermomode.heat, div.thermomode.cool, div.thermomode.off,
 div.thermostate, div.thermostat.humidity  {
 	background-color: #333333;
@@ -432,31 +431,37 @@ div.thermostate, div.thermostat.humidity  {
 	height: auto;
         margin: 0; padding: 0;
         color: #ffffff;
-}
-div.thermomode.on, div.thermofan.on {
+}*/
+
+div.thermomode.on, div.thermostatMode.on, 
+div.thermofan.on, div.thermostatFanMode.on {
     background-color: #3333ff;
 }
-div.thermomode.heat {
+div.thermomode.heat, div.thermostatMode.heat {
     background-color: #ff3300;
 }
-div.thermomode.cool {
+div.thermomode.cool, div.thermostatMode.cool {
     background-color: #3333ff;
 }
-div.thermomode.auto, div.thermofan.auto {
+div.thermomode.auto, div.thermofan.auto, 
+div.thermostatMode.auto, div.thermostatFanMode.auto {
     background-color: #009999;
 }
-div.thermostat.humidity {
-    background-color: #666666;
-}
 div.thermostat.thermofan::before,
+div.thermostat.thermostatFanMode::before,
+div.custom.thermostatFanMode::before,
 div.custom.thermofan::before {
     content: "Fan: ";
 }
 div.thermostat.thermomode::before,
+div.thermostat.thermostatMode::before,
+div.custom.thermostatMode::before,
 div.custom.thermomode::before {
     content: "Mode: ";
 }
 div.thermostat.thermostate::before,
+div.thermostat.thermostatOperatingState::before,
+div.custom.thermostatOperatingState::before,
 div.custom.thermostate::before {
     content: "State: ";
 }
@@ -473,7 +478,10 @@ div.custom.humidity::after {
 /* include legacy and updated corrected names */
 div.heat-val, div.cool-val, div.level-val, div.switchlevel-val,
 div.colorTemperature-val, div.hue-val, div.saturation-val,
-div.heat, div.cool, div.hue, div.saturation  {
+div.heatingSetpoint-val, div.coolingSetpoint-val,
+div.hue, div.saturation,
+div.overlay.heat div.thermostat.heat, div.overlay.cool div.thermostat.cool,
+div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -485,10 +493,16 @@ div.heat, div.cool, div.hue, div.saturation  {
     color: rgba(255, 255, 255, 1);
     border: 0px;
 }
-div.heat-val, div.heat {
+div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint,
+div.overlay.heat div.thermostat.heat, div.overlay.heat div.thermostat.cool {
+    padding-top: 5px;
+    height: 27px;
+}
+
+div.heat, div.heatingSetpoint {
     background-color: #cc3300;
 }
-div.cool-val, div.cool {
+div.cool, div.coolingSetpoint {
     background-color: #0033cc;
 }
 div.colorTemperature-val, div.hue-val, div.saturation-val, div.hue, div.saturation {
@@ -496,6 +510,7 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.hue, div.saturati
     color: #000000;
 }
 div.thermostat.thermomode, div.thermostat.thermofan, div.thermostat.thermofan.on,
+div.thermostat.thermostatMode, div.thermostat.thermostatFanMode,
 div.thermostat.thermostate, div.thermostat.humidity {
     width: 100%;
 }
@@ -504,6 +519,8 @@ div.thing.temperature-thing {
 }
 
 /* hover over the adjustment arrows */
+div.heatingSetpoint-up:hover, div.heatingSetpoint-dn:hover, 
+div.coolingSetpoint-up:hover, div.coolingSetpoint-dn:hover,
 div.heat-up:hover, div.heat-dn:hover, 
 div.cool-up:hover, div.cool-dn:hover,
 div.switchlevel-up:hover, div.switchlevel-dn:hover,
@@ -523,7 +540,7 @@ div.thing.music-thing {
     height: auto;
 }
 /* use italic serif font for music titles and a custom size */
-div.music.track, div.custom.track {
+div.music.track, div.custom.track, div.music.trackDescription {
     font-family: "Raleway",serif;
     font-size: 11pt;
     font-style: italic;
@@ -533,7 +550,8 @@ div.music.track, div.custom.track {
     border-bottom: none;
     background-color: rgba(80, 80, 80, 0.7);
 }
-div.music.musicstatus, div.music.musicmute, div.custom.musicstatus, div.custom.musicmute {
+div.music.musicstatus, div.music.musicmute, div.custom.musicstatus, div.custom.musicmute,
+div.music.status, div.music.mute {
     height: 24px;
     width: 100%;
     font-size: 11pt;

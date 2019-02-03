@@ -63,9 +63,12 @@ preferences {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "", displayDuringSetup: true)
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "st_")
         paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
-        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
+        input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
+        input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
+        input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
     }
     section("Lights and Switches") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
@@ -99,10 +102,6 @@ preferences {
         input "mypower", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
-    section ("Websocket Updates") {
-        input "webSocketHost (rPI IP)", "text", title: "Host", defaultValue: "", required: false
-        input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
-    }
     section("Logging") {
         input (
             name: "configLoggingLevelIDE",
@@ -116,7 +115,7 @@ preferences {
                 "4" : "Debug",
                 "5" : "Trace"
             ],
-            defaultValue: "3",
+            defaultValue: "4",
             displayDuringSetup: true,
             required: false
         )
@@ -156,15 +155,15 @@ def updated() {
 def initialize() {
     configureHub();
     state.usepistons = usepistons
-    state.directIP = settings?.webSocketHost
-    state.directPort = settings?.webSocketPort
+    state.directIP = webSocketHost
+    state.directPort = webSocketPort
     if ( state.usepistons ) {
         webCoRE_init()
     }
     state.loggingLevelIDE = (settings.configLoggingLevelIDE) ? settings.configLoggingLevelIDE.toInteger() : 3
     state.dologging = (state.loggingLevelIDE > 2);
     logger("Installed with settings: ${settings} ", "debug")
-    if (settings?.webSocketHost)
+    if (state.directIP)
     {
         postHub("initialize");
         
@@ -249,24 +248,31 @@ def getLock(swid, item=null) {
     return resp
 }
 
+// this was updated to use the real key names so that push updates work
+// note -changes were also made in housepanel.php and elsewhere to support this
 def getMusic(swid, item=null) {
     item = item? item : mymusics.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, track: item.currentValue("trackDescription"),
-                              musicstatus: item.currentValue("status"),
+    def resp = item ?   [name: item.displayName, 
+                              trackDescription: item.currentValue("trackDescription"),
+                              status: item.currentValue("status"),
                               level: item.currentValue("level"),
-                              musicmute: item.currentValue("mute")
+                              mute: item.currentValue("mute")
                         ] : false
+    logger("Music response = ${resp}", "debug")
     return resp
 }
 
+// this was updated to use the real key names so that push updates work
+// note -changes were also made in housepanel.php and elsewhere to support this
 def getThermostat(swid, item=null) {
     item = item? item : mythermostats.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, temperature: item.currentValue("temperature"),
-                              heat: item.currentValue("heatingSetpoint"),
-                              cool: item.currentValue("coolingSetpoint"),
-                              thermofan: item.currentValue("thermostatFanMode"),
-                              thermomode: item.currentValue("thermostatMode"),
-                              thermostate: item.currentValue("thermostatOperatingState")
+    def resp = item ?   [name: item.displayName, 
+                              temperature: item.currentValue("temperature"),
+                              heatingSetpoint: item.currentValue("heatingSetpoint"),
+                              coolingSetpoint: item.currentValue("coolingSetpoint"),
+                              thermostatFanMode: item.currentValue("thermostatFanMode"),
+                              thermostatMode: item.currentValue("thermostatMode"),
+                              thermostatOperatingState: item.currentValue("thermostatOperatingState")
                          ] : false
     if ( item.hasAttribute("humidity") ) {
         resp.put("humidity", item.currentValue("humidity"))
@@ -1397,6 +1403,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
     def cmd = curtemp
     def item  = mythermostats.find {it.id == swid }
     if (item) {
+          logger("setThermostat attr = $swattr for id = $swid curtemp = $curtemp", "debug")
         
           resp = getThermostat(swid, item)
           // switch (swattr) {
@@ -1406,7 +1413,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw > 85) newsw = 85
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
-              resp['heat'] = newsw
+              resp['heatingSetpoint'] = newsw
               // break
           }
           
@@ -1416,7 +1423,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw > 85) newsw = 85
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
-              resp['cool'] = newsw
+              resp['coolingSetpoint'] = newsw
               // break
           }
 
@@ -1426,7 +1433,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw < 50) newsw = 50
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
-              resp['heat'] = newsw
+              resp['heatingSetpoint'] = newsw
               // break
           }
           
@@ -1436,7 +1443,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               if (newsw < 60) newsw = 60
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
-              resp['cool'] = newsw
+              resp['coolingSetpoint'] = newsw
               // break
           }
           
@@ -1444,52 +1451,52 @@ def setThermostat(swid, curtemp, swattr, subid) {
           else if ( swattr.contains("emergency")) {
               item.heat()
               newsw = "heat"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode heat":
-          else if ( swattr.contains("thermomode") && (cmd=="heat" || swattr.contains("heat")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="heat" || cmd=="heatingSetpoint" || swattr.contains("heat")) ) {
               item.cool()
               newsw = "cool"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode cool":
-          else if ( swattr.contains("thermomode") && (cmd=="cool" || swattr.contains("cool")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="cool" || cmd=="coolingSetpoint" || swattr.contains("cool")) ) {
               item.auto()
               newsw = "auto"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode auto":
-          else if ( swattr.contains("thermomode") && (cmd=="auto" || swattr.contains("auto")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="auto" || swattr.contains("auto")) ) {
               item.off()
               newsw = "off"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermomode off":
-          else if ( swattr.contains("thermomode") && (cmd=="off" || swattr.contains("off")) ) {
+          else if ( swattr.contains("thermostatMode") && (cmd=="off" || swattr.contains("off")) ) {
               item.heat()
               newsw = "heat"
-              resp['thermomode'] = newsw
+              resp['thermostatMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanOn":
-          else if ( swattr.contains("thermofan") && (cmd=="on" || swattr.contains("on")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="on" || swattr.contains("on")) ) {
               item.fanAuto()
               newsw = "auto"
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.contains("thermofan") && (cmd=="auto" || swattr.contains("auto")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="auto" || swattr.contains("auto")) ) {
               if ( item.hasCommand("fanCirculate") ) {
                 item.fanCirculate()
                 newsw = "circulate"
@@ -1497,34 +1504,34 @@ def setThermostat(swid, curtemp, swattr, subid) {
                   item.fanOn()
                   newsw = "on"
               }
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
           
           // case "thermostat thermofan fanAuto":
-          else if ( swattr.contains("thermofan") && (cmd=="circulate" || swattr.contains("circulate")) ) {
+          else if ( swattr.contains("thermostatFanMode") && (cmd=="circulate" || swattr.contains("circulate")) ) {
               item.fanOn()
               newsw = "on"
-              resp['thermofan'] = newsw
+              resp['thermostatFanMode'] = newsw
               // break
           }
-          
+
         else if ( subid=="temperature" ) {
             def subidval = resp[subid]
             resp = [temperature: subidval]
         }
           
-        else if ( subid=="heat" ) {
+        else if ( subid=="heatingSetpoint" ) {
             def subidval = resp[subid]
-            resp = [heat: subidval]
+            resp = [heatingSetpoint: subidval]
         }
           
-        else if ( subid=="cool" ) {
+        else if ( subid=="coolingSetpoint" ) {
             def subidval = resp[subid]
-            resp = [cool: subidval]
+            resp = [coolingSetpoint: subidval]
         }
           
-        else if ( subid=="state" ) {
+        else if ( subid=="state" || subid=="thermostatFanMode" ) {
             def subidval = resp[subid]
             resp = [state: subidval]
         }
@@ -1537,13 +1544,13 @@ def setThermostat(swid, curtemp, swattr, subid) {
           // define actions for python end points  
           else {
           // default:
-              if ( (cmd=="heat" || cmd=="emergencyHeat") && swattr.isNumber()) {
+              if ( (cmd=="heat" || cmd=="heatingSetpoint" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
-                  resp['heat'] = swattr
+                  resp['heatingSetpoint'] = swattr
               }
-              else if (cmd=="cool" && swattr.isNumber()) {
+              else if ( (cmd=="cool" || cmd=="coolingSetpoint") && swattr.isNumber()) {
                   item.setCoolingSetpoint(swattr)
-                  resp['cool'] = swattr
+                  resp['coolingSetpoint'] = swattr
               }
               else if (cmd=="auto" && swattr.isNumber() && item.hasCapability("thermostatSetpoint")) {
                   item.thermostatSetpoint(swattr)
@@ -1562,20 +1569,25 @@ def setThermostat(swid, curtemp, swattr, subid) {
 def setMusic(swid, cmd, swattr, subid) {
     def resp = false
     def item  = mymusics.find {it.id == swid }
+//    if ((item == null) && (swattr == "music-tunein") & (cmd != null))
+//    {
+//        logger("do special for momentary ${swattr} ${cmd}", "trace")
+//        item = mymomentaries.find {it.id == swid } 
+//    }
     def newsw
     if (item) {
         resp = getMusic(swid, item)
         
         // fix old bug from addition of extra class stuff
         // had to fix this for all settings
-        if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains("unmuted" )) {
+        if ( subid=="mute" && swattr.contains("mute") && swattr.contains("unmuted" )) {
             newsw = "muted"
             item.mute()
-            resp['musicmute'] = newsw
-        } else if ( subid=="musicmute" && swattr.contains("musicmute") && swattr.contains(" muted" )) {
+            resp['mute'] = newsw
+        } else if ( subid=="mute" && swattr.contains("mute") && swattr.contains(" muted" )) {
             newsw = "unmuted"
             item.unmute()
-            resp['musicmute'] = newsw
+            resp['mute'] = newsw
         } else if ( subid=="level-up" || swattr.contains("level-up") ) {
             newsw = cmd.toInteger()
             newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
@@ -1594,21 +1606,21 @@ def setMusic(swid, cmd, swattr, subid) {
         } else if ( subid=="music-play" || swattr.contains("music-play") ) {
             newsw = "playing"
             item.play()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-stop" || swattr.contains("music-stop") ) {
             newsw = "stopped"
             item.stop()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-pause" || swattr.contains("music-pause") ) {
             newsw = "paused"
             item.pause()
-            resp['musicstatus'] = newsw
+            resp['status'] = newsw
         } else if ( subid=="music-previous" || swattr.contains("music-previous") ) {
             item.previousTrack()
-            resp['track'] = item.currentValue("trackDescription")
+            resp['trackDescription'] = item.currentValue("trackDescription")
         } else if ( subid=="music-next" || swattr.contains("music-next") ) {
             item.nextTrack()
-            resp['track'] = item.currentValue("trackDescription")
+            resp['trackDescription'] = item.currentValue("trackDescription")
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
         }
@@ -1636,7 +1648,7 @@ def ignoreTheseAttributes() {
         'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
         'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
         'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated',
-        'power','energy'
+        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy'
     ]
 }
 
@@ -1697,42 +1709,38 @@ def registerChangeHandler(devices) {
 }
 
 def changeHandler(evt) {
-    def sendItems = []
-    def sendNum = 1
     def src = evt?.source
     def deviceid = evt?.deviceId
     def deviceName = evt?.displayName
     def attr = evt?.name
     def value = evt?.value
-    def dt = evt?.date
     
-    sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtDate: dt])
+    if ( ignoreTheseAttributes().contains(attr) ) {
+        return;
+    }
+    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
+    
+    if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
+        logger(value, "debug")
 
-    if (state?.directIP && state?.directPort && sendItems?.size()) {
-        //Send Using the Direct Mechanism
-        sendItems.each { send->
-            logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
-            
-            // set a hub action - include the access token so we know which hub this is
-            def params = [
-                method: "POST",
-                path: "/",
-                headers: [
-                    HOST: "${state?.directIP}:${state?.directPort}",
-                    'Content-Type': 'application/json'
-                ],
-                body: [
-                    msgtype: "update",
-                    change_name: send?.evtDeviceName,
-                    change_device: send?.evtDeviceId,
-                    change_attribute: send?.evtAttr,
-                    change_value: send?.evtValue,
-                    change_date: send?.evtDate
-                ]
+        // set a hub action - include the access token so we know which hub this is
+        def params = [
+            method: "POST",
+            path: "/",
+            headers: [
+                HOST: "${state.directIP}:${state.directPort}",
+                'Content-Type': 'application/json'
+            ],
+            body: [
+                msgtype: "update",
+                change_name: deviceName,
+                change_device: deviceid,
+                change_attribute: attr,
+                change_value: value
             ]
-            def result = new physicalgraph.device.HubAction(params)
-            sendHubCommand(result)
-        }
+        ]
+        def result = new physicalgraph.device.HubAction(params)
+        sendHubCommand(result)
     }
 }
 

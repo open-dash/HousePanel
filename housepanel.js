@@ -208,7 +208,9 @@ function wsSocketCheck() {
 // only need to do this once - I have no clue why it was done the other way before
 function setupWebsocket()
 {
+    // webSocketUrl = "ws://192.168.11.20:1337";
     try {
+        console.log("Creating webSocket for: ", webSocketUrl);
         wsSocket = new WebSocket(webSocketUrl);
     } catch(err) {
         console.log("Error attempting to create webSocket for: ", webSocketUrl," error: ", err);
