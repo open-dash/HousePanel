@@ -168,7 +168,7 @@ def initialize() {
         postHub("initialize");
         
         runIn(2, "registerLightAndSwitches", [overwrite: true])
-        runIn(4, "registerMotionAndPresence", [overwrite: true])
+        // runIn(4, "registerMotionAndPresence", [overwrite: true])
         runIn(6, "registerDoorAndContact", [overwrite: true])
         runIn(8, "registerThermostat", [overwrite: true])
         runIn(10, "registerWater", [overwrite: true])
@@ -1691,7 +1691,7 @@ def registerSensorandOptions() {
     registerChangeHandler(mymusics)
     registerChangeHandler(mysmokes)
     registerChangeHandler(mypower)
-    registerChangeHandler(myothers)
+    // registerChangeHandler(myothers)
 }
 
 def registerChangeHandler(devices) {
@@ -1718,10 +1718,9 @@ def changeHandler(evt) {
     if ( ignoreTheseAttributes().contains(attr) ) {
         return;
     }
-    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
+    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
     
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
-        logger(value, "debug")
 
         // set a hub action - include the access token so we know which hub this is
         def params = [

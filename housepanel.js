@@ -238,9 +238,9 @@ function setupWebsocket()
         
         // skip processing websocket if we are not on the main page
         // when this happens the polling backup will save us
-        if ( pagename!=="main" ) {
-            return;
-        }
+//        if ( pagename!=="main" ) {
+//            return;
+//        }
         
         try {
             var presult = JSON.parse(event.data);
