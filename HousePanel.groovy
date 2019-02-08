@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 02/07/2019 - tweak to ignore stuff that was blocking useful push updates
+ * 02/03/2019 - switch thermostat and music tiles to use native key field names
  * 01/30/2019 - implement push notifications and logger
  * 01/19/2019 - added power and begin prepping for push notifications
  * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
@@ -166,20 +168,20 @@ def initialize() {
     if (state.directIP)
     {
         postHub("initialize");
-        
-        runIn(2, "registerLightAndSwitches", [overwrite: true])
-        // runIn(4, "registerMotionAndPresence", [overwrite: true])
-        runIn(6, "registerDoorAndContact", [overwrite: true])
-        runIn(8, "registerThermostat", [overwrite: true])
-        runIn(10, "registerWater", [overwrite: true])
-        runIn(12, "registerSensorandOptions", [overwrite: true])
+        runIn(10, "registerAll");
+//        runIn(2, "registerLightAndSwitches", [overwrite: true])
+//        runIn(4, "registerMotionAndPresence", [overwrite: true])
+//        runIn(6, "registerDoorAndContact", [overwrite: true])
+//        runIn(8, "registerThermostat", [overwrite: true])
+//        runIn(10, "registerWater", [overwrite: true])
+//        runIn(12, "registerSensorandOptions", [overwrite: true])
     }
 }
 
 def configureHub() {
     def hub = location.hubs[0];
     logger("Use this information on the Auth page of HousePanel.", "info")
-    logger("Hubitat IP = ${hub.localIP}", "info")
+    logger("Hub IP = ${hub.localIP}", "info")
     logger("Hub ID = ${hub.id}", "info")
     logger("You must go through the OAUTH flow to obtain a proper SmartThings AccessToken", "info")
     logger("You must go through the OAUTH flow to obtain a proper SmartThings EndPoint", "info")
@@ -1408,7 +1410,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           resp = getThermostat(swid, item)
           // switch (swattr) {
           // case "heat-up":
-          if ( subid=="heat-up" || swattr.contains("heat-up") ) {
+          if ( subid=="heatingSetpoint-up" || swattr.contains("heatingSetpoint-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.heat()
@@ -1418,7 +1420,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-up":
-          else if ( subid=="cool-up" || swattr.contains("cool-up") ) {
+          else if ( subid=="coolingSetpoint-up" || swattr.contains("coolingSetpoint-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.cool()
@@ -1428,7 +1430,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
 
           // case "heat-dn":
-          else if ( subid=="heat-dn" || swattr.contains("heat-dn")) {
+          else if ( subid=="heatingSetpoint-dn" || swattr.contains("heatingSetpoint-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 50) newsw = 50
               // item.heat()
@@ -1438,7 +1440,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-dn":
-          else if ( subid=="cool-dn" || swattr.contains("cool-dn")) {
+          else if ( subid=="coolingSetpoint-dn" || swattr.contains("coolingSetpoint-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.cool()
@@ -1639,73 +1641,55 @@ def setRoutine(swid, cmd, swattr, subid) {
     return routine
 }
 
-
-def ignoreTheseAttributes() {
-    return [
-        'DeviceWatch-DeviceStatus', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
-        'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
-        'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
-        'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
-        'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-        'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated',
-        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy'
-    ]
-}
-
-def registerLightAndSwitches() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(myswitches)
-    registerChangeHandler(mydimmers)
-    registerChangeHandler(mymomentaries)
-    registerChangeHandler(mylights)
-    registerChangeHandler(mybulbs)
-}
-
-def registerMotionAndPresence() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mypresences)
-    registerChangeHandler(mysensors)
-}
-
-def registerDoorAndContact() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mycontacts)
-    registerChangeHandler(mydoors)
-    registerChangeHandler(mylocks)
-}
-def registerThermostat() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mythermostats)
-    registerChangeHandler(mytemperatures)
-    registerChangeHandler(myilluminances)
-}
-
-def registerWater() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mywaters)
-    registerChangeHandler(myvalves)
-}
-
-def registerSensorandOptions() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mymusics)
-    registerChangeHandler(mysmokes)
-    registerChangeHandler(mypower)
-    // registerChangeHandler(myothers)
-}
-
-def registerChangeHandler(devices) {
+def registerAll() {
+    registerCapabilities(myswitches,"switch")
+    registerCapabilities(mydimmers,"switch")
+    registerCapabilities(mydimmers,"level")
+    registerCapabilities(mylights,"switch")
+    registerCapabilities(mybulbs,"switch")
+    registerCapabilities(mybulbs,"level")
+    registerCapabilities(mybulbs,"color")
+    registerCapabilities(mycontacts,"contact")
+    registerCapabilities(mydoors,"door")
+    registerCapabilities(mylocks,"lock")
+    registerCapabilities(myvalves,"valve")
+    registerCapabilities(mywaters,"water")
+    registerCapabilities(mypresences,"presence")
+    registerCapabilities(mysmokes,"smoke")
+    registerThermostats()
+    registerMusics()
     
-    devices?.each { device ->
-        List theAtts = device?.supportedAttributes?.collect { it?.name as String }?.unique()
-        logger("atts: ${theAtts}", "info")
-        theAtts?.each {att ->
-            if(!(ignoreTheseAttributes().contains(att))) {
-                subscribe(device, att, "changeHandler")
-                logger("Registering ${device?.displayName}.${att}", "trace")
-            }
-        }
+    // skip these on purpose because they change slowly and report often
+    // registerCapabilities(mytemperatures, "temperature")
+    // registerCapabilities(myilluminances, "illuminance")
+    // registerCapabilities(mypower, "power")
+    // registerCapabilities(mypower, "energy")
+}
+
+def registerCapabilities(devices, capability) {
+    subscribe(devices, capability, changeHandler)
+    logger("Registering ${capability} for ${devices?.size() ?: 0} things", "trace")
+}
+
+def registerThermostats() {
+    registerCapabilities(mythermostats, "heatingSetpoint")
+    registerCapabilities(mythermostats, "coolingSetpoint")
+    registerCapabilities(mythermostats, "thermostatFanMode")
+    registerCapabilities(mythermostats, "thermostatMode")
+    registerCapabilities(mythermostats, "thermostatSetpoint")
+    registerCapabilities(mythermostats, "coolingSetpoint")
+    mythermostats?.each { device ->
+        subscribeToCommand(device, "thermostatSetpoint", "changeHandler")
     }
+    logger("Registering all thermostats", "trace")
+}
+
+def registerMusics() {
+    registerCapabilities(mymusics, "status")
+    registerCapabilities(mymusics, "level")
+    registerCapabilities(mymusics, "mute")
+    registerCapabilities(mymusics, "trackDescription")
+    logger("Registering all musics", "trace")
 }
 
 def changeHandler(evt) {
@@ -1715,10 +1699,10 @@ def changeHandler(evt) {
     def attr = evt?.name
     def value = evt?.value
     
-    if ( ignoreTheseAttributes().contains(attr) ) {
-        return;
-    }
-    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
+//    if ( ignoreTheseAttributes().contains(attr) ) {
+//        return;
+//    }
+    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
     
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
 

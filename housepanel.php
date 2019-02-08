@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.980      Update tiles using direct push from hub using Node.js middleman
  * 1.972      Add ability to tailor fast polling to include any tile
  *            by adding a "refresh" user field with name fast, slow, or never
  *            - also added built-in second refresh for clock tiles
@@ -189,7 +190,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.972');
+define('HPVERSION', 'Version 1.980');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 

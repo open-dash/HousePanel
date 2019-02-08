@@ -1,31 +1,36 @@
-/*
-* House Panel PHP application for SmartThings
-* author: Ken Washington  (c) 2017
-*
-* general purpose routines included for authorizing a web service
-* specific application shows all switches, motion sensors, and door contacts
-* thermostats and doors to open and other capabilities will be added later
-*
-* for switches the Ajax call is used to turn the switch on and off from the web
-* DEBUG flags can be used to show specific data details during installation
-* this must be paired with the HousePanel SmartApp on the SmartThings side
-*
-* CLIENT_ID, CLIENT_SECRET, and ST_WEB must be in a file called clientinfo.php
-* which must look as follows:
-*
-* HousePanel is now part of Open-Dash
-*
-<?php
-define('CLIENT_ID', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
-define('CLIENT_SECRET', 'abc1abc1-abc2-abc3-abc4-abc5abc5abc5');
-define('ST_WEB','https://graph.api.smartthings.com');
+<p>HousePanel (HP) is a user-hosted (typically local) highly customizable open source
+web application dashboard for accessing and
+controlling a SmartThings or Hubitat equipped smart home from a Tablet, 
+Computer, or even Smart Phone.</p>
 
-* real data for CLIENT_ID and CLIENT_SECRET are found in SmartThings
-* after you enable OAUTH2 in the SmartApp panel
-*
-* Finally, install all files in any web server and you should be good to go
-* While any web server will do, I strongly recommend one with SSL or using
-* a local webserver on a Raspberry Pi that sits behind your home firewall
-* and on the same network as your ST hub. This will make the app run fast.
-* 
-*/
+<p>HP is designed to give the user full control over the look and feel of their panel controller.
+It does require some effort to install and configure, but once set up, making fine tunings
+and adjustments are relatively simple.  Most customizations can be done from within
+the built-in web-based user interface, which includes a full featured tile editor and
+a tile customizer for modifying content shown on any tile. Power users can also make
+major modifications by editing a CSS file using industry standard protocols.</p>
+
+<p>HP runs on a customer-provided web server and does not expose your personal data
+nor any details about your environment to the developer or any other party.
+You are in total control. The default settings were designed by a professional web designer
+to create a highly acceptable user interface for non-technical people. 
+It is designed to not look and feel "geeky". By default the tiles 
+are large and colorful, placed on beautiful full color backgrounds.</p>
+
+<p>Requirements - What You Need to Use HousePanel</h2>
+HousePanel is a web application written in PHP and Javascript that is 
+paired with a SmartThings and/or Hubitat SmartApp written in the Groovy language. 
+To use Housepanel you will need a modern browser with Javascript support.
+Obviously you will also need a SmartThings and/or Hubitat
+account with owner access. You will also need to have owner access to a web
+server of some type capable of hosting PHP applications.</p>
+
+Quick install directions: log into your rPI with SSH and enter:
+
+<blockquote><pre>
+cd ~
+wget https://raw.githubusercontent.com/kewashi/HousePanel/master/install.sh
+bash ./install.sh
+ </pre></blockquote>
+
+Full documentation is at http://www.housepanel.net

@@ -1,6 +1,6 @@
 {
   "name": "housepanel-push",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Module to push thing state to HousePanel web screen",
   "main": "housepanel-push.js",
   "directories": {
@@ -24,8 +24,8 @@
     "housepanel",
     "websocket"
   ],
-  "author": "Ken Washington",
-  "license": "ISC",
+  "author": "Ken Washington @kewashi on forums",
+  "license": "GNU",
   "bugs": {
     "url": "https://github.com/kewashi/HousePanel/issues"
   },

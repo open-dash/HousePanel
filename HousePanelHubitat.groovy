@@ -1440,7 +1440,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           resp = getThermostat(swid, item)
           // switch (swattr) {
           // case "heat-up":
-          if ( subid=="heat-up" || swattr.contains("heat-up") ) {
+          if ( subid=="heatingSetpoint-up" || swattr.contains("heatingSetpoint-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.heat()
@@ -1450,7 +1450,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-up":
-          else if ( subid=="cool-up" || swattr.contains("cool-up") ) {
+          else if ( subid=="coolingSetpoint-up" || swattr.contains("coolingSetpoint-up") ) {
               newsw = curtemp.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.cool()
@@ -1460,7 +1460,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
 
           // case "heat-dn":
-          else if ( subid=="heat-dn" || swattr.contains("heat-dn")) {
+          else if ( subid=="heatingSetpoint-dn" || swattr.contains("heatingSetpoint-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 50) newsw = 50
               // item.heat()
@@ -1470,7 +1470,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           }
           
           // case "cool-dn":
-          else if ( subid=="cool-dn" || swattr.contains("cool-dn")) {
+          else if ( subid=="coolingSetpoint-dn" || swattr.contains("coolingSetpoint-dn")) {
               newsw = curtemp.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.cool()
@@ -1707,7 +1707,7 @@ def ignoreTheseAttributes() {
         'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
         'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
         'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated',
-        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy'
+        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy', 'tamper', 'battery', '_off', '_on'
     ]
 }
 

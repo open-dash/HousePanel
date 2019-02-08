@@ -180,7 +180,7 @@ $(document).ready(function() {
             webSocketUrl = null;
         }
         
-        // once a minute check for socket open and if not open reopen
+        // periodically check for socket open and if not open reopen
         if ( webSocketUrl ) {
             wsSocketCheck();
             setInterval(wsSocketCheck, 30000);
@@ -247,7 +247,7 @@ function setupWebsocket()
             var pvalue = presult.value;
             var bid = presult.id;
             var thetype = presult.type;
-            console.log("Processing webSocket message from: ", webSocketUrl," data: ", event.data);
+            console.log("Processing webSocket message from: ", webSocketUrl," bid= ",bid," type= ",thetype," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
