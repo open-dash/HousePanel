@@ -1656,7 +1656,7 @@ function clockUpdater() {
         var ds = d.toString().split(" ");    
         var timestr = ds[4];
         var hour = d.getHours();
-        var sec = d.getSeconds();
+        // var sec = d.getSeconds();
         
         if ( hour=== 0 ) {
             timestr = "12" + timestr.substring(2);

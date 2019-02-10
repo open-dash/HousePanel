@@ -1,0 +1,12 @@
+[Unit]
+Description=housepanel-push NodeJS Application
+After=network-online.target
+
+[Service]
+Restart=on-failure
+WorkingDirectory=/var/www/html/housepanel/
+ExecStart=node /var/www/html/housepanel/housepanel-push.js
+
+[Install]
+WantedBy=multi-user.target
+

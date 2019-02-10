@@ -1,5 +1,5 @@
 /**
- *  HousePanel
+ *  HousePanel (SmartThings Version)
  *
  *  Copyright 2016 to 2019 Kenneth Washington
  *
@@ -17,9 +17,11 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 02/10/2019 - redo subscriptions for push to make more efficient by group
  * 02/07/2019 - tweak to ignore stuff that was blocking useful push updates
  * 02/03/2019 - switch thermostat and music tiles to use native key field names
  * 01/30/2019 - implement push notifications and logger
+ * 01/27/2019 - first draft of direct push notifications via hub post
  * 01/19/2019 - added power and begin prepping for push notifications
  * 01/14/2019 - fix bonehead error with switches and locks not working right due to attr
  * 01/05/2019 - fix music controls to work again after separating icons out
@@ -52,7 +54,7 @@ definition(
     name: "${handle()}",
     namespace: "kewashi",
     author: "Kenneth Washington",
-    description: "Tap here to install ${handle()} ${version()} - a highly customizable tablet smart app. ",
+    description: "Tap here to install ${handle()} ${version()} - a highly customizable dashboard smart app. ",
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
     iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
@@ -117,7 +119,7 @@ preferences {
                 "4" : "Debug",
                 "5" : "Trace"
             ],
-            defaultValue: "4",
+            defaultValue: "3",
             displayDuringSetup: true,
             required: false
         )
@@ -169,12 +171,6 @@ def initialize() {
     {
         postHub("initialize");
         runIn(10, "registerAll");
-//        runIn(2, "registerLightAndSwitches", [overwrite: true])
-//        runIn(4, "registerMotionAndPresence", [overwrite: true])
-//        runIn(6, "registerDoorAndContact", [overwrite: true])
-//        runIn(8, "registerThermostat", [overwrite: true])
-//        runIn(10, "registerWater", [overwrite: true])
-//        runIn(12, "registerSensorandOptions", [overwrite: true])
     }
 }
 
@@ -189,15 +185,6 @@ def configureHub() {
     logger("webSocket Port = ${state.directPort}", "info")
 }
 
-def getWeatherInfo(evt) {
-    def name = evt.getName()
-    def src = evt.getSource()
-    def val = evt.getValue()
-//    log.debug "Weather event: from ${src} name = ${name} value = ${val}"
-}
-
-// changed switch to only return switch so we can use it with other things
-// to get multiple attributes from a switch, use other
 def getSwitch(swid, item=null) {
     item = item? item : myswitches.find {it.id == swid }
     def resp = item ?   [name: item.displayName, switch: item.currentValue("switch")
@@ -237,7 +224,6 @@ def getContact(swid, item=null) {
 
 // change to only return lock status and battery
 def getLock(swid, item=null) {
-//    def lock = getThing(mylocks, swid, item)
     item = item? item : mylocks.find {it.id == swid }
     def resp = item ? [:] : false
     if ( item ) {
@@ -282,6 +268,7 @@ def getThermostat(swid, item=null) {
     if ( item.hasCapability("Battery") ) {
         resp.put("battery", item.currentValue("battery"))
     }
+    logger("Thermostat response = ${resp}", "debug")
     return resp
 }
 
@@ -289,6 +276,7 @@ def getThermostat(swid, item=null) {
 def getPresence(swid, item=null) {
     item = item ? item : mypresences.find {it.id == swid }
     def resp = item ? [name: item.displayName, presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
+    logger("Presence response = ${resp}", "debug")
     return resp
 }
 
@@ -307,6 +295,7 @@ def getIlluminance(swid, item=null) {
     // getThing(myilluminances, swid, item)
     item = item ? item : myilluminances.find {it.id == swid }
     def resp = item ? [name: item.displayName, illuminance : item.currentValue("illuminance")] : false
+    logger("Illuminance response = ${resp}", "debug")
     return resp
 }
 def getSmoke(swid, item=null) {
@@ -397,6 +386,7 @@ def setOther(swid, cmd, attr, subid ) {
     
     if (item && subid.startsWith("_")) {
         subid = subid.substring(1)
+        logger("Activating other device " + item + " command: " + subid, "debug")
         resp = [:]
         if ( item.hasCommand(subid) ) {
             item."$subid"()
@@ -439,12 +429,15 @@ def getThing(things, swid, item=null) {
                                 "enrollResponse","poll","ping","configure","refresh"]
                 def comname = comm.getName()
                 def args = comm.getArguments()
-                def arglen = args.size()
+                def arglen = 0
+                if (args != null)
+                    arglen = args.size()
+                logger("Command for ${swid} = $comname with $arglen args = $args ", "trace")
                 if ( arglen==0 && ! reserved.contains(comname) ) {
                     resp.put( "_"+comname, comname )
                 }
             } catch (ex) {
-                logger("Attempt to read commands for ${swid} failed ${ex}", "error")
+                logger("Attempt to read command for ${swid} failed ${ex}", "error")
             }
         }
     }
@@ -455,7 +448,7 @@ def getThing(things, swid, item=null) {
 def getThings(resp, things, thingtype) {
 //    def resp = []
     def n  = things ? things.size() : 0
-    if ( n > 0 ) { logger("Number of things of type ${thingtype} = ${n}","info"); }
+    logger("Number of things of type ${thingtype} = ${n}", "debug")
     things?.each {
         def val = getThing(things, it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
@@ -463,47 +456,80 @@ def getThings(resp, things, thingtype) {
     return resp
 }
 
+def logStepAndIncrement(step)
+{
+    logger("STDEB ${step}", "trace")
+    return step+1
+}
 // This retrieves and returns all things
 // used up front or whenever we need to re-read all things
 def getAllThings() {
+
     def resp = []
+    def run = -1
+    run = logStepAndIncrement(run)
     resp = getSwitches(resp)
+    run = logStepAndIncrement(run)
     resp = getDimmers(resp)
+    run = logStepAndIncrement(run)
     resp = getMomentaries(resp)
+    run = logStepAndIncrement(run)
     resp = getLights(resp)
+    run = logStepAndIncrement(run)
     resp = getBulbs(resp)
+    run = logStepAndIncrement(run)
     resp = getContacts(resp)
+    run = logStepAndIncrement(run)
     resp = getDoors(resp)
+    run = logStepAndIncrement(run)
     resp = getLocks(resp)
+    run = logStepAndIncrement(run)
     resp = getSensors(resp)
+    run = logStepAndIncrement(run)
     resp = getPresences(resp)
+    run = logStepAndIncrement(run)
     resp = getThermostats(resp)
+    run = logStepAndIncrement(run)
     resp = getTemperatures(resp)
+    run = logStepAndIncrement(run)
     resp = getIlluminances(resp)
+    run = logStepAndIncrement(run)
     resp = getWeathers(resp)
+    run = logStepAndIncrement(run)
     resp = getValves(resp)
+    run = logStepAndIncrement(run)
     resp = getWaters(resp)
+    run = logStepAndIncrement(run)
     resp = getMusics(resp)
+    run = logStepAndIncrement(run)
     resp = getSmokes(resp)
+    run = logStepAndIncrement(run)
     resp = getModes(resp)
+    run = logStepAndIncrement(run)
     resp = getSHMStates(resp)
+    run = logStepAndIncrement(run)
     resp = getRoutines(resp)
+    run = logStepAndIncrement(run)
     resp = getOthers(resp)
+    run = logStepAndIncrement(run)
     resp = getBlanks(resp)
+    run = logStepAndIncrement(run)
     resp = getImages(resp)
+    run = logStepAndIncrement(run)
     resp = getPowers(resp)
+    run = logStepAndIncrement(run)
 
     // optionally include pistons based on user option
     if (state.usepistons) {
         resp = getPistons(resp)
     }
+
     return resp
 }
-
 // this returns just a single active mode, not the list of available modes
 // this is done so we can treat this like any other set of tiles
 def getModes(resp) {
-    logger("Getting 4 mode tiles","info");
+    logger("Getting 4 SmartThings mode tiles","debug");
     def val = getmyMode(0)
     resp << [name: "Mode ${hubprefix}m1x1", id: "${hubprefix}m1x1", value: val, type: "mode"]
     resp << [name: "Mode ${hubprefix}m1x2", id: "${hubprefix}m1x2", value: val, type: "mode"]
@@ -520,7 +546,6 @@ def getSHMStates(resp) {
 }
 
 def getBlanks(resp) {
-    logger("Getting 4 blank tiles","info");
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
     vals.each {
@@ -531,7 +556,6 @@ def getBlanks(resp) {
 }
 
 def getImages(resp) {
-    logger("Getting 4 image tiles","info");
     def vals = ["img1","img2","img3","img4"]
     def val
     vals.each {
@@ -543,7 +567,7 @@ def getImages(resp) {
 
 def getPistons(resp) {
     def plist = webCoRE_list()
-    if ( n > 0 ) { logger("Number of pistons = ${n}","info"); }
+    logger("Number of pistons = " + plist?.size() ?: 0, "debug")
     plist?.each {
         def val = getPiston(it.id, it)
         resp << [name: it.name, id: it.id, value: val, type: "piston"]
@@ -552,8 +576,6 @@ def getPistons(resp) {
 }
 
 def getSwitches(resp) {
-    def n  = myswitches ? myswitches.size() : 0
-    if ( n > 0 ) { logger("Number of switches = ${n}","info"); }
     myswitches?.each {
         def multivalue = getSwitch(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
@@ -582,8 +604,6 @@ def getContacts(resp) {
 }
 
 def getMomentaries(resp) {
-    def n  = mymomentaries ? mymomentaries.size() : 0
-    if ( n > 0 ) { logger("Number of momentaries = ${n}","info"); }
     mymomentaries?.each {
         if ( it.hasCapability("Switch") ) {
             def val = getMomentary(it.id, it)
@@ -594,8 +614,6 @@ def getMomentaries(resp) {
 }
 
 def getLocks(resp) {
-    def n  = mylocks ? mylocks.size() : 0
-    if ( n > 0 ) { logger("Number of locks = ${n}","info"); }
     mylocks?.each {
         def multivalue = getLock(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
@@ -604,8 +622,6 @@ def getLocks(resp) {
 }
 
 def getMusics(resp) {
-    def n  = mymusics ? mymusics.size() : 0
-    if ( n > 0 ) { logger("Number of music players = ${n}","info"); }
     mymusics?.each {
         def multivalue = getMusic(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
@@ -614,8 +630,6 @@ def getMusics(resp) {
 }
 
 def getThermostats(resp) {
-    def n  = mythermostats ? mythermostats.size() : 0
-    if ( n > 0 ) { logger("Number of thermostats = ${n}","info"); }
     mythermostats?.each {
         def multivalue = getThermostat(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
@@ -624,8 +638,6 @@ def getThermostats(resp) {
 }
 
 def getPresences(resp) {
-    def n  = mypresences ? mypresences.size() : 0
-    if ( n > 0 ) { logger("Number of presences = ${n}","info"); }
     mypresences?.each {
         def multivalue = getPresence(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
@@ -648,8 +660,6 @@ def getSmokes(resp) {
     getThings(resp, mysmokes, "smoke")
 }
 def getTemperatures(resp) {
-    def n  = mytemperatures ? mytemperatures.size() : 0
-    if ( n > 0 ) { logger("Number of temperature tiles = ${n}","info"); }
     mytemperatures?.each {
         def val = getTemperature(it.id, it)
         resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
@@ -658,9 +668,6 @@ def getTemperatures(resp) {
 }
 
 def getWeathers(resp) {
-//    def n  = myweathers ? 1 : 0
-    def n  = myweathers ? myweathers.size() : 0
-    if ( n > 0 ) { logger("Number of weather tiles = ${n}","info"); }
     myweathers?.each {
         def multivalue = getWeather(it.id, it)
         resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
@@ -738,7 +745,7 @@ def autoType(swid) {
     return swtype
 }
 
-// routine that performs ajax action for clickable tiles
+// this performs ajax action for clickable tiles
 def doAction() {
     // returns false if the item is not found
     // otherwise returns a JSON object with the name, value, id, type
@@ -748,7 +755,7 @@ def doAction() {
     def swattr = params.swattr
     def subid = params.subid
     def cmdresult = false
-    // sendLocationEvent( [name: "housepanel", value: "touch", isStateChange:true, displayed:true, data: [id: swid, type: swtype, attr: swattr, cmd: cmd] ] )
+    logger("doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid", "info")
    
     // get the type if auto is set
     if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
@@ -823,15 +830,11 @@ def doAction() {
       case "other" :
           cmdresult = setOther(swid, cmd, swattr, subid)
           break
-        
     }
-   
     logger("doAction: cmd= $cmd type= $swtype id= $swid attr= $swattr subid= $subid cmdresult= $cmdresult", "debug");
     return cmdresult
-
 }
 
-// get a tile by the ID not object
 def doQuery() {
     def swid = params.swid
     def swtype = params.swtype
@@ -1050,7 +1053,6 @@ def setMode(swid, cmd, swattr, subid) {
     }
 
     logger("Mode changed from $themode to $newsw index = $idx subid = $subid", "debug");
-    
     location.setMode(newsw);
     resp =  [   name: swid, 
                 sitename: location.getName(),
@@ -1225,17 +1227,14 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         case "saturation-val":
         case "colorTemperature-val":
             newonoff = newonoff=="off" ? "on" : "off"
-            // newonoff=="on" ? item.on() : item.off()
             break
               
         case "on":
             newonoff = "off"
-            // item.off()
             break
               
         case "off":
             newonoff = "on"
-            // item.on()
             break
             
         case "color":
@@ -1245,11 +1244,9 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newsw = cmd.substring(12,15).toInteger()
                 item.setHue(hue)
                 item.setSaturation(saturation)
-                // item.setLevel(newsw)
+                item.setLevel(newsw)
                 newcolor = hsv2rgb(hue, saturation, newsw)
                 newonoff = "on"
-
-                // disable overriding the existing level
                 newsw = false
             }
             break
@@ -1329,6 +1326,7 @@ def setLock(swid, cmd, swattr, subid) {
     def newsw
     def item  = mylocks.find {it.id == swid }
 
+    logger("Performing setLock command with cmd = ${cmd} and swattr = ${swattr}", "debug")
     if (item) {
         if (cmd=="toggle") {
             newsw = item.currentLock=="locked" ? "unlocked" : "locked"
@@ -1391,7 +1389,6 @@ def setValve(swid, cmd, swattr, subid) {
             }
         }
      
-//        resp = [valve: newsw]
         resp = getThing(myvalves, swid, item)
     }
     return resp
@@ -1544,7 +1541,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
         }
            
           // define actions for python end points  
-          else {
+        else {
           // default:
               if ( (cmd=="heat" || cmd=="heatingSetpoint" || cmd=="emergencyHeat") && swattr.isNumber()) {
                   item.setHeatingSetpoint(swattr)
@@ -1561,8 +1558,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
               }
 
             // break
-          }
-        // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
+        }
       
     }
     return resp
@@ -1582,11 +1578,11 @@ def setMusic(swid, cmd, swattr, subid) {
         
         // fix old bug from addition of extra class stuff
         // had to fix this for all settings
-        if ( subid=="mute" && swattr.contains("mute") && swattr.contains("unmuted" )) {
+        if ( subid=="mute" && swattr.contains("unmuted" )) {
             newsw = "muted"
             item.mute()
             resp['mute'] = newsw
-        } else if ( subid=="mute" && swattr.contains("mute") && swattr.contains(" muted" )) {
+        } else if ( subid=="mute" && swattr.contains(" muted" )) {
             newsw = "unmuted"
             item.unmute()
             resp['mute'] = newsw
@@ -1626,7 +1622,6 @@ def setMusic(swid, cmd, swattr, subid) {
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
         }
-         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
     return resp
 }
@@ -1699,11 +1694,7 @@ def changeHandler(evt) {
     def attr = evt?.name
     def value = evt?.value
     
-//    if ( ignoreTheseAttributes().contains(attr) ) {
-//        return;
-//    }
     logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
-    
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
 
         // set a hub action - include the access token so we know which hub this is
@@ -1730,7 +1721,7 @@ def changeHandler(evt) {
 def postHub(message) {
 
     if ( message && state?.directIP && state?.directPort ) {
-        //Send Using the Direct Mechanism
+        // Send Using the Direct Mechanism
         logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
         // set a hub action - include the access token so we know which hub this is
@@ -1746,7 +1737,6 @@ def postHub(message) {
                 message: message,
             ]
         ]
-        // def result = new physicalgraph.device.HubAction(params)
         def result = new physicalgraph.device.HubAction(params)
         sendHubCommand(result)
         
@@ -1825,4 +1815,3 @@ public  webCoRE_list(mode)
     return p
 }
 public  webCoRE_handler(evt){switch(evt.value){case 'pistonList':List p=state.webCoRE?.pistons?:[];Map d=evt.jsonData?:[:];if(d.id&&d.pistons&&(d.pistons instanceof List)){p.removeAll{it.iid==d.id};p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};state.webCoRE = [updated:now(),pistons:p];};break;case 'pistonExecuted':def cbk=state.webCoRE?.cbk;if(cbk&&evt.jsonData)"$cbk"(evt.jsonData);break;}}
-

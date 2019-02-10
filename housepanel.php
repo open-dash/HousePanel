@@ -1100,10 +1100,10 @@ function getAllThings($reset = false) {
         $clockname = "Digital Clock";
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
-        $timeofday = date("g:i:s a");
+        $timeofday = date("h:i:s A");
         $timezone = date("T");
         $dclock = array("name" => $clockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>"M d, Y", "fmt_time"=> "g:i:s a");
+                        "fmt_date"=>"M d, Y", "fmt_time"=> "h:i:s A");
         $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
         $dateofmonth = date($dclock["fmt_date"]);
         $timeofday = date($dclock["fmt_time"]);
@@ -1929,7 +1929,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
         $fmt_time = $baseclock["fmt_time"];
     } else {
         $fmt_date = "M d, Y";
-        $fmt_time = "g:i:s a";
+        $fmt_time = "h:i:s A";
     }
     $dateofmonth = date($fmt_date);
     $timeofday = date($fmt_time);
@@ -2484,7 +2484,7 @@ function cleanupStr($str) {
 // call to write Custom Css Back to customtiles.css
 // we actually write two copies - one saved in the skin for skin swapping
 function writeCustomCss($fname, $str, $skin="") {
-    $today = date("F j, Y  g:i a");
+    $today = date("F j, Y  h:i:s A");
     $fixstr = "/* HousePanel Generated Tile Customization File */\n";
     $fixstr.= "/* Created: $today  */\n";
     $fixstr.= "/* ********************************************* */\n";
