@@ -17,6 +17,9 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 02/15/2019 - change hubnum to use hubId so we can remove hubs without damage
+ * 02/10/2019 - redo subscriptions for push to make more efficient by group
+ * 02/07/2019 - tweak to ignore stuff that was blocking useful push updates
  * 02/03/2019 - switch thermostat and music tiles to use native key field names
  * 02/01/2019 - added page structure to input
  * 01/30/2019 - implement push notifications and logger
@@ -49,13 +52,13 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.980" }
+public static String version() { return "v1.982" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
     namespace: "kewashi",
     author: "Kenneth Washington",
-    description: "Tap here to install ${handle()} ${version()} - a highly customizable tablet smart app. ",
+    description: "Tap here to install ${handle()} ${version()} - a highly customizable dashboard smart app. ",
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon1x.png",
     iconX2Url: "https://s3.amazonaws.com/kewpublicicon/smartthings/hpicon2x.png",
@@ -179,16 +182,10 @@ def initialize() {
     }
     state.loggingLevelIDE = (settings.configLoggingLevelIDE) ? settings.configLoggingLevelIDE.toInteger() : 3
     logger("Installed with settings: ${settings} ", "debug")
-    if (settings?.webSocketHost)
+    if (state.directIP)
     {
         postHub("initialize");
-        
-        runIn(2, "registerLightAndSwitches", [overwrite: true])
-        runIn(4, "registerMotionAndPresence", [overwrite: true])
-        runIn(6, "registerDoorAndContact", [overwrite: true])
-        runIn(8, "registerThermostat", [overwrite: true])
-        runIn(10, "registerWater", [overwrite: true])
-        runIn(12, "registerSensorandOptions", [overwrite: true])
+        runIn(10, "registerAll");
     }
 }
 
@@ -706,7 +703,7 @@ def getWeathers(resp) {
 
 def getOthers(resp) {
     def n  = myothers ? myothers.size() : 0
-    if ( n > 0 ) { logger("Number of selected other sensors = ${n}", "debug") }
+    if ( n > 0 ) { logger("Number of other sensors = ${n}", "debug") }
     myothers?.each {
         def thatid = it.id;
         def multivalue = getThing(myothers, thatid, it)
@@ -752,6 +749,7 @@ def autoType(swid) {
     else if ( myilluminances?.find {it.id == swid } ) { swtype= "illuminance" }
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
+    else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
     else if ( mypower?.find {it.id == swid } ) { swtype= "power" }
     else if ( swid=="${hubprefix}hsm" ) { swtype= "hsm" }
     else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
@@ -844,12 +842,11 @@ def doAction() {
           cmdresult = setOther(swid, cmd, swattr, subid)
           break
     }
-    logger("HousePanel doaction: cmd = $cmd type = $swtype id = $swid subid = $subid cmdresult = $cmdresult", "debug")
+    logger("doAction: cmd= $cmd type= $swtype id= $swid attr= $swattr subid= $subid cmdresult= $cmdresult", "debug");
     return cmdresult
 }
 
 def doQuery() {
-    // logger("HHDEB -------- doQuery start ${params}", "trace")
     def swid = params.swid
     def swtype = params.swtype
     def cmdresult = false
@@ -1062,7 +1059,7 @@ def setMode(swid, cmd, swattr, subid) {
         newsw = allmodes[0].getName()
     }
     
-    logger("Mode changed from $themode to $newsw index = $idx ", "debug")
+    logger("Mode changed from $themode to $newsw index = $idx subid = $subid", "debug");
     location.setMode(newsw);
     resp =  [   name: swid, 
                 sitename: location.getName(),
@@ -1106,12 +1103,11 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
     def saturation = false
     def temperature = false
     def newcolor = false
-    def skiponoff = false
     
     if (item ) {
     
         def newonoff = item.currentValue("switch")
-        logger("generic light cmd = $cmd swattr = $swattr", "debug")
+        logger("setGenericLight: swid = $swid cmd = $cmd swattr = $swattr subid = $subid", "debug");
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
@@ -1143,7 +1139,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newcolor = hsv2rgb(h, s, newsw)
             }
             newonoff = "on"
-            skiponoff = true
             break
               
         case "level-dn":
@@ -1158,7 +1153,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newcolor = hsv2rgb(h, s, newsw)
             }
             newonoff = "on"
-            skiponoff = true
             break
                 
         case "level":
@@ -1171,7 +1165,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                     def s = item.currentValue("saturation").toInteger()
                     newcolor = hsv2rgb(h, s, newsw)
                 }
-                skiponoff = true
             }
             newonoff = (newsw == 0) ? "off" : "on"
             break
@@ -1184,7 +1177,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(hue, s, v)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "hue-dn":
@@ -1196,7 +1188,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(hue, s, v)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "saturation-up":
@@ -1207,7 +1198,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(h, saturation, v)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "saturation-dn":
@@ -1219,7 +1209,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(h, saturation, v)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "colorTemperature-up":
@@ -1227,7 +1216,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100) + 100
                 item.setColorTemperature(temperature)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "colorTemperature-dn":
@@ -1238,7 +1226,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 temperature = (temperature >= 6500) ? 6500 : temperature - (temperature % 100)
                 item.setColorTemperature(temperature)
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "colorTemperature":
@@ -1249,7 +1236,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                     item.setColorTemperature(temperature)
                 }
                 newonoff = "on"
-                skiponoff = true
             break
               
         case "level-val":
@@ -1277,7 +1263,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 item.setLevel(newsw)
                 newcolor = hsv2rgb(hue, saturation, newsw)
                 newonoff = "on"
-                skiponoff = true
                 newsw = false
             }
             break
@@ -1292,7 +1277,6 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
             }
-            skiponoff = false
             break               
               
         }
@@ -1418,10 +1402,9 @@ def setValve(swid, cmd, swattr, subid) {
             resp = [:]
             if ( item.hasCommand(subid) ) {
                 item."$subid"()
+            }
         }
-    }
      
-//        resp = [valve: newsw]
         resp = getThing(myvalves, swid, item)
     }
     return resp
@@ -1592,7 +1575,6 @@ def setThermostat(swid, curtemp, swattr, subid) {
 
             // break
           }
-        // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
       
     }
     return resp
@@ -1612,11 +1594,11 @@ def setMusic(swid, cmd, swattr, subid) {
         
         // fix old bug from addition of extra class stuff
         // had to fix this for all settings
-        if ( subid=="mute" && swattr.contains("mute") && swattr.contains("unmuted" )) {
+        if ( subid=="mute" && swattr.contains("unmuted" )) {
             newsw = "muted"
             item.mute()
             resp['mute'] = newsw
-        } else if ( subid=="mute" && swattr.contains("mute") && swattr.contains(" muted" )) {
+        } else if ( subid=="mute" && swattr.contains(" muted" )) {
             newsw = "unmuted"
             item.unmute()
             resp['mute'] = newsw
@@ -1656,153 +1638,73 @@ def setMusic(swid, cmd, swattr, subid) {
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
         }
-         // resp = [name: item.displayName, value: newsw, id: swid, type: swtype]
     }
     return resp
 }
 
-/*************************************************************************/
-/* webCoRE Connector v0.2                                                */
-/*************************************************************************/
-/*  Copyright 2016 Adrian Caramaliu <ady624(at)gmail.com>                */
-/*                                                                       */
-/*  This program is free software: you can redistribute it and/or modify */
-/*  it under the terms of the GNU General Public License as published by */
-/*  the Free Software Foundation, either version 3 of the License, or    */
-/*  (at your option) any later version.                                  */
-/*                                                                       */
-/*  This program is distributed in the hope that it will be useful,      */
-/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
-/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the         */
-/*  GNU General Public License for more details.                         */
-/*                                                                       */
-/*  You should have received a copy of the GNU General Public License    */
-/*  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
-/*************************************************************************/
-private webCoRE_handle(){return'webCoRE'}
-private webCoRE_init(pistonExecutedCbk)
-{
-    state.webCoRE=(state.webCoRE instanceof Map?state.webCoRE:[:])+(pistonExecutedCbk?[cbk:pistonExecutedCbk]:[:]);
-    subscribe(location,"${webCoRE_handle()}.pistonList",webCoRE_handler);
-    if(pistonExecutedCbk)subscribe(location,"${webCoRE_handle()}.pistonExecuted",webCoRE_handler);webCoRE_poll();
-}
-private webCoRE_poll(){sendLocationEvent([name: webCoRE_handle(),value:'poll',isStateChange:true,displayed:false])}
-public  webCoRE_execute(pistonIdOrName,Map data=[:]){def i=(state.webCoRE?.pistons?:[]).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;if(i){sendLocationEvent([name:i,value:app.label,isStateChange:true,displayed:false,data:data])}}
-public  webCoRE_list(mode)
-{
-    def p=state.webCoRE?.pistons;
-    if(p)p.collect{
-        mode=='id'?it.id:(mode=='name'?it.name:[id:it.id,name:it.name])
-        logger("Reading piston: ${it}", "debug");
-    }
-    return p
-}
-public  webCoRE_handler(evt){switch(evt.value){case 'pistonList':List p=state.webCoRE?.pistons?:[];Map d=evt.jsonData?:[:];if(d.id&&d.pistons&&(d.pistons instanceof List)){p.removeAll{it.iid==d.id};p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};state.webCoRE = [updated:now(),pistons:p];};break;case 'pistonExecuted':def cbk=state.webCoRE?.cbk;if(cbk&&evt.jsonData)"$cbk"(evt.jsonData);break;}}
-
-def ignoreTheseAttributes() {
-    return [
-        'DeviceWatch-DeviceStatus', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
-        'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
-        'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
-        'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
-        'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-        'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'lastUpdated',
-        'trackData', 'trackDescription', 'humidity', 'temperature', 'power', 'energy', 'tamper', 'battery', '_off', '_on'
-    ]
-}
-
-def registerLightAndSwitches() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(myswitches)
-    registerChangeHandler(mydimmers)
-    registerChangeHandler(mymomentaries)
-    registerChangeHandler(mylights)
-    registerChangeHandler(mybulbs)
-}
-
-def registerMotionAndPresence() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mypresences)
-    registerChangeHandler(mysensors)
-}
-
-def registerDoorAndContact() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mycontacts)
-    registerChangeHandler(mydoors)
-    registerChangeHandler(mylocks)
-}
-def registerThermostat() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mythermostats)
-    registerChangeHandler(mytemperatures)
-    registerChangeHandler(myilluminances)
-}
-
-def registerWater() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mywaters)
-    registerChangeHandler(myvalves)
-}
-
-def registerSensorandOptions() {
-    //This has to be done at startup because it takes too long for a normal command.
-    registerChangeHandler(mymusics)
-    registerChangeHandler(mysmokes)
-    registerChangeHandler(mypower)
-    registerChangeHandler(myothers)
-}
-
-def registerChangeHandler(devices) {
+def registerAll() {
+    registerCapabilities(myswitches,"switch")
+    registerCapabilities(mydimmers,"switch")
+    registerCapabilities(mydimmers,"level")
+    registerCapabilities(mylights,"switch")
+    registerCapabilities(mybulbs,"switch")
+    registerCapabilities(mybulbs,"level")
+    registerCapabilities(mybulbs,"color")
+    registerCapabilities(mycontacts,"contact")
+    registerCapabilities(mydoors,"door")
+    registerCapabilities(mylocks,"lock")
+    registerCapabilities(myvalves,"valve")
+    registerCapabilities(mywaters,"water")
+    registerCapabilities(mypresences,"presence")
+    registerCapabilities(mysmokes,"smoke")
+    registerThermostats()
+    registerMusics()
     
-    devices?.each { device ->
-        List theAtts = device?.supportedAttributes?.collect { it?.name as String }?.unique()
-        logger("atts: ${theAtts}", "info")
-        theAtts?.each {att ->
-            if(!(ignoreTheseAttributes().contains(att))) {
-                subscribe(device, att, "changeHandler")
-                logger("Registering ${device?.displayName}.${att}", "trace")
-            }
-        }
-    }
+    // skip these on purpose because they change slowly and report often
+    // registerCapabilities(mytemperatures, "temperature")
+    // registerCapabilities(myilluminances, "illuminance")
+    // registerCapabilities(mypower, "power")
+    // registerCapabilities(mypower, "energy")
+}
+
+def registerCapabilities(devices, capability) {
+    subscribe(devices, capability, changeHandler)
+    logger("Registering ${capability} for ${devices?.size() ?: 0} things", "trace")
+}
+
+def registerThermostats() {
+    registerCapabilities(mythermostats, "heatingSetpoint")
+    registerCapabilities(mythermostats, "coolingSetpoint")
+    registerCapabilities(mythermostats, "thermostatFanMode")
+    registerCapabilities(mythermostats, "thermostatMode")
+    registerCapabilities(mythermostats, "thermostatSetpoint")
+    registerCapabilities(mythermostats, "coolingSetpoint")
+    logger("Registering all thermostats", "trace")
+}
+
+def registerMusics() {
+    registerCapabilities(mymusics, "status")
+    registerCapabilities(mymusics, "level")
+    registerCapabilities(mymusics, "mute")
+    registerCapabilities(mymusics, "trackDescription")
+    logger("Registering all musics", "trace")
 }
 
 def changeHandler(evt) {
-    def sendItems = []
-    def sendNum = 1
     def src = evt?.source
     def deviceid = evt?.deviceId
     def deviceName = evt?.displayName
     def attr = evt?.name
     def value = evt?.value
-    def dt = evt?.date
-    def sendEvt = true
-    
-    if ( ignoreTheseAttributes().contains(attr) ) {
-        return;
-    }
-    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state.directIP}:${state.directPort})", "debug")
-    
-    switch(attr) {
-        case "hsmStatus":
-            deviceid = "alarmSystemStatus_${location?.id}"
-            attr = "alarmSystemStatus"
-            break
-            
-        case "hsmAlert":
-        case "hsmRules":
-        case "hsmSetArm":
-            sendEvt = false
-            break
-            
-        case "alarmSystemStatus":
-            deviceid = "alarmSystemStatus_${location?.id}"
-            break
+
+    // handle special case of hsm
+    if ( attr=="hsmStatus " || attr=="alarmSystemStatus" ) {
+        deviceid = "alarmSystemStatus_${location.id}"
+        attr = "alarmSystemStatus"
     }
 
-    if (sendEvt && state.directIP && state.directPort && deviceName && deviceid && attr && value ) {
-        //Send Using the Direct Mechanism
-        logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr} ) to Websocket at (${state?.directIP}:${state?.directPort})", "trace")
+    logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
+    if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
 
         // set a hub action - include the access token so we know which hub this is
         def params = [
@@ -1827,8 +1729,8 @@ def changeHandler(evt) {
 
 def postHub(message) {
 
-    if ( message && state?.directIP && state?.directPort) {
-        //Send Using the Direct Mechanism
+    if ( message && state?.directIP && state?.directPort ) {
+        // Send Using the Direct Mechanism
         logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
         // set a hub action - include the access token so we know which hub this is
@@ -1885,4 +1787,40 @@ private logger(msg, level = "debug") {
     }
 }
 
-
+/*************************************************************************/
+/* webCoRE Connector v0.2                                                */
+/*************************************************************************/
+/*  Copyright 2016 Adrian Caramaliu <ady624(at)gmail.com>                */
+/*                                                                       */
+/*  This program is free software: you can redistribute it and/or modify */
+/*  it under the terms of the GNU General Public License as published by */
+/*  the Free Software Foundation, either version 3 of the License, or    */
+/*  (at your option) any later version.                                  */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the         */
+/*  GNU General Public License for more details.                         */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public License    */
+/*  along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
+/*************************************************************************/
+private webCoRE_handle(){return'webCoRE'}
+private webCoRE_init(pistonExecutedCbk)
+{
+    state.webCoRE=(state.webCoRE instanceof Map?state.webCoRE:[:])+(pistonExecutedCbk?[cbk:pistonExecutedCbk]:[:]);
+    subscribe(location,"${webCoRE_handle()}.pistonList",webCoRE_handler);
+    if(pistonExecutedCbk)subscribe(location,"${webCoRE_handle()}.pistonExecuted",webCoRE_handler);webCoRE_poll();
+}
+private webCoRE_poll(){sendLocationEvent([name: webCoRE_handle(),value:'poll',isStateChange:true,displayed:false])}
+public  webCoRE_execute(pistonIdOrName,Map data=[:]){def i=(state.webCoRE?.pistons?:[]).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;if(i){sendLocationEvent([name:i,value:app.label,isStateChange:true,displayed:false,data:data])}}
+public  webCoRE_list(mode)
+{
+    def p=state.webCoRE?.pistons;
+    if(p)p.collect{
+        mode=='id'?it.id:(mode=='name'?it.name:[id:it.id,name:it.name])
+        logger("Reading piston: ${it}", "debug");
+    }
+    return p
+}
+public  webCoRE_handler(evt){switch(evt.value){case 'pistonList':List p=state.webCoRE?.pistons?:[];Map d=evt.jsonData?:[:];if(d.id&&d.pistons&&(d.pistons instanceof List)){p.removeAll{it.iid==d.id};p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};state.webCoRE = [updated:now(),pistons:p];};break;case 'pistonExecuted':def cbk=state.webCoRE?.cbk;if(cbk&&evt.jsonData)"$cbk"(evt.jsonData);break;}}

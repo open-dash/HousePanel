@@ -67,7 +67,8 @@ $(document).ready(function() {
     
     // get default tab from cookie
     var defaultTab = getCookie( 'defaultTab' );
-    if ( defaultTab ) {
+    
+    if ( pagename==="main" && defaultTab ) {
         try {
             $("#"+defaultTab).click();
         } catch (e) {
@@ -82,7 +83,9 @@ $(document).ready(function() {
     }
 
     // hide the skin and 
-    $("div.skinoption").hide();
+    if ( pagename==="main" ) {
+        $("div.skinoption").hide();
+    }
 
     // setup page clicks
     if ( pagename==="main" && !disablepub ) {
@@ -150,16 +153,17 @@ $(document).ready(function() {
         // but for now we keep it just as a backup to keep things updates
         if ( hubs && typeof hubs === "object" ) {
             // loop through every hub
-            $.each(hubs, function (hubnum, hub) {
+            $.each(hubs, function (num, hub) {
                 // var hubType = hub.hubType;
                 var timerval;
+                var hubId = hub.hubId;
                 if ( hub.hubTimer ) {
                     timerval = hub.hubTimer;
                 } else {
                     timerval = 60000;
                 }
                 if ( timerval && timerval >= 1000 ) {
-                    setupTimer(timerval, "all", hubnum);
+                    setupTimer(timerval, "all", hubId);
                 }
             });
         }
@@ -350,19 +354,31 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     var modaldata = modalcontent;
     var modalhook;
     
+    var postype;
     if ( modaltag && typeof modaltag === "object" && modaltag.hasOwnProperty("attr") ) {
 //        alert("object");
         modalhook = modaltag;
+        postype = "relative";
     } else if ( modaltag && typeof modaltag === "string" ) {
 //        alert("string: "+modaltag);
-        modalhook = $(modaltag)
+        modalhook = $(modaltag);
+        if ( modaltag==="body" || modaltag==="document" || modaltag==="window" ) {
+            postype = "absolute";
+        } else {
+            postype = "relative";
+        }
     } else {
 //        alert("default body");
         modalhook = $("body");
+        postype = "absolute";
     }
+    
     var styleinfo = "";
     if ( pos ) {
-        styleinfo = " style=\"position: absolute; left: " + pos.left + "px; top: " + pos.top + "px;\"";
+        styleinfo = " style=\"position: " + postype + "; left: " + pos.left + "px; top: " + pos.top + "px;\"";
+        if ( pos.width && pos.height ) {
+            styleinfo += " \"width: " + pos.width + "px; height: " + pos.height + "px;\"";
+        }
     }
     
     modalcontent = "<div id='" + modalid +"' class='modalbox'" + styleinfo + ">" + modalcontent;
@@ -372,7 +388,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     modalcontent = modalcontent + "</div>";
     
     // console.log("modalcontent = " + modalcontent);
-    modalhook.append(modalcontent);
+    modalhook.prepend(modalcontent);
     
     // call post setup function if provided
     if ( loadfunction ) {
@@ -444,7 +460,7 @@ function setupColors() {
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubnum: hubnum},
+                       {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubid: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 updAll("color",aid,bidupd,thetype,hubnum,presult);
@@ -499,7 +515,7 @@ function setupSliders() {
             // handle music volume different than lights
             if ( thetype != "music") {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum, command: command, linkval: linkval},
+                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubid: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -509,7 +525,7 @@ function setupSliders() {
                 );
             } else {
                 $.post(returnURL, 
-                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubnum: hubnum, command: command, linkval: linkval},
+                       {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubid: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -564,7 +580,7 @@ function setupSliders() {
             console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
             
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubnum: hubnum, command: command, linkval: linkval },
+                   {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubid: hubnum, command: command, linkval: linkval },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             console.log( ajaxcall + " POST returned: "+ strObject(presult) );
@@ -1062,6 +1078,7 @@ function setupButtons() {
         // add on one time info from user
         $("input.hubauth").click(function(evt) {
             var hubnum = $(this).attr("hub");
+            var hubId = $(this).attr("hubId");
 //            var request = new XMLHttpRequest();
 //            request.open("POST", returnURL, false);
             var myform = document.getElementById("hubform_"+hubnum);
@@ -1081,7 +1098,6 @@ function setupButtons() {
             formData.append("uname", uname);
             formData.append("pword", pword);
             formData.append("use_kiosk", kiosk);
-            var defhub = formData.get("hubnum");
             var hubHost = formData.get("hubHost");
             var clientId = formData.get("clientId");
 
@@ -1108,7 +1124,7 @@ function setupButtons() {
                 console.log( presult );
                 var obj = presult;
                 if ( obj.action === "things" ) {
-                    var ntc = "Hub #" + defhub + " was authorized and " + obj.count + " devices were retrieved.";
+                    var ntc = "Hub #" + hubnum + " hub ID: " + hubId + " was authorized and " + obj.count + " devices were retrieved.";
                     $("#newthingcount").html(ntc);
                 }
 
@@ -1152,6 +1168,33 @@ function setupButtons() {
                     }
                 }
             );
+        });
+        
+        $("input.hubdel").click(function(evt) {
+            var hubnum = $(this).attr("hub");
+            var bodytag = "div.hubopt";
+            var hubId = $(this).attr("hubId");
+            var pos = {top: 40, left: 40, width: 400, height: 50};
+            // alert("Remove request for hub: " + hubnum + " hubID: " + hubId );
+
+            createModal("modalhub","Remove hub #" + hubnum + " with hub ID: " + hubId + "? Are you sure?", bodytag , true, pos, function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk==="okay" ) {
+                    // remove it from the system
+                    $.post(returnURL, 
+                        {useajax: "hubdelete", id: hubnum, type: "none", value: hubId},
+                        function (presult, pstatus) {
+                            console.log("hubdelete call: status = " + pstatus + " result = "+presult);
+                            if (pstatus==="success" && presult==="success") {
+                                console.log( "Removed hub: " + hubnum + " hubID: " + hubId );
+                                location.reload(true);
+                            }
+                        }
+                    );
+                }
+            });
+            
+            evt.stopPropagation(); 
         });
     
     }
@@ -1215,7 +1258,7 @@ function addEditLink() {
         var tilename = $("span.original.n_"+tile).html();
         var pos = {top: 100, left: 10};
 
-        createModal("modaladd","Remove: "+ tilename + " of type: "+str_type+" from hub #" + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("modaladd","Remove: "+ tilename + " of type: "+str_type+" from hub Id: " + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 // remove it from the system
@@ -1627,7 +1670,7 @@ function refreshTile(aid, bid, thetype, hubnum) {
 //        bid = bid.substring(2);
 //    }
     $.post(returnURL, 
-        {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubnum: hubnum},
+        {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubid: hubnum},
         function (presult, pstatus) {
             if (pstatus==="success") {
                 // console.log( "presult from refreshTile: ", strObject(presult) );
@@ -1656,7 +1699,7 @@ function clockUpdater() {
         var ds = d.toString().split(" ");    
         var timestr = ds[4];
         var hour = d.getHours();
-        var sec = d.getSeconds();
+        // var sec = d.getSeconds();
         
         if ( hour=== 0 ) {
             timestr = "12" + timestr.substring(2);
@@ -1690,6 +1733,8 @@ function clockUpdater() {
 function setupTimer(timerval, timertype, hubnum) {
 
     // console.log("hub #" + hubnum + " timer = " + timerval);
+    // we now pass the unique hubId value instead of numerical hub
+    // since the number can now change when new hubs are added and deleted
     var updarray = [timertype, timerval, hubnum];
     updarray.myMethod = function() {
 
@@ -1706,7 +1751,7 @@ function setupTimer(timerval, timertype, hubnum) {
 
         try {
             $.post(returnURL, 
-                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubnum: that[2]},
+                {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubid: that[2]},
                 function (presult, pstatus) {
                     if (pstatus==="success" && typeof presult==="object" ) {
 
@@ -1995,7 +2040,7 @@ function setupPage(trigger) {
         // and skip if this is a custom action since it could be anything
         // also, for momentary buttons we don't do any tile updating
         // other than visually pushing the button by changing the class for 1.5 seconds
-        console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+        console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
         if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid==="pistonName") ) ) {
             var tarclass = $(targetid).attr("class");
             var that = targetid;
@@ -2008,7 +2053,7 @@ function setupPage(trigger) {
             
             $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
-                    attr: subid, subid: subid, hubnum: hubnum},
+                    attr: subid, subid: subid, hubid: hubnum},
                 function(presult, pstatus) {
                     if (pstatus==="success" && presult!==undefined && presult!==false) {
                         console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
@@ -2041,10 +2086,10 @@ function setupPage(trigger) {
             $(targetid).html(thevalue);
 
         } else {
-            // console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
-                    attr: theattr, subid: subid, hubnum: hubnum, command: command, linkval: linkval},
+                    attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                    function (presult, pstatus) {
                         if (pstatus==="success" && presult ) {
                             try {
