@@ -315,38 +315,33 @@ table.roomoptions, table.headoptions {
 table.headoptions {
     height: 40px;
 }
-table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.customedit, table.headoptions th.customname {
-    border-bottom: 5px solid rgba(0, 0, 80, 1);    
+table.headoptions th.roomname, table.headoptions th.thingname, table.headoptions th.hubname {
+    border-bottom: 2px solid rgba(0, 0, 80, 1);    
     background-color: #3a5795;    
     color:#ffffff;
-    font-weight: bold;    padding: 2px;    width: 100px;
-    text-align: center;    line-height: 1.5;    height: 30px;
+    font-weight: bold;    
+    width: 100px;
+    text-align: center;    
+    line-height: 1.5;    
+    height: 35px;
 }
-table.headoptions th.roomname {
-    cursor: pointer;
-}
-table.headoptions td, table.roomoptions td {
+table.roomoptions td, table.headoptions th {
     width: 100px;
     color:#000000;
     text-align: center;
     border-right: 1px solid #999999;
     border-bottom: 1px solid #999999;
 }
-table.roomoptions td.customedit, table.headoptions th.customedit {
-    text-align: center; 
-    width: 5%;    
-}
-table.roomoptions td.customname, table.headoptions th.customname {
-    text-align: center; 
-    width: 10%;    
-}
-
 table.roomoptions td.thingname, table.headoptions th.thingname {
     text-align: left; 
     width: 20%;    
     border-left: 1px solid #999999;
-    font-weight: bold;
-    border-left: 1px solid #999999;    
+    border-right: 1px solid #999999;
+}
+table.roomoptions td.hubname, table.headoptions th.hubname {
+    text-align: center; 
+    width: 15%;    
+    border-left: 1px solid #999999;
     border-right: 1px solid #999999;
 }
 

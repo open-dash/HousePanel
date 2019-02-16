@@ -7,6 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.983      2019-02-14
+ *              bugfix in auth page where default hub was messed up
  * 1.982      2019-02-14
  *              change hubnum to use hubId so we can remove hubs without damage
  * 1.981      Upgrade to install.sh script and enable hub removal
@@ -193,7 +195,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.982');
+define('HPVERSION', 'Version 1.983');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -541,7 +543,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "HousePanel to access your smart home devices. With HousePanel " .
             "you can use any number and combination of hub types at the same time. " . 
             "To configure HousePanel you should have the following info about at least one hub: " .
-            "API URL, Client ID, and Client Secret</p><br />";
+            "API URL, Client ID, and Client Secret. A unique Hub ID must be specified for SmartThings hubs. " .
+            "A unique Hub ID will be automatically assigned for Hubitat hubs.</p><br />";
     
     $tc.= "<p><strong>*** IMPORTANT ***</strong><br /> This information is secret and it will be stored " .
             "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
@@ -549,28 +552,28 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "unless the site is secured via some means such as password protection. <strong>A locally hosted " . 
             "website on a Raspberry Pi is the strongly preferred option</strong>.</p>";
 
-    $tc.= "<p>The Authorize Hub #n button below will " .
-            "begin the typical OAUTH process for hub #n. " .
-            "If you provide a manual Access Token and Endpoint your hub will " .
-            "be authorized immediately and not sent through the OAUTH flow process, so your " .
-            "devices will have to be selected or modified from the hub app instead of here.</p>";
-
-    $tc.= "<p>After a successful OAUTH flow authorization, you will be redirected back here to repeat " .
-            "the process for another hub. If you are done, select Done Authorizing. " . 
-            "This will take you to the main HousePanel page. " .
-            "A default configuration will be attempted if your pages are empty.</p>";
-
-    $tc.= "<p>If you have trouble authorizing, check your file permissions " .
-            "to ensure that you can write to the home directory where HousePanel is installed. " .
-            "You should also confirm that your PHP is set up to use cURL. " .
-            "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
-            "(opens in a new window or tab).</p>";
-
-    $tc.= "<p>The username and password are used to identify this tablet. You can " .
-            "leave the username set to admin and the password blank to ignore this feature. " .
-            "Otherwise, set the username and password to anything you want. If you leave " .
-            "the password field blank, the prior password will be retained. Any non-blank username " . 
-            "will create or switch to a custom room configuration from file named: \"hm_username.cfg\"</p>";
+//    $tc.= "<p>The Authorize Hub #n button below will " .
+//            "begin the typical OAUTH process for hub #n. " .
+//            "If you provide a manual Access Token and Endpoint your hub will " .
+//            "be authorized immediately and not sent through the OAUTH flow process, so your " .
+//            "devices will have to be selected or modified from the hub app instead of here.</p>";
+//
+//    $tc.= "<p>After a successful OAUTH flow authorization, you will be redirected back here to repeat " .
+//            "the process for another hub. If you are done, select Done Authorizing. " . 
+//            "This will take you to the main HousePanel page. " .
+//            "A default configuration will be attempted if your pages are empty.</p>";
+//
+//    $tc.= "<p>If you have trouble authorizing, check your file permissions " .
+//            "to ensure that you can write to the home directory where HousePanel is installed. " .
+//            "You should also confirm that your PHP is set up to use cURL. " .
+//            "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
+//            "(opens in a new window or tab).</p>";
+//
+//    $tc.= "<p>The username and password are used to identify this tablet. You can " .
+//            "leave the username set to admin and the password blank to ignore this feature. " .
+//            "Otherwise, set the username and password to anything you want. If you leave " .
+//            "the password field blank, the prior password will be retained. Any non-blank username " . 
+//            "will create or switch to a custom room configuration from file named: \"hm_username.cfg\"</p>";
 
     $tc.= "</div>";
 
@@ -697,12 +700,6 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $pwords[$uname] = $pword;
             $rewrite = true;
         }
-        
-        // make an empty new hub for adding new ones
-        $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
-                        "clientId"=>"", "clientSecret"=>"",
-                        "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>1,
-                        "hubTimer"=>60000, "hubAccess"=>"", "hubEndpt"=>"");
         
         // handle legacy hmoptions files that have the old setup without arrays
         // this will only work once - the first time used
@@ -952,6 +949,13 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     }
         
     // add a new blank hub at the end for adding new ones
+        
+    // make an empty new hub for adding new ones
+    $newnum = strval(count($hubs)+1);
+    $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
+                    "clientId"=>"", "clientSecret"=>"",
+                    "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>$newnum,
+                    "hubTimer"=>60000, "hubAccess"=>"", "hubEndpt"=>"");
     $hubs[] = $newhub;
     
     $tc.= hidden("returnURL", $returl);
@@ -966,13 +970,14 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc.= "</div>"; 
     
     if ( $hubset!==null && $newthings!==null && is_array($newthings) ) {
-        $defhub = $hubset;
+        $defhub = strval($hubset);
         $numnewthings = count($newthings);
         $ntc= "Hub with hubId= $defhub was authorized and $numnewthings devices were retrieved.";
     } else {
-        $defhub = -1;
+        $defhub = strval($hubs[0]["hubId"]);
         $ntc = "";
     }
+    // $defhub = "1";
     $tc.= "<div id=\"newthingcount\">$ntc</div>";
     
     $tc.= "<div class='hubopt'><label for=\"pickhub\" class=\"startupinp\">Authorize which hub?</label>";
@@ -982,8 +987,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     foreach ($hubs as $hub) {
         $hubName = $hub["hubName"];
         $hubType = $hub["hubType"];
-        $hubId = $hub["hubId"];
-        if ( ($defhub===-1 && $i===0) || $hubId === $defhub) {
+        $hubId = strval($hub["hubId"]);
+        if ( $hubId === $defhub) {
             $hubselected = "selected";
         } else {
             $hubselected = "";
@@ -998,11 +1003,11 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     foreach ($hubs as $hub) {
 
         $hubType = $hub["hubType"];
-        $hubId = $hub["hubId"];
-        if ( ($defhub===-1 && $i===0) || $hubId === $defhub) {
-            $hubclass = "authhub hidden";
-        } else {
+        $hubId = strval($hub["hubId"]);
+        if ( $hubId === $defhub) {
             $hubclass = "authhub";
+        } else {
+            $hubclass = "authhub hidden";
         }
         $tc.="<div id=\"authhub_$i\" class=\"$hubclass\">";
         
@@ -1052,11 +1057,11 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<div><label class=\"startupinp required\">Refresh Timer: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubTimer\" width=\"10\" type=\"text\" value=\"" . $hub["hubTimer"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp\">Access Token: </label>";
-        $tc.= "<input disabled class=\"startupinp\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $hub["hubAccess"] . "\"/></div>"; 
+        $tc.= "<div><label class=\"startupinp hidden\">Access Token: </label>";
+        $tc.= "<input  class=\"hidden\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $hub["hubAccess"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp\">Endpoint: </label>";
-        $tc.= "<input disabled class=\"startupinp\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $hub["hubEndpt"] . "\"/></div>"; 
+        $tc.= "<div><label class=\"startupinp hidden\">Endpoint: </label>";
+        $tc.= "<input  class=\"hidden\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $hub["hubEndpt"] . "\"/></div>"; 
         
         $tc.= "<div>";
         $tc .= "<input hub=\"$i\" hubId=\"$hubId\" class=\"authbutton hubauth\" value=\"Authorize Hub #$i\" type=\"button\" />";
@@ -2877,7 +2882,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<br /><br />";
     $tc.= "<table class=\"headoptions\"><thead>";
     $tc.= "<tr><th class=\"thingname\">" . "Thing Name (type)" . "</th>";
-    $tc.= "<th class=\"roomname\">Hub</th>";
+    $tc.= "<th class=\"hubname\">Hub</th>";
    
     // list the room names in the proper order
     // for ($k=0; $k < count($roomoptions); $k++) {
@@ -2939,7 +2944,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $tc.= "</td>";
         
         $tc.="<td class=\"hubname\">";
-        $tc.= $hubStr . "<span class=\"typeopt\"> (" . $hubnum . ": " . $hubType . ")</span>";
+        $tc.= $hubStr . "<br><span class=\"typeopt\">(" . $hubnum . ": " . $hubType . ")</span>";
         $tc.= "</td>";
 
         // loop through all the rooms
