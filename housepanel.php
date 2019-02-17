@@ -7,6 +7,11 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.985      2019-02-17
+ *              finish implementing hub removal feature
+ *              added messages to inform user during long hub processes in auth
+ *              position delete confirm box near the tile
+ *              minor bug fixes
  * 1.983      2019-02-14
  *              bugfix in auth page where default hub was messed up
  * 1.982      2019-02-14
@@ -195,7 +200,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.983');
+define('HPVERSION', 'Version 1.985');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -965,7 +970,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc.= "<div><span class=\"startupinp\">Last update: $lastedit</span></div>";
     
     // ------------------ general settings ----------------------------------
-    $tc.= "<div>";
+    $tc.= "<div id=\"tskwrapper\">";
     $tc.= tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer);
     $tc.= "</div>"; 
     
@@ -993,7 +998,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         } else {
             $hubselected = "";
         }
-        $tc.= "<option value=\"$i\" $hubselected>Hub #$i ($hubType)</option>";
+        $tc.= "<option value=\"$hubId\" $hubselected>Hub #$i ($hubType)</option>";
         $i++;
     }
     $tc.= "</select></div>";
@@ -1009,9 +1014,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         } else {
             $hubclass = "authhub hidden";
         }
-        $tc.="<div id=\"authhub_$i\" class=\"$hubclass\">";
+        $tc.="<div id=\"authhub_$hubId\" hubid=\"$hubId\" hubtype=\"$hubType\" class=\"$hubclass\">";
         
-        $tc.= "<form id=\"hubform_$i\" class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
+        $tc.= "<form id=\"hubform_$hubId\" class=\"houseauth\" action=\"" . $returl . "\"  method=\"POST\">";
         $tc.= hidden("doauthorize", $hpcode);
         // $tc.= hidden("hubnum", $i);
 
@@ -1064,8 +1069,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<input  class=\"hidden\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $hub["hubEndpt"] . "\"/></div>"; 
         
         $tc.= "<div>";
-        $tc .= "<input hub=\"$i\" hubId=\"$hubId\" class=\"authbutton hubauth\" value=\"Authorize Hub #$i\" type=\"button\" />";
-        $tc .= "<input hub=\"$i\" hubId=\"$hubId\" class=\"authbutton hubdel\" value=\"Remove Hub #$i\" type=\"button\" />";
+        $tc .= "<input hub=\"$i\" hubid=\"$hubId\" class=\"authbutton hubauth\" value=\"Authorize Hub #$i\" type=\"button\" />";
+        $tc .= "<input hub=\"$i\" hubid=\"$hubId\" class=\"authbutton hubdel\" value=\"Remove Hub #$i\" type=\"button\" />";
         $tc.= "</div>";
         
         $tc.= "</form>";
@@ -3551,10 +3556,9 @@ function is_ssl() {
          isset($_SESSION["hpcode"]) && 
          intval($_POST["doauthorize"]) <= intval($_SESSION["hpcode"]) ) {
 
-        // get hub number and limit to 9 and ensure we have a number
-        // we do this because we use hubId instead
-        // $hubnum = filter_input(INPUT_POST, "hubnum", FILTER_SANITIZE_SPECIAL_CHARS);
-        // if ( !is_numeric($hubnum) || is_nan($hubnum) || $hubnum>9 || $hubnum<0 ) { $hubnum = 0; }
+        // get the hubId value and save in the old hubnum variable
+        $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
+        $hubnum = $hubId;
         
         $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -3592,7 +3596,6 @@ function is_ssl() {
         $userAccess = filter_input(INPUT_POST, "userAccess", FILTER_SANITIZE_SPECIAL_CHARS);
         $userEndpt = filter_input(INPUT_POST, "userEndpt", FILTER_SANITIZE_URL);
         $hubName = filter_input(INPUT_POST, "hubName", FILTER_SANITIZE_SPECIAL_CHARS);
-        $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubTimer = filter_input(INPUT_POST, "hubTimer", FILTER_SANITIZE_NUMBER_INT);
         $hubAccess = $userAccess;
         $hubEndpt = $userEndpt;
@@ -3651,9 +3654,7 @@ function is_ssl() {
         }
 
         // save the hubs
-        // $hubs[$hubnum] = $hub;
         $hubs = updateHubs($hubs, $hub);
-        $hubnum = $hubId;
         
         // update with this hub's information including the generic settings
         $configoptions = array(
@@ -3690,7 +3691,6 @@ function is_ssl() {
                 }
                 if ( $hubName ) {
                     $hub["hubName"] = $hubName;
-                    // $hubs[$hubnum] = $hub;
                     $hubs = updateHubs($hubs, $hub);
                     $configoptions["hubs"] = $hubs;
                     $options["config"] = $configoptions;
@@ -3698,6 +3698,8 @@ function is_ssl() {
                 writeOptions($options);
             }
 
+            // no redirection - just pass the new things to javascript
+            // which then reports the updates to the auth page
             $obj = array("action"=>"things", "count"=> count($newthings));
             echo json_encode($obj);
             exit(0);
@@ -3705,6 +3707,8 @@ function is_ssl() {
             
             // start the OAUTH flow but first
             // save the hubId in a session variable
+            // we now let javascript start the oauth flow
+            // this is cleaner because it avoids an additional reload
             $_SESSION["HP_hubnum"] = $hubnum;
             $obj = array("action"=>"oauth", "count"=> 0);
             echo json_encode($obj);
@@ -3754,6 +3758,7 @@ function is_ssl() {
  * *****************************************************************************
  */
     $configoptions = $options["config"];
+    $hubs = $configoptions["hubs"];
     $timezone = $configoptions["timezone"];
     $skin = $configoptions["skin"];
     $kiosk = $configoptions["kiosk"];
@@ -3786,8 +3791,6 @@ function is_ssl() {
         // get hub number and retrieve the required parameters
         // this is now actually the hubId value
         $hubnum = $_SESSION["HP_hubnum"];
-        $hubs = $configoptions["hubs"];
-        // $hub = $hubs[$hubnum];
         $hub = findHub($hubnum, $hubs);
         $hubType = $hub["hubType"];
         $hubName = $hub["hubName"];
@@ -4320,9 +4323,7 @@ function is_ssl() {
             // this is needed for the customization js file but...
             // end users can also use this to read the options file
             case "getoptions":
-//                $allthings = getAllThings(true);
-//                $options= getOptions($options, $allthings);
-                $options = readOptions();
+                // $options = readOptions();
                 echo json_encode($options);
                 exit;
                 break;
@@ -4523,6 +4524,28 @@ function is_ssl() {
                 echo json_encode($lines);
                 break;
                 
+            case "hubdelete":
+                $hubId = strval($swid);
+                $oldhubs = $hubs;
+                $update = false;
+                foreach($oldhubs as $id => $hub) {
+                    if ( strval($hub["hubId"]) === $hubId ) {
+                        $update = true;
+                        unset( $hubs[$id] );
+                        break;
+                    }
+                }
+                if ( $update ) {
+                    $configoptions["hubs"] = $hubs;
+                    $options["config"] = $configoptions;
+                    writeOptions($options);
+                }
+                echo json_encode($hubs);
+                // $_SESSION["hpcode"] = "redoauth";
+                // header("Location: $returnURL");
+                // exit(0);
+                break;
+              
             default:
                 // instead of printing a crazy message, return to main screen
                 // if the dynoform asks for an invalid function

@@ -234,12 +234,12 @@ function setupWebsocket()
     // this contains a single device object
     wsSocket.onmessage = function (event) {
         
-        try {
-            pagename = $("input[name='pagename']").val();
-        } catch(e) {
-            pagename = "";
-        }
-        
+//        try {
+//            pagename = $("input[name='pagename']").val();
+//        } catch(e) {
+//            pagename = "";
+//        }
+//        
         // skip processing websocket if we are not on the main page
         // when this happens the polling backup will save us
 //        if ( pagename!=="main" ) {
@@ -375,9 +375,25 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     
     var styleinfo = "";
     if ( pos ) {
-        styleinfo = " style=\"position: " + postype + "; left: " + pos.left + "px; top: " + pos.top + "px;\"";
-        if ( pos.width && pos.height ) {
-            styleinfo += " \"width: " + pos.width + "px; height: " + pos.height + "px;\"";
+        
+        // enable full style specification of specific attributes
+        if ( pos.style ) {
+            styleinfo = " style=\"" + pos.style + "\"";
+        } else {
+            if ( pos.position ) {
+                postype = pos.position;
+            }
+            styleinfo = " style=\"position: " + postype + ";";
+            if ( !isNaN(pos.left) && !isNaN(pos.top) ) {
+                styleinfo += " left: " + pos.left + "px; top: " + pos.top + "px;";
+            }
+            if ( pos.width && pos.height ) {
+                styleinfo += " width: " + pos.width + "px; height: " + pos.height + "px;";
+            }
+            if ( pos.border ) {
+                styleinfo += " border: " + pos.border + ";";
+            }
+            styleinfo += "\"";
         }
     }
     
@@ -1062,15 +1078,31 @@ function setupButtons() {
 
     if ( pagename==="auth" ) {
 
-        $("#pickhub").on('change',function(event) {
-            var hubnum = $(this).val();
-            var target = "#authhub_" + hubnum;
+        $("#pickhub").on('change',function(evt) {
+            var hubId = $(this).val();
+            var target = "#authhub_" + hubId;
+            var hubType = $(target).attr("hubtype");
+            if ( hubType==="New" ) {
+                $("input.hubdel").addClass("hidden");
+                $("#newthingcount").html("Fill out the fields below to add a New hub");
+            } else {
+                $("input.hubdel").removeClass("hidden");
+                $("#newthingcount").html("");
+            }
             $("div.authhub").each(function() {
                 if ( !$(this).hasClass("hidden") ) {
                     $(this).addClass("hidden");
                 }
             });
             $(target).removeClass("hidden");
+            evt.stopPropagation(); 
+        });
+        
+        // this clears out the message window
+        $("#authhubwrapper").on('click',function(event) {
+            $("#newthingcount").html("");
+        });
+        $("#tskwrapper").on('click',function(event) {
             $("#newthingcount").html("");
         });
         
@@ -1078,10 +1110,10 @@ function setupButtons() {
         // add on one time info from user
         $("input.hubauth").click(function(evt) {
             var hubnum = $(this).attr("hub");
-            var hubId = $(this).attr("hubId");
+            var hubId = $(this).attr("hubid");
 //            var request = new XMLHttpRequest();
 //            request.open("POST", returnURL, false);
-            var myform = document.getElementById("hubform_"+hubnum);
+            var myform = document.getElementById("hubform_"+hubId);
             var formData = new FormData(myform);
             
             var tz = $("#newtimezone").val();
@@ -1092,6 +1124,9 @@ function setupButtons() {
             // **********************************************
             // TODO - add input checking
             // **********************************************
+            
+            // tell user we are authorizing hub...
+            $("#newthingcount").html("Authorizing...").fadeTo(500, 0.3 ).fadeTo(500, 1).fadeTo(500, 0.3 ).fadeTo(500, 1);
             
             formData.append("timezone", tz);
             formData.append("skindir", skindir);
@@ -1137,8 +1172,6 @@ function setupButtons() {
             },"json");
             // request.send(formData);
             
-                        
-            
             evt.stopPropagation(); 
         });
 
@@ -1156,7 +1189,9 @@ function setupButtons() {
             // **********************************************
             // TODO - add input checking
             // **********************************************
-            
+            var ntc = "Processing hub information to create your dashboard...";
+            $("#newthingcount").html(ntc).fadeTo(700, 0.3 ).fadeTo(700, 1).fadeTo(700, 0.3 ).fadeTo(700, 1);;
+
             var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
                             pword: pword, kiosk: kiosk, port: port, webSocketServerPort: webSocketServerPort,
                             fast_timer: fast_timer, slow_timer: slow_timer};
@@ -1168,26 +1203,41 @@ function setupButtons() {
                     }
                 }
             );
+            evt.stopPropagation(); 
         });
         
         $("input.hubdel").click(function(evt) {
             var hubnum = $(this).attr("hub");
-            var bodytag = "div.hubopt";
-            var hubId = $(this).attr("hubId");
-            var pos = {top: 40, left: 40, width: 400, height: 50};
+            var hubId = $(this).attr("hubid");
+            var bodytag = "body";
+            var pos = {position: "absolute", top: 600, left: 150, 
+                       width: 400, height: 60, border: "4px solid"};
             // alert("Remove request for hub: " + hubnum + " hubID: " + hubId );
 
-            createModal("modalhub","Remove hub #" + hubnum + " with hub ID: " + hubId + "? Are you sure?", bodytag , true, pos, function(ui, content) {
+            createModal("modalhub","Remove hub #" + hubnum + " hubID: " + hubId + "? Are you sure?", bodytag , true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
                     // remove it from the system
                     $.post(returnURL, 
-                        {useajax: "hubdelete", id: hubnum, type: "none", value: hubId},
+                        {useajax: "hubdelete", id: hubId, type: "none", value: "none"},
                         function (presult, pstatus) {
-                            console.log("hubdelete call: status = " + pstatus + " result = "+presult);
-                            if (pstatus==="success" && presult==="success") {
-                                console.log( "Removed hub: " + hubnum + " hubID: " + hubId );
-                                location.reload(true);
+                            console.log("hubdelete call: status = " + pstatus + " result = ",presult);
+                            if (pstatus==="success") {
+                                // now lets fix up the auth page by removing the hub section
+                                var target = "#authhub_" + hubId;
+                                $(target).remove();
+                                $("#pickhub > option[value='" + hubId +"']").remove();
+                                $("div.authhub").first().removeClass("hidden");
+                                $("#pickhub").children().first().prop("selected", true);
+
+                                // inform user what just happened
+                                var ntc = "Removed hub#" + hubnum + " hubID: " + hubId;
+                                $("#newthingcount").html(ntc);
+                                console.log( ntc );
+                            } else {
+                                var errstr = "Error attempting to remove hub #" + hubnum+ " hubID: " + hubId;
+                                $("#newthingcount").html(errstr);
+                                console.log(errstr);
                             }
                         }
                     );
@@ -1256,9 +1306,14 @@ function addEditLink() {
         var panel = $(thing).attr("panel");
         var hubnum = $(thing).attr("hub");
         var tilename = $("span.original.n_"+tile).html();
-        var pos = {top: 100, left: 10};
+        var offset = $(thing).offset();
+        var thigh = $(thing).height();
+        var twide = $(thing).width();
+        var tleft = offset.left - 600 + twide;
+        if ( tleft < 10 ) { tleft = 10; }
+        var pos = {top: offset.top + thigh, left: tleft, width: 600, height: 80};
 
-        createModal("modaladd","Remove: "+ tilename + " of type: "+str_type+" from hub Id: " + hubnum + " & room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
+        createModal("modaladd","Remove: "+ tilename + " of type: "+str_type+" from hub Id: " + hubnum + " & room "+panel+"?<br>Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 // remove it from the system
