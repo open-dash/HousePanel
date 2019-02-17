@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.986      Minor fix to use proper hub name and type in info tables
  * 1.985      2019-02-17
  *              finish implementing hub removal feature
  *              added messages to inform user during long hub processes in auth
@@ -200,7 +201,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.985');
+define('HPVERSION', 'Version 1.986');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2918,8 +2919,8 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $thetype = $thesensor["type"];
         $hubnum = $thesensor["hubnum"];
         $hub = findHub($hubnum, $hubs);
-        if ( !$hub ) {
-            $hubnum = -1;
+        if ( $hubnum === -1 ) {
+            // $hubType = $thesensor["hubtype"];
             $hubType = "None";
             $hubStr = "None";
         } else {
@@ -3019,7 +3020,7 @@ function inroom($idx, $things) {
 }
 
 // this returns a hub based on its unique id
-function findHub($hubId, $hubs, $debug=false) {
+function findHub($hubId, $hubs) {
     $foundhub = $hubs[0];
     foreach($hubs as $hub) {
         if ( $hub["hubId"] == $hubId ) {
@@ -3390,15 +3391,14 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
         
         $hubnum = $thing["hubnum"];
         $hub = findHub($hubnum, $hubs);
-        if ( !$hub ) {
+        if ( $hubnum === -1 ) {
             $hubType = "None";
             $hubName = "None";
-            $hubstr = "None";
+            $hubstr = $hubName . "<br><span class=\"typeopt\"> (" . $hubnum . ": " . $hubType . ")</span>";
         } else {
-            // $hubstr = $hubnum . ": " . $thing["hubtype"];
             $hubType = $hub["hubType"];
             $hubName = $hub["hubName"];
-            $hubstr = $hubName . "<span class=\"typeopt\"> (" . $hubnum . ": " . $hubType . ")</span>";
+            $hubstr = $hubName . "<br><span class=\"typeopt\"> (" . $hubnum . ": " . $hubType . ")</span>";
         }
         
         // $idx = $thing["type"] . "|" . $thing["id"];
