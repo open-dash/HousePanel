@@ -167,14 +167,14 @@ then
     # create the file to install as a service
     sudo echo "[Unit] \n" > housepanel-push.service
     sudo chmod -R 777 housepanel-push.service
-    echo "Description=housepanel-push NodeJS Application \n" >> housepanel-push.service
-    echo "After=network-online.target \n\n" >> housepanel-push.service
-    echo "[Service] \n" >> housepanel-push.service
-    echo "Restart=on-failure\n" >> housepanel-push.service
-    echo "WorkingDirectory=/var/www/html/$hpdir \n" >> housepanel-push.service
-    echo "ExecStart=node /var/www/html/$hpdir/housepanel-push.js \n\n" >> housepanel-push.service
-    echo "[Install] \n" >> housepanel-push.service
-    echo "WantedBy=multi-user.target \n" >> housepanel-push.service
+    sudo echo "Description=housepanel-push NodeJS Application \n" >> housepanel-push.service
+    sudo echo "After=network-online.target \n\n" >> housepanel-push.service
+    sudo echo "[Service] \n" >> housepanel-push.service
+    sudo echo "Restart=on-failure\n" >> housepanel-push.service
+    sudo echo "WorkingDirectory=/var/www/html/$hpdir \n" >> housepanel-push.service
+    sudo echo "ExecStart=node /var/www/html/$hpdir/housepanel-push.js \n\n" >> housepanel-push.service
+    sudo echo "[Install] \n" >> housepanel-push.service
+    sudo echo "WantedBy=multi-user.target \n" >> housepanel-push.service
     sudo chmod -R 755 housepanel-push.service
     echo -e "$Green \nCreated housepanel-push.service file for running a service $Color_Off"
 

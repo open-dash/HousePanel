@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.987      Bugfix for broken hubpush after implementing hubId indexing
  * 1.986      Minor fix to use proper hub name and type in info tables
  * 1.985      2019-02-17
  *              finish implementing hub removal feature
@@ -201,7 +202,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.986');
+define('HPVERSION', 'Version 1.987');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2045,7 +2046,7 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     // check if this fast thing requires a hub call other than blanks and images
                     // this is basically the old individual polling method and will be slow
                     // so you should not enable very many tiles to be polled in the fast loop
-                    $hub2 = findHub($hubnum2, $hubs);
+                    $hub2 = $hubs[findHub($hubnum2, $hubs)];
                     if ( $hub2 && $type!=="blank" && $type!=="image" ) {
                         // $hub = $hubs[$hubnum2];
                         $access_token2 = $hub2["hubAccess"];
@@ -2113,7 +2114,9 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     // the final default is for "all" doaction and doquery calls
     } else {
         
-        $hub = findHub($hubnum, $hubs);
+        // get the index to use in our pusher
+        $hubindex = findHub($hubnum, $hubs);
+        $hub = $hubs[$hubindex];
         
         // first check if this subid has a companion link or post element
         // and if so, handle differently using the linked info or making a web service call
@@ -2124,11 +2127,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
             $content = "";
             $command = "HUB";
         }
-    
-//    $response = array("mainidx"=> $mainidx, "hubhum" => $hubnum,
-//        "swid"=> $swid, "attr"=> $swattr, "save"=>$save,  "value"=> $swval, "type= "=> $swtype, "subid" => $subid,
-//        "access"=> $access_token, "host" => $host, "command"=>$command, "content"=>$content);
-//    return json_encode($response);
     
         switch ($command) {
 
@@ -2165,10 +2163,10 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     $linked_val = $allthings[$lidx]["value"];
 
                     // make hub call if requested and if the linked tile has one
-                    $hub = findHub($linked_hubnum, $hubs);
-                    if ( $path==="doaction" && $hub ) {
-                        $linked_access = $hub["hubAccess"];
-                        $linked_endpt = $hub["hubEndpt"];
+                    $lhub = $hubs[findHub($linked_hubnum, $hubs)];
+                    if ( $path==="doaction" ) {
+                        $linked_access = $lhub["hubAccess"];
+                        $linked_endpt = $lhub["hubEndpt"];
                         $linked_host = $linked_endpt . "/" . $path;
                         
                         if ( array_key_exists($subid, $linked_val) ) {
@@ -2230,7 +2228,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 break;
             
             case "HUB":
-                $hub = findHub($hubnum, $hubs);
                 $access_token = $hub["hubAccess"];
                 $endpt = $hub["hubEndpt"];
                 $host = $endpt . "/" . $path;
@@ -2242,6 +2239,9 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                           "&swtype=" . urlencode($swtype);
                 if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
+                
+                // add the hub index for use in timers and housepanel-push
+                $response[] = $hubindex;
     
                 // if nothing returned and an action request, act like a query
                 if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
@@ -2918,7 +2918,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $thingname = $thesensor["name"];
         $thetype = $thesensor["type"];
         $hubnum = $thesensor["hubnum"];
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
         if ( $hubnum === -1 ) {
             // $hubType = $thesensor["hubtype"];
             $hubType = "None";
@@ -3019,16 +3019,17 @@ function inroom($idx, $things) {
     return $found;
 }
 
-// this returns a hub based on its unique id
+// this returns a hub index based on its unique id
 function findHub($hubId, $hubs) {
-    $foundhub = $hubs[0];
+    // $foundhub = $hubs[0];
+    $num = 0;
     foreach($hubs as $hub) {
-        if ( $hub["hubId"] == $hubId ) {
-            $foundhub = $hub;
-            break;
+        if ( strval($hub["hubId"]) === strval($hubId) ) {
+            return $num;
         }
+        $num++;
     }
-    return $foundhub;
+    return 0;
 }
 
 // update the hubs array with a new hub value of a certain ID
@@ -3390,7 +3391,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings) {
         }
         
         $hubnum = $thing["hubnum"];
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
         if ( $hubnum === -1 ) {
             $hubType = "None";
             $hubName = "None";
@@ -3791,7 +3792,7 @@ function is_ssl() {
         // get hub number and retrieve the required parameters
         // this is now actually the hubId value
         $hubnum = $_SESSION["HP_hubnum"];
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
         $hubType = $hub["hubType"];
         $hubName = $hub["hubName"];
         $hubHost = $hub["hubHost"];
@@ -3918,7 +3919,7 @@ function is_ssl() {
     }
     
     // get parms for the first hub as the default
-    $hub = findHub($hubnum, $hubs);
+    $hub = $hubs[findHub($hubnum, $hubs)];
     
     if ( !$useajax && !$valid ) {
         $_SESSION["hpcode"] = "redoauth";
@@ -3970,11 +3971,11 @@ function is_ssl() {
     }
     else if ( isset($_GET["hubId"]) ) {
         $hubnum = $_GET["hubId"];
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
     }
     else if ( isset($_POST["hubId"]) ) {
         $hubnum = $_POST["hubId"];
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
     }
     
     if ( $hubnum===false ) {
@@ -3985,7 +3986,7 @@ function is_ssl() {
                 break;
             }
         }
-        $hub = findHub($hubnum, $hubs);
+        $hub = $hubs[findHub($hubnum, $hubs)];
     }
     
 /*
@@ -4163,7 +4164,7 @@ function is_ssl() {
                 $hubType = "None";
             } else {
                 // $hub = $hubs[$hubnum];
-                $hub = findHub($hubnum, $hubs);
+                $hub = $hubs[findHub($hubnum, $hubs)];
                 $hubType = $hub["hubType"];
             }
             

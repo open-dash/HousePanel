@@ -69,16 +69,24 @@ function updateElements() {
         console.log('housepanel-push installed. Elements being updated from ', hubs.length,' hubs to ', config.housepanel_url);
         var request = require('request');
         var num;
+        // console.log(hubs);
         for (num= 0; num< hubs.length; num++) {
-            var numstr = num.toString();
+            
+            // now we have to pass the hub ID to get the items
+            var hubId = hubs[num].hubId;
+            var numstr = hubId.toString();
             var parms = { url:config.housepanel_url, 
                           form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubnum:numstr}};
             request.post( parms, function (error, response, body) {
                 if (response && response.statusCode == 200) {
                     var newitems = JSON.parse(body);
-                    var hubnum = newitems.pop();
+                    
+                    // pop the hub index off the stack since it was put there in doAction
+                    var hubnum = parseInt(newitems.pop());
+                    
                     var hub = hubs[hubnum];
-                    console.log('success reading', newitems.length,' elements from hub #', hubnum,
+                    var hubId = hub.hubId;
+                    console.log('success reading', newitems.length,' elements from hub ID:', hubId,
                                 ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
                     // console.log( newitems );
                     newitems.forEach( function(item) {
@@ -86,7 +94,7 @@ function updateElements() {
                     });
                 } else {
                     if ( error ) { console.log(error); }
-                    console.log('error attempting to read hub #', num,' statusCode:',response.statusCode);
+                    console.log('error attempting to read hub. statusCode:',response.statusCode);
                 }
             });
         }

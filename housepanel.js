@@ -1135,6 +1135,8 @@ function setupButtons() {
             formData.append("use_kiosk", kiosk);
             var hubHost = formData.get("hubHost");
             var clientId = formData.get("clientId");
+            var userAccess = formData.get("userAccess");
+            var userEndpt = formData.get("userEndpt");
 
             // console.log ( myform );
             // alert("hubHost= " + formData.get("hubHost"));
@@ -1146,17 +1148,34 @@ function setupButtons() {
 //            }
             // loop through results avoiding for/of since Netbeans doesn't know that language construct
             // the above works too and is more elegant but it flags an editor error
-            var entries = formData.entries();
-            var result = entries.next();
-            while( !result.done ) {
-                var vals = result.value;
-                var key = vals[0];
-                values[key] = vals[1];
-                result = entries.next();
-            }
+//            var entries = formData.entries();
+//            var result = entries.next();
+//            while( !result.done ) {
+//                var vals = result.value;
+//                var key = vals[0];
+//                values[key] = vals[1];
+//                result = entries.next();
+//            }
+            values.clientId = formData.get("clientId");
+            values.clientSecret = formData.get("clientSecret");
+            values.doauthorize = formData.get("doauthorize");
+            values.hubHost = formData.get("hubHost");
+            values.hubId = formData.get("hubId");
+            values.hubName = formData.get("hubName");
+            values.hubTimer = formData.get("hubTimer");
+            values.hubType = formData.get("hubType");
+            values.pword = formData.get("pword");
+            values.skindir = formData.get("skindir");
+            values.timezone = formData.get("timezone");
+            values.uname = formData.get("uname");
+            values.use_kiosk = formData.get("use_kiosk");
+            values.userAccess = formData.get("userAccess");
+            values.userEndpt = formData.get("userEndpt");
             console.log( values );
+            
             $.post(returnURL, values, function(presult, pstatus) {
                 console.log( presult );
+                alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
                     var ntc = "Hub #" + hubnum + " hub ID: " + hubId + " was authorized and " + obj.count + " devices were retrieved.";

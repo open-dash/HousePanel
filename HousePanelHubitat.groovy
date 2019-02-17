@@ -52,7 +52,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.982" }
+public static String version() { return "v1.987" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -74,7 +74,7 @@ preferences {
                       "actions will be slower than local installations."
             input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
             paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-            input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "h_", displayDuringSetup: true)
+            input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "h_", displayDuringSetup: true)
             paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
             input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false, displayDuringSetup: true)
             paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."

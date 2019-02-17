@@ -49,7 +49,7 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.982" }
+public static String version() { return "v1.987" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -68,7 +68,7 @@ preferences {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "st_")
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "st_")
         paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
