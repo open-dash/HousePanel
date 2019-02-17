@@ -1111,8 +1111,6 @@ function setupButtons() {
         $("input.hubauth").click(function(evt) {
             var hubnum = $(this).attr("hub");
             var hubId = $(this).attr("hubid");
-//            var request = new XMLHttpRequest();
-//            request.open("POST", returnURL, false);
             var myform = document.getElementById("hubform_"+hubId);
             var formData = new FormData(myform);
             
@@ -1135,26 +1133,13 @@ function setupButtons() {
             formData.append("use_kiosk", kiosk);
             var hubHost = formData.get("hubHost");
             var clientId = formData.get("clientId");
-            var userAccess = formData.get("userAccess");
-            var userEndpt = formData.get("userEndpt");
 
-            // console.log ( myform );
-            // alert("hubHost= " + formData.get("hubHost"));
-            // netbeans thinks this is bad js syntax but it isn't
+            // grab all the values the user specified
+            // this is done manually below
+            // the commented code works but it confuses my editor
             var values = {};
-//            for (var vals of formData.entries()) {
-//                var key = vals[0];
-//                values[key] = vals[1];
-//            }
-            // loop through results avoiding for/of since Netbeans doesn't know that language construct
-            // the above works too and is more elegant but it flags an editor error
-//            var entries = formData.entries();
-//            var result = entries.next();
-//            while( !result.done ) {
-//                var vals = result.value;
-//                var key = vals[0];
-//                values[key] = vals[1];
-//                result = entries.next();
+//            for (var key of formData.keys()) {
+//                values[key] = formData.get(key);
 //            }
             values.clientId = formData.get("clientId");
             values.clientSecret = formData.get("clientSecret");
@@ -1175,7 +1160,7 @@ function setupButtons() {
             
             $.post(returnURL, values, function(presult, pstatus) {
                 console.log( presult );
-                alert("Ready to auth...");
+                // alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
                     var ntc = "Hub #" + hubnum + " hub ID: " + hubId + " was authorized and " + obj.count + " devices were retrieved.";

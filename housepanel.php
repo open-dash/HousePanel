@@ -8,6 +8,7 @@
  *
  * Revision History
  * 1.987      Bugfix for broken hubpush after implementing hubId indexing
+ *            publish updated housepanel-push.js Node.js program
  * 1.986      Minor fix to use proper hub name and type in info tables
  * 1.985      2019-02-17
  *              finish implementing hub removal feature

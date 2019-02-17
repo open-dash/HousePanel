@@ -160,11 +160,16 @@ echo "<?php phpinfo ();?>" > /var/www/html/$hpdir/index.php
 if [ "$hppush" = "y"  ];
 then
     cd /var/www/html/$hpdir
+    echo -e "$Green \nRemoving any previously installed Node push modules $Color_Off"
+    sudo rm -r node_modules
+    sudo rm package.json
+    sudo rm package-lock.json
     sudo npm install housepanel-push
     sudo chmod -R 755 housepanel-push.js
     echo -e "$Green \nhousepanel-push service installed to enable fast updates of your dashboard $Color_Off"
 
     # create the file to install as a service
+    echo -e "$Green \nCreating a file to run housepanel-push as a service $Color_Off"
     sudo echo "[Unit] \n" > housepanel-push.service
     sudo chmod -R 777 housepanel-push.service
     sudo echo "Description=housepanel-push NodeJS Application \n" >> housepanel-push.service
