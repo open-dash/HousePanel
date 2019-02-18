@@ -1216,6 +1216,14 @@ div.clock.tzone{
     display:none;
 }
 
+/* disable non time elements for analog clocks */
+div.clock-thing.analog div.clock.weekday,
+div.clock-thing.analog div.clock.date,
+div.clock-thing.analog div.clock.time,
+div.clock-thing.analog div.clock.tzone {
+    display: none;
+}
+
 /* do not display these items */
 div.checkInterval, div.switchlevel.checkInterval, div.switchlevel.indicatorStatus, 
 div.switch.checkInterval, div.motion.checkInterval, div.switch.indicatorStatus, 

@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.988      Major bugfix to auth flow for new users without a cfg file
  * 1.987      Bugfix for broken hubpush after implementing hubId indexing
  *            publish updated housepanel-push.js Node.js program
  * 1.986      Minor fix to use proper hub name and type in info tables
@@ -203,7 +204,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.987');
+define('HPVERSION', 'Version 1.988');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -959,7 +960,13 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // add a new blank hub at the end for adding new ones
         
     // make an empty new hub for adding new ones
-    $newnum = strval(count($hubs)+1);
+    $j = count($hubs);
+    foreach ($hubs as $hub) {
+        $n = intval($hub["hubId"]);
+        if ( $n > $j ) { $j = $n; }
+    }
+    $newnum = strval($j + 1);
+    
     $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
                     "clientId"=>"", "clientSecret"=>"",
                     "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>$newnum,
@@ -3021,8 +3028,8 @@ function inroom($idx, $things) {
 }
 
 // this returns a hub index based on its unique id
+// if not found it gives the first hub
 function findHub($hubId, $hubs) {
-    // $foundhub = $hubs[0];
     $num = 0;
     foreach($hubs as $hub) {
         if ( strval($hub["hubId"]) === strval($hubId) ) {
@@ -3034,15 +3041,19 @@ function findHub($hubId, $hubs) {
 }
 
 // update the hubs array with a new hub value of a certain ID
+// if not found the hub is added
 function updateHubs($hubs, $newhub) {
-    $newhubs = $hubs;
     $hubId = $newhub["hubId"];
-    foreach($hubs as $id => $hub) {
-        if ( $hub["hubId"] === $hubId ) {
-            $newhubs[$id] = $newhub;
+    $num = 0;
+    foreach($hubs as $hub) {
+        if ( strval($hub["hubId"]) === strval($hubId) ) {
+            $hubs[$num] = $newhub;
+            return $hubs;
         }
+        $num++;
     }
-    return $newhubs;
+    $hubs[] =  $newhub;
+    return $hubs;
 }
 
 function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
@@ -3554,9 +3565,10 @@ function is_ssl() {
     }
 
     // first branch is for processing hub authorizations
-    if ( isset($_POST["doauthorize"]) &&
+    $doauthorize = filter_input(INPUT_POST, "doauthorize", FILTER_SANITIZE_SPECIAL_CHARS);
+    if ( $doauthorize &&
          isset($_SESSION["hpcode"]) && 
-         intval($_POST["doauthorize"]) <= intval($_SESSION["hpcode"]) ) {
+         intval($doauthorize) <= intval($_SESSION["hpcode"]) ) {
 
         // get the hubId value and save in the old hubnum variable
         $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -3649,10 +3661,10 @@ function is_ssl() {
         $hub["hubTimer"] = $hubTimer;
 
         if ( !$port ) {
-            $port = "19234";
+            $port = "";
         }
         if ( !$webSocketServerPort ) {
-            $webSocketServerPort = "1337";
+            $webSocketServerPort = "";
         }
 
         // save the hubs
@@ -3678,7 +3690,7 @@ function is_ssl() {
         
         // save options for now
         writeOptions($options);
-
+        
         // if manual is set the skip OAUTH flow
         // also proceed with recapturing things from this hub
         if ( $userAccess && $userEndpt ) {
@@ -3722,7 +3734,7 @@ function is_ssl() {
     
     // repeat auth page if the security check fails
     // or if we get a redoauth signal then also present auth page
-    else if ( $_POST["doauthorize"] || 
+    else if ( $doauthorize!==null || 
              ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="redoauth" ) ) {
         $hpcode = time();
         $_SESSION["hpcode"] = $hpcode;
@@ -3802,17 +3814,20 @@ function is_ssl() {
 
         // make call to get the token
         $token = getAccessToken($returnURL, $code, $hubHost, $clientId, $clientSecret, $hubType);
-//        echo "token = $token code = $code hubHost = $hubHost clientId = $clientId  secret = $clientSecret";
-//        exit(0);
+        if ($token) {
+            $endpt = getEndpoint($token, $hubHost, $clientId, $hubType);
+        } else {
+            $endpt = null;
+        }
 
         // get the endpoint if the token is valid
         // this works for either ST or HE hubs
-        if ($token) {
-            $endpt = getEndpoint($token, $hubHost, $clientId, $hubType);
+        if ($token && $endpt) {
+            // $endpt = getEndpoint($token, $hubHost, $clientId, $hubType);
 
             // save auth info in hmoptions file
             // *** IMPT *** this is the info needed to allow HP to read things
-            if ($endpt) {
+            // if ($endpt) {
                 $hub["hubAccess"] = $token;
                 $hub["hubEndpt"] = $endpt;
                 // $hubs[$hubnum] = $hub;
@@ -3840,6 +3855,26 @@ function is_ssl() {
                     }
                     writeOptions($options);
                 }
+
+                if (DEBUG2) {
+                    echo "<br />Auth flow success";
+                    echo "<br />serverName = $serverName";
+                    echo "<br />returnURL = $returnURL";
+                    echo "<br />hubnum (hubId) = $hubnum";
+                    echo "<br />hubType = $hubType";
+                    echo "<br />hubHost = $hubHost";
+                    echo "<br />clientId = $clientId";
+                    echo "<br />clientSecret = $clientSecret";
+                    echo "<br />code  = $code";
+                    echo "<br />token = $token";
+                    echo "<br />endpt = $endpt";
+                    echo "<br />sitename = $hubName";
+                    echo "<br /><h3>Options</h3>";
+                    echo "<pre>";
+                    print_r($options);
+                    echo "</pre>";
+                    exit;
+                }
                 
                 $hpcode = time();
                 $_SESSION["hpcode"] = $hpcode;
@@ -3849,33 +3884,33 @@ function is_ssl() {
                 echo $authpage;
                 echo htmlFooter();
                 exit(0);
-            }
+            // }
 
         // otherwise we have an error, so show the auth page again
         // use the session method to avoid repeating the code GET variable
         } else {
+            if (DEBUG2) {
+                echo "<br />Auth flow failure";
+                echo "<br />serverName = $serverName";
+                echo "<br />returnURL = $returnURL";
+                echo "<br />hubnum (hubId) = $hubnum";
+                echo "<br />hubType = $hubType";
+                echo "<br />hubHost = $hubHost";
+                echo "<br />clientId = $clientId";
+                echo "<br />clientSecret = $clientSecret";
+                echo "<br />code  = $code";
+                echo "<br />token = $token";
+                echo "<br />endpt = $endpt";
+                echo "<br />sitename = $hubName";
+                echo "<br /><h3>Options</h3>";
+                echo "<pre>";
+                print_r($options);
+                echo "</pre>";
+                exit;
+            }
             $_SESSION["hpcode"] = "redoauth";
             header("Location: $returnURL");
             exit(0);
-        }
-
-        if (DEBUG || DEBUG2) {
-            echo "<br />serverName = $serverName";
-            echo "<br />returnURL = $returnURL";
-            echo "<br />hubnum (hubId) = $hubnum";
-            echo "<br />hubType = $hubType";
-            echo "<br />hubHost = $hubHost";
-            echo "<br />clientId = $clientId";
-            echo "<br />clientSecret = $clientSecret";
-            echo "<br />code  = $code";
-            echo "<br />token = $token";
-            echo "<br />endpt = $endpt";
-            echo "<br />sitename = $hubName";
-            echo "<br /><h2>Options</h2>";
-            echo "<pre>";
-            print_r($options);
-            echo "</pre>";
-            exit;
         }
 
         // reload the page to remove GET parameters

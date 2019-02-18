@@ -709,13 +709,6 @@ div.clock.weekday, div.clock.date {
     margin-top: 5px;
 }
 
-/* disable non time elements for analog clocks */
-div.clock-thing.analog div.clock.weekday,
-div.clock-thing.analog div.clock.date,
-div.clock-thing.analog div.clock.tzone {
-    display: none;
-}
-
 div.mode.themode {
     font-size: 20pt;
     margin-top: 10px;

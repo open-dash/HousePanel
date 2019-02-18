@@ -47,8 +47,8 @@ function getCookie(cname) {
     return "";
 }
 
-// window.addEventListener("load", function(event) {
-// $(window).on("load", function(event) {
+// window.addEventListener("load", function(evt) {
+// $(window).on("load", function(evt) {
 $(document).ready(function() {
     // set the global return URL value
     try {
@@ -226,13 +226,13 @@ function setupWebsocket()
         console.log("webSocket connection opened for: ", webSocketUrl);
     };
     
-    wsSocket.onerror = function(event) {
-        console.error("webSocket error observed: ", event);
+    wsSocket.onerror = function(evt) {
+        console.error("webSocket error observed: ", evt);
     };
 
     // received a message from housepanel-push
     // this contains a single device object
-    wsSocket.onmessage = function (event) {
+    wsSocket.onmessage = function (evt) {
         
 //        try {
 //            pagename = $("input[name='pagename']").val();
@@ -247,7 +247,7 @@ function setupWebsocket()
 //        }
         
         try {
-            var presult = JSON.parse(event.data);
+            var presult = JSON.parse(evt.data);
             var pvalue = presult.value;
             var bid = presult.id;
             var thetype = presult.type;
@@ -669,7 +669,7 @@ function setupPagemove() {
         containment: "ul.ui-tabs-nav",
         delay: 200,
         revert: false,
-        update: function(event, ui) {
+        update: function(evt, ui) {
             var pages = {};
             var k = 0;
             // get the new list of pages in order
@@ -707,7 +707,7 @@ function setupSortable() {
         items: "> div",
         delay: 50,
         grid: [1, 1],
-        stop: function(event, ui) {
+        stop: function(evt, ui) {
             // var tile = $(ui.item).attr("tile");
             var roomtitle = $(ui.item).attr("panel");
             var things = [];
@@ -804,7 +804,7 @@ function setupDraggable() {
                 return accepting;
             },
             tolerance: "intersect",
-            drop: function(event, ui) {
+            drop: function(evt, ui) {
                 var thing = ui.draggable;
                 var bid = $(thing).attr("bid");
                 var tile = $(thing).attr("tile");
@@ -900,7 +900,7 @@ function setupDraggable() {
         $("#catalog").droppable({
             accept: "div.panel div.thing",
             tolerance: "fit",
-            drop: function(event, ui) {
+            drop: function(evt, ui) {
                 var thing = ui.draggable;
                 var bid = $(thing).attr("bid");
                 var thingtype = $(thing).attr("type");
@@ -984,10 +984,10 @@ function execButton(buttonid) {
                             "left":"0px", "top":"0px", "z-index":"9999" } );
 
         // clicking anywhere will restore the window to normal
-        $("#blankme").on("click", function(event) {
+        $("#blankme").on("click", function(evt) {
            $("#blankme").remove(); 
             priorOpmode = "Operate";
-            event.stopPropagation();
+            evt.stopPropagation();
         });
     } else if ( buttonid === "toggletabs") {
         toggleTabs();
@@ -1053,7 +1053,7 @@ function updateFilters() {
 function setupButtons() {
 
     if ( pagename==="main" && !disablepub ) {
-        $("#controlpanel").on("click", "div.formbutton", function() {
+        $("#controlpanel").on("click", "div.formbutton", function(evt) {
             var buttonid = $(this).attr("id");
             if ( $(this).hasClass("confirm") ) {
                 var pos = {top: 100, left: 100};
@@ -1061,12 +1061,12 @@ function setupButtons() {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(buttonid);
-                        $(this).stopPropagation();
+                        evt.stopPropagation();
                     }
                 });
             } else {
                 execButton(buttonid);
-                // $(this).stopPropagation();
+                evt.stopPropagation();
             }
         });
 
@@ -1099,10 +1099,10 @@ function setupButtons() {
         });
         
         // this clears out the message window
-        $("#authhubwrapper").on('click',function(event) {
+        $("#authhubwrapper").on('click',function(evt) {
             $("#newthingcount").html("");
         });
-        $("#tskwrapper").on('click',function(event) {
+        $("#tskwrapper").on('click',function(evt) {
             $("#newthingcount").html("");
         });
         
@@ -1157,6 +1157,7 @@ function setupButtons() {
             values.userAccess = formData.get("userAccess");
             values.userEndpt = formData.get("userEndpt");
             console.log( values );
+            // alert("about to auth...");
             
             $.post(returnURL, values, function(presult, pstatus) {
                 console.log( presult );
@@ -1981,7 +1982,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
 // this used to be done by page but now it is done by sensor type
 function setupPage(trigger) {
     $("div.overlay > div").off("click.tileactions");
-    $("div.overlay > div").on("click.tileactions", function(event) {
+    $("div.overlay > div").on("click.tileactions", function(evt) {
         
         var aid = $(this).attr("aid");
         var theattr = $(this).attr("class");
@@ -2185,7 +2186,7 @@ function setupPage(trigger) {
             
         } 
          
-        event.stopPropagation();
+        evt.stopPropagation();
     });
    
 };
