@@ -73,30 +73,43 @@ function updateElements() {
         for (num= 0; num< hubs.length; num++) {
             
             // now we have to pass the hub ID to get the items
-            var hubId = hubs[num].hubId;
-            var numstr = hubId.toString();
-            var parms = { url:config.housepanel_url, 
-                          form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubnum:numstr}};
-            request.post( parms, function (error, response, body) {
-                if (response && response.statusCode == 200) {
-                    var newitems = JSON.parse(body);
-                    
-                    // pop the hub index off the stack since it was put there in doAction
-                    var hubnum = parseInt(newitems.pop());
-                    
-                    var hub = hubs[hubnum];
-                    var hubId = hub.hubId;
-                    console.log('success reading', newitems.length,' elements from hub ID:', hubId,
-                                ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
-                    // console.log( newitems );
-                    newitems.forEach( function(item) {
-                        elements.push(item);
-                    });
-                } else {
-                    if ( error ) { console.log(error); }
-                    console.log('error attempting to read hub. statusCode:',response.statusCode);
-                }
-            });
+            try {
+                var hubId = hubs[num].hubId;
+                var numstr = hubId.toString();
+            } catch (e3) {
+                console.log("Error obtaining hub information for hub #" + num);
+                numstr = null;
+            }
+            
+            if ( numstr ) {
+                var parms = { url:config.housepanel_url, 
+                              form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubnum:numstr}};
+                request.post( parms, function (error, response, body) {
+                    if (response && response.statusCode == 200) {
+                        var newitems = JSON.parse(body);
+
+                        // pop the hub index off the stack since it was put there in doAction
+                        var hubnum = parseInt(newitems.pop());
+
+                        try {
+                            var hub = hubs[hubnum];
+                            var hubId = hub.hubId;
+                            console.log('success reading', newitems.length,' elements from hub ID:', hubId,
+                                        ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
+                            // console.log( newitems );
+                            newitems.forEach( function(item) {
+                                elements.push(item);
+                            });
+                        } catch (e4) {
+                            console.log("Error obtaining hub information for hub #" + hubnum);
+                        }
+                    } else {
+                        if ( error ) { console.log(error); }
+                        console.log('error attempting to read hub. statusCode:',response.statusCode);
+                    }
+
+                });
+            }
         }
     } else {
         console.log('housepanel-push installed; will be activated when first hub is authorized in HousePanel.');        
@@ -107,12 +120,16 @@ function updateElements() {
         app.listen(config.port, function () {
             console.log("App Server is running on port: " + config.port);
         });
+    } else {
+        console.log("config port not valid. port= ", config.port);
     }
 
     if ( server && config && config.webSocketServerPort ) {
         server.listen(config.webSocketServerPort, function() {
             console.log((new Date()) + " webSocket Server is listening on port " + config.webSocketServerPort);
         });
+    } else {
+        console.log("webSocket port not valid. port= ", config.webSocketServerPort);
     }
 }
 
@@ -167,6 +184,8 @@ if ( app ) {
                 }
             }
             res.json('pushed new status info to ' + cnt + ' tiles');
+        } else {
+            console.log("webSocket App received unknown message.", req.body);
         }
 
     });
@@ -199,7 +218,7 @@ if ( wsServer ) {
 
         // user disconnected
         connection.on('close', function(connection) {
-            console.log((new Date()) + " Peer " + connection.remoteAddress + " disconnected.");
+            console.log((new Date()) + " Peer disconnected. ",connection);
 
             // remove user from the list of connected clients
             clients.splice(index, 1);

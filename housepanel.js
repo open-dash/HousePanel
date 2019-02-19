@@ -9,6 +9,7 @@ var pagename = "main";
 // set a global socket variable to manage two-way handshake
 var wsSocket = null;
 var webSocketUrl = null;
+var nodejsUrl = null;
 
 // set this global variable to true to disable actions
 // I use this for testing the look and feel on a public hosting location
@@ -179,15 +180,17 @@ $(document).ready(function() {
         // get the webSocket info and the timers
         try {
             webSocketUrl = $("input[name='webSocketUrl']").val();
+            nodejsUrl = $("input[name='nodejsUrl']").val();
         } catch(err) {
             console.log("Error attempting to retrieve webSocket URL. err: ", err);
             webSocketUrl = null;
+            nodejsUrl = null;
         }
         
         // periodically check for socket open and if not open reopen
         if ( webSocketUrl ) {
             wsSocketCheck();
-            setInterval(wsSocketCheck, 30000);
+            setInterval(wsSocketCheck, 60000);
         }
 
         // initialize the clock updater that runs every second
@@ -205,6 +208,15 @@ $(document).ready(function() {
 function wsSocketCheck() {
     if ( webSocketUrl && ( wsSocket === null || wsSocket.readyState===3 )  ) {
         setupWebsocket();
+    }
+}
+
+// send a message over to our web socket
+// usually to tell it to update the elements since dashboard has changed
+// but in theory this could be any message for future use
+function wsSocketSend(msg) {
+    if ( webSocketUrl && wsSocket && wsSocket.readyState===1 ) {
+        wsSocket.send(msg);
     }
 }
 
@@ -234,31 +246,19 @@ function setupWebsocket()
     // this contains a single device object
     wsSocket.onmessage = function (evt) {
         
-//        try {
-//            pagename = $("input[name='pagename']").val();
-//        } catch(e) {
-//            pagename = "";
-//        }
-//        
-        // skip processing websocket if we are not on the main page
-        // when this happens the polling backup will save us
-//        if ( pagename!=="main" ) {
-//            return;
-//        }
-        
         try {
             var presult = JSON.parse(evt.data);
             var pvalue = presult.value;
             var bid = presult.id;
             var thetype = presult.type;
-            console.log("Processing webSocket message from: ", webSocketUrl," bid= ",bid," type= ",thetype," value= ",pvalue);
+            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," type= ",thetype," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
         }
 
         // check if we have valid info for this update item
-        if ( bid && thetype && pvalue && typeof pvalue==="object" ) {
+        if ( bid!==null && thetype && pvalue && typeof pvalue==="object" ) {
         
             // update all the tiles that match this type and id
             // notice we limit this to items on the actual panel
@@ -1239,6 +1239,9 @@ function setupButtons() {
                                 var ntc = "Removed hub#" + hubnum + " hubID: " + hubId;
                                 $("#newthingcount").html(ntc);
                                 console.log( ntc );
+                                
+                                // send message over to Node.js to update elements
+                                wsSocketSend("update");
                             } else {
                                 var errstr = "Error attempting to remove hub #" + hubnum+ " hubID: " + hubId;
                                 $("#newthingcount").html(errstr);
@@ -1254,6 +1257,18 @@ function setupButtons() {
     
     }
 
+}
+
+// function to send a message to Node.js app
+// this isn't used because using wsSocket is more efficient
+function postNode(msg) {
+    if ( nodejsUrl ) {
+        $.post(nodejsUrl, {msgtype: "initialize", message: msg},
+            function(presult, pstatus) {  
+                console.log("Node.js call: status = " + pstatus + " result = "+presult);
+            }, "json"
+        );
+    }
 }
 
 function addEditLink() {

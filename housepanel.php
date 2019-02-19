@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.989      Continued bug fixing hubpush and auth flow stuff
  * 1.988      Major bugfix to auth flow for new users without a cfg file
  * 1.987      Bugfix for broken hubpush after implementing hubId indexing
  *            publish updated housepanel-push.js Node.js program
@@ -204,7 +205,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.988');
+define('HPVERSION', 'Version 1.989');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2248,9 +2249,6 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
                 
-                // add the hub index for use in timers and housepanel-push
-                $response[] = $hubindex;
-    
                 // if nothing returned and an action request, act like a query
                 if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $thing = $allthings[$mainidx];
@@ -2335,6 +2333,11 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
             }
             $_SESSION["allthings"] = $allthings;
         }
+    }
+    
+    // add the hub index for use in timers and housepanel-push
+    if ( $path==="doquery" && ($swid==="all" && $swtype=="all") ) {
+        $response[] = $hubindex;
     }
     
     // debug code to show the codes upon return
@@ -4573,11 +4576,13 @@ function is_ssl() {
                     }
                 }
                 if ( $update ) {
-                    $configoptions["hubs"] = $hubs;
+                    $newhubs = array_values($hubs);
+                    $hubs = $newhubs;
+                    $configoptions["hubs"] = $newhubs;
                     $options["config"] = $configoptions;
                     writeOptions($options);
                 }
-                echo json_encode($hubs);
+                echo json_encode($newhubs);
                 // $_SESSION["hpcode"] = "redoauth";
                 // header("Location: $returnURL");
                 // exit(0);
@@ -4780,8 +4785,13 @@ function is_ssl() {
             $tc.= hidden("pagename", "main");
 
             // save the socket address for use on js side
-            $webSocketUrl = "ws://" . $serverName . ":" . $webSocketServerPort;
+            $webSocketUrl = $webSocketServerPort ? ("ws://" . $serverName . ":" . $webSocketServerPort) : "";
             $tc.= hidden("webSocketUrl", $webSocketUrl);
+            
+            // save Node.js address for use on the js side
+            $nodejsUrl = $port ? ( is_ssl() . $serverName . ":" . $port ) : "";
+            $tc.= hidden("nodejsUrl", $nodejsUrl);
+            
             $tc.= hidden("fast_timer", $fast_timer);
             $tc.= hidden("slow_timer", $slow_timer);
             
