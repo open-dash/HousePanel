@@ -7,6 +7,11 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.990      Final cleanup before public release of hubpush bugfixes
+ *            move housepanel-push to subfolder beneath main files
+ *            update housepanel-push to include more robust error checking
+ *            Fixed bug in housepanel-push service causing it to crash
+ *            Corrected and cleaned up install.sh script to work with hubpush
  * 1.989      Continued bug fixing hubpush and auth flow stuff
  * 1.988      Major bugfix to auth flow for new users without a cfg file
  * 1.987      Bugfix for broken hubpush after implementing hubId indexing
@@ -205,7 +210,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.989');
+define('HPVERSION', 'Version 1.990');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 

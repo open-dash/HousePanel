@@ -4,8 +4,8 @@ After=network-online.target
 
 [Service]
 Restart=on-failure
-WorkingDirectory=/var/www/html/housepanel/
-ExecStart=node /var/www/html/housepanel/housepanel-push.js
+WorkingDirectory=/var/www/html/smartthings/housepanel-push/
+ExecStart=node /var/www/html/smartthings/housepanel-push/housepanel-push.js
 
 [Install]
 WantedBy=multi-user.target

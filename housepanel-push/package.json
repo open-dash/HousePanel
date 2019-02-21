@@ -1,11 +1,8 @@
 {
   "name": "housepanel-push",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "description": "Module to push thing state to HousePanel web screen",
   "main": "housepanel-push.js",
-  "directories": {
-    "doc": "docs"
-  },
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
@@ -14,18 +11,19 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "sudo systemctl restart housepanel-push"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kewashi/HousePanel.git"
+    "url": "https://github.com/kewashi/HousePanel.git"
   },
   "keywords": [
     "housepanel",
     "websocket"
   ],
   "author": "Ken Washington @kewashi on forums",
-  "license": "GNU",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/kewashi/HousePanel/issues"
   },
