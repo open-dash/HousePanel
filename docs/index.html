@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018, 2019</i><br/>
-<i>Version 1.964 as of January 16, 2019</i>
+<i>Version 1.990 as of January 16, 2019</i>
 </p>
 </div>
 
@@ -57,6 +57,13 @@ json strings of status about your home to any other web application. This advanc
 feature is mostly for developers and can be safely ignored, but if you are a developer
 then you should read the final section of this Wiki on Advanced Applications of HP.</p>
 
+<p>As of version 1.990, HousePanel also includes a helper application that
+pushes the status of things to your dashboard in real time as they change
+due to user control outside of the panel. This feature requires installation
+of HousePanel on a rPI. If activated this feature will provide immediate updates
+to your dashboard as opposed to waiting for the once-a-minute poll to update it.
+</p>
+
 <h2>Features</h2>
 HousePanel can display and/or control most types of things in a smart home 
 ecosystem, including:
@@ -77,11 +84,13 @@ ecosystem, including:
     <li>water sensors 
     <li>valves (sprinklers)
     <li>smoke
+    <li>power
 </ul>
 
 A number of special tiles are also supported, including: 
 <ul>
-    <li>Smart Home Monitor
+    <li>Smart Home Monitor (SmartThings only)
+    <li>Hubitat Safety Monitor (Hubitat only)
     <li>blanks 
     <li>clock
     <li>images
@@ -89,7 +98,7 @@ A number of special tiles are also supported, including:
     <li>routines
     <li>weather
     <li>frame (great for weather forecasts)
-    <li>WebCoRE pistons,
+    <li>WebCoRE pistons (SmartThings only)
     <li>video
     <li>custom
 </ul>
@@ -110,7 +119,8 @@ of modern web browsers. Under the hood HP uses jQuery to make this efficient. Th
 number of pages can be displayed, and on each page, any number of "things" can be shown
 and controlled. Later in this document we will explain how to customize the names of pages and
 the number of pages used. A default page configuration is provided but pages can be
-easily renamed, deleted, or added when in Edit mode.<br /><br />
+easily renamed, deleted, or added when in Edit mode.
+<br /><br />
 
 For advanced users HousePanel is a highly flexible API that can
 serve as a web service to access your smart home devices from anywhere. 
@@ -118,7 +128,8 @@ This works for SmartThings and Hubitat connected devices.
 This feature requires that users first authenticate their hubs using the GUI.
 API calls are possible without using prior GUI authentication if the user is willing
 to provide fairly complex URL-encoded security codes on the API command line.
-Instructions for using the API are in the advanced section of this Wiki.<br/><br/>
+Instructions for using the API are in the advanced section of this Wiki.
+<br/><br/>
 
 The main page of HousePanel once installed and configured will look something like this:
 <div><img src="mainpage.png"></div>
@@ -126,26 +137,35 @@ The main page of HousePanel once installed and configured will look something li
 
 <h2>Requirements - What You Need to Use HousePanel</h2>
 HousePanel is a web application written in PHP and Javascript that is 
-paired with a SmartThings and/or Hubitat SmartApp written in the Groovy language. 
-To use Housepanel you will need a modern browser with Javascript support.
+paired with a SmartThings and/or Hubitat SmartApp written in the Groovy language.
+There is also a small Node.js module used to enable real time status info
+on the dashboard. This feature requires a local rPI installation of HousePanel.
+<br/><br/>
+
+To use Housepanel you will need a modern browser that supports HTML5 and Javascript.
 Obviously you will also need a SmartThings and/or Hubitat
 account with owner access. You will also need to have owner access to a web
-server of some type capable of hosting PHP applications. You should also have
-access to a good CSS editor that you will use to make custom changes to your
-HousePanel configuration. You can do this with any text editor, but you will
+server of some type capable of hosting PHP applications. Access to a good CSS 
+editor will also be useful but is no longer essential given the robustness of
+the integrated tile editor. If you do plan on editing CSS directly to make custom changes to your
+HousePanel configuration, you can do this with any text editor, but you will
 be much happier if you are using a coding editor that assists you with the crazy syntax
 of CSS and graphical aids for color selections. I personally use NetBeans which is
 my favorite coding editor. You can get a copy from the Oracle website 
 at <a href="www.netbeans.org">www.netbeans.org</a>. If you do use 
 NetBeans be sure to install the plugin for PHP editing. 
 I also find the color code preview plugin to be useful for picking colors easily.
+Again, most users won't need to worry about this because the look and feel of
+HousePanel can be controlled using a proviided in-app tile editor (more on that later).
 
 <h1>Installation</h1>
 
 <h2>Server Options and Instructions</h2>
 
 <h3>Option 1 - Raspberry Pi (Best Option)</h3>
-This is by far my favorite and the strongly preferred option. 
+This is by far my favorite and the strongly preferred option. This is the only
+option that supports a test and confirmed implementation of the ability to update
+things on the panel in real time when things change.
 Raspberry Pi single board hobby computers are perfect
 for projects like HousePanel. This is because they take up very little space, use a small amount of energy,
 and they are relatively easy to configure. Unlike a dedicated computer, a Raspberry Pi can be neatly tucked
@@ -189,6 +209,7 @@ You can also do a manual install following the steps below. To do this,
 enter the next several lines to install the Apache and PHP applications onto the rPi.<br/><br/>
 
 For PHP 5 use the following commands:<br/><br/>
+
 <blockquote><pre>
 sudo apt-get update
 sudo apt-get -y upgrade
@@ -208,19 +229,80 @@ sudo apt-get -y install php-curl
 sudo rpi-update
 </pre></blockquote>
 
+To manually install the Node.js hub push element, enter the following:
+<br><br>
+
+<blockquote><pre>
+npm update housepanel-push
+sudo systemctl housepanel-push
+</pre></blockquote>
+
+This assumes you have a valid housepanel-push.service file. By default this file
+is included in the housepanel-push sub-folder. This file may need to be edited
+to point to the folder where you have housepanel installed. That folder by
+default is named "smartthings".
+<br><br>
+
+You will also need to have npm and node installed first for this to work. 
+The following commands will install Node.js on a raspberry Pi.
+<br><br>
+
+<blockquote><pre>
+wget http://node-arm.herokuapp.com/node_latest_armhf.deb 
+sudo dpkg -i node_latest_armhf.deb
+</pre></blockquote>
+
+Alternative instructions for installing Node.js and npm can be
+found here:
+<br><br>
+
+<blockquote><pre>
+https://www.instructables.com/id/Install-Nodejs-and-Npm-on-Raspberry-Pi/
+</pre></blockquote>
+
+Regardless of which method you use, you should check to make sure you have 
+Node.js installed properly by running the following command:
+<br><br>
+
+<blockquote><pre>
+node -v
+</pre></blockquote>
+
+Sometimes the Node.js setup is stubborn and refuses to load. You should check to
+make sure that housepanel-push is running in the background after you install
+it as service. That can be done by doing:
+
+<blockquote><pre>
+ps -aux | grep housepanel
+</pre></blockquote>
+
+You should see the housepanel-push service running. If not, something went wrong
+and you will have to do some troubleshooting.
+<br><br>
+
+I realize this is a lot of configuration to deal with. The install.sh script
+attempts to automate this for you. It works for some people but it isn't
+completely robust so it might fail, so the details above might prove useful.
+Over time I will continue improving the install.sh script to make it more robust
+and foolproof.
+<br><br>
+
 Next, you need to confirm that PHP is setup to use cUrl. This should be on by default 
 because of the install lines above, but check php.ini to be sure.
 Look for your php.ini file and then edit it using nano or vim. Within php.ini
 search for "curl". You should find a line that loads the curl library. Sometimes
 that line is commented out with a "#" in the first column. If your file has this,
 activate the loading of the curl library by uncommenting that line. 
-Finally, restart Apache using:<br/><br/>
+<br><br>
+
+Finally, restart Apache using:
+<br/><br/>
 
 <blockquote><pre>
 sudo service apache2 restart
 </pre></blockquote>
 
-Another reason I like this option is because you can run a number of other
+Another reason I like the rPI option is because you can run a number of other
 services on a rPI that enhance the functionality of HousePanel. For example,
 I have KuKu Harmony and Homebridge both running on my rPI side by side with
 HousePanel. Installing those apps are beyond the scope of this doc.
@@ -273,14 +355,9 @@ the owner, groups, and the world can read and write to the folder.<br/><br/>
 
 <h2>Testing your PHP Web Server</h2>
 Before proceeding I highly recommend that you test your web server
-and confirm that it works with PHP and cUrl. To do that create a simple file with
-just the following in it:<br/>
-<blockquote><pre>
-    &lt;?php 
-    phpinfo();
-</pre></blockquote>
-Save this file to phpinfo.php and upload it to your server. Open a browser
-and point it to this file. For example, let's assume you are using a
+and confirm that it works with PHP and cUrl. To do that load the file
+phpinfo.php into a browser window. This file is included in the
+primary repo folder. For example, let's assume you are using a
 rPi on static IP address 192.168.1.50 and your HP is installed in /housepanel
 then you would browse over to: 
 http://192.168.1.50/housepanel/phpinfo.php
@@ -290,7 +367,8 @@ If things are working you should see a PHP information page returned. Scroll
 down and look for a section named cUrl to see if it is activated. The HP distribution
 files that we will download later includes a phpinfo.php file so if you
 prefer you can wait and perform this test after uploading the files, in which
-case you won't have to worry about creating this file.<br/><br/>
+case you won't have to worry about creating this file.
+<br/><br/>
 
 If loading this page generates an error, then you know your web server was
 not installed correctly and it will need to be addressed before you can proceed.
