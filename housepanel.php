@@ -3785,9 +3785,9 @@ function is_ssl() {
     $skin = $configoptions["skin"];
     $kiosk = $configoptions["kiosk"];
     $webSocketServerPort = $configoptions["webSocketServerPort"];
-    if ( !$webSocketServerPort ) {
-        $webSocketServerPort = "1337";
-    }
+//    if ( !$webSocketServerPort ) {
+//        $webSocketServerPort = "1337";
+//    }
     $fast_timer = $configoptions["fast_timer"];
     $slow_timer = $configoptions["slow_timer"];
 

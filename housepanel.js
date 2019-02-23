@@ -17,6 +17,7 @@ var nodejsUrl = null;
 // end-users are welcome to use this but it is intended for development only
 // use the timers options to turn off polling
 var disablepub = false;
+var disablebtn = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -393,6 +394,9 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
             if ( pos.border ) {
                 styleinfo += " border: " + pos.border + ";";
             }
+            if ( pos.zindex ) {
+                styleinfo += " z-index: " + pos.zindex + ";";
+            }
             styleinfo += "\"";
         }
     }
@@ -755,12 +759,12 @@ function thingDraggable(thing) {
             
             // while dragging make sure we are on top
             $(evt.target).css("z-index", 9999);
+        },
+        stop: function(evt, ui) {
+            startPos.zindex = parseInt(startPos.zindex) + 1;
+            $(evt.target).css( {"z-index": startPos.zindex.toString()} );
         }
     });
-    
-//    var styleinfo = " style=\"position: absolute; left: 1px; top: 1px;\"";
-//    var editdiv = "<div class=\"editlink\" aid=" + thing.attr("id") + styleinfo  + ">[E]</div>";
-//    thing.append(editdiv);
 }
 
 function setupDraggable() {
@@ -1052,7 +1056,7 @@ function updateFilters() {
 
 function setupButtons() {
 
-    if ( pagename==="main" && !disablepub ) {
+    if ( pagename==="main" && !disablebtn ) {
         $("#controlpanel").on("click", "div.formbutton", function(evt) {
             var buttonid = $(this).attr("id");
             if ( $(this).hasClass("confirm") ) {

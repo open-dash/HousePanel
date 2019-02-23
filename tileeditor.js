@@ -920,7 +920,7 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
     
     // create a function to display the tile
     var dodisplay = function() {
-        var pos = {top: 100, left: 200};
+        var pos = {top: 100, left: 200, zindex: 99999};
         createModal("modalid", dialog_html, "body", true, pos, 
             // function invoked upon leaving the dialog
             function(ui, content) {
