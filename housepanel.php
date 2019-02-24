@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.991      New modern skin and include door in classes from tile names
  * 1.990      Final cleanup before public release of hubpush bugfixes
  *            move housepanel-push to subfolder beneath main files
  *            update housepanel-push to include more robust error checking
@@ -210,7 +211,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.990');
+define('HPVERSION', 'Version 1.991');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1385,13 +1386,19 @@ function processName($thingname, $thingtype) {
 
     // get rid of 's and split along white space
     // but only for tiles that are not weather
+    $subtype = "";
     if ( $thingtype!=="weather") {
         $ignores = array("'s","*","<",">","!","{","}","-",".",",",":","+","&","%");
-        $ignore2 = getTypes();
+        // $ignore2 = getTypes();
+        // ignore all but door types
+        $ignore2 = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
+                         "motion", "lock", "thermostat", "temperature", "music", "valve",
+                         "illuminance", "smoke", "water",
+                         "weather", "presence", "mode", "shm", "hsm", "piston", "other",
+                         "clock", "blank", "image", "frame", "video", "custom", "control", "power");
         $lowname = str_replace($ignores, "", strtolower($thingname));
         // $lowname = str_replace($ignore2, "", $lowname);
         $subopts = preg_split("/[\s,;|]+/", $lowname);
-        $subtype = "";
         $k = 0;
         foreach ($subopts as $key) {
             if ( !in_array($key, $ignore2) && strtolower($key) !== $thingtype && !is_numeric($key) && strlen($key)>1 ) {

@@ -1,0 +1,638 @@
+/* 
+ * This is a modern HousePanel skin file 
+ * icons will look similar to other dashboards
+ */
+
+/* panel backgrounds go here in the skin */
+div.panel-Family, div.panel-family, div.panel-Familyroom, div.panel-familyroom {
+    background-image: none;
+}
+div.panel-Kitchen, div.panel-kitchen, div.panel-Dinette, div.panel-dinette {
+    background-image: none;
+}
+div.panel-Living, div.panel-living, div.panel-Livingroom, div.panel-livingroom {
+    background-image: none;
+}
+div.panel-Outside, div.panel-outside {
+    background-image: none;
+}
+div.panel-Garage, div.panel-garage {
+    background-image: none;
+}
+div.panel-Office, div.panel-office, div.panel-Library, div.panel-library {
+    background-image: none;
+}
+div.panel-Bedroom, div.panel-bedroom, div.panel-Bedrooms, div.panel-bedrooms {
+    background-image: none;
+}
+div.panel-Music, div.panel-music, div.panel-Theater, div.panel-theater, 
+div.panel-Entertainment, div.panel-entertainment {
+    background-image: none;
+}
+
+div.panel {
+    background-color: #999999;
+}
+
+/*div.overlay {
+    width: 100%; 
+    height: auto;
+    display: block;
+}*/
+/* all things look like this */  
+/* the heights are set to auto for larger items like weather and thermostats */
+div.thing {
+    display: inline-block;
+    position: relative;
+    text-align: center;
+    vertical-align: top;
+    background-color: rgba(170, 170, 170, 1);
+    color: rgba(50, 50, 50, 1);
+    font-size: 12pt;
+    background-position: center center;
+    background-repeat: no-repeat;
+    border-left: 4px solid #666666; 
+    border-top: 4px solid #666666; 
+    border-right: 4px solid #666666; 
+    border-bottom: 4px solid #666666; 
+    border-radius: 0%; 
+    box-shadow: none; 
+    margin: 0px;
+    padding: 0px;
+    cursor: default;
+    width: 120px;
+    height: 180px;
+    z-index: 1;
+}
+div.thing:hover{
+    box-shadow: 0px 0px 41px rgba(0, 0, 0, 0.70);
+}
+
+/* items that have a pointer */
+div.switch, div.bulb, div.light, div.switchlevel, div.momentary, 
+div.lock, div.mode.themode, div.piston, div.valve, div.routine.label,
+div.level, div.door.garage,
+div.custom-thing div.custom.post,
+div.piston-thing, div.music.musicmute, div.overlay.music-controls div.music,
+div.door.garage.closed, div.door.garage.closing, div.door.garage.open, div.door.garage.opening,
+div.thermofan, div.thermomode,
+div.valve.startZone, div.valve.pause, div.piston-thing div.pistonName,
+div.shm.state, div.hsm.state
+{
+    cursor: pointer;
+}
+
+/* hide the header for this skin */
+div.thingname {
+    display: none;
+}
+
+/* this section is for specific thing icons and texts */
+/* the transparency is set to near zero so text doesn't show */
+div.contact.open, div.custom.open {
+    background-image: url('icons/contactopen.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.contact.closed, div.custom.closed {
+    background-image: url('icons/contactclosed.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.contact.mat.open, div.custom.mat.open {
+    background-image: url('icons/matempty.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.contact.mat.closed, div.custom.mat.closed {
+    background-image: url('icons/matfull.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+
+/* specific contact types one might find */
+div.door.open, div.contact.door.open {
+    background-image: url('icons/dooropen.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.door.closed, div.contact.door.closed {
+    background-image: url('icons/doorclosed.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+/* hide the contact part of garage doors that include an embedded contact sensor */
+div.door-thing.garage div.overlay.contact {
+    display: none;
+}
+div.contact.garage.open {
+    background-image: url('icons/dooropen.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.contact.garage.closed {
+    background-image: url('icons/doorclosed.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.door.garage.open, div.door.garage.opening {
+    background-image: url('icons/garageopen.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.door.garage.closed, div.door.garage.closing {
+    background-image: url('icons/garageclosed.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.valve.open {
+    background-image: url('icons/sprinkler-on.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.valve.closed {
+    background-image: url('icons/sprinkler-off.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.valve.startZone, div.valve.pause {
+    display: none;
+}
+div.motion.inactive {
+    background-image: url('icons/motioninactive.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.motion.active {
+    background-image: url('icons/motionactive.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.lock.locked {
+    background-image: url('icons/lock.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.lock.unlocked, div.lock.unknown {
+    background-image: url('icons/unlock.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.on {
+    background-image: url('icons/switchon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switchlevel.on {
+    background-image: url('icons/lampon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.bulb.on, div.light.on {
+    background-image: url('icons/bulbon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.light.on {
+    background-image: url('icons/lampon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.lamp.on {
+    background-image: url('icons/lampon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.floor.on {
+    background-image: url('icons/floorlampon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.plug.on {
+    background-image: url('icons/plugon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.off {
+    background-image: url('icons/switchoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switchlevel.off {
+    background-image: url('icons/bulboff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.bulb.off, div.light.off {
+    background-image: url('icons/bulboff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.light.off {
+    background-image: url('icons/lampoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.lamp.off {
+    background-image: url('icons/lampoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.floor.off {
+    background-image: url('icons/floorlampoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.switch.plug.off {
+    background-image: url('icons/plugoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+/* momentary styling */
+div.momentary.off {
+    background-image: url('icons/buttonoff.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.momentary.on {
+    background-image: url('icons/buttonon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+/* presence styling */
+div.presence.present, div.custom.present {
+    background-image: url('icons/boypresent.png');
+    background-color: rgba(170, 170, 170, 1);
+    color: rgba(255, 255, 255, 0.01);
+}
+div.presence.absent, div.custom.absent {
+    background-image: url('icons/boyabsent.png');
+    background-color: rgba(170, 170, 170, 1);
+    color: rgba(255, 255, 255, 0.01);
+}
+
+
+div.overlay.energy div.energy::after, div.overlay.switch div.energy::after {
+    content: " (kWh)";
+}
+div.overlay.power div.power::after, div.overlay.switch div.power::after {
+    content: " (Watts)";
+}
+
+/* slider styling */
+div.overlay.level, div.overlay.colorTemperature {
+    height: 32px;
+    background-color: rgba(100, 100, 100, 1);
+    width: 100%;
+}
+div.switchlevel-thing div.overlay.level,
+div.bulb-thing div.overlay.level,
+div.light-thing div.overlay.level {
+    position: absolute;
+    bottom: 0px;
+}
+div.overlay.level div.level, div.overlay.colorTemperature div.colorTemperature {
+    height: 4px;
+    background-color: rgba(255, 255, 255, 1);
+    color: rgba(255, 255, 255, 1);
+    width: 94%;
+    margin-left: 3%;
+}
+div.level span.ui-slider-handle,
+div.colorTemperature span.ui-slider-handle {
+    background-color: rgba(240, 240, 240, 1);
+    border: 1px solid rgba(240, 240, 240, 1);
+}
+
+/* remove slider from regular switches */
+div.switch-thing div.overlay.level, div.light-thing div.overlay.level {
+    display: none;
+    height: 0px;
+}
+
+/* print names */
+div.overlay.name, div.overlay.name div.name {
+    display: block;
+    position: relative;
+    width: 94%;
+    margin-left: 3%;
+    text-align: left;
+    font-size: 12pt;
+    margin-top: 2px;
+    height: 46px;
+    color: rgba(50, 50, 50, 1);
+}
+
+/* music styling */
+div.thing.music-thing {
+    width: 248px;
+    height: 180px;
+}
+div.music.track, div.custom.track, div.music.trackDescription {
+    font-family: "Raleway",serif;
+    font-size: 11pt;
+    font-style: italic;
+    height: 32px;
+    border-bottom: none;
+}
+div.music.musicstatus, div.music.musicmute, div.custom.musicstatus, div.custom.musicmute,
+div.music.status, div.music.mute {
+    height: 24px;
+    color: rgba(255, 255, 255, 1);
+}
+div.music.mute {
+    display: none;
+}
+div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
+    display: inline-block;
+	background-size: 38px;
+    width: 42px; height: 42px;
+    border: 0px; padding: 0px;
+    color: rgba(255, 255, 255, 0.01);
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+div.music-pause {
+    background-image: url("icons/pause.png");
+}
+div.music-stop {
+    background-image: url("icons/stop.png");
+}
+div.music-play {
+    background-image: url("icons/play.png");
+}
+div.music-previous {
+    background-image: url("icons/prev.png");
+}
+div.music-next {
+    background-image: url("icons/next.png");
+}
+
+/* make thermostat height auto */
+div.thing.thermostat-thing {
+    width: 120px;
+    height: auto;
+}
+
+/* round temperature value inside a thermostat */
+div.overlay.temperature div.temperature {
+    display: inline-block;
+    background-color: rgba(50, 50, 50, 1);
+    color: #ffffee;
+    border: 2px solid white;
+    box-shadow: 5px 4px 15px black;
+    cursor: default;
+    text-align: center;
+    height: 50px;
+    width: 50px;
+    padding: 4px 3px 0 3px;
+    margin: 10px 12px 10px 12px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 45px;
+}
+
+div.overlay.temperature div.weather.temperature,
+div.overlay.feelsLike div.weather.feelsLike {
+    background-color: rgba(50, 50, 50, 1);
+    color: #ffffee;
+}
+
+/* make weather items side by side but thermostat not */
+div.thermostat-thing div.overlay.temperature {
+    display: block;
+}
+
+/* up and down arrows */
+div.colorTemperature-up, div.colorTemperature-dn,
+div.hue-up, div.hue-dn,
+div.saturation-up, div.saturation-dn,
+div.heatingSetpoint-dn, div.coolingSetpoint-dn,
+div.heatingSetpoint-up, div.coolingSetpoint-up {
+    display: inline-block;
+	background-size: 30px;
+    width: 32px; height: 32px;
+    border: 0px; padding: 0px;
+    color: rgba(255, 255, 255, 0.01);
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+div.colorTemperature-dn, div.hue-dn, div.saturation-dn,
+div.heatingSetpoint-dn, div.coolingSetpoint-dn {
+    background-image: url("icons/down.png");
+}
+
+div.colorTemperature-up, div.hue-up, div.saturation-up,
+div.heatingSetpoint-up, div.coolingSetpoint-up {
+    background-image: url("icons/up.png");
+}
+
+/* hover over the adjustment arrows */
+div.heatingSetpoint-up:hover, div.heatingSetpoint-dn:hover, 
+div.coolingSetpoint-up:hover, div.coolingSetpoint-dn:hover,
+div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
+div.hue-up:hover, div.hue-dn:hover,
+div.saturation-up:hover, div.saturation-dn:hover {
+    padding-left: 4px;
+    padding-top: 4px;
+    width: 28px;
+    height: 28px;
+}
+
+div.thermostat.thermostatFanMode::before,
+div.custom.thermostatFanMode::before {
+    content: "Fan: ";
+}
+div.thermostat.thermostatMode::before,
+div.custom.thermostatMode::before {
+    content: "Mode: ";
+}
+div.thermostat.thermostatOperatingState::before,
+div.custom.thermostatOperatingState::before {
+    content: "State: ";
+}
+div.thermostat.humidity::before,
+div.custom.humidity::before {
+    content: "Humidity: ";
+}
+div.thermostat.humidity::after,
+div.custom.humidity::after {
+    content: "%";
+}
+
+/* values of the adjustable items */
+div.colorTemperature-val, div.hue-val, div.saturation-val,
+div.heatingSetpoint-val, div.coolingSetpoint-val,
+div.hue, div.saturation,
+div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint {
+    display: inline-block;
+    position: relative;
+    left: 0px; top: 0px;
+    text-align: center;
+    vertical-align: top;
+    font-size: 18px;
+    width: 50px;
+    padding-top: 5px;
+    height: 27px;
+    color: rgba(255, 255, 255, 1);
+    border: 0px;
+}
+
+/* pistons */
+div.pistonName {
+    color: rgba(255, 255, 255, 0.01);
+    background-image: url('icons/piston.png');
+}
+div.pistonName.firing {
+    background-image: url('icons/pistonfiring.png');
+}
+
+/* weather styling */
+div.thing.weather-thing {
+    width: 248px;
+    height: auto;
+}
+
+div.weather.feelsLike::before,
+div.custom.feelsLike::before {
+    content: "Like: ";
+    font-size: 8pt;
+}
+div.weather.humidity::before {
+    content: "Humidity: ";
+}
+div.weather.percentPrecip::before {
+    content: "Rain: ";
+}
+div.weather.humidity::after, div.weather.percentPrecip::after,
+div.illuminance-thing div.illuminance.humidity:after,
+div.custom.humidity::after, div.custom.percentPrecip::after {
+    content: "%";
+}
+div.weather.illuminance::after,
+div.custom.illuminance::after {
+    content: " Lux";
+}
+div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
+div.weather.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
+    background-color: rgba(170, 170, 170, 1);
+    margin-bottom: 0px;
+    height: auto;
+    display: block;
+}
+div.weather.sunriseset, div.weather.timeZoneOffset, div.weather.alertKeys,
+div.weather.sunriseDate, div.weather.sunsetDate,
+div.weather.ultravioletIndex, div.weather.lastUpdate, div.weather.uvDescription {
+    display: none;
+}
+
+div.weather_temps {
+    display: block;
+}
+div.weather_temps div.overlay.temperature,
+div.weather_temps div.overlay.feelsLike {
+    display: inline;
+    padding-right: 4px;
+}
+div.weather.weatherIcon, div.weather.forecastIcon {
+    display: inline-block;
+    background-size: 50px;
+}
+
+/* clock */
+div.thing.clock-thing {
+    width: 248px;
+    height: 180px;
+}
+div.clock.time {
+    font-size: 28pt;
+}
+div.overlay.name div.clock.name {
+    display: none;
+}
+div.clock.analog, div.thing.clock-thing.analog {
+    background-color: rgba(170, 170, 170, 0.01);
+}
+div.clock-thing.analog div.overlay.skin {
+    margin-top: 14px;
+    display: block;
+    position: relative;
+}
+
+/* monitor state */
+div.shm.state, div.hsm.state, div.custom.state {
+    font-size: 18pt;
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 1);
+    background-size: 70px;
+    background-repeat: no-repeat;
+    height: 102px;
+    background-position-x: center;
+    background-position-y: bottom;
+}
+div.shm.state.stay, div.hsm.state.armedHome, div.hsm.state.armedNight,
+div.custom.state.stay, div.custom.state.armedHome, div.custom.state.armedNight {
+    background-image: url('icons/security-blue.png');
+}
+div.shm.state.away, div.hsm.state.armedAway,
+div.custom.state.away, div.custom.state.armedAway {
+    background-image: url('icons/security-red.png');
+}
+div.shm.state.off, div.hsm.state.disarmed, div.hsm.state.allDisarmed,
+div.custom.state.off, div.custom.state.disarmed, div.custom.state.allDisarmed {
+    background-image: url('icons/security-green.png');
+}
+
+/* hide temperatures in motions */
+div.overlay.temperature div.motion.temperature {
+    display: none;
+}
+
+/* hide tamper fields */
+div.overlay.tamper {
+    display: none;
+}
+
+/* images */
+div.thing.image-thing {
+    background-color: rgba(255,255,255,0.01);
+    box-shadow: none;
+    width: auto;
+    height: auto;
+}
+div.image.url {
+    width: 240px;
+    height: 180px;
+    font-size: 0px;
+    background-color: rgba(50, 50, 50, 1);
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+iframe body {
+    margin: 0px;
+}
+div.thing.frame-thing {
+    width: 371px;
+    height: 180px;
+    background-color: rgba(0, 0, 0, 0.01);
+    border: 0; 
+}
+div.thing.frame-thing.forecast {
+    width: 494px;
+    height: 212px;
+    margin-top: 10px;
+}
+div.thing.frame-thing div.overlay.status,
+div.thing.frame-thing div.overlay.name {
+    display: none;
+}
+
+div.thing.video-thing {
+    width: 240px;
+    height: 180px;
+}
+
+div.overlay.battery {
+    display: none;
+}

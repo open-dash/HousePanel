@@ -1308,6 +1308,10 @@ div.thing div.overlay.level .ui-slider.slider-horizontal {
 }
 
 /* battery display */
+div.overlay.battery {
+    position: absolute;
+}
+
 div.overlay.battery div.battery {
     background: none;
     display: block;
