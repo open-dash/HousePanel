@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018, 2019</i><br/>
-<i>Version 1.990 as of January 16, 2019</i>
+<i>Version 1.991 as of February 25, 2019</i>
 </p>
 </div>
 
@@ -50,19 +50,24 @@ nor any details about your environment to the developer or any other party.
 You are in total control. The default settings were designed by a professional web designer
 to create a highly acceptable user interface for non-technical people. 
 It is designed to not look and feel "geeky". By default the tiles 
-are large and colorful, placed on beautiful full color backgrounds.</p>
+are large and colorful, placed on beautiful full color backgrounds.
+There is also a modern skin that makes HousePanel look very similar to 
+other popular dashboards. Finally, the user can create any number of custom
+skins to make HousePanel look however they desire.</p>
+
+<p>As of version 1.990, HousePanel also includes a helper Node.js application that
+pushes the status of things to your dashboard in real time as they change
+due to user control outside of the panel. This feature requires installation
+of HousePanel on server located on the same network as your hub. Typically this
+will be a Raspberry PI but it can be any server that supports Node.js and that
+can be accessed locally by the smart hub. If activated this feature will provide immediate updates
+to your dashboard as opposed to waiting for the once-a-minute poll to update it.
+</p>
 
 <p>An advanced feature of HP is that it can be used as a text-based web service to return
 json strings of status about your home to any other web application. This advanced
 feature is mostly for developers and can be safely ignored, but if you are a developer
 then you should read the final section of this Wiki on Advanced Applications of HP.</p>
-
-<p>As of version 1.990, HousePanel also includes a helper application that
-pushes the status of things to your dashboard in real time as they change
-due to user control outside of the panel. This feature requires installation
-of HousePanel on a rPI. If activated this feature will provide immediate updates
-to your dashboard as opposed to waiting for the once-a-minute poll to update it.
-</p>
 
 <h2>Features</h2>
 HousePanel can display and/or control most types of things in a smart home 
@@ -123,23 +128,27 @@ easily renamed, deleted, or added when in Edit mode.
 <br /><br />
 
 For advanced users HousePanel is a highly flexible API that can
-serve as a web service to access your smart home devices from anywhere. 
+serve as a web service to access your smart home devices from another web application. 
 This works for SmartThings and Hubitat connected devices.
 This feature requires that users first authenticate their hubs using the GUI.
-API calls are possible without using prior GUI authentication if the user is willing
-to provide fairly complex URL-encoded security codes on the API command line.
-Instructions for using the API are in the advanced section of this Wiki.
+API calls are possible without using prior GUI authentication if the user knows and
+provides the fairly complex URL-encoded security codes on the API command line.
+Instructions for using the API are in the advanced section of this document.
 <br/><br/>
 
 The main page of HousePanel once installed and configured will look something like this:
 <div><img src="mainpage.png"></div>
-
+<img src="authpage.png" alt=""/>
 
 <h2>Requirements - What You Need to Use HousePanel</h2>
 HousePanel is a web application written in PHP and Javascript that is 
 paired with a SmartThings and/or Hubitat SmartApp written in the Groovy language.
-There is also a small Node.js module used to enable real time status info
-on the dashboard. This feature requires a local rPI installation of HousePanel.
+There is also an optional small Node.js module used to push status info
+to the dashboard in real time. If this module is installed, your panel will stay
+in sync with the status of things in your home in near real time. Otherwise
+HousePanel uses polling to keep things in sync, so there can be up to a one
+minute delay before your dashboard is updated to match external changes. Any state
+change made on the dashboard itself will always be immediately shown correctly.
 <br/><br/>
 
 To use Housepanel you will need a modern browser that supports HTML5 and Javascript.
@@ -228,64 +237,6 @@ sudo apt-get -y install curl
 sudo apt-get -y install php-curl
 sudo rpi-update
 </pre></blockquote>
-
-To manually install the Node.js hub push element, enter the following:
-<br><br>
-
-<blockquote><pre>
-npm update housepanel-push
-sudo systemctl housepanel-push
-</pre></blockquote>
-
-This assumes you have a valid housepanel-push.service file. By default this file
-is included in the housepanel-push sub-folder. This file may need to be edited
-to point to the folder where you have housepanel installed. That folder by
-default is named "smartthings".
-<br><br>
-
-You will also need to have npm and node installed first for this to work. 
-The following commands will install Node.js on a raspberry Pi.
-<br><br>
-
-<blockquote><pre>
-wget http://node-arm.herokuapp.com/node_latest_armhf.deb 
-sudo dpkg -i node_latest_armhf.deb
-</pre></blockquote>
-
-Alternative instructions for installing Node.js and npm can be
-found here:
-<br><br>
-
-<blockquote><pre>
-https://www.instructables.com/id/Install-Nodejs-and-Npm-on-Raspberry-Pi/
-</pre></blockquote>
-
-Regardless of which method you use, you should check to make sure you have 
-Node.js installed properly by running the following command:
-<br><br>
-
-<blockquote><pre>
-node -v
-</pre></blockquote>
-
-Sometimes the Node.js setup is stubborn and refuses to load. You should check to
-make sure that housepanel-push is running in the background after you install
-it as service. That can be done by doing:
-
-<blockquote><pre>
-ps -aux | grep housepanel
-</pre></blockquote>
-
-You should see the housepanel-push service running. If not, something went wrong
-and you will have to do some troubleshooting.
-<br><br>
-
-I realize this is a lot of configuration to deal with. The install.sh script
-attempts to automate this for you. It works for some people but it isn't
-completely robust so it might fail, so the details above might prove useful.
-Over time I will continue improving the install.sh script to make it more robust
-and foolproof.
-<br><br>
 
 Next, you need to confirm that PHP is setup to use cUrl. This should be on by default 
 because of the install lines above, but check php.ini to be sure.
@@ -377,21 +328,21 @@ are beyond the scope of this Wiki but there are ample resources on the
 web that can help you troubleshoot this and get it working before you proceed.
 
 <h2>Installing the HousePanel Application</h2>
-
-<h3>Install and Configure groovy file</h3>
 There are two groovy files that are used to operate HousePanel - one for SmartThings
 and one for Hubitat. The SmartThings version is called HousePanel.groovy
 and it should be installed into your SmartThings smartapp IDE repository.
 The Hubitat version is called HousePanelHubitat.groovy and it should be
 installed into your Hubitat IDE on your local LAN.<br/><br/>
 
-<u>SmartThings - HousePanel.groovy</u><br/><br/>
+<h3>SmartThings SmartApp Installation</h3>
 Unfortunately I was not able to get the SmartThings IDE option to work with my account
 so you will have to install this manually. 
-First, open the HousePanel groovy file from the following GitHub account:
-<pre>
+First, open the HousePanel.groovy file from the following GitHub account:
+<br><br>
+
+<blockquote><pre>
 <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
-</pre>
+</pre></blockquote>
 
 With this file open click on the "raw" icon in the upper right corner.
 This will open a window showing just the "raw" lines of code. Copy the entire file
@@ -418,14 +369,24 @@ of data called CLIENT_ID and CLIENT_SECRET.
 These values are important and must be copied and saved for use in the
 next step when you are configuring your web server.<br/><br/>
 
-<u>Hubitat - HousePanelHubitat.groovy</u><br/><br/>
-HousePanel now supports Hubitat with or without SmartThings. If you are
-a Hubitat user, you will need to install the HousePanelHubitat.groovy
-file into the app section of the Hubitat webpage API. To do this,
-go to the HousePanel GitHub account at 
+After you have installed HousePanel.groovy in the IDE, you need to load an
+instance of the app on your smartphone using the SmartThings app. You must use
+the legacy SmartThings app to install HousePanel. When you load the app you will
+be presented with a few options, followed by a list of things to select. You can select
+them here or you can wait and select them when you authenticate the hub from
+the main application side. Either works with SmartThings.
+
+<h3>Hubitat App Installation</h3>
+If you are a Hubitat user, you will need to install the HousePanelHubitat.groovy
+file into the app section of the Hubitat webpage API. Open the
+HousePanelHubitat.groovy file from the following GitHub account:
+<br><br>
+
+<blockquote><pre>
 <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a>
-and open the HousePanelHubitat.groovy file. With this file open click 
-on the "raw" icon in the upper right corner.
+</pre></blockquote>
+
+With this file open click on the "raw" icon in the upper right corner.
 This will open a window showing just the "raw" lines of code. Copy the entire file
 to the clipboard using Control-A or Command-A on mac, then Control-C or Command-C on a mac.
 Navigate back to your Hubitat IDE on your local LAN. 
@@ -441,13 +402,27 @@ of data called Client ID and Client Secret.
 These values are important and must be copied and saved for use in the
 next step when you are configuring your web server.<br/><br/>
 
+After you have installed HousePanel.groovy in the Apps Code area, you need to load an
+instance of the app in the Apps area near the top. When you load the app you will
+be presented with a few options, followed by a list of things to select. 
+With Hubitat hubs you must select the things you want to include in your dashboard
+at this time. When you authenticate the hub later, you will only be asked if you
+want to give permission to HousePanel to access Hubitat. With Hubitat you will not
+be given the option of changing what things you permit during the authentication step.
+<br><br>
+
+<h3>Multiple Hub Considerations</h3>
 You can install either the SmartThings or Hubitat hub or both of them. They
 play nice with each other so you can use both together or one or the other. This feature
 is a great way to make a gradual transition from SmartThings over to Hubitat.
 As of Version 1.80, any number of Hubitat and SmartThings 
 hubs can be connected to the panel. Hooks are there for Wink and OpenHab support which will 
 come with time. I'm excited about this because I wrote this generally enough to 
-make future hub bindings easy to add.<br/><br/>
+make future hub bindings easy to add. As of this writing, HousePanel has not been tested
+to work with multiple SmartThings hubs on the same account. Users have reported problems
+with trying to do this. However, multiple SmartThings hubs on different accounts appear
+to work fine. Also, multiple Hubitat hubs have been reported to work properly.
+<br/><br/>
 
 <h3>Install PHP Code on Web Server</h3>
 
@@ -472,13 +447,15 @@ bash ./install.sh
 Once you have done this you should be all set and ready to run HousePanel.
 The following is only if you want or need to do a manual install.<br /><br />
 
-A typical place to install HP is in its own directory called /housepanel. Be sure 
-to preserve the directory structure when you download and then upload the 
-files to your web server. Please ensure that you copy ALL of the files to
+A typical place to install HP is in its own directory called "housepanel" within
+your html folder, typically located at /var/www/html. 
+Be sure to preserve the directory structure when you upload the 
+files to your web server. Also, make sure you copy ALL of the files to
 your web server. The .groovy files, python examples, LICENSE, and README files are not 
 needed but it won't hurt to have them on your web server as a backup copy, 
 so I would just copy all the files. You also can skip copying the "docs" 
-sub-directory but again, it won't hurt to be there. 
+sub-directory but again, it won't hurt to be there. If there, you will be able
+to pull up a local copy of this doc file from your dashboard.
 If you are using FTP to transfer files, please be sure to use a binary
 transfer protocol. <br/><br/>
 
@@ -492,53 +469,102 @@ using visual cues.<br/><br/>
 
 Earlier versions of HousePanel required the creation of
 a file named "clientinfo.php".  This file will still be used if created
-but it is no longer required, so you can skip this section. If you proceed
-and create this file, it will supercede any parameters you provide in the app.
-<strong>This is strongly discouraged.</strong> 
-The following documentation is for legacy support reasons only
-and should simply be ignored by all new users.<br/><br/>
-
-<div style="color: #cccccc">
-The clientinfo.php file will look like this:<br/>
-
-<pre>
-&lt;?php
-define('TIMEZONE', 'America/Detroit');
-define('CLIENT_ID', 'a1b23aa1-a123-123a-b12c-12345abc1234');
-define('CLIENT_SECRET', 'a123456a-bc12-1212-123a-a12312312312');
-define('ST_WEB','https://graph.api.smartthings.com');
-//define('HUBITAT_HOST',"http://192.168.1.50");
-//define('HUBITAT_ID',"##");
-//define('HUBITAT_ACCESS_TOKEN',"1234blahblahblah");
-</pre>
+but it is no longer required. If you have a copy of this file from an older
+installation, it is strongly recommended that you remove it. For now the code
+will attempt to use it, but this feature may be removed in the future.
 <br/><br/>
 
-The first parameter to set is TIMEZONE to reflect where your house 
-is located. The times displayed will always be shown in this time zone.<br /><br />
 
-If you are using SmartThings, you can put your 
-CLIENT_ID, CLIENT_SECRET, and ST_WEB information into
-this file and then re-upload it to your web server
-as an alternative to providing it when the app launches.
-This information is obtained from the ST IDE where you uploaded
-the HousePanel.groovy app and enabled OAUTH2.<br /><br />
+<h3>Hub Push Node.js Installation</h3>
 
-The ST_WEB variable can also be changed here if your IDE is at a different location
-which will be the case if you are in Europe. If you are running a Hubitat-only installation these parameters
-can be set to false in this file. If that is the case the Hubitat
-parameters described below must be defined.<br /><br />
+This section describes how to install the optional Node.js hub push middleman feature.
+You should install the rest of HousePanel and authenticate your hubs before attempting
+to install this feature. For this feature to work you ust have Node and NPM installed. 
+If your server is a rPi, log into it using ssh and enter the following commands to install Node and NPM.
+<br><br>
 
-The information in the above sample is fake data and will not work
-without being changed to include your real OAUTH2 information. Again,
-you find this information in Step 2 above in your SmartThings IDE. 
-<br/><br/>If you are not using SmartThings just put false here and ignore the rest.<br/><br/>
+<blockquote><pre>
+wget http://node-arm.herokuapp.com/node_latest_armhf.deb 
+sudo dpkg -i node_latest_armhf.deb
+</pre></blockquote>
 
-If you want HousePanel to read your Hubitat devices, you must provide
-valid values for the following parameters: 
-HUBITAT_HOST, HUBITAT_ID, and HUBITAT_ACCESS_TOKEN. These are obtained
-from the Hubitat webpage on your mobile. The only tricky one is the last one
-which is displayed once you activate Hubitat.<br/><br/>
-</div>
+Alternative instructions for installing Node.js and npm can be found here:
+<br><br>
+
+<blockquote><pre>
+https://www.instructables.com/id/Install-Nodejs-and-Npm-on-Raspberry-Pi/
+</pre></blockquote>
+
+Regardless of which method you use, you should check to make sure you have 
+Node.js installed properly by running the following command:
+<br><br>
+
+<blockquote><pre>
+node -v
+</pre></blockquote>
+
+Next, you will configure the app called housepanel-push.js <br><br>
+
+The main GitHub repository contains a version of housepanel-push.js in the housepanel-push sub-folder. To use
+this you must first configure it using the npm package manager to load all of the
+required dependencies. Navigate to the housepanel-push subfolder and enter:
+<br><br>
+
+<blockquote><pre>
+npm update housepanel-push
+</pre></blockquote>
+
+Test your application by running it on the console:
+<br><br>
+
+<blockquote><pre>
+node housepanel-push.js
+</pre></blockquote>
+
+If successful the app will read your hmoptions.cfg file and report statistics about your setup.
+If you have not yet installed the rest of HousePanel this will indicate that and hibernate
+until it finds a valid config file. Either way, this flags that you have the app working
+so you should stop it by hitting "Control-C". Next you will install it as a service. To do
+that start by editing the provided housepanel-push.service file and change the WorkingDirectory and
+Execstart lines to point to the location where you have HousePanel installed on this server.
+<br><br>
+
+<blockquote><pre>
+WorkingDirectory=/var/www/html/smartthings/housepanel-push/
+ExecStart=node /var/www/html/smartthings/housepanel-push/housepanel-push.js
+</pre></blockquote>
+
+In the above line, for example, you should change "smartthings" to "housepanel"
+if you installed HousePanel in the /var/www/html/housepanel folder. Save this file,
+change its permissions, and launch the service as follows:
+
+<blockquote><pre>
+sudo chmod 766 housepanel-push.service
+sudo chmod 766 housepanel-push.js
+sudo systemctl housepanel-push
+</pre></blockquote>
+
+Sometimes the Node.js setup is stubborn and refuses to load. You should check to
+make sure that housepanel-push is running in the background after you install
+it as service. That can be done by doing:
+
+<blockquote><pre>
+ps -aux | grep housepanel
+</pre></blockquote>
+
+You should see the housepanel-push service running. If not, something went wrong
+and you will have to do some troubleshooting. Detailed troubleshooting is beyond
+the scope of this documentation. Please visit the forum for further assistance.
+If you see it running in the background, then congratulations, you have it set
+up properly and it will push status over to HousePanel.
+<br><br>
+
+I realize this is a lot of configuration to deal with. The install.sh script
+attempts to automate this for you. It works for some people but it is not
+completely robust so it might fail, in which case the details above should help.
+Over time I will continue improving the install.sh script to make it more robust
+and foolproof.
+<br>
 
 <h3>Set Server Permissions</h3>
 This step ensures that your web server can create and update as needed
@@ -553,7 +579,7 @@ assuming your directory name is /housepanel. If you are using Option 2
 then your local web server configuration tool should be used to set
 the directory to read/write. If you are using Option 1 - Raspberry Pi - then your
 best option is to SSH over to the Raspberry Pi and then use the Linux
-command "chmod 777 /var/www/htdocs/housepanel". Replace the directory name
+command "chmod 777 /var/www/html/housepanel". Replace the directory name
 here with where your Apache stores html files and the name of the
 directory where you installed the HousePanel files.
 
@@ -573,6 +599,7 @@ and complete that step:<br/><br/>
     <li>HousePanel files from <a href="https://github.com/kewashi/HousePanel">https://github.com/kewashi/HousePanel</a> uploaded to its own directory on your web server
     <li>the directory above configured to read/write using "chmod 777 yourdirectory"
     <li>HTML5 capable Web browser with javascrpt and cookies enabled
+    <li>Node middleman running, tested using ps -aux | grep housepanel
 </ul>
 <br/><br/>
 
@@ -626,12 +653,13 @@ This authentication page is also where you will provide the API Url,
 Client ID and Client Secret information from the OAUTH settings noted earlier.
 Note that if you provided a clientinfo.php file, these values will be pre-populated.
 The Hub Name field is optional and will be filled in automatically for SmartThings
-and Hubitat.
-Hub ID is only used on the Hubitat side and then only if you want HP to automatically
-determine your user-provided end point. Most users can ignore this and use the
-normal OAUTH flow which doesn't use the Hub ID. <br/><br/>
+and Hubitat.<br><br>
 
-The Fixed Access Token and Fixed Endpoint values are also optional. If provided
+Hub ID is a unique identifier for this hub that is user provided. Hubitat hubs
+will populate this field with the hubid of the hub. The user must provide a unique value
+for SmartThings hubs. This field will be populated with a good guess.<br/><br/>
+
+The Fixed Access Token and Fixed Endpoint values are optional. If provided
 you do not have to provide the Client ID and Client Secret values. You also will
 not be redirected to an auth challenge page. This option is provided for those
 who know their tokens and don't want to bother being challenged every time
@@ -668,13 +696,16 @@ a web server, but such a server must stay on and can be more easily accessed
 via a keyboard than a rPi that has been tucked inside a cabinet. Anyway, 
 enough preaching about the benefits of the rPi install. <br/><br/>
 
-For SmartThings hubs HousePanel will present
+SmartThings hubs will present
 a list of your hubs. Select which hub you want to associate with HP. Most
 people only have 1 hub so there isn't any decision to make here, but you will
 still need to explicitly click on the one hub that you have. I have two hubs
 so in my case I have to pick the one that I want to control. Anyway, after you
 click on the hub, or in the case of Hubitat, after you authenticate,
-all supported things will be shown in a list.<br/><br/>
+all supported things will be shown in a list. For local Hubitat installs the
+list of things must be selected when you install the app. The authentication step
+will only ask you to authorize access with Hubitat.
+<br/><br/>
 
 This is where you select which things you want HousePanel to have the
 option of displaying and controlling. <strong>IMPORTANT!!</strong> I am saying the
@@ -689,8 +720,11 @@ You might decide to exlude some devices. For instance, I excluded a light that I
 food pantry that is activated by a door open sensor, since I don't
 ever anticipate needing to turn the lights on in a closed food pantry. Anyway,
 just select the things you want and you will be good to go. To finish this step click
-on the Save button at the bottom of the screen. This will be the moment you
-waited for...<br/><br/>
+on the Save button at the bottom of the screen. Again, this applies only to SmartThings
+because Hubitat requires the things to be selected when you install the app. This same
+approach can be used with SmartThings where you select the things you want from the
+smartphone SmartThings app. If you do that, the things you selected on your smartphone
+will be selected by default when you authenticate the hub.<br><br>
 
 You will then be redirected back to this same Authentication page where the number
 of devices read will be shown for the hub you selected. At this point you can
@@ -700,15 +734,14 @@ a hub then select the last item which is always a new blank hub.
 If you are done authorizing hubs, select the "Done Authorizing" button at the bottom
 of the screen. This will show you the main HousePanel page and you'll be ready to start
 enjoying your panel. Sometimes when you return from the auth page a Refresh is
-needed for your new things to show up. Just select the Refresh button and hit Okay.<br/><br/>
+needed for your new things to show up. Just reload your browser or click the Refresh button.<br/><br/>
 
-What happens next is control is returned to HousePanel and the app starts by
-reading all things and their states that you selected. It then assigns unique
+When the HousePanel main dashboard loads the first time, it reads
+all things that you selected and their states. It then assigns unique
 ID numbers to each thing, it automatically organizes each thing selected into
-one of several pre-defined Rooms. That information is then saved in a file
-called hmoptions.cfg that is saved on your 
-server. In our example case, it
-will be stored in: "http://192.168.1.50/housepanel/hmoptions.cfg". As an aside,
+one of several pre-defined rooms. That information is then saved in a file
+called hmoptions.cfg onto your server. In our example case, it
+will be stored in: "/var/www/html/housepanel/hmoptions.cfg". As an aside,
 this is why you had to do the step of making your server directory Read/Write.
 Without that setting HousePanel will not be able to save this file. If all goes well
 HousePanel will then render the page and display it to you. It will look
@@ -722,7 +755,7 @@ named Kitchen, Family, Living, Office, Bedrooms, Outside, and Music.
 Then it places and activates any thing whose name contains one of several
 keywords into the corresponding room. The keywords are listed below
 separated by "|" for the rooms noted. This keyword map can be found in the
-housepanel.php source code in the setDefaults function roughly around line 1940.
+housepanel.php source code in the setDefaults function roughly around line 2770.
 If you are comfortable with editing source code, feel free to change these
 keywords to your liking; however, end users will have other ways of moving
 things around and renaming rooms using the graphical editor. 
@@ -753,13 +786,13 @@ telling HP to show that tab that was previously created.<br/><br/>
 While on any page, you can click or tap on any thing tile to change its state.
 For example, clicking on "Kitchen Light" will turn the light off if it is
 on, and will turn it on if it is off. If you click on a closed garage door, it will open.
-However, not all things support state changes from HP.  Contacts and motion sensors
-for example are display only tiles so clicking on them will do nothing. Same
-for the clock and blank tiles. Tiles that support mode changes include switch,
-bulbs, lights, dimmers, garage doors, mode, routines, thermostats, and music tiles. 
+However, not all things support state changes from HP.  Contacts, motion sensors,
+clocks, and blanks are display only tiles so clicking on them will do nothing. 
+Tiles that invoke actions include switch,
+bulbs, lights, dimmers, garage doors, mode, routines, shm (SmartThings), hsm (Hubitat), 
+thermostats, and music tiles. 
 If you are using a computer, the cursor will change to a pointer when
-you hover over thing tiles that can be clicked on to change state. Other
-thing tiles will remain an arrow icon.<br/><br/>
+you hover over things that can be clicked to change state.<br/><br/>
 
 Some tiles such as thermostat and music tiles have multiple controls that can 
 be individually controlled by clicking on them. 
@@ -770,7 +803,7 @@ can also be clicked on. On dimmer tiles you change the intensity
 of the light by moving the slider. When you do this
 the light will always come if it is off.<br/><br/>
 
-If you have the Javascript control panel open, clicking on things will return
+If you have the browser control panel open (F12 on Chrome), clicking on things will return
 status information to that screen. This is a great way to see if your panel is working
 properly.
 
@@ -810,13 +843,16 @@ to reorder your rooms. The new room location will be permanent on this server.
 IMPORTANT!! You can mix edit and reorder mode, but you should first do reorder
 and then do edit to make fine tuning adjustments. If you reorder after you edit
 the relative positions will no longer be applicable so they are reset to zero.
-If you mistakenly do this, just his Refresh and the page will render properly.
+If you mistakenly do this, just click Refresh and the page will render properly.
 
 <h2>Adding or Removing Things from Rooms</h2>
 Deeper customization involves adding or removing things to your rooms. 
 One way to do this is to use Edit mode described above. While in Edit mode
 a catalog will display on the right hand side. You can drag things from this
-catalog and drop them on the page. An easy way to make
+catalog and drop them on the page. A confirmation box will appear - click on Yes
+to confirm addition of the dropped tile. <br><br>
+
+An easy way to make
 multiple changes to multiple rooms at the same time is to use the Options page.
 This page is launched using the Options button found at the bottom left of the page.
 Clicking this button will load a page with a
@@ -849,7 +885,7 @@ Some amazing work done by @nitwit in the SmartThings community inspired the
 development of a robust tile editor in HousePanel that can be used to modify
 the look of just about every element of every tile. To use the editor, select
 "Edit" mode in the radio buttons near the bottom of the page. Each tile will then
-show a green, blue, and red dots. 
+show a green, blue, and red dot. 
 
 <div><img src="editdots.png"></div>
 
@@ -1087,17 +1123,7 @@ the styling "div" to include "on" or "off" based on whether the switch is
 on or off in state. Using this one can provide a unique image or unique color
 styling based on whether the switch is on or off. The default CSS uses this
 to style "on" switches to use a bright light bulb, and "off" switches to use
-a dim light bulb. The pertinent lines in the default CSS file are here:
-<br/><br/>
-
-<blockquote><pre>
-div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
-    background-image: url('bulbon.png');
-}
-div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
-    background-image: url('bulboff.png');
-}
-</pre></blockquote>
+a dim light bulb.
 <br/><br/>
 
 Notice that this styling applies to switches, dimmers, bulbs, and lights.
