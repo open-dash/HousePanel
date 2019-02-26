@@ -629,10 +629,22 @@ div.thing.frame-thing div.overlay.name {
 }
 
 div.thing.video-thing {
-    width: 240px;
+    width: 248px;
     height: 180px;
 }
 
 div.overlay.battery {
+    display: none;
+}
+
+/* make controller fit */
+div.thing.control-thing {
+    width: 120px;
+    height: 180px;
+    font-weight: bold;
+}
+div.thing.control-thing div.control.showdoc,
+div.thing.control-thing div.control.toggletabs,
+div.thing.control-thing div.control.blackout {
     display: none;
 }

@@ -9,6 +9,7 @@
  * Revision History
  * 1.992      Bugfix for swapping skins to enable new skin's customtiles
  *            this also changes the custom tiles comments to avoid dups
+ *            minor tweaks to the modern skin and controller look
  * 1.991      New modern skin and include door in classes from tile names
  * 1.990      Final cleanup before public release of hubpush bugfixes
  *            move housepanel-push to subfolder beneath main files
