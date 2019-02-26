@@ -648,3 +648,7 @@ div.thing.control-thing div.control.toggletabs,
 div.thing.control-thing div.control.blackout {
     display: none;
 }
+
+div.thing.shm-thing, div.thing.hsm-thing, div.thing.mode-thing {
+    height: 180px;
+}
