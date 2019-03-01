@@ -1508,20 +1508,18 @@ div.weather.weatherIcon, div.weather.forecastIcon {
     display: inline-block;
 }
 div.thing.control-thing {
+    background-color: rgba(210, 210, 210, 1);
     width: 150px;
     height: auto;
-    font-size: 24px;
 }
 
 /* make all control items look right */
 div.thing.control-thing div.control {
-    background-color: rgba(80, 110, 110, 1);
-    padding-top: 3px; padding-bottom: 3px;
+    background-color: rgba(210, 210, 210, 1);
     cursor: pointer;
 }
-div.thing.control-thing div.thingname.control {
+div.thing.control-thing div.thingname {
     background-color: rgba(50, 50, 100, 1);
-    padding-top: 3px; padding-bottom: 0px;
 }
 
 div.control.name {
