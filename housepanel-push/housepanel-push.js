@@ -12,8 +12,7 @@ var clients = [ ];
 // array of all tiles in all hubs
 var elements = [ ];
 
-// options, config, and hubs taken from the main options file
-var options;
+// config, and hubs taken from the main options file
 var config;
 var hubs;
 
@@ -22,6 +21,8 @@ var server;
 var app;
 var wsServer;
 var fname = null;
+var applistening = false;
+var serverlistening = false;
 
 try {
     // create the HTTP server for handling sockets
@@ -74,19 +75,20 @@ function updateElements() {
     }
     
     if ( fname === null ) {
-        console.log("Error trying to read hmoptions.cfg file - not found.");
+        console.log('housepanel-push installed but hmoptions file not found. Will be activated when HousePanel is used and the first hub is authorized.');
         return;
     }
 
     try {
-        options = JSON.parse(fs.readFileSync(fname, 'utf8'));
+        var options = JSON.parse(fs.readFileSync(fname, 'utf8'));
         config = options.config;
         hubs = config.hubs;
     } catch(e) {
+        config = null;
         hubs = null;
     }
     
-    if ( hubs && hubs.length && config.housepanel_url ) {
+    if ( hubs && hubs.length && config && config.housepanel_url ) {
         console.log('housepanel-push installed. Elements being updated from ', hubs.length,' hubs to ', config.housepanel_url);
         var request = require('request');
         var num;
@@ -139,20 +141,22 @@ function updateElements() {
     }
     
     // list on the port
-    if ( app && config && config.port ) {
+    if ( !applistening && app && config && config.port ) {
         app.listen(config.port, function () {
             console.log("App Server is running on port: " + config.port);
+            applistening = true;
         });
     } else {
-        console.log("config port not valid. port= ", config.port);
+        console.log("Node.js application port not valid. port= ", config.port);
     }
 
-    if ( server && config && config.webSocketServerPort ) {
+    if ( applistening && !serverlistening && server && config && config.webSocketServerPort ) {
         server.listen(config.webSocketServerPort, function() {
             console.log((new Date()) + " webSocket Server is listening on port " + config.webSocketServerPort);
         });
+        serverlistening = true;
     } else {
-        console.log("webSocket port not valid. port= ", config.webSocketServerPort);
+        console.log("webSocket port not valid. webSocketServerPort= ", config.webSocketServerPort);
     }
 }
 
@@ -177,7 +181,7 @@ if ( app ) {
             console.log("New hub authorized; updating things in housepanel-push.");
             updateElements();
 
-        } else if ( req.body['msgtype'] == "update" && elements && elements.length && fname ) {
+        } else if ( req.body['msgtype'] == "update" && elements && elements.length ) {
 
             // loop through all the elements for this hub
             // remove music trackData field that we don't know how to handle

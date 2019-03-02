@@ -7,6 +7,10 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.995      Update install script to properly implement push service setup
+ *            remove .service file because install script makes this
+ *            clean up hubid usage to use the real id for each hub consistently
+ *            refresh screen automatically after user reorders tiles
  * 1.992      Bugfix for swapping skins to enable new skin's customtiles
  *            this also changes the custom tiles comments to avoid dups
  *            minor tweaks to the modern skin and controller look
@@ -214,7 +218,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.992');
+define('HPVERSION', 'Version 1.995');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -422,7 +426,7 @@ function getName($hubAccess, $hubEndpt, $clientId, $clientSecret) {
     $headertype = array("Authorization: Bearer " . $hubAccess);
     $nvpreq = "client_secret=" . urlencode($clientSecret) . "&scope=app&client_id=" . urlencode($clientId);
     $response = curl_call($host, $headertype, $nvpreq, "POST");
-    return $response["sitename"];
+    return array( $response["sitename"], $response["hubId"] );
 }
 
 function fixHost($stweb) {
@@ -489,19 +493,16 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
     $response = curl_call($host, $headertype);
 
     $endpt = false;
-//    $sitename = "";
     if ($response) {
         if ( is_array($response) ) {
 	    $endclientid = $response[0]["oauthClient"]["clientId"];
 	    if ($endclientid === $clientId) {
                 $endpt = $response[0]["uri"];
-//                $sitename = $response[0]["location"]["name"];
 	    }
         } else {
 	    $endclientid = $response["oauthClient"]["clientId"];
 	    if ($endclientid === $clientId) {
                 $endpt = $response["uri"];
-//                $sitename = $response["location"]["name"];
 	    }
         }
     }
@@ -972,10 +973,14 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // make an empty new hub for adding new ones
     $j = count($hubs);
     foreach ($hubs as $hub) {
-        $n = intval($hub["hubId"]);
+        if ( is_numeric($hub["hubId"]) && intval($hub["hubId"]) < 10000 ) {
+            $n = intval($hub["hubId"]) + 1;
+        } else {
+            $n = $j + 1;
+        }
         if ( $n > $j ) { $j = $n; }
     }
-    $newnum = strval($j + 1);
+    $newnum = strval($j);
     
     $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
                     "clientId"=>"", "clientSecret"=>"",
@@ -1584,6 +1589,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
         foreach($thingvalue as $tkey => $tval) {
             if ($tkey!=="temperature" &&
                 $tkey!=="feelsLike" &&
+                $tkey!=="city" &&
                 $tkey!=="weather" &&
                 $tkey!=="weatherIcon" &&
                 $tkey!=="forecastIcon" &&
@@ -3065,11 +3071,10 @@ function findHub($hubId, $hubs) {
 
 // update the hubs array with a new hub value of a certain ID
 // if not found the hub is added
-function updateHubs($hubs, $newhub) {
-    $hubId = $newhub["hubId"];
+function updateHubs($hubs, $newhub, $oldid) {
     $num = 0;
     foreach($hubs as $hub) {
-        if ( strval($hub["hubId"]) === strval($hubId) ) {
+        if ( strval($hub["hubId"]) === strval($oldid) ) {
             $hubs[$num] = $newhub;
             return $hubs;
         }
@@ -3704,7 +3709,7 @@ function is_ssl() {
         }
 
         // save the hubs
-        $hubs = updateHubs($hubs, $hub);
+        $hubs = updateHubs($hubs, $hub, $hubId);
         
         // update with this hub's information including the generic settings
         $configoptions = array(
@@ -3732,25 +3737,27 @@ function is_ssl() {
         if ( $userAccess && $userEndpt ) {
 
             // get all new devices and update the options index array
-            $newthings = getDevices(array(), $options, $hubnum, $hubType, $userAccess, $userEndpt, $clientId, $clientSecret);
+            $newthings = getDevices(array(), $options, $hubId, $hubType, $userAccess, $userEndpt, $clientId, $clientSecret);
             
             if ( count($newthings) ) {
                 $options = getOptions($options, $newthings);
+                $hubNameId = getName($userAccess, $userEndpt, $clientId, $clientSecret);
                 if ( $hubName === "" ) {
-                    $hubName = getName($userAccess, $userEndpt, $clientId, $clientSecret);
-                }
-                if ( $hubName ) {
+                    $hubName = $hubNameId[0];
                     $hub["hubName"] = $hubName;
-                    $hubs = updateHubs($hubs, $hub);
-                    $configoptions["hubs"] = $hubs;
-                    $options["config"] = $configoptions;
                 }
+                $oldid = $hubId;
+                $hubId = $hubNameId[1];
+                $hub["hubId"] = $hubNameId[1];
+                $hubs = updateHubs($hubs, $hub, $oldid);
+                $configoptions["hubs"] = $hubs;
+                $options["config"] = $configoptions;
                 writeOptions($options);
             }
 
             // no redirection - just pass the new things to javascript
             // which then reports the updates to the auth page
-            $obj = array("action"=>"things", "count"=> count($newthings));
+            $obj = array("action"=>"things", "count"=> count($newthings), "hubName"=> $hubName, "hubId" => $hubId);
             echo json_encode($obj);
             exit(0);
         } else {
@@ -3840,8 +3847,8 @@ function is_ssl() {
         
         // get hub number and retrieve the required parameters
         // this is now actually the hubId value
-        $hubnum = $_SESSION["HP_hubnum"];
-        $hub = $hubs[findHub($hubnum, $hubs)];
+        $hubId = $_SESSION["HP_hubnum"];
+        $hub = $hubs[findHub($hubId, $hubs)];
         $hubType = $hub["hubType"];
         $hubName = $hub["hubName"];
         $hubHost = $hub["hubHost"];
@@ -3866,37 +3873,35 @@ function is_ssl() {
             // if ($endpt) {
                 $hub["hubAccess"] = $token;
                 $hub["hubEndpt"] = $endpt;
-                // $hubs[$hubnum] = $hub;
-                $hubs = updateHubs($hubs, $hub);
-                $configoptions["hubs"] = $hubs;
                 
-                // update configuration settings
-                $options["config"] = $configoptions;
+                // get user provided name
+                $hubNameId = getName($token, $endpt, $clientId, $clientSecret);
+                if ( $hubName==="" ) {
+                    $hubName = $hubNameId[0];
+                }
+                
+                // update id number if different
+                $oldid = $hubId;
+                $hubId = $hubNameId[1];
                 
                 // get all new devices and update the options index array
-                $newthings = getDevices(array(), $options, $hubnum, $hubType, $token, $endpt, $clientId, $clientSecret);
+                $newthings = getDevices(array(), $options, $hubId, $hubType, $token, $endpt, $clientId, $clientSecret);
                 if ( count($newthings) ) {
                     $options = getOptions($options, $newthings);
-
-                    // get name from the hub if still blank
-                    if ( $hubName==="" ) {
-                        $hubName = getName($token, $endpt, $clientId, $clientSecret);
-                    }
-                    if ( $hubName ) {
-                        $hub["hubName"] = $hubName;
-                        // $hubs[$hubnum] = $hub;
-                        $hubs = updateHubs($hubs, $hub);
-                        $configoptions["hubs"] = $hubs;
-                        $options["config"] = $configoptions;
-                    }
-                    writeOptions($options);
                 }
+                
+                $hub["hubName"] = $hubName;
+                $hub["hubId"] = $hubId;
+                $hubs = updateHubs($hubs, $hub, $oldid);
+                $configoptions["hubs"] = $hubs;
+                $options["config"] = $configoptions;
+                writeOptions($options);
 
                 if (DEBUG2) {
                     echo "<br />Auth flow success";
                     echo "<br />serverName = $serverName";
                     echo "<br />returnURL = $returnURL";
-                    echo "<br />hubnum (hubId) = $hubnum";
+                    echo "<br />hubnum (hubId) = $hubId";
                     echo "<br />hubType = $hubType";
                     echo "<br />hubHost = $hubHost";
                     echo "<br />clientId = $clientId";
@@ -3905,6 +3910,7 @@ function is_ssl() {
                     echo "<br />token = $token";
                     echo "<br />endpt = $endpt";
                     echo "<br />sitename = $hubName";
+                    echo "<br />hub Id = $hubId";
                     echo "<br /><h3>Options</h3>";
                     echo "<pre>";
                     print_r($options);
@@ -3915,7 +3921,7 @@ function is_ssl() {
                 $hpcode = time();
                 $_SESSION["hpcode"] = $hpcode;
                 unset($_SESSION["HP_hubnum"]);
-                $authpage= getAuthPage($returnURL, $hpcode, $hubnum, $newthings);
+                $authpage= getAuthPage($returnURL, $hpcode, $hubId, $newthings);
                 echo htmlHeader($skin);
                 echo $authpage;
                 echo htmlFooter();

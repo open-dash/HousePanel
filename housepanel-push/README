@@ -3,9 +3,3 @@ to give users near immediate feedback about state changes made in their smart ho
 on the HousePanel dashboard. This is used together with polling to keep your dashboard
 in sync with the status of your home.
 
-Version 1.3.0 requires HousePanel 1.900 or later
-it fixes a bug that was introduced when hub removal was enabled with hubId indexing
-
-Once installed you must restart HousePanel
-to activate the immediate feedback capability.
-

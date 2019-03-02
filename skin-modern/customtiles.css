@@ -5,12 +5,4 @@
 /* ****** ANY EDITS MADE WILL BE REPLACED ****** */
 /* ****** WHENEVER TILE EDITOR IS USED    ****** */
 /* ********************************************* */
-/* special handling of garage entry which is a door */
-div.contact.garage.entry.open {
-    background-image: url('skin-modern/icons/dooropen.png');
-    color: rgba(255, 255, 255, 0.01);
-}
-div.contact.garage.entry.closed {
-    background-image: url('skin-modern/icons/doorclosed.png');
-    color: rgba(255, 255, 255, 0.01);
-}
+

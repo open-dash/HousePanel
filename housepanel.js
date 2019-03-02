@@ -10,6 +10,8 @@ var pagename = "main";
 var wsSocket = null;
 var webSocketUrl = null;
 var nodejsUrl = null;
+var reordered = false;
+
 
 // set this global variable to true to disable actions
 // I use this for testing the look and feel on a public hosting location
@@ -49,8 +51,6 @@ function getCookie(cname) {
     return "";
 }
 
-// window.addEventListener("load", function(evt) {
-// $(window).on("load", function(evt) {
 $(document).ready(function() {
     // set the global return URL value
     try {
@@ -225,7 +225,6 @@ function wsSocketSend(msg) {
 // only need to do this once - I have no clue why it was done the other way before
 function setupWebsocket()
 {
-    // webSocketUrl = "ws://192.168.11.20:1337";
     try {
         console.log("Creating webSocket for: ", webSocketUrl);
         wsSocket = new WebSocket(webSocketUrl);
@@ -407,7 +406,6 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     }
     modalcontent = modalcontent + "</div>";
     
-    // console.log("modalcontent = " + modalcontent);
     modalhook.prepend(modalcontent);
     
     // call post setup function if provided
@@ -418,7 +416,6 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     // invoke response to click
     if ( addok ) {
         $("#"+modalid).on("click",".dialogbtn", function(evt) {
-            // alert("clicked on button");
             if ( responsefunction ) {
                 responsefunction(this, modaldata);
             }
@@ -458,7 +455,6 @@ function setupColors() {
             theme: 'default',
             change: function(hex) {
                 try {
-                    // console.log( "color: " + hex + " = " + $(this).minicolors("rgbaString") );
                     that.html(hex);
                     var aid = that.attr("aid");
                     that.css({"background-color": hex});
@@ -479,6 +475,7 @@ function setupColors() {
                 var bidupd = bid;
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
+                console.log(ajaxcall + ": id= "+bid+" type= "+ thetype+ " color= "+ hslstr);
                 $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubid: hubnum},
                        function (presult, pstatus) {
@@ -694,6 +691,7 @@ function setupPagemove() {
 function setupSortable() {
     
     // loop through each room panel
+    reordered = false;
     $("div.panel").each( function() {
         var roomtitle = $(this).attr("title");
         
@@ -725,6 +723,7 @@ function setupSortable() {
                 // update the sorting numbers to show new order
                 updateSortNumber(this, num.toString());
             });
+            reordered = true;
             console.log("reordered " + num + " tiles:\n" + strObject(things));
             $.post(returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
@@ -1025,8 +1024,9 @@ function execButton(buttonid) {
         if ( priorOpmode === "Reorder" ) {
             cancelSortable();
             cancelPagemove();
-            // delEditLink();
-            // location.reload(true);
+            if ( reordered ) {
+                location.reload(true);
+            }
         } else if ( priorOpmode === "DragDrop" ) {
             updateFilters();
             cancelDraggable();
@@ -1077,6 +1077,7 @@ function setupButtons() {
         $("div.modeoptions").on("click","input.radioopts",function(evt){
             var opmode = $(this).attr("value");
             execButton(opmode);
+            evt.stopPropagation();
         });
     }
 
@@ -1168,6 +1169,9 @@ function setupButtons() {
                 // alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
+                    // console.log(obj);
+                    $("input[name='hubName']").val(obj.hubName);
+                    $("input[name='hubId']").val(obj.hubId);
                     var ntc = "Hub #" + hubnum + " hub ID: " + hubId + " was authorized and " + obj.count + " devices were retrieved.";
                     $("#newthingcount").html(ntc);
                 }

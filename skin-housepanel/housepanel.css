@@ -616,12 +616,12 @@ div.weather.illuminance::after,
 div.custom.illuminance::after {
     content: " Lux";
 }
-div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
+/*div.weather.humidity, div.weather.localSunrise, div.weather.localSunset,
 div.windVector, div.weather.percentPrecip, div.weather.alert, div.weather.illuminance {
     background-color: rgba(100, 100, 100, 1);
     margin-bottom: 0px;
     display: block;
-}
+}*/
 div.weather.sunriseset, div.weather.timeZoneOffset, div.weather.alertKeys,
 div.weather.sunriseDate, div.weather.sunsetDate,
 div.weather.ultravioletIndex, div.weather.lastUpdate {
@@ -630,62 +630,13 @@ div.weather.ultravioletIndex, div.weather.lastUpdate {
 div.weather.weatherIcon, div.weather.forecastIcon {
     display: inline-block;
 }
-div.weather-thing div.overlay {
-    display: inline;
-    padding-right: 0px;
-}
 div.weather-thing div.overlay.temperature, div.weather-thing div.overlay.feelsLike {
     display: inline;
     padding-right: 4px;
 }
-div.weather-thing div.overlay.name, div.weather-thing div.overlay.city {
+div.weather-thing div.overlay.name {
     display: none;
     position: relative;
-}
-div.overlay.weatherIcon div.clear, div.overlay.forecastIcon div.clear {
-    background-image: url("media/clear.png");
-}
-div.overlay.weatherIcon div.mostlysunny, div.overlay.forecastIcon div.mostlysunny {
-    background-image: url("media/mostlysunny.png");
-}
-div.overlay.weatherIcon div.partlysunny, div.overlay.forecastIcon div.partlysunny {
-    background-image: url("media/partlysunny.png");
-}
-div.overlay.weatherIcon div.rain, div.overlay.forecastIcon div.rain {
-    background-image: url("media/rain.png");
-}
-div.overlay.weatherIcon div.chancerain, div.overlay.forecastIcon div.chancerain {
-    background-image: url("media/rain.png");
-}
-div.overlay.weatherIcon div.snow, div.overlay.forecastIcon div.snow {
-    background-image: url("media/snow.png");
-}
-div.overlay.weatherIcon div.chancesnow, div.overlay.forecastIcon div.chancesnow {
-    background-image: url("media/snow.png");
-}
-div.overlay.weatherIcon div.tstorms, div.overlay.forecastIcon div.tstorms {
-    background-image: url("media/tstorms.png");
-}
-div.overlay.weatherIcon div.chancetstorms, div.overlay.forecastIcon div.chancetstorms {
-    background-image: url("media/tstorms.png");
-}
-div.overlay.weatherIcon div.cloudy, div.overlay.forecastIcon div.cloudy {
-    background-image: url("media/cloudy.png");
-}
-div.overlay.weatherIcon div.mostlycloudy, div.overlay.forecastIcon div.mostlycloudy {
-    background-image: url("media/mostlycloudy.png");
-}
-div.overlay.weatherIcon div.partlycloudy, div.overlay.forecastIcon div.partlycloudy {
-    background-image: url("media/partlycloudy.png");
-}
-div.overlay.weatherIcon div.windy, div.overlay.forecastIcon div.windy {
-    background-image: url("media/windy.png");
-}
-div.overlay.weatherIcon div.sleet, div.overlay.forecastIcon div.sleet {
-    background-image: url("media/rain.png");
-}
-div.overlay.weatherIcon div.fog, div.overlay.forecastIcon div.fog {
-    background-image: url("media/fog.png");
 }
 
 /* clock styling */

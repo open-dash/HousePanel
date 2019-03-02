@@ -146,6 +146,8 @@ sudo rm -f $zipfile
 echo -e "$Cyan \nSetting permissions for /var/www/html/$hpdir $Color_Off"
 sudo chown -R www-data:www-data /var/www/html/$hpdir
 sudo chmod -R 777 /var/www/html/$hpdir
+sudo chown -R pi:pi /var/www/html/$hpdir/housepanel-push
+sudo chmod -R 775 /var/www/html/$hpdir/housepanel-push
 echo -e "$Green \nHousePanel has been downloaded and installed in /var/www/html/$hpdir $Color_Off"
 
 # Create a default index file to show php info
@@ -159,35 +161,34 @@ sudo service apache2 restart
 if [ "$hppush" = "y"  ];
 then
     cd /var/www/html/$hpdir/housepanel-push
-    echo -e "$Green \nInstalling or updating Node push module $Color_Off"
-    npm update housepanel-push
-    sudo cp housepanel-push.js ..
+
+    echo -e "$Green \nInstalling housepanel-push package $Color_Off"
+    npm install
 
     # create the file to install as a service
     echo -e "$Green \nCreating a file to run housepanel-push as a service $Color_Off"
     sudo echo "[Unit]" > housepanel-push.service
-    sudo echo "Description=housepanel-push NodeJS Application" >> housepanel-push.service
+    sudo echo "Description=Node.js HousePanel Push Server" >> housepanel-push.service
+    sudo echo "After=network-online.target" >> housepanel-push.service
     sudo echo " " >> housepanel-push.service
-    sudo echo "After=network-online.target \n\n" >> housepanel-push.service
-    sudo echo >> housepanel-push.service
-    sudo echo "[Service] \n" >> housepanel-push.service
-    sudo echo "Restart=on-failure\n" >> housepanel-push.service
-    sudo echo "WorkingDirectory=/var/www/html/$hpdir/" >> housepanel-push.service
-    sudo echo "ExecStart=node /var/www/html/$hpdir/housepanel-push/housepanel-push.js" >> housepanel-push.service
-    sudo echo >> housepanel-push.service
+    sudo echo "[Service]" >> housepanel-push.service
+    sudo echo "Restart=on-failure" >> housepanel-push.service
+    sudo echo "RestartSec=10" >> housepanel-push.service
+    sudo echo "WorkingDirectory=/var/www/html/$hpdir/housepanel-push" >> housepanel-push.service
+    sudo echo "ExecStart=/usr/bin/node housepanel-push.js" >> housepanel-push.service
+    sudo echo "Type=simple" >> housepanel-push.service
+    sudo echo "User=pi" >> housepanel-push.service
+    sudo echo " " >> housepanel-push.service
     sudo echo "[Install]" >> housepanel-push.service
     sudo echo "WantedBy=multi-user.target" >> housepanel-push.service
-    sudo chmod -R 755 housepanel-push.service
-    echo -e "$Green \nCreated housepanel-push.service file for running a service $Color_Off"
+    sudo chmod 755 housepanel-push.service
 
-    # systemctl daemon-reload
+    echo -e "$Green \nInstalling housepanel-push as a service $Color_Off"
+    sudo cp housepanel-push.service /etc/systemd/system
+    cd /etc/systemd/system
     sudo systemctl enable housepanel-push
+    sudo systemctl daemon-reload
     sudo systemctl restart housepanel-push
-    
-    # the package.json file has the above in it as a start script
-    # so we could use the statement below, but I like the one above
-    # sudo npm start
-    echo -e "$Green \nHousePanel push service installed to enable fast updates of your dashboard $Color_Off"
 fi
 
 cd ~

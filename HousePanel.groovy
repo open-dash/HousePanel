@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 02/26/2019 - add hubId to name query
  * 02/15/2019 - change hubnum to use hubId so we can remove hubs without damage
  * 02/10/2019 - redo subscriptions for push to make more efficient by group
  * 02/07/2019 - tweak to ignore stuff that was blocking useful push updates
@@ -711,6 +712,7 @@ def getPowers(resp) {
 
 def getHubInfo() {
     def resp =  [ sitename: location.getName(),
+                  hubId: location.getId(),
                   hubtype: "SmartThings" ]
     return resp
 }
