@@ -144,13 +144,13 @@ function updateElements() {
     if ( !applistening && app && config && config.port ) {
         app.listen(config.port, function () {
             console.log("App Server is running on port: " + config.port);
-            applistening = true;
         });
+        applistening = true;
     } else {
         console.log("Node.js application port not valid. port= ", config.port);
     }
 
-    if ( applistening && !serverlistening && server && config && config.webSocketServerPort ) {
+    if ( !serverlistening && server && config && config.webSocketServerPort ) {
         server.listen(config.webSocketServerPort, function() {
             console.log((new Date()) + " webSocket Server is listening on port " + config.webSocketServerPort);
         });
