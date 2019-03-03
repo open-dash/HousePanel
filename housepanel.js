@@ -258,6 +258,7 @@ function setupWebsocket()
         }
 
         // check if we have valid info for this update item
+        var linktile = null;
         if ( bid!==null && thetype && pvalue && typeof pvalue==="object" ) {
         
             // update all the tiles that match this type and id
@@ -265,9 +266,64 @@ function setupWebsocket()
             $('div.panel div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
                 try {
                     var aid = $(this).attr("id").substring(2);
+                    linktile = $(this).attr("tile");
                     updateTile(aid, pvalue);
                 } catch (e) {
                     console.log("Error updating tile of type: "+ thetype + " and id: " + bid + " with value: ", pvalue);
+                }
+            });
+        }
+        
+        // handle motion and contact triggers
+        var ontrigger = null;
+        if ( thetype==="motion" ) {
+            if ( pvalue.motion ==="active") { 
+                ontrigger = "on";
+            } else {
+                ontrigger = "";
+            }
+        } else if ( thetype==="contact") {
+            if ( pvalue.contact ==="open") { 
+                ontrigger = "on";
+            } else {
+                ontrigger = "off";
+            }
+        } else if ( typeof pvalue.switch !== "undefined" ) {
+            if ( pvalue.switch ==="on") { 
+                ontrigger = "on";
+            } else {
+                ontrigger = "off";
+            }
+        }
+            
+        if ( linktile && ontrigger ) {
+            $('div.user_hidden[linkval="' + linktile + '"]').each(function() {
+                var tile = $(this).parents("div.thing").last();
+                var tilenum = tile.attr("tile");
+                var aid = tile.attr("id").substring(2);
+                var trbid = tile.attr("bid");
+                var theattr = tile.attr("class");
+                var hubnum = tile.attr("hub");
+                var trtype = tile.attr("type");
+                
+                
+                console.log(thetype + " trigger of switch for tile: ", tilenum," bid: ", trbid);
+                if ( trtype === "switch" || trtype === "switchlevel" || trtype==="bulb" || trtype==="light" ) {
+                    var currentvalue = $("#a-"+aid+"-switch").html();
+                    
+                    if ( ontrigger !== currentvalue ) {
+                        var ajaxcall = "doaction";
+                        var subid = "switch";
+                        $.post(returnURL, 
+                               {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subid},
+                               function (presult, pstatus) {
+                                    if (pstatus==="success" ) {
+                                        console.log( ajaxcall + " POST returned: "+ strObject(presult) );
+                                        updAll(subid,aid,trbid,trtype,hubnum,presult);
+                                    }
+                               }, "json"
+                        );
+                    }
                 }
             });
         }
@@ -2123,8 +2179,8 @@ function setupPage(trigger) {
         // and skip if this is a custom action since it could be anything
         // also, for momentary buttons we don't do any tile updating
         // other than visually pushing the button by changing the class for 1.5 seconds
-        console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
         if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid==="pistonName") ) ) {
+            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             var tarclass = $(targetid).attr("class");
             var that = targetid;
             // define a class with method to reset momentary button

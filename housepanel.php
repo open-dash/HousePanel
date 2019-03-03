@@ -7,6 +7,11 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.996      Fix hubId bug in push file
+ *            implement crude rule capability triggered by custom tile use
+ *            - if a motion sensor is added to a light it will trigger it on
+ *            - if a contact is added to a light, open will turn on, close off
+ *            - if another switch is added to a light, it will trigger it too
  * 1.995      Update install script to properly implement push service setup
  *            remove .service file because install script makes this
  *            clean up hubid usage to use the real id for each hub consistently
@@ -1328,12 +1333,10 @@ function getCustomTile($custom_val, $customid, $options, $allthings=false) {
                         $thesensor = $allthings[$idx];
                         $thevalue = $thesensor["value"];
                         $thetype = $thesensor["type"];
-                        
+                
                         // if the subid exists in our linked tile add it
                         // this can replace existing fields with linked value
                         // if an error exists show text of intended link
-                        $usubid = "user_" . $subid;
-                        
                         // first case is if link is valid and not an existing field
                         if ( array_key_exists($subid, $thevalue) ) {
                             $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
@@ -1367,6 +1370,11 @@ function getCustomTile($custom_val, $customid, $options, $allthings=false) {
                 } else if ( $calltype==="URL" ) {
                     $custom_val["user_" . $subid] = "::" . $calltype . "::" . $posturl;
                     $custom_val[$subid] = $content;
+               
+                } else if ( $calltype==="RULE" ) {
+                    $custom_val["user_" . $subid] = "::" . $calltype . "::" . $content;
+                    $custom_val[$subid] = "";
+
                 } else {
                     // code for any user provided text string
                     // we could skip this but including it bypasses the hub call

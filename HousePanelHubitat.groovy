@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 03/02/2019 - added motion sensors to subscriptions
  * 02/26/2019 - add hubId to name query
  * 02/15/2019 - change hubnum to use hubId so we can remove hubs without damage
  * 02/10/2019 - redo subscriptions for push to make more efficient by group
@@ -1653,6 +1654,7 @@ def registerAll() {
     registerCapabilities(mybulbs,"level")
     registerCapabilities(mybulbs,"color")
     registerCapabilities(mycontacts,"contact")
+    registerCapabilities(mysensors,"motion")
     registerCapabilities(mydoors,"door")
     registerCapabilities(mylocks,"lock")
     registerCapabilities(myvalves,"valve")

@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 03/02/2019 - added motion sensors to subscriptions and fix timing issue
  * 02/26/2019 - add hubId to name query
  * 02/15/2019 - change hubnum to use hubId so we can remove hubs without damage
  * 02/10/2019 - redo subscriptions for push to make more efficient by group
@@ -468,7 +469,7 @@ def logStepAndIncrement(step)
 def getAllThings() {
 
     def resp = []
-    def run = -1
+    def run = 1
     run = logStepAndIncrement(run)
     resp = getSwitches(resp)
     run = logStepAndIncrement(run)
@@ -541,7 +542,7 @@ def getModes(resp) {
 }
 
 def getSHMStates(resp) {
-    logger("Getting Smart Home Monitor state for SmartThings Hub","info");
+    logger("Getting Smart Home Monitor state for SmartThings Hub","debug");
     def val = getSHMState(0)
     resp << [name: "Smart Home Monitor", id: "${hubprefix}shm", value: val, type: "shm"]
     return resp
@@ -680,7 +681,7 @@ def getWeathers(resp) {
 // get hellohome routines - thanks to ady264 for the tip
 def getRoutines(resp) {
     def routines = location.helloHome?.getPhrases()
-    if ( n > 0 ) { logger("Number of routines = ${n}","info"); }
+    if ( n > 0 ) { logger("Number of routines = ${n}","debug"); }
     routines?.each {
         def multivalue = getRoutine(it.id, it)
         resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
@@ -690,7 +691,7 @@ def getRoutines(resp) {
 
 def getOthers(resp) {
     def n  = myothers ? myothers.size() : 0
-    if ( n > 0 ) { logger("Number of other sensors = ${n}","info"); }
+    if ( n > 0 ) { logger("Number of other sensors = ${n}","debug"); }
     myothers?.each {
         def thatid = it.id;
         def multivalue = getThing(myothers, thatid, it)
@@ -701,7 +702,7 @@ def getOthers(resp) {
 
 def getPowers(resp) {
     def n  = mypower ? mypower.size() : 0
-    if ( n > 0 ) { logger("Number of selected power things = ${n}","info"); }
+    if ( n > 0 ) { logger("Number of selected power things = ${n}","debug"); }
     mypower?.each {
         def thatid = it.id;
         def multivalue = getThing(mypower, thatid, it)
@@ -1640,28 +1641,54 @@ def setRoutine(swid, cmd, swattr, subid) {
 }
 
 def registerAll() {
+    runIn(10, "registerLights");
+    runIn(10, "registerBulbs");
+    runIn(10, "registerDoors");
+    runIn(10, "registerMotions");
+    runIn(10, "registerOthers");
+    runIn(10, "registerThermostats");
+    runIn(10, "registerMusics");
+    
+    // skip these on purpose because they change slowly and report often
+    // runIn(10, "registerSlows");
+}
+
+def registerLights() {
     registerCapabilities(myswitches,"switch")
     registerCapabilities(mydimmers,"switch")
     registerCapabilities(mydimmers,"level")
     registerCapabilities(mylights,"switch")
+}
+
+def registerBulbs() {
     registerCapabilities(mybulbs,"switch")
     registerCapabilities(mybulbs,"level")
     registerCapabilities(mybulbs,"color")
+}
+
+def registerDoors() {
     registerCapabilities(mycontacts,"contact")
+    registerCapabilities(mysensors,"motion")
     registerCapabilities(mydoors,"door")
     registerCapabilities(mylocks,"lock")
+}
+
+def registerMotions() {
+    registerCapabilities(mysensors,"motion")
+}
+
+def registerOthers() {
     registerCapabilities(myvalves,"valve")
     registerCapabilities(mywaters,"water")
     registerCapabilities(mypresences,"presence")
     registerCapabilities(mysmokes,"smoke")
-    registerThermostats()
-    registerMusics()
-    
-    // skip these on purpose because they change slowly and report often
-    // registerCapabilities(mytemperatures, "temperature")
-    // registerCapabilities(myilluminances, "illuminance")
-    // registerCapabilities(mypower, "power")
-    // registerCapabilities(mypower, "energy")
+}
+
+def registerSlows() {
+     registerCapabilities(mytemperatures, "temperature")
+     registerCapabilities(myilluminances, "illuminance")
+     registerCapabilities(mypower, "power")
+     registerCapabilities(mypower, "energy")
 }
 
 def registerCapabilities(devices, capability) {

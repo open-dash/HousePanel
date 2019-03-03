@@ -99,6 +99,7 @@ function updateElements() {
             try {
                 var hubId = hubs[num].hubId;
                 var numstr = hubId.toString();
+                console.log("Reading hubId= " + numstr);
             } catch (e3) {
                 console.log("Error obtaining hub information for hub #" + num);
                 numstr = null;
@@ -106,7 +107,7 @@ function updateElements() {
             
             if ( numstr ) {
                 var parms = { url:config.housepanel_url, 
-                              form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubnum:numstr}};
+                              form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubid:numstr}};
                 request.post( parms, function (error, response, body) {
                     if (response && response.statusCode == 200) {
                         var newitems = JSON.parse(body);
@@ -147,7 +148,7 @@ function updateElements() {
         });
         applistening = true;
     } else {
-        console.log("Node.js application port not valid. port= ", config.port);
+        console.log((new Date()) + "Node.js application port not valid. port= ", config.port);
     }
 
     if ( !serverlistening && server && config && config.webSocketServerPort ) {

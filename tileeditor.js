@@ -1756,17 +1756,36 @@ function initColor(str_type, subid, thingindex) {
     // determine hiding of element
     $("#isHidden").off('change');
     $("#isHidden").on('change', function(event) {
+        var str_type = $("#tileDialog").attr("str_type");
         var thingindex = $("#tileDialog").attr("thingindex");
         var subid = $("#subidTarget").html();
+        var onoff = getOnOff(str_type, subid);
         var strCaller = $($(event.target)).attr("target");
         var ischecked = $(event.target).prop("checked");
         if ( ischecked  ){
             addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: none;", true);
+            // addCSSRule(strCaller, "display: none;", false);
+            if ( onoff[0]!=="" && strCaller.endsWith("."+onoff[0]) ) {
+                strCaller = strCaller.slice(0,strCaller.length - onoff[0].length - 1);
+            } else if ( onoff[1]!=="" && strCaller.endsWith("."+onoff[1]) ) {
+                strCaller = strCaller.slice(0,strCaller.length - onoff[1].length - 1);
+            }
             addCSSRule(strCaller, "display: none;", false);
+            addCSSRule(strCaller + "." + onoff[0], "display: none;", false);
+            addCSSRule(strCaller + "." + onoff[1], "display: none;", false);
         } else {
             addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: " + defaultOverlay + ";", true);
+            // addCSSRule(strCaller, "display: " + defaultShow + ";", false);
+            if ( onoff[0]!=="" && strCaller.endsWith("."+onoff[0]) ) {
+                strCaller = strCaller.slice(0,strCaller.length - onoff[0].length - 1);
+            } else if ( onoff[1]!=="" && strCaller.endsWith("."+onoff[1]) ) {
+                strCaller = strCaller.slice(0,strCaller.length - onoff[1].length - 1);
+            }
             addCSSRule(strCaller, "display: " + defaultShow + ";", false);
+            addCSSRule(strCaller + "." + onoff[0], "display: " + defaultShow + ";", false);
+            addCSSRule(strCaller + "." + onoff[1], "display: " + defaultShow + ";", false);
         }
+        // console.log("hidden debug: ",strCaller);
         event.stopPropagation;
     });	
     
