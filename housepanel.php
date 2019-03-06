@@ -7,6 +7,8 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.997      Improve crude rule feature to only do push from last client
+ *            minor performance and aesthetic improvements in push Node code
  * 1.996      Fix hubId bug in push file
  *            implement crude rule capability triggered by custom tile use
  *            - if a motion sensor is added to a light it will trigger it on
@@ -223,7 +225,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.995');
+define('HPVERSION', 'Version 1.997');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 

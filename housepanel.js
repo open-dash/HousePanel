@@ -251,6 +251,8 @@ function setupWebsocket()
             var pvalue = presult.value;
             var bid = presult.id;
             var thetype = presult.type;
+            var client = presult.client;
+            var clientcount = presult.clientcount;
             console.log("webSocket message from: ", webSocketUrl," bid= ",bid," type= ",thetype," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
@@ -274,25 +276,31 @@ function setupWebsocket()
             });
         }
         
-        // handle motion and contact triggers
+        // handle motion and contact triggers but only for the last client
+        // since we only need one of the clients to execute rules
         var ontrigger = null;
-        if ( thetype==="motion" ) {
-            if ( pvalue.motion ==="active") { 
-                ontrigger = "on";
-            } else {
-                ontrigger = "";
-            }
-        } else if ( thetype==="contact") {
-            if ( pvalue.contact ==="open") { 
-                ontrigger = "on";
-            } else {
-                ontrigger = "off";
-            }
-        } else if ( typeof pvalue.switch !== "undefined" ) {
-            if ( pvalue.switch ==="on") { 
-                ontrigger = "on";
-            } else {
-                ontrigger = "off";
+        if ( client===clientcount ) {
+            if ( thetype==="motion" ) {
+                console.log("motion rule trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
+                if ( pvalue.motion ==="active") { 
+                    ontrigger = "on";
+                } else {
+                    ontrigger = "";
+                }
+            } else if ( thetype==="contact") {
+                console.log("contact rule trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
+                if ( pvalue.contact ==="open") { 
+                    ontrigger = "on";
+                } else {
+                    ontrigger = "off";
+                }
+            } else if ( typeof pvalue.switch !== "undefined" ) {
+                console.log("switch rule trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
+                if ( pvalue.switch ==="on") { 
+                    ontrigger = "on";
+                } else {
+                    ontrigger = "off";
+                }
             }
         }
             
@@ -307,9 +315,9 @@ function setupWebsocket()
                 var trtype = tile.attr("type");
                 
                 
-                console.log(thetype + " trigger of switch for tile: ", tilenum," bid: ", trbid);
                 if ( trtype === "switch" || trtype === "switchlevel" || trtype==="bulb" || trtype==="light" ) {
                     var currentvalue = $("#a-"+aid+"-switch").html();
+                    console.log(thetype + " trigger of switch for tile: ", tilenum," bid: ", trbid," current: ",currentvalue," ontrigger: ",ontrigger);
                     
                     if ( ontrigger !== currentvalue ) {
                         var ajaxcall = "doaction";

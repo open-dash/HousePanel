@@ -164,10 +164,10 @@ function updateElements() {
 // a callback function to tell user what to do if they point a browser here
 if ( app ) {
     app.get("/", function (req, res) {
-        res.send("This is housepanel-push used to forward state from hubs to HousePanel dashboards. <br>" +
-                 "To use this you must install housepanel-push as a service. <br><br>" +
-                 "Try running:  sudo systemctl restart housepanel-push");
-        console.log("GET request");
+        res.send("This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
+                 "To use this you must install housepanel-push as a service on some server. " +
+                 "Currently connected to " + clients.length + " clients. " );
+        console.log((new Date()) + "GET request. Currently connected to " + clients.length + " clients. " );
     });
 }
 
@@ -179,7 +179,7 @@ if ( app ) {
         // the first initialize type tells Node.js to update elements
         if ( req.body['msgtype'] == "initialize" ) {
             res.json('hub info updated');
-            console.log("New hub authorized; updating things in housepanel-push.");
+            console.log((new Date()) + "New hub authorized; updating things in housepanel-push.");
             updateElements();
 
         } else if ( req.body['msgtype'] == "update" && elements && elements.length ) {
@@ -198,19 +198,21 @@ if ( app ) {
                     // console.log(entry['value']);
                     entry['value'][req.body['change_attribute']] = req.body['change_value'];
                     if ( entry['value']['trackData'] ) { delete entry['value']['trackData']; }
-                    console.log('updating tile #',entry['id'],' from trigger:',req.body['change_attribute'],' value= ',entry['value']);
+                    console.log((new Date()) + 'updating tile #',entry['id'],' from trigger:',req.body['change_attribute'],' value= ',entry['value']);
 
                     // send the updated element to all clients
                     // this is processed by the webSockets client in housepanel.js
                     for (var i=0; i < clients.length; i++) {
                         // clients[i].sendUTF(JSON.stringify(elements));
+                        entry["client"] = i+1;
+                        entry["clientcount"] = clients.length;
                         clients[i].sendUTF(JSON.stringify(entry));
                     }
                 }
             }
             res.json('pushed new status info to ' + cnt + ' tiles');
         } else {
-            console.log("webSocket App received unknown message.", req.body);
+            console.log((new Date()) + "webSocket App received unknown message.", req.body);
             res.json('webSocket App received unknown message.');
         }
 
@@ -235,7 +237,7 @@ if ( wsServer ) {
         // user sent some message
         // any message signals need to refresh the elements
         connection.on('message', function(message) {
-            console.log("Message received from HousePanel; updating things in housepanel-push.");
+            console.log((new Date()) + "Message received from HousePanel; updating things in housepanel-push.");
             updateElements();
         });
 
