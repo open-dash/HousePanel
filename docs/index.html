@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018, 2019</i><br/>
-<i>Version 1.991 as of February 25, 2019</i>
+<i>Version 1.997 as of March 5, 2019</i>
 </p>
 </div>
 
@@ -479,7 +479,7 @@ will attempt to use it, but this feature may be removed in the future.
 
 This section describes how to install the optional Node.js hub push middleman feature.
 You should install the rest of HousePanel and authenticate your hubs before attempting
-to install this feature. For this feature to work you ust have Node and NPM installed. 
+to install this feature. For this feature to work you must have Node and Npm installed. 
 If your server is a rPi, log into it using ssh and enter the following commands to install Node and NPM.
 <br><br>
 
@@ -511,7 +511,7 @@ required dependencies. Navigate to the housepanel-push subfolder and enter:
 <br><br>
 
 <blockquote><pre>
-npm update housepanel-push
+npm install
 </pre></blockquote>
 
 Test your application by running it on the console:
@@ -539,8 +539,9 @@ if you installed HousePanel in the /var/www/html/housepanel folder. Save this fi
 change its permissions, and launch the service as follows:
 
 <blockquote><pre>
-sudo chmod 766 housepanel-push.service
-sudo chmod 766 housepanel-push.js
+sudo chmod 777 housepanel-push.service
+sudo chmod 777 housepanel-push.js
+sudo systemctl enable housepanel-push
 sudo systemctl housepanel-push
 </pre></blockquote>
 
