@@ -161,12 +161,16 @@ function updateElements() {
     }
 }
 
-// a callback function to tell user what to do if they point a browser here
+// a callback function to give status info if they point a browser here
 if ( app ) {
     app.get("/", function (req, res) {
-        res.send("This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
-                 "To use this you must install housepanel-push as a service on some server. " +
-                 "Currently connected to " + clients.length + " clients. " );
+        var str = "This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
+                  "To use this you must install housepanel-push as a service on some server. <br>" +
+                  "Currently connected to " + clients.length + " clients. <br><br> ";
+        for (var i=0; i < clients.length; i++) {
+            str = str + "Client #" + i + " IP= " + clients[i].socket.remoteAddress.substring(7) + " <br>";
+        }
+        res.send(str);
         console.log((new Date()) + "GET request. Currently connected to " + clients.length + " clients. " );
     });
 }
