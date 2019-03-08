@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 1.998      Macro rules implemented as beta feature. No easy GUI provided yet
  * 1.997      Improve crude rule feature to only do push from last client
  *            minor performance and aesthetic improvements in push Node code
  * 1.996      Fix hubId bug in push file
@@ -225,7 +226,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.997');
+define('HPVERSION', 'Version 1.998');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -339,21 +340,23 @@ function putdiv($value, $class) {
 }
 
 // function to make a curl call
-function curl_call($host, $headertype=FALSE, $nvpstr=FALSE, $calltype="GET")
+function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET")
 {
+
+    $debug = "host= $host header= $headertype nvpstr = $nvpstr calltype= $calltype";
+    
 	//setting the curl parameters.
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $host);
-	if ($headertype) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $host);
+    if ($headertype) {
     	curl_setopt($ch, CURLOPT_HTTPHEADER, $headertype);
     }
 
-	//turning off peer verification
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	// curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+    //turning off peer verification
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
 
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     if ($calltype==="POST" && $nvpstr) {
     	curl_setopt($ch, CURLOPT_POST, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
@@ -1375,7 +1378,7 @@ function getCustomTile($custom_val, $customid, $options, $allthings=false) {
                
                 } else if ( $calltype==="RULE" ) {
                     $custom_val["user_" . $subid] = "::" . $calltype . "::" . $content;
-                    $custom_val[$subid] = "";
+                    $custom_val[$subid] = "RULE::$subid";
 
                 } else {
                     // code for any user provided text string
@@ -2267,11 +2270,49 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                 $response = array($subid => $content);
                 break;
             
+            case "RULE":
+                // $rulecommands = explode(",",$content);
+                $rulecommands = preg_split("/[\s,;]+/", $content);
+                $response = array();
+                $n = 1;
+                foreach ($rulecommands as $rule) {
+                    $rulepair = explode("=", $rule);
+                    if ( count($rulepair) > 2 ) {
+                        $tileid = strval($rulepair[0]);
+                        $swval = strval($rulepair[1]);
+                        $idx = array_search($tileid, $options["index"]);
+                        $k = strpos($idx,"|");
+                        $swtype = substr($idx, 0, $k);
+                        $swid = substr($idx, $k+1);
+                        $nvpreq = "swid=" . urlencode($swid) . 
+                                  "&swvalue=" . urlencode($swval) . 
+                                  "&swtype=" . urlencode($swtype);
+                        
+                        $lidx = array_search($tileid, $options["index"]);
+                        if ( $allthings && array_key_exists($lidx, $allthings) ) {
+                            $linked_hubnum = $allthings[$lidx]["hubnum"];
+                            $lhub = $hubs[findHub($linked_hubnum, $hubs)];
+                        } else {
+                            $lhub = $hub;
+                        }
+                        
+                        $access_token = $lhub["hubAccess"];
+                        $endpt = $lhub["hubEndpt"];
+                        $path = "doaction";
+                        $host = $endpt . "/" . $path;
+                        $myheader = array("Authorization: Bearer " . $access_token);
+                        $res = curl_call($host, $myheader, $nvpreq, "POST");
+                        $response[$tileid] = $res;
+                    }
+                    $n++;
+                }
+                return json_encode($response);
+                break;
+            
             case "HUB":
                 $access_token = $hub["hubAccess"];
                 $endpt = $hub["hubEndpt"];
                 $host = $endpt . "/" . $path;
-                
                 $headertype = array("Authorization: Bearer " . $access_token);
                 $nvpreq = "swid=" . urlencode($swid) . 
                           "&swattr=" . urlencode($swattr) . 

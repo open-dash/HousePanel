@@ -17,7 +17,7 @@ $(document).ready(function() {
     getAllthings();
 });
     
-function getAllthings() {
+function getAllthings(modalwindow) {
         $.post(cm_Globals.returnURL, 
             {useajax: "getthings", id: "none", type: "none"},
             function (presult, pstatus) {
@@ -28,6 +28,9 @@ function getAllthings() {
                     getOptions();
                 } else {
                     console.log("Error: failure reading things from HP");
+                }
+                if ( modalwindow ) {
+                    closeModal(modalwindow);
                 }
             }, "json"
         );
@@ -189,6 +192,7 @@ function customTypePanel() {
         dh+= "<option value='PUT'>PUT</option>";
         dh+= "<option value='URL'>URL</option>";
         dh+= "<option value='LINK'>LINK</option>";
+        dh+= "<option value='RULE'>RULE</option>";
     dh+= "</select>";
     dh+= "</div></div>";
 
@@ -333,6 +337,34 @@ function loadTextPanel() {
     var infotext = "The \"" + servicetype + "\" option enables you to " +
         "add any user-specified text to the tile being customized. " +
         "In the top of the right column, enter the desired text. The text can valid HTML tags. " +
+        "You must also either pick the field this will override OR give a new user-defined field name using the entry box on the left. " +
+        "Click the \"Add\" button and this field will be added to the list of \"Existing Fields\" " +
+        "shown on the left side of this dialog box. You can mix and match this with any other addition.";
+    $("#cm_dynoInfo").html(infotext);
+    
+    return dh;
+}
+
+function loadRulePanel() {
+    var servicetype = "RULE";
+    var content = cm_Globals.usertext;
+    var dh = "";
+    dh+= "<div id='cm_dynoText'>";
+    dh+= "<div class='cm_group'><div><label for='cm_rule'>Custom Rule: </label></div>";
+    dh+= "<input class='cm_text' id='cm_text' type='text' value='" + content + "'></div>";
+    dh+= "</div>";
+    
+    // preview button and panel
+    dh += "<div class='cm_group'>";
+        dh+= "<div><label for='cm_preview'>Preview:</label></div>";
+        dh+= "<div class='cm_preview' id='cm_preview'></div>";
+        dh+= actionButtons();
+    dh+= "</div>";
+    
+    var infotext = "The \"" + servicetype + "\" option enables you to " +
+        "add a rule to the tile being customized. A rule is a list of tile ID's to activate or de-activet. " +
+        "In the top of the right column, enter the desired text. The text should be a comma separate list " +
+        "of tile numbers=command, where command is either on, off, open, closed, etc. Any command supported is accepted. " +
         "You must also either pick the field this will override OR give a new user-defined field name using the entry box on the left. " +
         "Click the \"Add\" button and this field will be added to the list of \"Existing Fields\" " +
         "shown on the left side of this dialog box. You can mix and match this with any other addition.";
@@ -565,7 +597,11 @@ function initCustomActions() {
             content = loadServicePanel(customType);
             $("#cm_dynoContent").html(content);
             initExistingFields();
-        } else {cm_Globals
+        } else if ( customType ==="RULE" ) {
+            content = loadRulePanel();
+            $("#cm_dynoContent").html(content);
+            initExistingFields();
+        } else {
             content = loadTextPanel();
             $("#cm_dynoContent").html(content);
             initExistingFields();
@@ -588,10 +624,10 @@ function initCustomActions() {
             return;
         }
         
-        var pos = {top: 100, left: 100};
+        var pos = {top: 5, left: 5, zindex: 99999, background: "blue", color: "white"};
         var subid = $("#cm_userfield").val();
         var tilename = $("#cm_subheader").html();
-        createModal("modalexec","Remove item: " + subid + " from tile: " + tilename + " - Are you sure?", "#modalcustom", true, pos, function(ui) {
+        createModal("modalremove","Remove item: " + subid + " from tile: " + tilename + "<br> Are you sure?", "table.cm_table", true, pos, function(ui) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
                 applyCustomField("delcustom");
@@ -754,6 +790,10 @@ function applyCustomField(action) {
         alert("Invalid entries:\n" + errstr);
     } else {
     
+        // show processing window
+        var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
+        createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
+        
         // make the call
         cm_Globals.reload = true;
         console.log(action + ": id= " + id + " type= " +customtype + " content= " + content + " tile= " + tileid + " subid= " + subid);
@@ -763,10 +803,11 @@ function applyCustomField(action) {
                 if (pstatus==="success" && !presult.startsWith("error") ) {
                     console.log (action + " performed successfully. presult: " + strObject(presult));
                     console.log("Updating information...");
-                    getAllthings();
+                    getAllthings("waitbox");
                 } else {
                     // alert("Error attempting to perform " + action + ": " + presult);
                     console.log("Error attempting to perform " + action + ": " + presult);
+                    closeModal("waitbox");
                 }
             }
         );

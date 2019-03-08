@@ -423,7 +423,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
 //        alert("object");
         modalhook = modaltag;
         postype = "relative";
-    } else if ( modaltag && typeof modaltag === "string" ) {
+    } else if ( modaltag && (typeof modaltag === "string") && typeof ($(modaltag)) === "object"  ) {
 //        alert("string: "+modaltag);
         modalhook = $(modaltag);
         if ( modaltag==="body" || modaltag==="document" || modaltag==="window" ) {
@@ -457,6 +457,12 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
             if ( pos.border ) {
                 styleinfo += " border: " + pos.border + ";";
             }
+            if ( pos.background ) {
+                styleinfo += " background: " + pos.background + ";";
+            }
+            if ( pos.color ) {
+                styleinfo += " color: " + pos.color + ";";
+            }
             if ( pos.zindex ) {
                 styleinfo += " z-index: " + pos.zindex + ";";
             }
@@ -487,7 +493,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
         });
     } else {
         $("body").on("click",function(evt) {
-            if ( evt.target.id === modalid ) {
+            if ( evt.target.id === modalid || modalid==="waitbox") {
                 evt.stopPropagation();
                 return;
             } else {
@@ -2259,7 +2265,9 @@ function setupPage(trigger) {
                                             updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
                                         }
                                     }
-                                    updAll(subid,aid,bid,thetype,hubnum,presult);
+                                    if ( command !== "RULE" ) {
+                                        updAll(subid,aid,bid,thetype,hubnum,presult);
+                                    }
                                     
                                 } else {
                                     console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
@@ -2267,6 +2275,8 @@ function setupPage(trigger) {
                             } catch (e) { 
                                 console.log(e);
                             }
+                        } else {
+                            console.log("Unknown ajax result. ", pstatus, presult);
                         }
                    }, "json"
             );
