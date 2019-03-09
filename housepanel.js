@@ -584,7 +584,7 @@ function setupSliders() {
             var command = "";
             var linktype = thetype;
             var linkval = "";
-            if ( usertile && $(usertile).attr("command")!==undefined ) {
+            if ( usertile && $(usertile).attr("command") ) {
                 command = $(usertile).attr("command");    // command type
                 if ( !thevalue ) {
                     thevalue = $(usertile).attr("value");      // raw user provided val
@@ -593,10 +593,6 @@ function setupSliders() {
                 linktype = $(usertile).attr("linktype");  // type of tile linked to
             }
             
-//            if ( bid.startsWith("h_") ) {
-//                // ajaxcall = "dohubitat";
-//                bid = bid.substring(2);
-//            }
             console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
             
             // handle music volume different than lights
@@ -1808,10 +1804,6 @@ function updateTile(aid, presult) {
     if ( isclock ) {
         CoolClock.findAndCreateClocks();
     }
-    
-//    if ( aid=="1" && presult["skin"]!==undefined ) {
-//        console.log ( "debugging analog clock: " + strObject(presult) );
-//    }
 }
 
 // this differs from updateTile by calling ST to get the latest data first
@@ -2083,8 +2075,9 @@ function setupPage(trigger) {
         
         // avoid doing click if the target was the title bar
         // also skip sliders tied to subid === level or colorTemperature
-        if ( aid===undefined || // modalStatus || 
-             subid==="level" || subid==="colorTemperature" ||
+        if ( ( typeof aid==="undefined" ) || 
+             ( subid==="level" ) || 
+             ( subid==="colorTemperature" ) ||
              ( $(this).attr("id") && $(this).attr("id").startsWith("s-") ) ) {
             return;
         }
@@ -2208,7 +2201,7 @@ function setupPage(trigger) {
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                     attr: subid, subid: subid, hubid: hubnum},
                 function(presult, pstatus) {
-                    if (pstatus==="success" && presult!==undefined && presult!==false) {
+                    if (pstatus==="success") {
                         console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
                         // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
                         if (thetype==="piston") {

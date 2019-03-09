@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.000      Release of rule feature as non beta. Fixed level and other tweaks
  * 1.998      Macro rules implemented as beta feature. No easy GUI provided yet
  * 1.997      Improve crude rule feature to only do push from last client
  *            minor performance and aesthetic improvements in push Node code
@@ -226,7 +227,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 1.998');
+define('HPVERSION', 'Version 2.000');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -2279,14 +2280,26 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
                     $rulepair = explode("=", $rule);
                     if ( count($rulepair) > 2 ) {
                         $tileid = strval($rulepair[0]);
-                        $swval = strval($rulepair[1]);
+                        $subid = strval($rulepair[1]);
+                        $swval = strval($rulepair[2]);
                         $idx = array_search($tileid, $options["index"]);
                         $k = strpos($idx,"|");
                         $swtype = substr($idx, 0, $k);
                         $swid = substr($idx, $k+1);
                         $nvpreq = "swid=" . urlencode($swid) . 
+                                  "&subid=" . urlencode($subid) . 
                                   "&swvalue=" . urlencode($swval) . 
                                   "&swtype=" . urlencode($swtype);
+                        
+                        if ( $subid==="level" ) {
+                            $nvpreq.= "&swattr=level";
+                        } else if ( $subid==="colorTemperature") {
+                            $nvpreq.= "&swattr=level";
+                        } else if ( $subid==="switch") {
+                            $nvpreq.= "&swattr=none";
+                        } else {
+                            $nvpreq.= "&swattr=" . $swtype . " p_" . $tileid . " " . $swval;
+                        }
                         
                         $lidx = array_search($tileid, $options["index"]);
                         if ( $allthings && array_key_exists($lidx, $allthings) ) {
