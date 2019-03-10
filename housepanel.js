@@ -808,7 +808,11 @@ function updateSortNumber(thetile, num) {
 }
 
 var startPos = {top: 0, left: 0, zindex: 0};
-function thingDraggable(thing) {
+function thingDraggable(thing, snap) {
+    var snapgrid = false;
+    if ( snap ) {
+        snapgrid = [10, 10];
+    }
     thing.draggable({
         revert: "invalid",
         // containment: "#dragregion",
@@ -829,7 +833,7 @@ function thingDraggable(thing) {
             startPos.zindex = parseInt(startPos.zindex) + 1;
             $(evt.target).css( {"z-index": startPos.zindex.toString()} );
         },
-        grid: [10, 10]
+        grid: snapgrid
     });
 }
 
@@ -860,7 +864,8 @@ function setupDraggable() {
         $("#catalog").show();
 
         // the active things on a panel
-        thingDraggable( $("div.panel div.thing") );
+        var snap = $("#mode_snap").prop("checked");
+        thingDraggable( $("div.panel div.thing"), snap );
     
         // enable dropping things from the catalog into panel
         // and movement of existing things around on the panel itself
@@ -912,7 +917,8 @@ function setupDraggable() {
                                                 var newthing = lastthing.next();
                                                 dragZindex = dragZindex + 1;
                                                 $(newthing).css( {"z-index": dragZindex.toString()} );
-                                                thingDraggable( newthing );
+                                                var snap = $("#mode_snap").prop("checked");
+                                                thingDraggable( newthing, snap );
                                                 setupPage();
                                                 setupSliders();
                                                 setupColors();
