@@ -18,7 +18,7 @@ var reordered = false;
 // this way the app can be installed but won't control my home
 // end-users are welcome to use this but it is intended for development only
 // use the timers options to turn off polling
-var disablepub = true;
+var disablepub = false;
 var disablebtn = false;
 
 Number.prototype.pad = function(size) {
