@@ -1969,9 +1969,9 @@ function getCatalog($allthings) {
     return $tc;
 }
 
-function doAction($endpt, $path, $access_token, $swid, $swtype, 
-                  $hubnum, $hubType, $swval="", $swattr="", $subid="", 
-                  $command="", $content="") {
+function doAction($hubnum, $path, $swid, $swtype, 
+                  $swval="", $swattr="", $subid="", 
+                  $command="", $content="", $macro=true ) {
     
     $save = $swval;
     $options = readOptions();
@@ -1979,10 +1979,35 @@ function doAction($endpt, $path, $access_token, $swid, $swtype,
     $hubs = $configoptions["hubs"];
     $tz = $configoptions["timezone"];
     date_default_timezone_set($tz);
-    $host = $endpt . "/" . $path;
     $mainidx = $swtype . "|" . $swid;
     $lidx = $mainidx;
     $response = array();
+    
+    // check for macros tied to this id
+    $idsub = $swid . "|" . $subid;
+    if ( $macro && $path==="doaction" && $swid!=="all" &&
+         array_key_exists("macros", $options) && 
+         array_key_exists($idsub, $options["macros"]) ) {
+        $macros = $options["macros"];
+        
+        // if only one actino provided make it an array
+        $actions = $macros[$idsub];
+        if ( !is_array($actions) ) {
+            $actions = array($actions);
+        }
+        
+        // loop through all the macro actions
+        // calling this routine recursively
+        // the last parameter prevents infinite loop
+        foreach ($actions as $actionitem) {
+            $items = split("|", $actionitem);
+            if ( count($items) >= 5 ) {
+            doAction($hubnum, "doaction", 
+                     $items[0], $items[1], $items[2], $items[3], $items[4],
+                     "", "", false);
+            }
+        }
+    }
     
     // detect if we have a session
     // not having a session typically means HP is in API mode
@@ -4339,15 +4364,15 @@ function is_ssl() {
         switch ($useajax) {
             case "doaction":
             case "dohubitat":
-                if ( $access_token && $endpt ) {
+                if ( $hubnum ) {
                     if ( $multicall ) {
                         $result = "";
                         for ($i= 0; $i < count($swid); $i++) {
-                            $result.= doAction($endpt, "doaction", $access_token, $swid[$i], $swtype[$i], $hubnum, $hubType, $swval[$i], $swattr[$i], $subid[$i], $command, $linkval);
+                            $result.= doAction($hubnum, "doaction", $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i], "", "", false);
                         }
                         echo $result;
                     } else {
-                        echo doAction($endpt, "doaction", $access_token, $swid, $swtype, $hubnum, $hubType, $swval, $swattr, $subid, $command, $linkval);
+                        echo doAction($hubnum, "doaction", $swid, $swtype, $swval, $swattr, $subid, $command, $linkval);
                     }
                 } else {
                     echo $nothing;
@@ -4356,8 +4381,8 @@ function is_ssl() {
         
             case "doquery":
             case "queryhubitat":
-                if ( $access_token && $endpt ) {
-                    echo doAction($endpt, "doquery", $access_token, $swid, $swtype, $hubnum, $hubType);
+                if ( $hubnum ) {
+                    echo doAction($hubnum, "doquery", $swid, $swtype);
                 } else {
                     echo $nothing;
                 }
@@ -4916,6 +4941,7 @@ function is_ssl() {
                   <input id=\"mode_Operate\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"operate\" checked><label for=\"mode_Operate\" class=\"radioopts\">Operate</label>
                   <input id=\"mode_Reorder\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"reorder\" ><label for=\"mode_Reorder\" class=\"radioopts\">Reorder</label>
                   <input id=\"mode_Edit\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"edit\" ><label for=\"mode_Edit\" class=\"radioopts\">Edit</label>
+                  <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
                 $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";

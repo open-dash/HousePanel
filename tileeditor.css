@@ -988,16 +988,16 @@ div.radiogroup label, div.radiogroup input {
 }
 input.radioopts {
     cursor: pointer;
-    margin-left: 10px;
+    margin-left: 5px;
     margin-right: 4px;
     display: inline-block;
 }
 label.radioopts {
     cursor: pointer;
     margin-left: 0px;
-    margin-right: 10px;
+    margin-right: 5px;
     font-size: 12pt;
-    width: 50px;
+    width: auto;
     text-align: left;
     display: inline-block;
 }

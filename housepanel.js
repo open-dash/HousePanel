@@ -18,7 +18,7 @@ var reordered = false;
 // this way the app can be installed but won't control my home
 // end-users are welcome to use this but it is intended for development only
 // use the timers options to turn off polling
-var disablepub = false;
+var disablepub = true;
 var disablebtn = false;
 
 Number.prototype.pad = function(size) {
@@ -828,7 +828,8 @@ function thingDraggable(thing) {
         stop: function(evt, ui) {
             startPos.zindex = parseInt(startPos.zindex) + 1;
             $(evt.target).css( {"z-index": startPos.zindex.toString()} );
-        }
+        },
+        grid: [10, 10]
     });
 }
 
