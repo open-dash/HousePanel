@@ -1121,6 +1121,7 @@ div.thing:hover{
 div.thing.catalog-thing {
     display: inline-block;
     width: 120px;
+    height: auto;
 }
 /* the name of the thing - must be after the above heights */
 /* added catalog-thing div.thingname to ensure catalog shows properly */
@@ -1133,6 +1134,7 @@ div.thing div.thingname, div.catalog-thing div.thingname {
     width: 100%;
     height: 30px;
     cursor: default;
+    display: inline-block;
 }
 div.thingname:hover {
     background-color: #5050a0; 

@@ -83,8 +83,13 @@ div.shm.state, div.hsm.state
 }
 
 /* hide the header for this skin */
-div.thingname {
+div.thing div.thingname {
     display: none;
+}
+div.catalog-thing div.thingname {
+    background-color: rgba(50, 50, 50,1);
+    color: rgba(240, 240, 240, 1);
+    display: inline-block;
 }
 
 /* this section is for specific thing icons and texts */

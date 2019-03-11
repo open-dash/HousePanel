@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.010      Grid snap feature and fix catalog for modern skin
  * 2.000      Release of rule feature as non beta. Fixed level and other tweaks
  * 1.998      Macro rules implemented as beta feature. No easy GUI provided yet
  * 1.997      Improve crude rule feature to only do push from last client
@@ -227,7 +228,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 2.000');
+define('HPVERSION', 'Version 2.010');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -4941,7 +4942,7 @@ function is_ssl() {
                   <input id=\"mode_Operate\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"operate\" checked><label for=\"mode_Operate\" class=\"radioopts\">Operate</label>
                   <input id=\"mode_Reorder\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"reorder\" ><label for=\"mode_Reorder\" class=\"radioopts\">Reorder</label>
                   <input id=\"mode_Edit\" class=\"radioopts\" type=\"radio\" name=\"usemode\" value=\"edit\" ><label for=\"mode_Edit\" class=\"radioopts\">Edit</label>
-                  <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
+                  <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\" value=\"snap\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
                 $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";

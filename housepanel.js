@@ -864,7 +864,7 @@ function setupDraggable() {
         $("#catalog").show();
 
         // the active things on a panel
-        var snap = $("#mode_snap").prop("checked");
+        var snap = $("#mode_Snap").prop("checked");
         thingDraggable( $("div.panel div.thing"), snap );
     
         // enable dropping things from the catalog into panel
@@ -917,7 +917,7 @@ function setupDraggable() {
                                                 var newthing = lastthing.next();
                                                 dragZindex = dragZindex + 1;
                                                 $(newthing).css( {"z-index": dragZindex.toString()} );
-                                                var snap = $("#mode_snap").prop("checked");
+                                                var snap = $("#mode_Snap").prop("checked");
                                                 thingDraggable( newthing, snap );
                                                 setupPage();
                                                 setupSliders();
@@ -1108,6 +1108,10 @@ function execButton(buttonid) {
         }
         $("#mode_Operate").prop("checked",true);
         priorOpmode = "Operate";
+    } else if ( buttonid==="snap" ) {
+        var snap = $("#mode_Snap").prop("checked");
+        console.log("snap mode= ",snap);
+        // thingDraggable( $("div.panel div.thing"), snap );
     } else {
         var newForm = dynoForm(buttonid);
         newForm.submit();
