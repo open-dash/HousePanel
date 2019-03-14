@@ -129,7 +129,7 @@ div.on, div.off, div.present, div.absent, div.firing, div.piston.pistonName {
 
 /* alter the thermostat on and off to show since we don't use an icon here */
 div.thermostat.thermostatMode, div.thermostat.thermostatFanMode, 
-div.thermostat.thermostatOperatingState, div.thermostat.humidity,
+div.thermostat.thermostatOperatingState, div.thermostat.humidity, div.other.humidity,
 div.thermomode.auto, div.thermomode.off,
 div.thermomode.heat, div.thermomode.cool,
 div.thermofan.off, div.thermofan.on, div.thermofan.circulate {
@@ -466,10 +466,12 @@ div.custom.thermostate::before {
     content: "State: ";
 }
 div.thermostat.humidity::before,
+div.other.humidity::before,
 div.custom.humidity::before {
     content: "Humidity: ";
 }
 div.thermostat.humidity::after,
+div.other.humidity::after,
 div.custom.humidity::after {
     content: "%";
 }
@@ -481,7 +483,8 @@ div.colorTemperature-val, div.hue-val, div.saturation-val,
 div.heatingSetpoint-val, div.coolingSetpoint-val,
 div.hue, div.saturation,
 div.overlay.heat div.thermostat.heat, div.overlay.cool div.thermostat.cool,
-div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint {
+div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint,
+div.other.heatingSetpoint, div.other.coolingSetpoint {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;
@@ -494,6 +497,7 @@ div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint {
     border: 0px;
 }
 div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint,
+div.other.heatingSetpoint, div.other.coolingSetpoint,
 div.overlay.heat div.thermostat.heat, div.overlay.heat div.thermostat.cool {
     padding-top: 5px;
     height: 27px;
@@ -511,7 +515,7 @@ div.colorTemperature-val, div.hue-val, div.saturation-val, div.hue, div.saturati
 }
 div.thermostat.thermomode, div.thermostat.thermofan, div.thermostat.thermofan.on,
 div.thermostat.thermostatMode, div.thermostat.thermostatFanMode,
-div.thermostat.thermostate, div.thermostat.humidity {
+div.thermostat.thermostate, div.thermostat.humidity, div.other.humidity {
     width: 100%;
 }
 div.thing.temperature-thing {

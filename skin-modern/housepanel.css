@@ -316,11 +316,17 @@ div.switch-thing div.overlay.level, div.light-thing div.overlay.level {
 }
 
 /* print names */
-div.overlay.name, div.overlay.name div.name {
+div.overlay.name {
     display: block;
+    position: relative;
+    width: 100%;
+}
+div.overlay.name div.name {
+    display: inline-block;
     position: relative;
     width: 94%;
     margin-left: 3%;
+    margin-right: 3%;
     text-align: left;
     font-size: 12pt;
     margin-top: 2px;
@@ -457,10 +463,12 @@ div.custom.thermostatOperatingState::before {
     content: "State: ";
 }
 div.thermostat.humidity::before,
+div.other.humidity::before,
 div.custom.humidity::before {
     content: "Humidity: ";
 }
 div.thermostat.humidity::after,
+div.other.humidity::after,
 div.custom.humidity::after {
     content: "%";
 }
@@ -469,7 +477,8 @@ div.custom.humidity::after {
 div.colorTemperature-val, div.hue-val, div.saturation-val,
 div.heatingSetpoint-val, div.coolingSetpoint-val,
 div.hue, div.saturation,
-div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint {
+div.thermostat.heatingSetpoint, div.thermostat.coolingSetpoint,
+div.other.heatingSetpoint, div.other.coolingSetpoint {
     display: inline-block;
     position: relative;
     left: 0px; top: 0px;

@@ -2176,11 +2176,19 @@ function setupPage(trigger) {
             // for this case there is nothing to do on the server so we just
             // update the text on screen and return it to the log
             } else if ( command==="TEXT" ) {
-                presult[subid] = userval;
-                console.log( "Clicked on custom TEXT tile with: "+ strObject(presult) );
-                
+            $.post(returnURL, 
+                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
+                    attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
+                function(presult, pstatus) {
+                    if (pstatus==="success") {
+                        console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
+                        updateTile(aid, presult);
+                    }
+                }, "json");
+                // presult[subid] = userval;
+                // console.log( "Clicked on custom TEXT tile with: "+ strObject(presult) );
                 // just update this customized tile since clicking on text doesn't really do anything
-                updateTile(aid, presult);
+                // updateTile(aid, presult);
                 return;
             }
             

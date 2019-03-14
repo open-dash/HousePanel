@@ -11,7 +11,7 @@
 <p>
 House Panel Open Source Web App for SmartThings and Hubitat<br/>
 <i>Ken Washington (@kewashi)  (c) 2017, 2018, 2019</i><br/>
-<i>Version 1.997 as of March 5, 2019</i>
+<i>Version 2.020 as of March 14, 2019</i>
 </p>
 </div>
 
@@ -945,7 +945,7 @@ Clicking on the blue circle will open the Tile Customizer page that looks as fol
 <div><img src="customize.png"></div>
 
 The Custom Type option in the upper left is used to pick what type of customization
-you are performing. Four options are available: TEXT, POST, GET, PUT, URL, and LINK.
+you are performing. Four options are available: TEXT, POST, GET, PUT, URL, LINK, and RULE.
 TEXT links are used to add any user provided text to the tile. When adding anything
 to the tile, you must name the field in the User Field Name area on the left.
 You can also select an existing field, in which case your text will show up
@@ -962,7 +962,8 @@ list of "Existing Fields" shown on the left side of this dialog box.
 You can mix and match this with any other addition.<br><br>
 
 URL types are similar to POST, GET, and PUT except it opens the given URL
-in a new window.<br><br>
+in a new window. The text entered must begin with http for this to work.
+TEXT fields will behave like URL fields when a valid URL is provided.<br><br>
 
 LINK types enable you to add any other field in any other tile in your smart home 
 to the tile being customized. In the top of the right column, select the tile to 
@@ -971,15 +972,72 @@ using the "Available Fields" list above on the right. Once you are happy with yo
 selection, click the "Add" button and this field will be added to the list of "Existing Fields" 
 shown on the left side of this dialog box. You can mix and match this with any other addition.
 Note that with LINK customizations the field name must be taken from the linked tile.
-This means you can only show one version of any pre-defined field. For example, if
-you link in a switch field from another tile, it will replace the existing switch field.
-And if you attempt to link in another switch field, it will overwrite any existing one.<br><br>
+If you link in a switch field from another tile, it will replace the existing switch field.
+If you attempt to link in another switch field, it will overwrite any existing one unless
+you alter the field name by adding some custom text after the word switch.
+For example, you could make this field name switchtwo. This only works if there is
+already a linked field named switch.<br><br>
+
+RULE types provide a simple automation capability. The rule is provided as a single
+line of text representing the tile number you want to control, the field, and the type
+of action you want to take. These three values are separated by an equal sign. Any
+number of rules can be entered separated by a comma or semicolon.
+For example, to turn on tiles 42 and 60 that are both switches you would enter:<br><br>
+<blockquote>
+42=switch=on, 60=switch=on
+</blockquote>
+
+More complex rules are allowed such as setting level and mixing on and off. For
+example, the following will open a garage door, set the level of a dimmer,
+turn one light on, and turn another light off.<br><br>
+<blockquote>
+42=switch=on, 16=door=open, 60=switch=off, 51=level=30
+</blockquote>
+
+To use this rule feature you need to have the tile numbers that you want to control.
+Tile numbers can be obtained from the Info page.<br><br>
 
 The Tile Customizer is a powerful tool for making custom panels. The tile shown
 above for example was made by adding a switch, a slider, a smart home monitor,
 and a close time field to a blank tile. Once these fields are added they take on
 the style of their parent, but that can be modified using the Tile Editor 
 described in the prior section.
+
+<h2>Macros</h2>
+Macros are a more powerful alternative to automation than the RULE system
+provided by the Tile Customizer described in the previous section. With Macros
+you can string together any number of action calls that HousePanel supports
+and connect it to any field on any tile. The catch is there is no GUI for 
+defining Macros. Macros must be hand-written and saved in your hmoptions.cfg
+file, so this is a feature only for power users. Macros are defined in a section
+of the hmoptions.cfg file called "macros". That section looks something like:
+
+<blockquote><pre>
+"macros":{
+"custom|custom_4|test":
+[
+  ["-","adcd1-12345-4a33-c111-11223ea123","switch","switch","toggle"],
+  ["-","dcba9-54321-4cda-a222-223344abcd","switch","switch","off"],
+  ["-","dcba9-26371-5cda-b333-65432abcda","switchlevel","level","on","60"]
+]
+}
+</pre></blockquote>
+
+The keys are a string composed of the type, the id, and the field, separated by the "|" symbol.
+The type|id pair is the "connected tile" that is used to trigger the macro.
+This should be one of the tiles listed in the "index" section of the hmoptions.cfg file.
+The field specified is the field that is clicked on to invoke the macro.
+An array of arrays follow. Each array entry has up to 6 fields. The first array element
+is the hub id. If "-" is entered, the hubid of the connected tile is used. The second
+element is the id of the thing to automate. The third element is the type of thing. The fourth
+element is the field to control. The fifth element is the command or value to pass to HP.
+For example, it could be "on", "off", "open", or "close". A sixth element is attribute
+that is sent for some tiles to be controlled. For example, level can be sent this way.<br><br>
+
+Any number of macros can be defined and they can be tied to anything, including custom fields
+as is shown in the above example. The only restriction is they cannot be mixed with RULE
+custom fields.<br><br>
+
 
 <h2>Styling Things Using CSS</h2>
 

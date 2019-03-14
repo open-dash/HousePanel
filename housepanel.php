@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.020      Macro rule graduate from beta to tested feature - still no gui
  * 2.010      Grid snap feature and fix catalog for modern skin
  * 2.000      Release of rule feature as non beta. Fixed level and other tweaks
  * 1.998      Macro rules implemented as beta feature. No easy GUI provided yet
@@ -228,7 +229,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 2.010');
+define('HPVERSION', 'Version 2.020');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1099,11 +1100,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<div><label class=\"startupinp required\">Refresh Timer: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubTimer\" width=\"10\" type=\"text\" value=\"" . $hub["hubTimer"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp hidden\">Access Token: </label>";
-        $tc.= "<input  class=\"hidden\" name=\"userAccess\" width=\"80\" type=\"text\" value=\"" . $hub["hubAccess"] . "\"/></div>"; 
-
-        $tc.= "<div><label class=\"startupinp hidden\">Endpoint: </label>";
-        $tc.= "<input  class=\"hidden\" name=\"userEndpt\" width=\"80\" type=\"text\" value=\"" . $hub["hubEndpt"] . "\"/></div>"; 
+        $tc.= "<input class=\"hidden\" name=\"hubAccess\" type=\"hidden\" value=\"" . $hub["hubAccess"] . "\"/>"; 
+        $tc.= "<input class=\"hidden\" name=\"hubEndpt\" type=\"hidden\" value=\"" . $hub["hubEndpt"] . "\"/>"; 
         
         $tc.= "<div>";
         $tc .= "<input hub=\"$i\" hubid=\"$hubId\" class=\"authbutton hubauth\" value=\"Authorize Hub #$i\" type=\"button\" />";
@@ -1983,29 +1981,68 @@ function doAction($hubnum, $path, $swid, $swtype,
     $mainidx = $swtype . "|" . $swid;
     $lidx = $mainidx;
     $response = array();
+    $macrocount = 0;
     
     // check for macros tied to this id
-    $idsub = $swid . "|" . $subid;
-    if ( $macro && $path==="doaction" && $swid!=="all" &&
+    $idsub = $swtype . "|" . $swid . "|" . $subid;
+    if ( $macro && $command!=="RULE" && $path==="doaction" && $swid!=="all" &&
          array_key_exists("macros", $options) && 
          array_key_exists($idsub, $options["macros"]) ) {
         $macros = $options["macros"];
-        
-        // if only one actino provided make it an array
         $actions = $macros[$idsub];
-        if ( !is_array($actions) ) {
-            $actions = array($actions);
-        }
-        
-        // loop through all the macro actions
-        // calling this routine recursively
-        // the last parameter prevents infinite loop
-        foreach ($actions as $actionitem) {
-            $items = split("|", $actionitem);
-            if ( count($items) >= 5 ) {
-            doAction($hubnum, "doaction", 
-                     $items[0], $items[1], $items[2], $items[3], $items[4],
-                     "", "", false);
+        if ( is_array($actions) ) {
+            
+            if ( !is_array($actions[0]) ) {
+                $actions = array($actions);
+            }    
+            // loop through all the macro actions
+            // calling this routine recursively
+            // the last parameter prevents infinite loop
+            foreach ($actions as $items) {
+                if ( count($items) > 0 ) {
+                    $macrohub = $items[0];
+                    // enable macro to use same data as parent trigger by giving - or self
+                    if ( $macrohub==="-" ) {
+                        $macrohub= $hubnum;
+                    }
+                    if ( count($items) < 2 || $items[1]==="-" ) {
+                        $macroid= $swid;
+                    } else {
+                        $macroid = $items[1];
+                    }
+                    if ( count($items) < 3 || $items[2]==="-" ) {
+                        $macrotype= $swtype;
+                    } else {
+                        $macrotype = $items[2];
+                    }
+                    if ( count($items)<4 ) {
+                        $macrosubid= "";
+                    } else if ( $items[3]==="-" ) {
+                        $macrosubid= $subid;
+                    } else {
+                        $macrosubid = $items[3];
+                    }
+                    if ( count($items)<5 ) {
+                        $macroval= $swval;
+                    } else if ( $items[4]==="-" ) {
+                        $macroval= $swval;
+                    } else {
+                        $macroval = $items[4];
+                    }
+                    if ( count($items)<6 ) {
+                        $macroattr= "";
+                    } else if ( $items[5]==="-" ) {
+                        $macroattr= $swattr;
+                    } else {
+                        $macroattr = $items[5];
+                    }
+
+                    // make the recursive call with false as last param to avoid loop
+                    $macrocount++;
+                    doAction($macrohub, "doaction", 
+                         $macroid, $macrotype, $macroval, $macroattr, $macrosubid,
+                         "", "", false);
+                }
             }
         }
     }
@@ -2444,6 +2481,10 @@ function doAction($hubnum, $path, $swid, $swtype,
             }
             $_SESSION["allthings"] = $allthings;
         }
+    }
+    
+    if ( $macro && $macrocount>0 ) {
+        $response["execmacro"] = strval($macrocount);
     }
     
     // add the hub index for use in timers and housepanel-push
