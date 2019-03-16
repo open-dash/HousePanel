@@ -542,7 +542,7 @@ change its permissions, and launch the service as follows:
 sudo chmod 777 housepanel-push.service
 sudo chmod 777 housepanel-push.js
 sudo systemctl enable housepanel-push
-sudo systemctl housepanel-push
+sudo systemctl restart housepanel-push
 </pre></blockquote>
 
 Sometimes the Node.js setup is stubborn and refuses to load. You should check to
@@ -945,7 +945,7 @@ Clicking on the blue circle will open the Tile Customizer page that looks as fol
 <div><img src="customize.png"></div>
 
 The Custom Type option in the upper left is used to pick what type of customization
-you are performing. Four options are available: TEXT, POST, GET, PUT, URL, LINK, and RULE.
+you are performing. Seven options are available: TEXT, POST, GET, PUT, URL, LINK, and RULE.
 TEXT links are used to add any user provided text to the tile. When adding anything
 to the tile, you must name the field in the User Field Name area on the left.
 You can also select an existing field, in which case your text will show up

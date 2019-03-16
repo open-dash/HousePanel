@@ -493,11 +493,12 @@ div.other.heatingSetpoint, div.other.coolingSetpoint {
 }
 
 /* pistons */
-div.pistonName {
+div.overlay.pistonName div.pistonName {
+    height: 112px;
     color: rgba(255, 255, 255, 0.01);
     background-image: url('icons/piston.png');
 }
-div.pistonName.firing {
+div.overlay.pistonName div.pistonName.firing {
     background-image: url('icons/pistonfiring.png');
 }
 
@@ -578,7 +579,7 @@ div.shm.state, div.hsm.state, div.custom.state {
     font-size: 18pt;
     margin-top: 10px;
     color: rgba(255, 255, 255, 1);
-    background-size: 70px;
+    background-size: 50px;
     background-repeat: no-repeat;
     height: 102px;
     background-position-x: center;
@@ -664,5 +665,28 @@ div.thing.control-thing div.control.blackout {
 }
 
 div.thing.shm-thing, div.thing.hsm-thing, div.thing.mode-thing {
+    width: 120px;
     height: 180px;
+}
+/* mode and ST shm and Hubitat hsm styles */
+div.mode-thing.m1x1, div.mode-thing.m2x1,
+div.blank-thing.b1x1, div.blank-thing.b2x1 {
+    height: 180px;
+}
+div.mode-thing.m1x2, div.mode-thing.m2x2,
+div.blank-thing.b1x2, div.blank-thing.b2x2 {
+    height: 368px;
+}
+div.mode-thing.m1x1, div.mode-thing.m1x2,
+div.blank-thing.b1x1, div.blank-thing.b1x2 {
+    width: 120px;
+}
+div.mode-thing.m2x1, div.mode-thing.m2x2 {
+    width: 248px;
+}
+div.blank-thing.b2x1, div.blank-thing.b2x2 {
+    width: 256px;
+}
+div.blank-thing div.overlay.name {
+    display: none;
 }

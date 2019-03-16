@@ -563,14 +563,14 @@ div.music.status, div.music.mute {
 }
 
 /* pistons */
-div.pistonName {
+div.overlay.pistonName div.pistonName {
     height: 112px;
     color: rgba(102,102,102,0.01);
     background-color: rgba(102, 102, 102, 1);
     background-image: url('icons/piston.png');
     width: 100%;
 }
-div.pistonName.firing {
+div.overlay.pistonName div.pistonName.firing {
     background-image: url('icons/pistonfiring.png');
     color: rgba(255, 255, 255, 0.01);
 }

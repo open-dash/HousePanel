@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 03/15/2019 - fix names of mode, blank, and image, and add humidity to temperature
+ * 03/14/2019 - exclude fields that are not interesting from general tiles
  * 03/02/2019 - added motion sensors to subscriptions and fix timing issue
  * 02/26/2019 - add hubId to name query
  * 02/15/2019 - change hubnum to use hubId so we can remove hubs without damage
@@ -305,11 +307,14 @@ def getSmoke(swid, item=null) {
     getThing(mysmokes, swid, item)
 }
 
-// return just temperature for this capability
+// return temperature for this capability and humidity if it has one
 def getTemperature(swid, item=null) {
     // getThing(mytemperatures, swid, item)
     item = item ? item : mytemperatures.find {it.id == swid }
     def resp = item ? [name: item.displayName, temperature : item.currentValue("temperature")] : false
+    if ( resp && item.hasAttribute("humidity") ) {
+        resp.put("humidity", item.currentValue("humidity"))
+    }
     return resp
 }
 
@@ -325,12 +330,19 @@ def getPower(swid, item=null) {
     getThing(mypower, swid, item)
 }
 
+def extractName(swid, prefix) {
+    def k = hubprefix.length()
+    def postfix = swid ? swid : ""
+    if ( k>0 && swid && swid.startsWith(hubprefix) ) {
+        postfix = swid.substring(k)
+    }
+    def thename = "$prefix $postfix"
+}
+
 def getmyMode(swid, item=null) {
     def curmode = location.getCurrentMode()
-    def curmodename = curmode.getName()
-    def resp =  [ name: swid,
-              sitename: location.getName(),
-              themode: curmodename ];
+    def resp = [ name: extractName(swid, "Mode"), 
+        sitename: location.getName(), themode: curmode.getName() ];
     return resp
 }
 
@@ -341,12 +353,12 @@ def getSHMState(swid, item=null){
 }
 
 def getBlank(swid, item=null) {
-    def resp = [name: "Blank ${swid}", size: "${swid}"]
+    def resp = [name: extractName(swid, "Blank")]
     return resp
 }
 
 def getImage(swid, item=null) {
-    def resp = [name: "Image ${swid}", url: "${swid}"]
+    def resp = [name: extractName(swid, "Image"), url: "${swid}"]
     return resp
 }
 
@@ -415,9 +427,12 @@ def getThing(things, swid, item=null) {
             // def capname = cap.getName()
             cap.attributes?.each {attr ->
                 try {
+                    def reservedcap = ["DeviceWatch-DeviceStatus", "checkInterval", "healthStatus"]
                     def othername = attr.getName()
                     def othervalue = item.currentValue(othername)
-                    resp.put(othername,othervalue)
+                    if ( !reservedcap.contains(othername) ) {
+                        resp.put(othername,othervalue)
+                    }
                 } catch (ex) {
                     logger("Attempt to read attribute for ${swid} failed ${ex}", "error")
                 } 
@@ -426,7 +441,7 @@ def getThing(things, swid, item=null) {
         // add commands other than standard ones
         item.supportedCommands.each { comm ->
             try {
-                def reserved = ["setLevel","setHue",\
+                def reserved = ["setLevel","setHue","on","off","open","close",\
                                 "setSaturation","setColorTemperature","setColor","setAdjustedColor",\
                                 "indicatorWhenOn","indicatorWhenOff","indicatorNever",\
                                 "enrollResponse","poll","ping","configure","refresh"]
@@ -529,21 +544,21 @@ def getAllThings() {
 
     return resp
 }
-// this returns just a single active mode, not the list of available modes
-// this is done so we can treat this like any other set of tiles
+
 def getModes(resp) {
     logger("Getting 4 SmartThings mode tiles","debug");
-    def val = getmyMode(0)
-    resp << [name: "Mode ${hubprefix}m1x1", id: "${hubprefix}m1x1", value: val, type: "mode"]
-    resp << [name: "Mode ${hubprefix}m1x2", id: "${hubprefix}m1x2", value: val, type: "mode"]
-    resp << [name: "Mode ${hubprefix}m2x1", id: "${hubprefix}m2x1", value: val, type: "mode"]
-    resp << [name: "Mode ${hubprefix}m2x2", id: "${hubprefix}m2x2", value: val, type: "mode"]
+    def vals = ["m1x1","m1x2","m2x1","m2x2"]
+    def val
+    vals.each {
+        val = getmyMode(it)
+        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "mode"]
+    }
     return resp
 }
 
 def getSHMStates(resp) {
     logger("Getting Smart Home Monitor state for SmartThings Hub","debug");
-    def val = getSHMState(0)
+    def val = getSHMState("${hubprefix}shm")
     resp << [name: "Smart Home Monitor", id: "${hubprefix}shm", value: val, type: "shm"]
     return resp
 }
@@ -552,8 +567,8 @@ def getBlanks(resp) {
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
     def val
     vals.each {
-        val = getBlank(it)
-        resp << [name: "Blank ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "blank"]
+        val = getBlank("${hubprefix}${it}")
+        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "blank"]
     }
     return resp
 }
@@ -562,8 +577,8 @@ def getImages(resp) {
     def vals = ["img1","img2","img3","img4"]
     def val
     vals.each {
-        val = getImage(it)
-        resp << [name: "Image ${hubprefix}${it}", id: "${hubprefix}${it}", value: val, type: "image"]
+        val = getImage("${hubprefix}${it}")
+        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "image"]
     }
     return resp
 }
@@ -1058,8 +1073,7 @@ def setMode(swid, cmd, swattr, subid) {
 
     logger("Mode changed from $themode to $newsw index = $idx subid = $subid", "debug");
     location.setMode(newsw);
-    resp =  [   name: swid, 
-                sitename: location.getName(),
+    resp =  [   sitename: location.getName(),
                 themode: newsw
             ];
     
@@ -1067,12 +1081,21 @@ def setMode(swid, cmd, swattr, subid) {
 }
 
 def setSHMState(swid, cmd, swattr, subid){
-    if (cmd == "away") sendLocationEvent(name: "alarmSystemStatus" , value : "away" )
-    else if (cmd == "stay") sendLocationEvent(name: "alarmSystemStatus" , value : "stay" )
-    else if (cmd == "off") sendLocationEvent(name: "alarmSystemStatus" , value : "off" )
-    else { cmd = location.currentState("alarmSystemStatus")?.value }
-    logger("SHM state set to $cmd", "info");
 
+    // handle casess for attr set from GUI
+    if ( swattr.startsWith("shm") && swattr.endsWith("away") ) {
+        cmd = "stay"
+    } else if ( swattr.startsWith("shm") && swattr.endsWith("stay") ) {
+        cmd = "off"
+    } else if ( swattr.startsWith("shm") && swattr.endsWith("off") ) {
+        cmd = "away"
+    } else {
+        if ( cmd!="stay" && cmd!="away" && cmd!="off" ) {
+            cmd = location.currentState("alarmSystemStatus")?.value
+        }
+    }
+    sendLocationEvent(name: "alarmSystemStatus" , value : cmd )
+    logger("SHM state set to $cmd", "info")
     def resp = [name : "Smart Home Monitor", state: cmd]
     return resp
 }

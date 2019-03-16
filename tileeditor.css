@@ -1605,3 +1605,7 @@ div.overlay.refresh {
 div.control-thing div.overlay.refresh {
     display: block;
 }
+
+div.rule {
+    cursor: pointer;
+}

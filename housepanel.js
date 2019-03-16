@@ -2205,7 +2205,7 @@ function setupPage(trigger) {
         // and skip if this is a custom action since it could be anything
         // also, for momentary buttons we don't do any tile updating
         // other than visually pushing the button by changing the class for 1.5 seconds
-        if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid==="pistonName") ) ) {
+        if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid.startsWith("piston")) ) ) {
             console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             var tarclass = $(targetid).attr("class");
             var that = targetid;

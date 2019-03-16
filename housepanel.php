@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.030      Fix HSM and SHM bugs and piston styling for modern skin
  * 2.020      Macro rule graduate from beta to tested feature - still no gui
  * 2.010      Grid snap feature and fix catalog for modern skin
  * 2.000      Release of rule feature as non beta. Fixed level and other tweaks
@@ -229,7 +230,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 2.020');
+define('HPVERSION', 'Version 2.030');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1809,6 +1810,9 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
             $numval = substr($tkey,8);
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . $numval . "</div>";
         } else {
+            if ( substr($tval,0,6)==="RULE::" && $subtype!=="rule" ) {
+                $tkeyshow.= " rule";
+            }
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" title=\"$tkey\" class=\"" . $thingtype . $subtype . $tkeyshow . " p_$kindex" . $extra . "\" id=\"a-$i-$tkey" . "\">" . $tval . "</div>";
         }
         $tc.= "</div>";
