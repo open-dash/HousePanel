@@ -1086,7 +1086,6 @@ def setMode(swid, cmd, swattr, subid) {
 def setHsmState(swid, cmd, swattr, subid){
 
     def i
-    def defkey
     def key = ""
     def cmds = ["armAway", "armHome", "armNight", "disarm"]
     def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
