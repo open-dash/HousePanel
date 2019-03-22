@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.031      Use custom name for head title and name field
  * 2.030      Fix HSM and SHM bugs and piston styling for modern skin
  * 2.020      Macro rule graduate from beta to tested feature - still no gui
  * 2.010      Grid snap feature and fix catalog for modern skin
@@ -230,7 +231,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 2.030');
+define('HPVERSION', 'Version 2.031');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 
@@ -1557,6 +1558,9 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     } else {
         $thingpr = $thingname;
     }
+    
+    // now we use custom name in both places
+    $thingvalue["name"] = $thingpr;
     
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
