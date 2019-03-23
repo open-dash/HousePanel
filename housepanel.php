@@ -1168,7 +1168,7 @@ function getAllThings($reset = false) {
         $timezone = date("T");
         $dclock = array("name" => $clockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>"M d, Y", "fmt_time"=> "h:i:s A");
-        $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+        $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
         $dateofmonth = date($dclock["fmt_date"]);
         $timeofday = date($dclock["fmt_time"]);
         $dclock["date"] = $dateofmonth;
@@ -1182,7 +1182,7 @@ function getAllThings($reset = false) {
         $clockskin = "CoolClock:swissRail:72";
         $aclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>$dclock["fmt_date"], "fmt_time"=> $dclock["fmt_time"]);
-        $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+        $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
         $dateofmonth = date($aclock["fmt_date"]);
         $timeofday = date($aclock["fmt_time"]);
         $aclock["date"] = $dateofmonth;
@@ -1241,7 +1241,7 @@ function getAllThings($reset = false) {
             $customid = "custom_" . strval($i);
             $customname = "Custom " . strval($i);
             $custom_val = array("name"=> $customname);
-            // $custom_val = getCustomTile($custom_val, $customid, $options, $allthings);
+            // $custom_val = getCustomTile($custom_val, "custom", $customid, $options, $allthings);
             $allthings["custom|$customid"] = array("id" => $customid, "name" => $custom_val["name"], 
                 "hubnum" => -1, "hubtype" => "None", "type" => "custom", "refresh"=>"fast",
                 "value" => $custom_val);
@@ -1253,7 +1253,7 @@ function getAllThings($reset = false) {
         // we skip the control tile since it has its own refresh field that means something else
         foreach ($allthings as $idx => $thing) {
             if ( $thing["type"]!=="control" ) {
-                $thing["value"] = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
                 
                 // adjust refresh if user gave a custom refresh type
                 if ( array_key_exists("refresh",$thing["value"]) ) {
@@ -1285,9 +1285,40 @@ function getAllThings($reset = false) {
 // create addon subid's for any tile
 // this enables a unique customization effect
 // the last parameter is only needed for LINK customizations
-function getCustomTile($custom_val, $customid, $options, $allthings=false) {
+function getCustomTile($custom_val, $customtype, $customid, $options, $allthings=false) {
     
     $reserved = array("index","rooms","things","config","control","useroptions");
+    $idx = $customtype . "|" . $customid;
+    $rooms = $options["rooms"];
+    $thingoptions = $options["things"];
+    $tileid = $options["index"][$idx];
+    
+    // get custom tile name if it was defined in tile editor and stored
+    // in the room array - this is a temp fix until I change the architecture
+    // to store custom names in the index of things instead
+    $customname= "";
+    foreach ($rooms as $room) {
+        if ( array_key_exists($room, $thingoptions) ) {
+            $things = $thingoptions[$room];
+            foreach ($things as $kindexarr) {
+                // only do this if we have custom names defined in rooms
+                if ( is_array($kindexarr) && count($kindexarr) > 3 ) {
+                    $kindex = $kindexarr[0];
+
+                    // if our tile matches and there is a custom name, use it
+                    if ( strval($kindex)===strval($tileid) ) {
+                        $customname = $kindexarr[4];
+                        if ( $customname!=="" ) { break; }
+                    }
+                }
+            }
+        }
+        if ( $customname!=="" ) { break; }
+    }
+    
+    if ( $customname ) {
+        $custom_val["name"] = $customname;
+    }
     
     // see if a section for this id is in options file
     if (array_key_exists("user_" . $customid, $options) ) {
@@ -1514,7 +1545,8 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
 
     // grab options
     $options = readOptions();
-    
+    $allthings = getAllThings();
+   
     $bid = $thesensor["id"];
     $thingvalue = $thesensor["value"];
     $thingtype = $thesensor["type"];
@@ -1561,6 +1593,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     
     // now we use custom name in both places
     $thingvalue["name"] = $thingpr;
+    // $thingvalue = getCustomTile($thingvalue, $thingtype, $bid, $options, $allthings);
     
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
@@ -2068,7 +2101,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // analog clock borrows these formats if it shows digital data
     if ( $allthings ) {
         $baseclock = $allthings["clock|clockdigital"]["value"];
-        $baseclock = getCustomTile($baseclock, "clockdigital", $options, $allthings);
+        $baseclock = getCustomTile($baseclock, "clock", "clockdigital", $options, $allthings);
         $fmt_date = $baseclock["fmt_date"];
         $fmt_time = $baseclock["fmt_time"];
     } else {
@@ -2084,7 +2117,7 @@ function doAction($hubnum, $path, $swid, $swtype,
         $dclockname = "Digital Clock";
         $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-        $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+        $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
         $fmt_date = $dclock["fmt_date"];
         $fmt_time = $dclock["fmt_time"];
         $dclock["date"] = date($fmt_date);
@@ -2095,7 +2128,7 @@ function doAction($hubnum, $path, $swid, $swtype,
         $clockskin = "CoolClock:swissRail:72";
         $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                         "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-        $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+        $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
         $fmt_date = $aclock["fmt_date"];
         $fmt_time = $aclock["fmt_time"];
         $aclock["date"] = date($fmt_date);
@@ -2114,7 +2147,7 @@ function doAction($hubnum, $path, $swid, $swtype,
             $videoval = returnVideo($swval,"inherit","inherit");
             $response = array("video" => $videoval);
         }
-        $response = getCustomTile($response, $swid, $options, $allthings);
+        $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
         
     } else if ($swtype==="frame" && $subid==="frame" ) {
         if ( $allthings ) {
@@ -2129,7 +2162,7 @@ function doAction($hubnum, $path, $swid, $swtype,
             $frameval = returnFrame($swval,"inherit","inherit");
             $response = array("frame" => $frameval);
         }
-        $response = getCustomTile($response, $swid, $options, $allthings);
+        $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
 
     // if the new fast type is requested return things that can be updated
     // without making a call out to the hub
@@ -2175,7 +2208,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $response2 = curl_call($host2, $headertype, $nvpreq, "POST");
                         $thing["value"] = $response2;
                     }
-                    $thing["value"] = getCustomTile($thing["value"],$thing["id"],$options, $allthings);
+                    $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"],$options, $allthings);
                     
                     // update any thing that has time elements
                     // for speed sake we skip dates since they don't change that fast
@@ -2217,7 +2250,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $tileid = $indexoptions[$fidx];
                 if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="slow" ) {
                 // if ( $type==="frame" ) {
-                    $thing["value"] = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                    $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"], $options, $allthings);
                     $response[$tileid] = $thing;
                 }
             }
@@ -2408,7 +2441,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 // if nothing returned and an action request, act like a query
                 if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $thing = $allthings[$mainidx];
-                    $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                    $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
                     $response = array($subid => $thevalue[$subid]);
                 }
                 break;
@@ -2440,7 +2473,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $dclockname = "Digital Clock";
                 $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                                 "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-                $dclock = getCustomTile($dclock, "clockdigital", $options, $allthings);
+                $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
                 $fmt_date = $dclock["fmt_date"];
                 $fmt_time = $dclock["fmt_time"];
                 $dclock["date"] = date($fmt_date);
@@ -2451,7 +2484,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $clockskin = "CoolClock:swissRail:72";
                 $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                                 "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-                $aclock = getCustomTile($aclock, "clockanalog", $options, $allthings);
+                $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
                 $fmt_date = $aclock["fmt_date"];
                 $fmt_time = $aclock["fmt_time"];
                 $aclock["date"] = date($fmt_date);
@@ -2468,7 +2501,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                          ( $thing["refresh"]==="normal" || 
                            $thing["refresh"]==="fast" ) ) && 
                          array_key_exists($idx, $options["index"]) ) {
-                        $thevalue = getCustomTile($thing["value"], $thing["id"], $options, $allthings);
+                        $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
                         $thing["value"] = $thevalue;
                         $allthings[$idx] = $thing;
                         $tileid = $options["index"][$idx];
