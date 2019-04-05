@@ -1297,7 +1297,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
     // in the room array - this is a temp fix until I change the architecture
     // to store custom names in the index of things instead
     $customname= "";
-    foreach ($rooms as $room) {
+    foreach ($rooms as $room => $ridx) {
         if ( array_key_exists($room, $thingoptions) ) {
             $things = $thingoptions[$room];
             foreach ($things as $kindexarr) {
@@ -1306,7 +1306,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                     $kindex = $kindexarr[0];
 
                     // if our tile matches and there is a custom name, use it
-                    if ( strval($kindex)===strval($tileid) ) {
+                    if ( intval($kindex)===intval($tileid) ) {
                         $customname = $kindexarr[4];
                         if ( $customname!=="" ) { break; }
                     }
@@ -2453,7 +2453,7 @@ function doAction($hubnum, $path, $swid, $swtype,
         if ( $response && count($response)>0 && $allthings ) {
             
             // update session with new status and pick out all if needed
-            if ( $path==="doquery" && ($swid==="all" && $swtype=="all") ) {
+            if ( $path==="doquery" && $swid==="all" ) {
                 $respvals = array();
                 foreach($response as $thing) {
                     $idx = $thing["type"] . "|" . $thing["id"];
@@ -2464,6 +2464,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $oldthing = $allthings[$idx];
                         $newvalue = array_merge($oldthing["value"], $thing["value"]);
                         $newthing = array_merge($oldthing, $thing);
+                        
+                        $newvalue = getCustomTile($newvalue, $thing["type"], $thing["id"], $options, $allthings);
                         $newthing["value"] = $newvalue;
                         $allthings[$idx] = $newthing;
                     }
@@ -2501,9 +2503,9 @@ function doAction($hubnum, $path, $swid, $swtype,
                          ( $thing["refresh"]==="normal" || 
                            $thing["refresh"]==="fast" ) ) && 
                          array_key_exists($idx, $options["index"]) ) {
-                        $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
-                        $thing["value"] = $thevalue;
-                        $allthings[$idx] = $thing;
+                        // $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
+                        // $thing["value"] = $thevalue;
+                        // $allthings[$idx] = $thing;
                         $tileid = $options["index"][$idx];
                         $respvals[$tileid] = $thing;
                     }
