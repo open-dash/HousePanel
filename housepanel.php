@@ -7,6 +7,7 @@
  * HousePanel now obtains all auth information from the setup step upon first run
  *
  * Revision History
+ * 2.040      Four event fields added to most tiles for reporting (ST only for now)
  * 2.031      Use custom name for head title and name field
  * 2.030      Fix HSM and SHM bugs and piston styling for modern skin
  * 2.020      Macro rule graduate from beta to tested feature - still no gui
@@ -231,7 +232,7 @@
 */
 ini_set('max_execution_time', 300);
 ini_set('max_input_vars', 20);
-define('HPVERSION', 'Version 2.031');
+define('HPVERSION', 'Version 2.040');
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 

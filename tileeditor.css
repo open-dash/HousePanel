@@ -1609,3 +1609,8 @@ div.control-thing div.overlay.refresh {
 div.rule {
     cursor: pointer;
 }
+
+/* by default turn off all history displays */
+div.event_1, div.event_2, div.event_3, div.event_4 {
+    display: none;
+}

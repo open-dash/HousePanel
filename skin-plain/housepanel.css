@@ -54,7 +54,6 @@ div.thing.catalog-thing {
 /* styling defaults without state or specific thing subtypes */
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
 div.contact, div.music, div.presence, div.piston, div.valve, div.door, div.temperature {
-    display: inline-block;
     background-repeat: no-repeat;
     padding: 0px 0;
     margin: 0;

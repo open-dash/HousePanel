@@ -76,7 +76,6 @@ div.thing.switch-thing, div.thing.switchlevel-thing, div.thing.bulb-thing {
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
 div.contact, div.music, div.presence, div.piston, div.valve, div.overlay div.door, 
 div.temperature, div.overlay div.themode, div.shm, div.hsm {
-    display: inline-block;
     background-repeat: no-repeat;
     padding: 0px 0;
     margin: 0;
@@ -892,4 +891,11 @@ div.other-thing div.overlay._on {
     display: inline-block;
     color: rgba(255,255,255,1);
     font-size: 12pt;
+}
+div.event_1 {
+    display: block;
+    font-size: 9pt;
+    width: 100%;
+    background-color: rgba(90,90,90,1);
+    font-style: italic;
 }

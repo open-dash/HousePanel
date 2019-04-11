@@ -118,6 +118,21 @@ desired iFrame content. By default HP comes with two html frames that shows
 a weather forecast in two different formats.
 <br/><br/>
 
+Most tiles now also contain 4 fields hidden by default that display the last four
+events that occurred and their date in the UTC time zone. One or up to all four
+of these fields can be revealed using the tile editor or by adding the following
+to your skin (more on skins later).
+<br/><br/>
+<blockquote><pre>
+div.event_1 {
+    display: block;
+    font-size: 9pt;
+    width: 100%;
+    background-color: rgba(90,90,90,1);
+    font-style: italic;
+}
+</pre></blockquote>
+
 A very important feature of HousePanel is the Tab layout. All controllable things are presented on one
 of several Tabs that can be quickly swapped in and out of view. This uses the tabbed display capability
 of modern web browsers. Under the hood HP uses jQuery to make this efficient. This means that any

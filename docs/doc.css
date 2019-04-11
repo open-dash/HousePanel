@@ -54,6 +54,7 @@ blockquote, div.code {
     font-size: 14pt;
     background-color: #cccccc;
     border: 2px black solid;
+    overflow-x: scroll;
 }
 table {
     color: black;

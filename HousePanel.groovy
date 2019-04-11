@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/09/2019 - add history fields
  * 03/15/2019 - fix names of mode, blank, and image, and add humidity to temperature
  * 03/14/2019 - exclude fields that are not interesting from general tiles
  * 03/02/2019 - added motion sensors to subscriptions and fix timing issue
@@ -190,10 +191,35 @@ def configureHub() {
     logger("webSocket Port = ${state.directPort}", "info")
 }
 
+def addHistory(resp, item) {
+    if ( resp ) {
+        def start = new Date() - 7
+        def thestates = item.eventsSince(start,["max":4])
+        logger(thestates.toString(),"trace")
+        def i = 0;
+        def priorval = ""
+        def dateFormat = "MM/dd HH:mm:ss"
+        // def tz = Calendar.getInstance().getTimeZone()
+        def tz = TimeZone.getTimeZone("EST")
+        thestates.each {
+            if ( it.isStateChange() && it.value!=priorval ) {
+                i++
+                def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
+                resp.put("event_${i}", evtvalue )
+                priorval = it.value
+            }
+        }
+    }
+    return resp
+}
+
 def getSwitch(swid, item=null) {
     item = item? item : myswitches.find {it.id == swid }
     def resp = item ?   [name: item.displayName, switch: item.currentValue("switch")
                          ] : false
+    resp = addHistory(resp, item)
+    logger("Switch response = ${resp}", "debug")
+    return resp
 }
 
 def getBulb(swid, item=null) {
@@ -211,6 +237,7 @@ def getMomentary(swid, item=null) {
         def curval = item.currentValue("switch")
         if (curval!="on" && curval!="off") { curval = "off" }
         resp = [name: item.displayName, momentary: curval]
+        resp = addHistory(resp, item)
     }
     return resp
 }
@@ -238,6 +265,8 @@ def getLock(swid, item=null) {
         }
         resp.put("lock", item.currentValue("lock"))
     }
+    resp = addHistory(resp, item)
+    logger("Lock response = ${resp}", "debug")
     return resp
 }
 
@@ -251,6 +280,7 @@ def getMusic(swid, item=null) {
                               level: item.currentValue("level"),
                               mute: item.currentValue("mute")
                         ] : false
+    resp = addHistory(resp, item)
     logger("Music response = ${resp}", "debug")
     return resp
 }
@@ -273,6 +303,7 @@ def getThermostat(swid, item=null) {
     if ( item.hasCapability("Battery") ) {
         resp.put("battery", item.currentValue("battery"))
     }
+    resp = addHistory(resp, item)
     logger("Thermostat response = ${resp}", "debug")
     return resp
 }
@@ -281,6 +312,7 @@ def getThermostat(swid, item=null) {
 def getPresence(swid, item=null) {
     item = item ? item : mypresences.find {it.id == swid }
     def resp = item ? [name: item.displayName, presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
+    resp = addHistory(resp, item)
     logger("Presence response = ${resp}", "debug")
     return resp
 }
@@ -300,6 +332,7 @@ def getIlluminance(swid, item=null) {
     // getThing(myilluminances, swid, item)
     item = item ? item : myilluminances.find {it.id == swid }
     def resp = item ? [name: item.displayName, illuminance : item.currentValue("illuminance")] : false
+    resp = addHistory(resp, item)
     logger("Illuminance response = ${resp}", "debug")
     return resp
 }
@@ -315,11 +348,13 @@ def getTemperature(swid, item=null) {
     if ( resp && item.hasAttribute("humidity") ) {
         resp.put("humidity", item.currentValue("humidity"))
     }
+    resp = addHistory(resp, item)
+    logger("Temperature response = ${resp}", "debug")
     return resp
 }
 
 def getWeather(swid, item=null) {
-	getDevice(myweathers, swid, item)
+    getDevice(myweathers, swid, item)
 }
 
 def getOther(swid, item=null) {
@@ -347,9 +382,9 @@ def getmyMode(swid, item=null) {
 }
 
 def getSHMState(swid, item=null){
-	def status = location.currentState("alarmSystemStatus")?.value
-	def resp = [name : "Smart Home Monitor", state: status]
-	return resp
+    def status = location.currentState("alarmSystemStatus")?.value
+    def resp = [name : "Smart Home Monitor", state: status]
+    return resp
 }
 
 def getBlank(swid, item=null) {
@@ -422,7 +457,7 @@ def getThing(things, swid, item=null) {
     def resp = item ? [:] : false
     if ( item ) {
         resp.put("name",item.displayName)
-    
+        
         item.capabilities.each {cap ->
             // def capname = cap.getName()
             cap.attributes?.each {attr ->
@@ -458,6 +493,7 @@ def getThing(things, swid, item=null) {
                 logger("Attempt to read command for ${swid} failed ${ex}", "error")
             }
         }
+        resp = addHistory(resp, item)
     }
     return resp
 }
