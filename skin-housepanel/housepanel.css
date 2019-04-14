@@ -892,7 +892,11 @@ div.other-thing div.overlay._on {
     color: rgba(255,255,255,1);
     font-size: 12pt;
 }
-div.event_1 {
+
+/* enable event reporting for some things */
+div.switch.event_1, div.lock.event_1, div.light.event_1,
+div.contact.event_1, div.door.event_1,
+div.switchlevel.event_1, div.bulb.event_1 {
     display: block;
     font-size: 9pt;
     width: 100%;

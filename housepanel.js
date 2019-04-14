@@ -1157,6 +1157,23 @@ function setupButtons() {
             evt.stopPropagation();
         });
     }
+    
+    if ( pagename=="info" ) {
+        
+        $("button.showhistory").on('click', function() {
+            if ( $("#devhistory").hasClass("hidden") ) {
+                $("#devhistory").removeClass("hidden");
+                $(this).html("Hide History");
+            } else {
+                $("#devhistory").addClass("hidden");
+                $(this).html("Show History");
+            }
+        });
+        
+        $("button.infobutton").on('click', function() {
+            window.location.href = returnURL;
+        });
+    }
 
     if ( pagename==="auth" ) {
 

@@ -450,7 +450,7 @@ div.buttons, form.buttons {
     display: inline;
 }
 input.submitbutton, input.resetbutton, input.authbutton, 
-div.restoretabs, div.formbutton {
+div.restoretabs, div.formbutton, button.showhistory, button.infobutton {
     background-color: #3a5795;
     width: 150px; height: 50px; margin-left: 10px; margin-right: 30px;
     cursor: pointer;    border: none;
@@ -458,6 +458,13 @@ div.restoretabs, div.formbutton {
     border-bottom: 4px solid rgba(0, 0, 0, 0.8); 
     border-right: 4px solid rgba(0, 0, 0, 0.8); 
     font-size: 14pt;
+}
+button.showhistory, button.infobutton {
+    width: 250px;
+}
+.fixbottom {
+    position: fixed; 
+    top: 0px; right: 0px;
 }
 /* style restore tabs like a button - notice adjustments for border and vertical centering */
 div.restoretabs, div.formbutton {
