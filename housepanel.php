@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.045      Merge groovy files into one with conditional hub detector
  2.042      Minor tweak to CSS default for showing history only on some things
             - add dev history to show info and auto create version info from this
             - add on and off toggle icons from modern to the default skin

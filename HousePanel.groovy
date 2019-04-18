@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/17/2019 - merge groovy files with detector for hub type
  * 04/09/2019 - add history fields
  * 03/15/2019 - fix names of mode, blank, and image, and add humidity to temperature
  * 03/14/2019 - exclude fields that are not interesting from general tiles
@@ -69,12 +70,16 @@ definition(
 
 
 preferences {
-    section("HousePanel SmartThings Configuration") {
+    section("HousePanel Configuration") {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
         input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "st_")
-        paragraph "Enable this to use Pistons. You must have WebCore installed for this to work."
+        paragraph "Set Hubitat Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
+                  "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
+                  "actions will be slower than local installations. This only applies to Hubitat. SmartThings always uses Cloud calls."
+        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
+        paragraph "Enable this to use Pistons. You must have WebCore installed for this to work. Not recommended for Hubitat hubs."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
         input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
@@ -114,7 +119,7 @@ preferences {
     }
     section("Logging") {
         input (
-            name: "configLoggingLevelIDE",
+            name: "configLogLevel",
             title: "IDE Live Logging Level:\nMessages with this level and higher will be logged to the IDE.",
             type: "enum",
             options: [
@@ -163,15 +168,15 @@ def updated() {
 }
 
 def initialize() {
+    state.hubtype = getPlatform()
+    state.usepistons = settings?.usepistons
+    state.directIP = settings?.webSocketHost
+    state.directPort = settings?.webSocketPort
     configureHub();
-    state.usepistons = usepistons
-    state.directIP = webSocketHost
-    state.directPort = webSocketPort
     if ( state.usepistons ) {
         webCoRE_init()
     }
-    state.loggingLevelIDE = (settings.configLoggingLevelIDE) ? settings.configLoggingLevelIDE.toInteger() : 3
-    state.dologging = (state.loggingLevelIDE > 2);
+    state.loggingLevelIDE = settings.configLogLevel?.toInteger() ?: 3
     logger("Installed with settings: ${settings} ", "debug")
     if (state.directIP)
     {
@@ -180,19 +185,50 @@ def initialize() {
     }
 }
 
+private String getPlatform() {
+    def hubt = physicalgraph?.device?.HubAction ? 'SmartThings' : 'Hubitat'
+    logger(hubt, "info")
+    return hubt
+}
+
 def configureHub() {
-    def hub = location.hubs[0];
+    def hub = location.hubs[0]
+    def hubid
+    def hubip
+    def endpt
+    
+    def firmware = hub?.firmwareVersionString ?: "unknown"
+
+    // detect ST based on ID
+    if ( state.hubtype=="SmartThings" ) {
+        state.hubid = hub.id
+        hubip = hub.localIP
+        logger("You must go through the OAUTH flow to obtain a proper SmartThings AccessToken", "info")
+        logger("You must go through the OAUTH flow to obtain a proper SmartThings EndPoint", "info")
+    } else {
+        state.hubid = app.id
+        if ( cloudcalls ) {
+            hubip = "https://oauth.cloud.hubitat.com";
+            endpt = "${hubip}/${hubUID}/apps/${app.id}/"
+            logger("Cloud installation was requested and is reflected in the hubip and endpt info", "info")
+        } else {
+            hubip = hub.localIP
+            endpt = "${hubip}/apps/api/${app.id}/"
+        }
+        logger("Hubitat AccessToken = ${state.accessToken}", "info")
+        logger("Hubitat EndPoint = ${endpt}", "info")
+    }
+    
     logger("Use this information on the Auth page of HousePanel.", "info")
-    logger("Hub IP = ${hub.localIP}", "info")
-    logger("Hub ID = ${hub.id}", "info")
-    logger("You must go through the OAUTH flow to obtain a proper SmartThings AccessToken", "info")
-    logger("You must go through the OAUTH flow to obtain a proper SmartThings EndPoint", "info")
+    logger("Hub IP = ${hubip}", "info")
+    logger("Hub ID = ${state.hubid}", "info")
+    logger("Hub Firmware = ${firmware}", "info")
     logger("rPI IP Address = ${state.directIP}", "info")
     logger("webSocket Port = ${state.directPort}", "info")
 }
 
 def addHistory(resp, item) {
-    if ( resp ) {
+    if ( state.hubtype=="SmartThings" && resp ) {
         def start = new Date() - 7
         def thestates = item.eventsSince(start,["max":4])
         logger(thestates.toString(),"trace")
@@ -202,7 +238,7 @@ def addHistory(resp, item) {
         // def tz = Calendar.getInstance().getTimeZone()
         def tz = TimeZone.getTimeZone("EST")
         thestates.each {
-            if ( it.isStateChange() && it.value!=priorval ) {
+            if ( it.isStateChange && it.value!=priorval ) {
                 i++
                 def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
                 resp.put("event_${i}", evtvalue )
@@ -387,6 +423,14 @@ def getSHMState(swid, item=null){
     return resp
 }
 
+def getHsmState(swid, item=null) {
+    // uses Hubitat specific call for HSM per 
+    // https://community.hubitat.com/t/hubitat-safety-monitor-api/934/11
+    def status = location.hsmStatus ?: "uninstalled"
+    def resp = [name : "Hubitat Safety Monitor", state: status]
+    return resp
+}
+
 def getBlank(swid, item=null) {
     def resp = [name: extractName(swid, "Blank")]
     return resp
@@ -500,7 +544,6 @@ def getThing(things, swid, item=null) {
 
 // make a generic thing list getter to streamline the code
 def getThings(resp, things, thingtype) {
-//    def resp = []
     def n  = things ? things.size() : 0
     logger("Number of things of type ${thingtype} = ${n}", "debug")
     things?.each {
@@ -512,7 +555,7 @@ def getThings(resp, things, thingtype) {
 
 def logStepAndIncrement(step)
 {
-    logger("STDEB ${step}", "trace")
+    logger("Debug ${step}", "trace")
     return step+1
 }
 // This retrieves and returns all things
@@ -547,8 +590,10 @@ def getAllThings() {
     resp = getTemperatures(resp)
     run = logStepAndIncrement(run)
     resp = getIlluminances(resp)
-    run = logStepAndIncrement(run)
-    resp = getWeathers(resp)
+    if ( state.hubtype == "SmartThings" ) {
+        run = logStepAndIncrement(run)
+        resp = getWeathers(resp)
+    }
     run = logStepAndIncrement(run)
     resp = getValves(resp)
     run = logStepAndIncrement(run)
@@ -559,10 +604,16 @@ def getAllThings() {
     resp = getSmokes(resp)
     run = logStepAndIncrement(run)
     resp = getModes(resp)
-    run = logStepAndIncrement(run)
-    resp = getSHMStates(resp)
-    run = logStepAndIncrement(run)
-    resp = getRoutines(resp)
+    if ( state.hubtype == "SmartThings" ) {
+        run = logStepAndIncrement(run)
+        resp = getSHMStates(resp)
+        run = logStepAndIncrement(run)
+        resp = getRoutines(resp)
+    }
+    if ( state.hubtype == "Hubitat" ) {
+        run = logStepAndIncrement(run)
+        resp = getHsmStates(resp)
+    }
     run = logStepAndIncrement(run)
     resp = getOthers(resp)
     run = logStepAndIncrement(run)
@@ -571,10 +622,10 @@ def getAllThings() {
     resp = getImages(resp)
     run = logStepAndIncrement(run)
     resp = getPowers(resp)
-    run = logStepAndIncrement(run)
 
     // optionally include pistons based on user option
     if (state.usepistons) {
+        run = logStepAndIncrement(run)
         resp = getPistons(resp)
     }
 
@@ -582,7 +633,7 @@ def getAllThings() {
 }
 
 def getModes(resp) {
-    logger("Getting 4 SmartThings mode tiles","debug");
+    logger("Getting 4 ${state.hubtype} mode tiles","debug");
     def vals = ["m1x1","m1x2","m2x1","m2x2"]
     def val
     vals.each {
@@ -596,6 +647,15 @@ def getSHMStates(resp) {
     logger("Getting Smart Home Monitor state for SmartThings Hub","debug");
     def val = getSHMState("${hubprefix}shm")
     resp << [name: "Smart Home Monitor", id: "${hubprefix}shm", value: val, type: "shm"]
+    return resp
+}
+
+def getHsmStates(resp) {
+    logger("Getting Hubitat Safety Monitor state for Hubitat Hub","debug");
+    def val = getHsmState("${hubprefix}hsm")
+    if ( val ) {
+        resp << [name: "Hubitat Safety Monitor", id: "${hubprefix}hsm", value: val, type: "hsm"]
+    }
     return resp
 }
 
@@ -764,8 +824,8 @@ def getPowers(resp) {
 
 def getHubInfo() {
     def resp =  [ sitename: location.getName(),
-                  hubId: location.getId(),
-                  hubtype: "SmartThings" ]
+                  hubId: state.hubid,
+                  hubtype: state.hubtype ]
     return resp
 }
 
@@ -792,6 +852,7 @@ def autoType(swid) {
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
     else if ( mypower?.find {it.id == swid } ) { swtype= "power" }
     else if ( swid=="${hubprefix}shm" ) { swtype= "shm" }
+    else if ( swid=="${hubprefix}hsm" ) { swtype= "hsm" }
     else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
     else if ( swid=="${hubprefix}b1x1" || swid=="${hubprefix}b1x2" || swid=="${hubprefix}b2x1" || swid=="${hubprefix}b2x2" ) { swtype= "blank" }
     else if ( swid=="${hubprefix}img1" || swid=="${hubprefix}img2" || swid=="${hubprefix}img3" || swid=="${hubprefix}img4" ) { swtype= "image" }
@@ -862,6 +923,10 @@ def doAction() {
       case "shm" :
          cmdresult = setSHMState(swid, cmd, swattr, subid)
          break
+         
+      case "hsm":
+          cmdresult = setHsmState(swid, cmd, swattr, subid)
+          break;
 		 
       case "valve" :
       	 cmdresult = setValve(swid, cmd, swattr, subid)
@@ -993,6 +1058,10 @@ def doQuery() {
         
     case "shm" :
         cmdresult = getSHMState(swid)
+        break
+        
+    case "hsm" :
+        cmdresult = getHsmState(swid)
         break
         
     case "routine" :
@@ -1133,6 +1202,50 @@ def setSHMState(swid, cmd, swattr, subid){
     sendLocationEvent(name: "alarmSystemStatus" , value : cmd )
     logger("SHM state set to $cmd", "info")
     def resp = [name : "Smart Home Monitor", state: cmd]
+    return resp
+}
+
+def setHsmState(swid, cmd, swattr, subid){
+
+    def i
+    def key = ""
+    def cmds = ["armAway", "armHome", "armNight", "disarm"]
+    def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
+
+    // first handle gui that sends attr information
+    if ( swattr && swattr.startsWith("hsm") ) {
+        for (defkey in keys) {
+            if ( swattr.endsWith(defkey) ) {
+                i = keys.indexOf(defkey) + 1
+                if ( i >= keys.size() ) { i = 0 }
+                cmd = cmds[i]
+                key = keys[i]
+            }
+        }
+    }
+
+    if ( key=="" ) {
+        if ( keys.contains(cmd) ) {
+            i = keys.indexOf(cmd)
+            key = cmd
+            cmd = cmds[i]
+        } else if ( cmds.contains(cmd) ) {
+            i = cmds.indexOf(cmd)
+            key = keys[1]
+        } else {
+            key = location.hsmStatus
+            i = keys.indexOf(key)
+            cmd = cmds[i]
+        }
+    }
+
+    if ( cmd && cmds.contains(cmd) ) {
+        sendLocationEvent(name: "hsmSetArm", value: cmd)
+        i = cmds.indexOf(cmd)
+        key = keys[1]
+    }
+    logger("HSM arm set to ${key}", "debug")
+    def resp = [name : "Hubitat Safety Monitor", state: key]
     return resp
 }
 
@@ -1779,6 +1892,12 @@ def changeHandler(evt) {
     def deviceName = evt?.displayName
     def attr = evt?.name
     def value = evt?.value
+
+    // handle special case of hsm
+    if ( attr=="hsmStatus " || attr=="alarmSystemStatus" ) {
+        deviceid = "alarmSystemStatus_${location.id}"
+        attr = "alarmSystemStatus"
+    }
     
     logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
@@ -1799,7 +1918,12 @@ def changeHandler(evt) {
                 change_value: value
             ]
         ]
-        def result = new physicalgraph.device.HubAction(params)
+        def result
+        if ( state.hubtype=="SmartThings" ) {
+            result = physicalgraph.device.HubAction.newInstance(params)
+        } else {
+            result = hubitat.device.HubAction.newInstance(params)
+        }
         sendHubCommand(result)
     }
 }
@@ -1823,7 +1947,12 @@ def postHub(message) {
                 message: message,
             ]
         ]
-        def result = new physicalgraph.device.HubAction(params)
+        def result
+        if ( state.hubtype=="SmartThings" ) {
+            result = physicalgraph.device.HubAction.newInstance(params)
+        } else {
+            result = hubitat.device.HubAction.newInstance(params)
+        }
         sendHubCommand(result)
         
     }
