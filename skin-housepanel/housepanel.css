@@ -88,10 +88,36 @@ div.overlay div.themode,
 div.temperature-thing, div.thingname.temperature {
     width: 120px;
 }
-div.shm, div.hsm {
-    width: 140px;
-}
 
+div.shm-thing div.overlay div.shm.state, div.hsm-thing div.overlay div.hsm.state {
+    width: 140px;
+    background-color: inherit;
+    border-top: none;
+}
+div.shm-thing div.overlay._off, div.shm-thing div.overlay._away, div.shm-thing div.overlay._stay {
+    display: inline-block;
+    background-color: rgba(150, 150, 150, 1); 
+    border-top: 1px solid white;
+    width: 46px;
+}
+div.shm-thing div.overlay div.shm,
+div.hsm-thing div.overlay div.hsm {
+    background-color: rgba(150, 150, 150, 1); 
+    border-top: 1px solid white;
+    font-size: 12pt;
+    cursor: pointer;
+}
+div.shm-thing div.overlay div.shm:hover,
+div.hsm-thing div.overlay div.hsm:hover {
+    filter: invert(1);
+}
+div.shm-thing div.overlay.name div.shm, div.hsm-thing div.overlay.name div.hsm {
+    display: none;
+}
+div.shm-thing div.overlay.state div.shm, div.hsm-thing div.overlay.state div.hsm {
+    font-size: 18pt;
+    filter: invert(0);
+}
 /* heights for things with icons */
 div.switch.on, div.switch.off, div.light.on, div.light.off,
 div.presence.present, div.presence.absent,

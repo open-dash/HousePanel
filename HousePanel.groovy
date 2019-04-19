@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/18/2019 - add direct mode change for SHM and HSM (HE bug in HSM)
  * 04/17/2019 - merge groovy files with detector for hub type
  * 04/09/2019 - add history fields
  * 03/15/2019 - fix names of mode, blank, and image, and add humidity to temperature
@@ -178,6 +179,12 @@ def initialize() {
     }
     state.loggingLevelIDE = settings.configLogLevel?.toInteger() ?: 3
     logger("Installed with settings: ${settings} ", "debug")
+    
+    if ( state.hubtype=="Hubitat" ) {
+        subscribe(location, "hsmStatus", hsmStatusHandler)
+        subscribe(location, "hsmAlerts", hsmAlertHandler)
+    }
+    
     if (state.directIP)
     {
         postHub("initialize");
@@ -228,22 +235,27 @@ def configureHub() {
 }
 
 def addHistory(resp, item) {
-    if ( state.hubtype=="SmartThings" && resp ) {
-        def start = new Date() - 7
-        def thestates = item.eventsSince(start,["max":4])
-        logger(thestates.toString(),"trace")
-        def i = 0;
-        def priorval = ""
-        def dateFormat = "MM/dd HH:mm:ss"
-        // def tz = Calendar.getInstance().getTimeZone()
-        def tz = TimeZone.getTimeZone("EST")
-        thestates.each {
-            if ( it.isStateChange && it.value!=priorval ) {
-                i++
-                def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
-                resp.put("event_${i}", evtvalue )
-                priorval = it.value
+    if (resp && item ) {
+        
+        try {
+            def start = new Date() - 7
+            def thestates = item.eventsSince(start,["max":4])
+            logger(thestates.toString(),"trace")
+            def i = 0;
+            def priorval = ""
+            def dateFormat = "MM/dd HH:mm:ss"
+            // def tz = Calendar.getInstance().getTimeZone()
+            def tz = TimeZone.getTimeZone("EST")
+            thestates.each {
+                if ( it.isStateChange && it.value!=priorval ) {
+                    i++
+                    def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
+                    resp.put("event_${i}", evtvalue )
+                    priorval = it.value
+                }
             }
+        } catch (e) {
+            logger("Cannot retrieve history for device ${item.displayName}", "info")
         }
     }
     return resp
@@ -418,16 +430,28 @@ def getmyMode(swid, item=null) {
 }
 
 def getSHMState(swid, item=null){
+    def cmds = ["off", "away", "stay"]
     def status = location.currentState("alarmSystemStatus")?.value
     def resp = [name : "Smart Home Monitor", state: status]
+    for (defcmd in cmds) {
+        resp.put("_${defcmd}",defcmd)
+    }
     return resp
 }
 
 def getHsmState(swid, item=null) {
     // uses Hubitat specific call for HSM per 
     // https://community.hubitat.com/t/hubitat-safety-monitor-api/934/11
+    def cmds = ["armAway", "armHome", "armNight", "disarm", "armRules", "disarmRules", "disarmAll", "armAll", "cancelAlerts"]
+    def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
     def status = location.hsmStatus ?: "uninstalled"
     def resp = [name : "Hubitat Safety Monitor", state: status]
+    
+    if ( status != "uninstalled" ) {
+        for (defcmd in cmds) {
+            resp.put("_${defcmd}",defcmd)
+        }
+    }
     return resp
 }
 
@@ -1186,34 +1210,57 @@ def setMode(swid, cmd, swattr, subid) {
 }
 
 def setSHMState(swid, cmd, swattr, subid){
+    def cmds = ["off", "away", "stay"]
 
-    // handle casess for attr set from GUI
-    if ( swattr.startsWith("shm") && swattr.endsWith("away") ) {
-        cmd = "stay"
-    } else if ( swattr.startsWith("shm") && swattr.endsWith("stay") ) {
+    // first handle toggling on icon in gui using attr information
+    // default is disarm if something isn't understood
+    if ( subid=="state" && swattr && swattr.startsWith("shm") ) {
         cmd = "off"
-    } else if ( swattr.startsWith("shm") && swattr.endsWith("off") ) {
-        cmd = "away"
-    } else {
-        if ( cmd!="stay" && cmd!="away" && cmd!="off" ) {
-            cmd = location.currentState("alarmSystemStatus")?.value
+        for (defkey in cmds) {
+            if ( swattr.endsWith(defkey) ) {
+                i = cmds.indexOf(defkey) + 1
+                if ( i >= cmds.size() ) { i = 0 }
+                cmd = cmds[i]
+            }
         }
+        
+    // handle commands sent by GUI
+    } else if (subid.startsWith("_")) {
+        cmd = subid.substring(1)
     }
+
+    // handle API commands sent by name
+    if ( !cmds.contains(cmd) ) {
+        cmd = location.currentState("alarmSystemStatus")?.value
+    }
+
     sendLocationEvent(name: "alarmSystemStatus" , value : cmd )
     logger("SHM state set to $cmd", "info")
     def resp = [name : "Smart Home Monitor", state: cmd]
+    for (defcmd in cmds) {
+        resp.put("_${defcmd}",defcmd)
+    }
     return resp
+}
+
+def hsmStatusHandler(evt) {
+    log.info "HSM state set to ${evt.value}" + (evt.value=="rule" ? $evt.descriptionText : "" )
+}
+def hsmAlertHandler(evt) {
+    log.info "HSM alert: ${evt.value}"
 }
 
 def setHsmState(swid, cmd, swattr, subid){
 
     def i
     def key = ""
-    def cmds = ["armAway", "armHome", "armNight", "disarm"]
-    def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
+    def cmds = ["armAway", "armHome", "armNight", "disarm", "armRules", "disarmRules", "disarmAll", "armAll", "cancelAlerts"]
+    def keys = ["armedAway", "armedHome", "armedNight", "disarmed", "armedHome", "disarmed", "disarmed", "armedAway", "disarmed"]
 
-    // first handle gui that sends attr information
-    if ( swattr && swattr.startsWith("hsm") ) {
+    // first handle toggling on icon in gui using attr information
+    // default is disarm if something isn't understood
+    if ( subid=="state" && swattr && swattr.startsWith("hsm") ) {
+        cmd = "disarm"
         for (defkey in keys) {
             if ( swattr.endsWith(defkey) ) {
                 i = keys.indexOf(defkey) + 1
@@ -1222,30 +1269,31 @@ def setHsmState(swid, cmd, swattr, subid){
                 key = keys[i]
             }
         }
-    }
+        
+    // handle commands sent by GUI
+    } else if (subid.startsWith("_")) {
+        cmd = subid.substring(1)
+        i = cmds.indexOf(cmd)
+        key = keys[i]
 
-    if ( key=="" ) {
-        if ( keys.contains(cmd) ) {
-            i = keys.indexOf(cmd)
-            key = cmd
-            cmd = cmds[i]
-        } else if ( cmds.contains(cmd) ) {
-            i = cmds.indexOf(cmd)
-            key = keys[1]
-        } else {
-            key = location.hsmStatus
-            i = keys.indexOf(key)
-            cmd = cmds[i]
-        }
+    // handle API commands sent by name
+    } else if ( cmds.contains(cmd) ) {
+        i = cmds.indexOf(cmd)
+        key = keys[i]
+    } else {
+        cmd = false
     }
-
+    
     if ( cmd && cmds.contains(cmd) ) {
         sendLocationEvent(name: "hsmSetArm", value: cmd)
-        i = cmds.indexOf(cmd)
-        key = keys[1]
+        logger("HSM arm set with cmd= ${cmd}", "info")
     }
-    logger("HSM arm set to ${key}", "debug")
+    
     def resp = [name : "Hubitat Safety Monitor", state: key]
+    for (defcmd in cmds) {
+        resp.put("_${defcmd}",defcmd)
+    }
+    // def resp = getHsmState(swid)
     return resp
 }
 
@@ -1894,10 +1942,10 @@ def changeHandler(evt) {
     def value = evt?.value
 
     // handle special case of hsm
-    if ( attr=="hsmStatus " || attr=="alarmSystemStatus" ) {
-        deviceid = "alarmSystemStatus_${location.id}"
-        attr = "alarmSystemStatus"
-    }
+//    if ( attr=="hsmStatus " || attr=="alarmSystemStatus" ) {
+//        deviceid = "alarmSystemStatus_${location.id}"
+//        attr = "alarmSystemStatus"
+//    }
     
     logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
