@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.047      Clean up SHM and HSM to deliver similar display fields and bug fixes
  2.046      Avoid fatal error if prefix not given, fix Routine bug in groovy, etc
  2.045      Merge groovy files into one with conditional hub detector
  2.042      Minor tweak to CSS default for showing history only on some things

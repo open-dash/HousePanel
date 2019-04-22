@@ -17,6 +17,8 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/22/2019 - clean up SHM and HSM to return similar display fields
+ *              - mimic Night setting in SHM to match how HSM works
  * 04/21/2019 - deal with missing prefix and other null protections
  * 04/18/2019 - add direct mode change for SHM and HSM (HE bug in HSM)
  * 04/17/2019 - merge groovy files with detector for hub type
@@ -195,7 +197,7 @@ def initialize() {
 
 private String getPlatform() {
     def hubt = physicalgraph?.device?.HubAction ? 'SmartThings' : 'Hubitat'
-    logger(hubt, "info")
+    logger("Platform = ${hubt}", "debug")
     return hubt
 }
 
@@ -431,24 +433,46 @@ def getmyMode(swid, item=null) {
 }
 
 def getSHMState(swid, item=null){
-    def cmds = ["off", "away", "stay"]
-    def status = location.currentState("alarmSystemStatus")?.value
-    def resp = [name : "Smart Home Monitor", state: status]
+    def cmds = ["away", "stay", "night", "off"]
+    def keynames = ["Away", "Home", "Night", "Disarmed"]
+    def key = location.currentState("alarmSystemStatus")?.value
+
+    // mimic the states provided by HSM
+    def i = cmds.findIndexOf{it == key}
+    if ( i<0 ) { i = 3 }
+    
+    // if mode is night and set to stay change mode to fake night setting
+    if ( i==1 ) {
+        def curmode = location.getCurrentMode()?.getName()
+        if ( curmode == "Night" ) { i= 2 }
+    }
+    
+    def statusname = keynames[i]
+    def resp = [name : "Smart Home Monitor", state: statusname]
     for (defcmd in cmds) {
         resp.put("_${defcmd}",defcmd)
     }
     return resp
 }
 
-def getHsmState(swid, item=null) {
+def getHSMState(swid, item=null) {
     // uses Hubitat specific call for HSM per 
     // https://community.hubitat.com/t/hubitat-safety-monitor-api/934/11
     def cmds = ["armAway", "armHome", "armNight", "disarm", "armRules", "disarmRules", "disarmAll", "armAll", "cancelAlerts"]
     def keys = ["armedAway", "armedHome", "armedNight", "disarmed"]
-    def status = location.hsmStatus ?: "uninstalled"
-    def resp = [name : "Hubitat Safety Monitor", state: status]
+    def keynames = ["Away", "Home", "Night", "Disarmed"]
     
-    if ( status != "uninstalled" ) {
+    def key = location.hsmStatus ?: false
+    def resp
+    
+    if ( !key ) {
+        resp = [name : "Hubitat Safety Monitor", state: "Not Installed"]
+        logger("location hsmStatus is invalid; it is not installed","info")
+    } else {
+        def i = keys.findIndexOf{ it == key }
+        def statusname = (i >= 0) ? keynames[i] : "Disarmed"
+        resp = [name : "Hubitat Safety Monitor", state: statusname]
+        logger("location hsmStatus returned: ${key} as name: ${statusname}","debug")
         for (defcmd in cmds) {
             resp.put("_${defcmd}",defcmd)
         }
@@ -637,7 +661,7 @@ def getAllThings() {
     }
     if ( state.hubtype == "Hubitat" ) {
         run = logStepAndIncrement(run)
-        resp = getHsmStates(resp)
+        resp = getHSMStates(resp)
     }
     run = logStepAndIncrement(run)
     resp = getOthers(resp)
@@ -675,9 +699,9 @@ def getSHMStates(resp) {
     return resp
 }
 
-def getHsmStates(resp) {
+def getHSMStates(resp) {
     logger("Getting Hubitat Safety Monitor state for Hubitat Hub","debug");
-    def val = getHsmState("${hubprefix}hsm")
+    def val = getHSMState("${hubprefix}hsm")
     if ( val ) {
         resp << [name: "Hubitat Safety Monitor", id: "${hubprefix}hsm", value: val, type: "hsm"]
     }
@@ -951,7 +975,7 @@ def doAction() {
          break
          
       case "hsm":
-          cmdresult = setHsmState(swid, cmd, swattr, subid)
+          cmdresult = setHSMState(swid, cmd, swattr, subid)
           break;
 		 
       case "valve" :
@@ -1087,7 +1111,7 @@ def doQuery() {
         break
         
     case "hsm" :
-        cmdresult = getHsmState(swid)
+        cmdresult = getHSMState(swid)
         break
         
     case "routine" :
@@ -1212,17 +1236,32 @@ def setMode(swid, cmd, swattr, subid) {
 }
 
 def setSHMState(swid, cmd, swattr, subid){
-    def cmds = ["off", "away", "stay"]
+    def cmds = ["away", "stay", "night", "off"]
+    def keynames = ["Away", "Home", "Night", "Disarmed"]
 
     // first handle toggling on icon in gui using attr information
     // default is disarm if something isn't understood
     if ( subid=="state" && swattr && swattr.startsWith("shm") ) {
-        cmd = "off"
-        for (defkey in cmds) {
+        cmd = false
+        def i = 0
+        for (defkey in keynames) {
+            i++
             if ( swattr.endsWith(defkey) ) {
-                i = cmds.indexOf(defkey) + 1
-                if ( i >= cmds.size() ) { i = 0 }
+                if ( i >= keynames.size() ) { i = 0 }
                 cmd = cmds[i]
+                break
+            }
+        }
+        
+        if ( !cmd ) {
+            i = 0
+            for (defkey in cmds) {
+                i++
+                if ( swattr.endsWith(defkey) ) {
+                    if ( i >= cmds.size() ) { i = 0 }
+                    cmd = cmds[i]
+                    break
+                }
             }
         }
         
@@ -1230,15 +1269,26 @@ def setSHMState(swid, cmd, swattr, subid){
     } else if (subid.startsWith("_")) {
         cmd = subid.substring(1)
     }
-
-    // handle API commands sent by name
-    if ( !cmds.contains(cmd) ) {
-        cmd = location.currentState("alarmSystemStatus")?.value
+    
+    // mimic night by setting mode to night and changing to away
+    def k = cmds.findIndexOf{ it == cmd }
+    if ( k < 0 ) { k = 3 }
+    def statusname = keynames[k]
+    
+    if ( cmd=="night" ) {
+        cmd = "stay"
+        // location.setMode("Night");
+        logger("SHM Night mode set which acts just like Stay", "info");
     }
 
-    sendLocationEvent(name: "alarmSystemStatus" , value : cmd )
-    logger("SHM state set to $cmd", "info")
-    def resp = [name : "Smart Home Monitor", state: cmd]
+    // handle API commands sent by name
+    if ( cmd && cmds.contains(cmd) ) {
+        sendLocationEvent(name: "alarmSystemStatus" , value : cmd )
+    }
+
+    
+    logger("SHM state set to $cmd and given name= $statusname", "info")
+    def resp = [name : "Smart Home Monitor", state: statusname]
     for (defcmd in cmds) {
         resp.put("_${defcmd}",defcmd)
     }
@@ -1252,50 +1302,55 @@ def hsmAlertHandler(evt) {
     log.info "HSM alert: ${evt.value}"
 }
 
-def setHsmState(swid, cmd, swattr, subid){
+def setHSMState(swid, cmd, swattr, subid){
 
-    def i
-    def key = ""
+    def key = location.hsmStatus?: false
+    if ( !key ) {
+        def noresp = [name : "Hubitat Safety Monitor", state: "Not Installed"]
+        return noresp
+    }
+    
     def cmds = ["armAway", "armHome", "armNight", "disarm", "armRules", "disarmRules", "disarmAll", "armAll", "cancelAlerts"]
-    def keys = ["armedAway", "armedHome", "armedNight", "disarmed", "armedHome", "disarmed", "disarmed", "armedAway", "disarmed"]
+    def keys = ["Away", "Home", "Night", "Disarmed"]
+    // def keynames = ["Armed Away", "Armed Home", "Armed Night", "Disarmed"]
 
     // first handle toggling on icon in gui using attr information
-    // default is disarm if something isn't understood
+    // use the keys array to accomodate friendly and native names of modes
+    def i = 0
     if ( subid=="state" && swattr && swattr.startsWith("hsm") ) {
         cmd = "disarm"
         for (defkey in keys) {
+            i++
             if ( swattr.endsWith(defkey) ) {
-                i = keys.indexOf(defkey) + 1
                 if ( i >= keys.size() ) { i = 0 }
                 cmd = cmds[i]
-                key = keys[i]
+                break
             }
         }
         
-    // handle commands sent by GUI
+    // handle commands sent by GUI or user
     } else if (subid.startsWith("_")) {
         cmd = subid.substring(1)
-        i = cmds.indexOf(cmd)
-        key = keys[i]
+    }
 
-    // handle API commands sent by name
-    } else if ( cmds.contains(cmd) ) {
-        i = cmds.indexOf(cmd)
-        key = keys[i]
-    } else {
-        cmd = false
+    // deal with invalid names a user might give using api
+    // the gui would never send anything invalid
+    if ( !cmd || !cmds.contains(cmd) ) {
+        cmd = "disarm"
     }
     
-    if ( cmd && cmds.contains(cmd) ) {
-        sendLocationEvent(name: "hsmSetArm", value: cmd)
-        logger("HSM arm set with cmd= ${cmd}", "info")
-    }
+    // send command to change the alarm mode
+    sendLocationEvent(name: "hsmSetArm", value: cmd)
+    logger("HSM arm set with cmd= ${cmd}", "info")
     
-    def resp = [name : "Hubitat Safety Monitor", state: key]
+    def k = cmds.findIndexOf{ it == cmd }
+    if ( k<0 || k>3 ) { k = 3 }
+    def keyname = keys[k]
+    def resp = [name : "Hubitat Safety Monitor", state: keyname]
     for (defcmd in cmds) {
         resp.put("_${defcmd}",defcmd)
     }
-    // def resp = getHsmState(swid)
+    // def resp = getHSMState(swid)
     return resp
 }
 
