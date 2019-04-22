@@ -575,6 +575,28 @@ div.clock-thing.analog div.overlay.skin {
 }
 
 /* monitor state */
+
+div.shm-thing div.overlay div.shm,
+div.hsm-thing div.overlay div.hsm {
+    background-color: rgba(150, 150, 150, 1); 
+    border-top: 1px solid white;
+    font-size: 12pt;
+    cursor: pointer;
+    width: 100%;
+}
+div.shm-thing div.overlay div.shm:hover,
+div.hsm-thing div.overlay div.hsm:hover {
+    filter: invert(1);
+}
+div.shm-thing div.overlay.name div.shm, div.hsm-thing div.overlay.name div.hsm {
+    display: none;
+}
+div.shm-thing div.overlay.state div.shm, 
+div.hsm-thing div.overlay.state div.hsm {
+    font-size: 18pt;
+    filter: invert(0);
+}
+
 div.shm.state, div.hsm.state, div.custom.state {
     font-size: 18pt;
     margin-top: 10px;
@@ -585,17 +607,26 @@ div.shm.state, div.hsm.state, div.custom.state {
     background-position-x: center;
     background-position-y: bottom;
 }
-div.shm.state.stay, div.hsm.state.armedHome, div.hsm.state.armedNight,
-div.custom.state.stay, div.custom.state.armedHome, div.custom.state.armedNight {
+div.shm.state.stay, div.hsm.state.armedHome, div.state.Home,
+div.custom.state.stay, div.custom.state.armedHome, div.custom.state.Home {
     background-image: url('icons/security-blue.png');
 }
-div.shm.state.away, div.hsm.state.armedAway,
-div.custom.state.away, div.custom.state.armedAway {
+div.shm.state.away, div.hsm.state.armedAway, div.state.Away,
+div.custom.state.away, div.custom.state.armedAway, div.custom.state.Away {
     background-image: url('icons/security-red.png');
 }
-div.shm.state.off, div.hsm.state.disarmed, div.hsm.state.allDisarmed,
-div.custom.state.off, div.custom.state.disarmed, div.custom.state.allDisarmed {
+div.shm.state.off, div.hsm.state.disarmed, div.overlay.state div.state.Disarmed,
+div.custom.state.off, div.custom.state.disarmed, div.custom.state.Disarmed {
     background-image: url('icons/security-green.png');
+}
+div.hsm.state.armedNight, div.state.Night, 
+div.custom.state.armedNight, div.custom.state.Night {
+    background-image: url('icons/security-purple.png');
+}
+div.shm-thing div.overlay div.shm.state, div.hsm-thing div.overlay div.hsm.state {
+    width: 140px;
+    background-color: inherit;
+    border-top: none;
 }
 
 /* hide temperatures in motions */
@@ -644,8 +675,11 @@ div.thing.frame-thing div.overlay.name {
 }
 
 div.thing.video-thing {
-    width: 248px;
-    height: 180px;
+    width: auto;
+    height: auto;
+}
+div.video-thing div.overlay.name {
+    display: none;
 }
 
 div.overlay.battery {
