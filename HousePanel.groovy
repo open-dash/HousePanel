@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/21/2019 - deal with missing prefix and other null protections
  * 04/18/2019 - add direct mode change for SHM and HSM (HE bug in HSM)
  * 04/17/2019 - merge groovy files with detector for hub type
  * 04/09/2019 - add history fields
@@ -75,7 +76,7 @@ preferences {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
                   "Only those things selected will be usable on your panel. First, a few options can be enabled. "
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "st_")
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "st_")
         paragraph "Set Hubitat Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
                   "actions will be slower than local installations. This only applies to Hubitat. SmartThings always uses Cloud calls."
@@ -414,9 +415,9 @@ def getPower(swid, item=null) {
 }
 
 def extractName(swid, prefix) {
-    def k = hubprefix.length()
     def postfix = swid ? swid : ""
-    if ( k>0 && swid && swid.startsWith(hubprefix) ) {
+    if ( hubprefix && swid && swid.startsWith(hubprefix) ) {
+        def k = hubprefix.length()
         postfix = swid.substring(k)
     }
     def thename = "$prefix $postfix"
@@ -425,7 +426,7 @@ def extractName(swid, prefix) {
 def getmyMode(swid, item=null) {
     def curmode = location.getCurrentMode()
     def resp = [ name: extractName(swid, "Mode"), 
-        sitename: location.getName(), themode: curmode.getName() ];
+        sitename: location.getName(), themode: curmode?.getName() ];
     return resp
 }
 
@@ -486,13 +487,13 @@ def getDevice(mydevices, swid, item=null) {
     if ( mydevices ) {
     	item = item ? item : mydevices.find {it.id == swid }
     	if (item) {
-			resp = [:]
-			def attrs = item.getSupportedAttributes()
-			attrs.each {att ->
-	            def attname = att.name
-    	        def attval = item.currentValue(attname)
-        	    resp.put(attname,attval)
-    		}
+            resp = [:]
+            def attrs = item.getSupportedAttributes()
+            attrs.each {att ->
+                def attname = att.name
+                def attval = item.currentValue(attname)
+                resp.put(attname,attval)
+            }
     	}
     }
     return resp
@@ -816,6 +817,7 @@ def getWeathers(resp) {
 // get hellohome routines - thanks to ady264 for the tip
 def getRoutines(resp) {
     def routines = location.helloHome?.getPhrases()
+    def n  = routines ? routines.size() : 0
     if ( n > 0 ) { logger("Number of routines = ${n}","debug"); }
     routines?.each {
         def multivalue = getRoutine(it.id, it)
