@@ -1621,3 +1621,6 @@ div.rule {
 div.event_1, div.event_2, div.event_3, div.event_4 {
     display: none;
 }
+div.clicked {
+    filter: invert(1);
+}

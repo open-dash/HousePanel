@@ -2269,6 +2269,12 @@ function setupPage(trigger) {
 
         } else {
             console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+
+            // create a visual cue that we clicked on this item
+            $(targetid).addClass("clicked");
+            setTimeout( function(){ $(targetid).removeClass("clicked"); }, 750 );
+            
+            // pass the call to main routine in php
             $.post(returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                     attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
