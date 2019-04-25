@@ -187,6 +187,8 @@ $(document).ready(function() {
             webSocketUrl = null;
             nodejsUrl = null;
         }
+        timezone = $("input[name='timezone']").val();
+        timezone = parseInt(timezone, 10);
         
         // periodically check for socket open and if not open reopen
         if ( webSocketUrl ) {
@@ -196,7 +198,7 @@ $(document).ready(function() {
 
         // initialize the clock updater that runs every second
         // unlike the timer routines this doesn't do any php callbacks
-        clockUpdater();
+        clockUpdater(timezone);
 
         cancelDraggable();
         cancelSortable();
@@ -1865,10 +1867,13 @@ function setupTabclick() {
     });
 }
 
-function clockUpdater() {
+function clockUpdater(tz) {
 
     setInterval(function() {
-        var d = new Date();
+        var old = new Date();
+        var utc = old.getTime() + (old.getTimezoneOffset() * 60000);
+        var d = new Date(utc + (1000*tz));        
+        
         var ds = d.toString().split(" ");    
         var timestr = ds[4];
         var hour = d.getHours();
@@ -1900,7 +1905,7 @@ function clockUpdater() {
                 $(this).html(timestr);
             }
         });
-    }, 1050);
+    }, 1000);
 }
 
 function setupTimer(timerval, timertype, hubnum) {

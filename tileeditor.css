@@ -67,7 +67,7 @@ div.greetingopts div.hubopt {
     display: inline-block;
     position: absolute;
     top: 1px;
-    right: 80px;
+    right: 40px;
     width: 30px; height: 22px; padding-top: 8px;
     border-radius: 50%;
     background-color: rgba(140,140,140,0.5);
@@ -81,6 +81,15 @@ div.greetingopts div.hubopt {
 }
 #showdocs:hover {
     filter: invert(1);
+}
+.showversion {
+    display: inline-block;
+    color: #cccccc;
+    position: absolute;
+    top: 5px;
+    right: 100px;
+    width: auto; height: 22px; padding-top: 8px;
+    text-align: left; 
 }
 
 label.startupinp, input.indent {

@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.049      Time zone fix for real time javascript digital clock
+            - add version number to main screen
  2.048      Visual cue for clicking on any tile for 3/4 of a second
  2.047      Clean up SHM and HSM to deliver similar display fields and bug fixes
  2.046      Avoid fatal error if prefix not given, fix Routine bug in groovy, etc
@@ -5001,6 +5003,7 @@ function is_ssl() {
             
             // include doc button
             $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
+            $tc.= '<div class="showversion">' . HPVERSION  .'</div>';
 
             // end of the tabs
             $tc.= "</div>";
@@ -5023,7 +5026,10 @@ function is_ssl() {
             // save Node.js address for use on the js side
             $nodejsUrl = $port ? ( is_ssl() . $serverName . ":" . $port ) : "";
             $tc.= hidden("nodejsUrl", $nodejsUrl);
-            
+            $datetimezone = new DateTimeZone($timezone);
+            $datetime = new DateTime("now", $datetimezone);
+            $tzoffset = timezone_offset_get($datetimezone, $datetime);
+            $tc.= hidden("timezone", $tzoffset);
             $tc.= hidden("fast_timer", $fast_timer);
             $tc.= hidden("slow_timer", $slow_timer);
             
