@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.050      Fix cloberred custom names; fix Hubitat event reporting; add timezone
  2.049      Time zone fix for real time javascript digital clock
             - add version number to main screen
  2.048      Visual cue for clicking on any tile for 3/4 of a second
@@ -2663,6 +2664,7 @@ function readOptions() {
         $serialoptions = file_get_contents("hmoptions.cfg");
         $serialnew = str_replace(array("\n","\r","\t"), "", $serialoptions);
         $options = json_decode($serialnew,true);
+        $oldthingsarr = $options["things"];
 //        $_SESSION["hmoptions"] = $options;
 
     
@@ -2682,7 +2684,31 @@ function readOptions() {
                 
                 // load in custom settings
                 $options["rooms"] = $opt_rooms;
-                $options["things"] = $opt_things;
+                // $options["things"] = $opt_things;
+                $options["things"] = array();
+                
+                // protect against having a custom name and an empty custom user name
+                foreach ($opt_rooms as $room => $ridx) {
+                    if ( array_key_exists($room, $opt_things) ) {
+                        $things = $opt_things[$room];
+                        $newthings = array();
+                        foreach ($things as $kindexarr) {
+                            // check for a blank custom name
+                            if ( is_array($kindexarr) && count($kindexarr)>3 && $kindexarr[4]==="" ) {
+                                $kindex = $kindexarr[0];
+                                $oldthings = $oldthingsarr[$room];
+                                foreach($oldthings as $okidx) {
+                                    if ( is_array($okidx) && $okidx[0]===$kindex && count($okidx)>3 && $okidx[4] ) {
+                                       $kindexarr[4] = $okidx[4]; 
+                                    }
+                                }
+                            }
+                            $newthings[] = $kindexarr;
+                        }
+                        $options["things"][$room] = $newthings;
+                    }
+                }
+                
             }
         }
         
@@ -3622,7 +3648,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
                 if ( $key === "frame" ) {
                     $value.= $key . "= <strong>EmbeddedFrame</strong> ";
                 } else {
-                    if ( $thing["type"]==="custom" ) { $val = "custom... "; }
+                    if ( $thing["type"]==="custom" && is_array($val) ) { $val = "Custom Array... "; }
                     if ( strlen($val) > 128 ) {
                         $val = substr($val,0,124) . " ...";
                     }

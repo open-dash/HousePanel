@@ -120,6 +120,7 @@ div.shm-thing div.overlay.state div.shm, div.hsm-thing div.overlay.state div.hsm
 }
 /* heights for things with icons */
 div.switch.on, div.switch.off, div.light.on, div.light.off,
+div.switch.flash, div.light.flash,
 div.presence.present, div.presence.absent,
 div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off,
 div.lock.locked, div.lock.unlocked, div.lock.unknown, div.motion.active, div.motion.inactive,
@@ -288,11 +289,12 @@ div.thing.lock-thing {
 
 /* switch styling */
 
-div.switch.on, div.switch.light.on, div.switchlevel.on, div.bulb.on, div.light.on {
+div.switch.on, div.switch.light.on, div.bulb.on, div.light.on,
+div.switch.flash, div.switch.light.flash, div.bulb.flash, div.light.flash {
     background-image: url('icons/bulbon.png');
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.off, div.switch.light.off, div.switchlevel.off, div.bulb.off, div.light.off {
+div.switch.off, div.switch.light.off, div.bulb.off, div.light.off {
     background-image: url('icons/bulboff.png');
     color: rgba(255, 255, 255, 0.01);
 }

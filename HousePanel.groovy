@@ -85,6 +85,8 @@ preferences {
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
         paragraph "Enable this to use Pistons. You must have WebCore installed for this to work. Not recommended for Hubitat hubs."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
+        paragraph "Timezone for event time fields; e.g., America/Detroit, Europe/London, or America/Los_Angeles"
+        input (name: "timezone", type: "text", multiple: false, title: "Timezone Name:", required: false, defaultValue: "America/Detroit")
         paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
         input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
         input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
@@ -173,9 +175,10 @@ def updated() {
 
 def initialize() {
     state.hubtype = getPlatform()
-    state.usepistons = settings?.usepistons
-    state.directIP = settings?.webSocketHost
-    state.directPort = settings?.webSocketPort
+    state.usepistons = settings?.usepistons ?: false
+    state.directIP = settings?.webSocketHost ?: ""
+    state.directPort = settings?.webSocketPort ?: "19234"
+    state.tz = settings?.timezone ?: "America/Detroit"
     configureHub();
     if ( state.usepistons ) {
         webCoRE_init()
@@ -248,9 +251,9 @@ def addHistory(resp, item) {
             def priorval = ""
             def dateFormat = "MM/dd HH:mm:ss"
             // def tz = Calendar.getInstance().getTimeZone()
-            def tz = TimeZone.getTimeZone("EST")
+            def tz = TimeZone.getTimeZone( state.tz ?: "America/Detroit" )
             thestates.each {
-                if ( it.isStateChange && it.value!=priorval ) {
+                if ( it.value!=priorval ) {
                     i++
                     def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
                     resp.put("event_${i}", evtvalue )
@@ -417,7 +420,7 @@ def getPower(swid, item=null) {
 }
 
 def extractName(swid, prefix) {
-    def postfix = swid ? swid : ""
+    def postfix = swid ?: ""
     if ( hubprefix && swid && swid.startsWith(hubprefix) ) {
         def k = hubprefix.length()
         postfix = swid.substring(k)
@@ -1535,9 +1538,12 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         default:
             if (cmd=="on" || cmd=="off") {
                 newonoff = cmd
+            } else if (subid.startsWith("_")) {
+                newonoff = subid.substring(1)
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
+            
             if ( swattr.isNumber() ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
@@ -1546,7 +1552,11 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
               
         }
         
-        newonoff=="on" ? item.on() : item.off()
+        // newonoff=="on" ? item.on() : item.off()
+        if ( item.hasCommand(newonoff) ) {
+            item."$newonoff"()
+        }
+        
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( newcolor ) { resp.put("color", newcolor) }
