@@ -183,37 +183,37 @@ div.lock.unlocked, div.lock.unknown {
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.on {
+div.switch.on, div.switch.flash {
     background-image: url('icons/switchon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switchlevel.on {
-    background-image: url('icons/lampon.png');
-    height: 80px;
-    color: rgba(255, 255, 255, 0.01);
-}
-div.bulb.on, div.light.on {
+div.switchlevel.switch.on, div.switchlevel.switch.flash {
     background-image: url('icons/bulbon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.light.on {
+div.bulb.switch.on, div.bulb.switch.flash {
+    background-image: url('icons/bulbon.png');
+    height: 80px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.light.switch.on, div.light.switch.flash {
     background-image: url('icons/lampon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.lamp.on {
+div.switch.lamp.on, div.switch.lamp.flash {
     background-image: url('icons/lampon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.floor.on {
+div.switch.floor.on, div.switch.floor.flash {
     background-image: url('icons/floorlampon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switch.plug.on {
+div.switch.plug.on, div.switch.plug.flash {
     background-image: url('icons/plugon.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
@@ -223,12 +223,12 @@ div.switch.off {
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.switchlevel.off {
+div.switchlevel.switch.off {
     background-image: url('icons/bulboff.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);
 }
-div.bulb.off, div.light.off {
+div.bulb.switch.off {
     background-image: url('icons/bulboff.png');
     height: 80px;
     color: rgba(255, 255, 255, 0.01);

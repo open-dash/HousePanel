@@ -2305,7 +2305,8 @@ function setupPage(trigger) {
                                             updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
                                         }
                                     }
-                                    if ( command !== "RULE" ) {
+                                    else if ( command !== "RULE" ) {
+                                        if ( presult["name"] ) { delete presult["name"]; }
                                         updAll(subid,aid,bid,thetype,hubnum,presult);
                                     }
                                     

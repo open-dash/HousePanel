@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.051      Another run at fixing name clobber; update modern skin for flash
  2.050      Fix cloberred custom names; fix Hubitat event reporting; add timezone
  2.049      Time zone fix for real time javascript digital clock
             - add version number to main screen
