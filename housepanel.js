@@ -251,6 +251,10 @@ function setupWebsocket()
         try {
             var presult = JSON.parse(evt.data);
             var pvalue = presult.value;
+
+            // remove names because they don't reflect customization
+            if ( pvalue["name"] ) { delete pvalue["name"]; }
+            
             var bid = presult.id;
             var thetype = presult.type;
             var client = presult.client;
@@ -1961,7 +1965,10 @@ function setupTimer(timerval, timertype, hubnum) {
                                     if ( thevalue && thevalue.hasOwnProperty("value") ) {
                                         thevalue = thevalue.value;
                                     }
-                                    if ( thevalue && typeof thevalue==="object" ) { updateTile(aid,thevalue); }
+                                    if ( thevalue && typeof thevalue==="object" ) {
+                                        if ( thevalue["name"] ) { delete thevalue["name"]; }
+                                        updateTile(aid,thevalue); 
+                                    }
                                 }
                             });
                         } catch (err) { console.error("Polling error", err.message); }
