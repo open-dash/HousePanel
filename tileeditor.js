@@ -10,7 +10,6 @@
 var et_Globals = {};
 var savedSheet;
 var priorIcon = "none";
-var defaultShow = "block";
 var defaultOverlay = "block";
 var tileCount = 0;
 
@@ -52,7 +51,7 @@ function getOnOff(str_type, subid) {
     
     // handle the cases for custom tiles that could have any subid starting with valid names
     if ( subid.startsWith("switch" ) ) {
-        onoff = ["on","off"];
+        onoff = ["on","off","flash"];
     } else if ( (str_type==="momentary") && subid.startsWith("momentary" ) ) {
         onoff = ["on","off"];
     } else if ( subid.startsWith("contact" ) || subid.startsWith("door" ) || subid.startsWith("valve" ) ) {
@@ -63,15 +62,11 @@ function getOnOff(str_type, subid) {
         onoff = ["active","inactive"];
     } else if ( subid.startsWith("pistonName" ) ) {
         onoff = ["firing","idle"];
-    } else if ( subid.startsWith("thermofan" ) ) {
+    } else if ( subid.startsWith("thermostatFanMode" ) ) {
         onoff = ["auto","on"];
-    } else if ( subid.startsWith("thermomode" ) ) {
-        onoff = ["active","inactive"];
-    } else if ( subid.startsWith("thermostate" ) ) {
-        onoff = ["active","inactive"];
-    } else if ( subid.startsWith("thermomode" ) ) {
+    } else if ( subid.startsWith("thermostatMode" ) ) {
         onoff = ["heat","cool","auto","off"];
-    } else if ( subid.startsWith("thermostate" ) ) {
+    } else if ( subid.startsWith("thermostatOperatingState" ) ) {
         onoff = ["idle","heating","cooling","off"];
     } else if ( subid.startsWith("musicstatus" ) ) {
         onoff = ["stopped","paused","playing"];
@@ -579,7 +574,8 @@ function initDialogBinds(str_type, thingindex) {
                     }
                 } else {
                     newsize = newsize.toString() + "px;";
-                    rule = "width: " + newsize + " display: inline-block;";
+                    // rule = "width: " + newsize + " display: inline-block;";
+                    rule = "width: " + newsize;
                 }
                 addCSSRule(getCssRuleTarget(str_type, subid, thingindex), rule);
             }
@@ -1229,6 +1225,32 @@ function resetInverted(selector) {
     }
 }
 
+function checkboxHandler(idselect, onaction, offaction, overlay) {
+    $(idselect).off('change');
+    $(idselect).on("change",function() {
+        var strAbs;;
+        var str_type = $("#tileDialog").attr("str_type");
+        var thingindex = $("#tileDialog").attr("thingindex");
+        var subid = $("#subidTarget").html();
+        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
+        var overlayTarget = "div.overlay." + subid + ".v_" + thingindex;
+        // alert(cssRuleTarget);
+        if($(idselect).is(':checked')){
+            // alert("overlay= "+overlay+" overlayTarget= "+overlayTarget+" action= "+onaction);
+            if (overlay) {
+                addCSSRule(overlayTarget, onaction, true);
+            }
+            addCSSRule(cssRuleTarget, onaction, false);
+        } else {
+            // alert("overlay= "+overlay+" overlayTarget= "+overlayTarget+" action= "+offaction);
+            if (overlay) {
+                addCSSRule(overlayTarget, offaction, true);
+            }
+            addCSSRule(cssRuleTarget, offaction, false);
+        }
+    });
+}
+
 // add all the color selectors to the colorpicker div
 function initColor(str_type, subid, thingindex) {
   
@@ -1560,6 +1582,8 @@ function initColor(str_type, subid, thingindex) {
         ishidden += "<label class=\"iconChecks\" for=\"isHidden\">Hide Element?</label></div><br />";
 
         var inverted = "<div class='editSection_input autochk'><input type='checkbox' id='invertIcon'><label class=\"iconChecks\" for=\"invertIcon\">Invert Element?</label></div>";
+        inverted += "<div class='editSection_input'><input type='checkbox' id='absPlace'><label class=\"iconChecks\" for=\"absPlace\">Absolute Loc?</label></div>";
+        inverted += "<div class='editSection_input'><input type='checkbox' id='inlineOpt'><label class=\"iconChecks\" for=\"inlineOpt\">Inline?</label></div>";
         // inverted += "<div class='editSection_input'><input type='checkbox' id='fastPoll'><label class=\"iconChecks\" for=\"fastPoll\">Fast Poll?</label></div>";
 
         var border = "<div class='editSection_input'><label>Border Type:</label>";
@@ -1619,29 +1643,10 @@ function initColor(str_type, subid, thingindex) {
     
     }
 
-    $("#invertIcon").off('change');
-    $("#invertIcon").on("change",function() {
-        var strInvert;;
-        var str_type = $("#tileDialog").attr("str_type");
-        var thingindex = $("#tileDialog").attr("thingindex");
-        var subid = $("#subidTarget").html();
-        var cssRuleTarget = getCssRuleTarget(str_type, subid, thingindex);
-        // alert(cssRuleTarget);
-        if($("#invertIcon").is(':checked')){
-            strInvert = "filter: invert(1);";
-            addCSSRule(cssRuleTarget, strInvert, false);
-        } else {
-            strInvert = "filter: invert(0);";
-            addCSSRule(cssRuleTarget, strInvert, false);	
-        }
-    });
+    checkboxHandler("#invertIcon","filter: invert(1);","filter: invert(0);", false);
+    checkboxHandler("#absPlace","position: absolute;","position: relative;", true);
+    checkboxHandler("#inlineOpt","display: inline-block;","display: block;", false);
     
-    // if user changes polling, force page reload
-//    $("#fastPoll").off('change');
-//    $("#fastPoll").on("change",function() {
-//        cm_Globals.reload = true;
-//    });
-
     $("#editEffect").off('change');
     $("#editEffect").on('change', function (event) {
         var str_type = $("#tileDialog").attr("str_type");
@@ -1762,29 +1767,27 @@ function initColor(str_type, subid, thingindex) {
         var onoff = getOnOff(str_type, subid);
         var strCaller = $($(event.target)).attr("target");
         var ischecked = $(event.target).prop("checked");
-        if ( ischecked  ){
-            addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: none;", true);
-            // addCSSRule(strCaller, "display: none;", false);
-            if ( onoff[0]!=="" && strCaller.endsWith("."+onoff[0]) ) {
-                strCaller = strCaller.slice(0,strCaller.length - onoff[0].length - 1);
-            } else if ( onoff[1]!=="" && strCaller.endsWith("."+onoff[1]) ) {
-                strCaller = strCaller.slice(0,strCaller.length - onoff[1].length - 1);
-            }
-            addCSSRule(strCaller, "display: none;", false);
-            addCSSRule(strCaller + "." + onoff[0], "display: none;", false);
-            addCSSRule(strCaller + "." + onoff[1], "display: none;", false);
-        } else {
-            addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: " + defaultOverlay + ";", true);
-            // addCSSRule(strCaller, "display: " + defaultShow + ";", false);
-            if ( onoff[0]!=="" && strCaller.endsWith("."+onoff[0]) ) {
-                strCaller = strCaller.slice(0,strCaller.length - onoff[0].length - 1);
-            } else if ( onoff[1]!=="" && strCaller.endsWith("."+onoff[1]) ) {
-                strCaller = strCaller.slice(0,strCaller.length - onoff[1].length - 1);
-            }
-            addCSSRule(strCaller, "display: " + defaultShow + ";", false);
-            addCSSRule(strCaller + "." + onoff[0], "display: " + defaultShow + ";", false);
-            addCSSRule(strCaller + "." + onoff[1], "display: " + defaultShow + ";", false);
+        var displayset = "none";
+        var displayovl = "none";
+        
+        if ( !ischecked ) {
+            displayset = $("#inlineOpt").prop("checked") ? "inline-block" : "block";
+            displayovl = defaultOverlay;
         }
+        addCSSRule("div.overlay."+subid+".v_"+thingindex, "display: " + displayovl + ";", true);
+        var tailoff = false;
+        onoff.forEach( function(flag, idx, arr) {
+            if ( !tailoff && flag!=="" && strCaller.endsWith("."+flag) ) {
+                strCaller = strCaller.slice(0,strCaller.length - flag.length - 1);
+                tailoff = true;
+            }
+        });
+        addCSSRule(strCaller, "display: " + displayset + ";", false);
+        onoff.forEach( function(flag, idx, arr) {
+            if ( flag!=="" ) {
+                addCSSRule(strCaller + "." + flag, "display: " + displayset + ";", false);
+            }
+        });
         // console.log("hidden debug: ",strCaller);
         event.stopPropagation;
     });	
@@ -1816,19 +1819,19 @@ function initColor(str_type, subid, thingindex) {
         $("#invertIcon").prop("checked",false);
     }
     
-    // set initial fast poll check box
-    // disable fast polling for pages, controller, and frames (they are slow polled)
-//    if ( str_type==="blank" || str_type==="image" || str_type==="custom" || 
-//         str_type==="video" || str_type==="clock" ) {
-//        $("#fastPoll").prop("checked",true);
-//        $("#fastPoll").prop("disabled",false);
-//    } else if ( str_type==="page" || str_type==="control" || str_type==="frame" ) {
-//        $("#fastPoll").prop("checked",false);
-//        $("#fastPoll").prop("disabled",true);
-//    } else {
-//        $("#fastPoll").prop("checked",false);
-//        $("#fastPoll").prop("disabled",false);
-//    }
+    // set the initial abs check box
+    if ( $(target).css("position") && $(target).css("position").includes("absolute") ) {
+        $("#absPlace").prop("checked",true);
+    } else {
+        $("#absPlace").prop("checked",false);
+    }
+    
+    // set the initial inline check box
+    if ( $(target).css("display") && $(target).css("display").includes("inline") ) {
+        $("#inlineOpt").prop("checked",true);
+    } else {
+        $("#inlineOpt").prop("checked",false);
+    }
     
     // set the initial icon none check box
     var isicon = $(target).css("background-image");
@@ -1860,17 +1863,14 @@ function initColor(str_type, subid, thingindex) {
     
     // set initial hidden status
     if ( subid!=="wholetile" ) {
-        var ish1= $(target).css("display");
         var ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");
         var ish3 = $("div.overlay." + subid).css("display");
-        if ( ish1 === "none" || ish2 === "none" || ish3 ==="none") {
+        if ( ish2 === "none" || ish3 ==="none") {
             $("#isHidden").prop("checked", true);
-            defaultShow = "inline-block";
             defaultOverlay = "block";
         } else {
             $("#isHidden").prop("checked", false);
-            defaultShow = ish1 ? ish1 : "inline-block";
-            defaultOverlay = ish2 ? ish2 : "block";
+            defaultOverlay = ish2 ? ish2 : (ish3 ? ish3 : "block");
         }
     }
     

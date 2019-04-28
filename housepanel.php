@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.053      Misc bug fixes: LINK on/off; tile editor tweaks
+            - new feature in Tile Editor to pick inline/blcok & absolute/relative
  2.052      Really fixed clobber this time (in hubpush). Added portrait CSS support
  2.051      Another run at fixing name clobber; update modern skin for flash
  2.050      Fix cloberred custom names; fix Hubitat event reporting; add timezone
