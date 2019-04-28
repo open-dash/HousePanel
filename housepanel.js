@@ -2291,24 +2291,26 @@ function setupPage(trigger) {
                    {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                     attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                    function (presult, pstatus) {
-                        if (pstatus==="success" && presult ) {
+                        if (pstatus==="success" && presult && typeof presult==="object" ) {
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
                                     console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
                                     
                                     // update the linked item
-                                    if ( command=="LINK" ) {
+                                    // note - the events of any linked item will replace the events of master tile
+                                    if ( command==="LINK" ) {
                                         var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
-//                                        alert(linkaid+ " lt= " + linktype + " lv= "+linkval);
-//                                        alert(strObject(presult));
+                                        var realsubid = presult["LINK"]["realsubid"];
+                                        // alert(linkaid+ " lt= " + linktype + " lv= "+linkval);
                                         if ( linkaid && realsubid ) {
                                             linkaid = linkaid.substring(2);
-                                            var realsubid = presult["LINK"]["realsubid"];
                                             var linkbid = presult["LINK"]["linked_swid"];
                                             var linkvalue = presult["LINK"]["linked_val"];
-                                            delete presult["LINK"];
-                                            // updateTile(linkaid, linkvalue);
+                                            if ( linkvalue["name"] ) { delete linkvalue["name"]; }
+                                            // console.log("aid= " + aid + " linkaid= "+linkaid+" realsubid= " + realsubid + " linkbid= " + linkbid +" linktype= " + linktype + " obj= " + strObject(linkvalue));
+                                            // update the host linked tile and the target linked tiles
+                                            updateTile(aid, linkvalue);
                                             updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
                                         }
                                     }
