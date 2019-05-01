@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.054      Clean up groovy file; add direct mode action buttons
  2.053      Misc bug fixes: LINK on/off; tile editor tweaks
             - new feature in Tile Editor to pick inline/blcok & absolute/relative
  2.052      Really fixed clobber this time (in hubpush). Added portrait CSS support

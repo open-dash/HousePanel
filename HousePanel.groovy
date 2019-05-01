@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 04/30/2019 - clean up this groovy file
  * 04/22/2019 - clean up SHM and HSM to return similar display fields
  *              - mimic Night setting in SHM to match how HSM works
  * 04/21/2019 - deal with missing prefix and other null protections
@@ -75,15 +76,14 @@ definition(
 
 preferences {
     section("HousePanel Configuration") {
-        paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel use. " +
-                  "Only those things selected will be usable on your panel. First, a few options can be enabled. "
+        paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel."
         paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
         input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "st_")
         paragraph "Set Hubitat Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
                   "actions will be slower than local installations. This only applies to Hubitat. SmartThings always uses Cloud calls."
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
-        paragraph "Enable this to use Pistons. You must have WebCore installed for this to work. Not recommended for Hubitat hubs."
+        paragraph "Enable Pistons? You must have WebCore installed for this to work. Beta feature for Hubitat hubs."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         paragraph "Timezone for event time fields; e.g., America/Detroit, Europe/London, or America/Los_Angeles"
         input (name: "timezone", type: "text", multiple: false, title: "Timezone Name:", required: false, defaultValue: "America/Detroit")
@@ -100,7 +100,7 @@ preferences {
     }
     section ("Motion and Presence") {
     	input "mypresences", "capability.presenceSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Presence"
-    	input "mysensors", "capability.motionSensor", multiple: true, required: false, title: "Motion"
+    	input "mymotions", "capability.motionSensor", multiple: true, required: false, title: "Motion"
     }
     section ("Door and Contact Sensors") {
     	input "mycontacts", "capability.contactSensor", hideWhenEmpty: true, multiple: true, required: false, title: "Contact Sensors"
@@ -119,8 +119,9 @@ preferences {
     	input "mysmokes", "capability.smokeDetector", hideWhenEmpty: true, multiple: true, required: false, title: "Smoke Detectors"
     }
     section ("Music & Other Sensors") {
+        paragraph "Any thing can be added as an Other sensor. Other sensors bring in ALL fields supported by the device handler."
     	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
-        input "mypower", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
+        input "mypowers", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
     section("Logging") {
@@ -246,7 +247,6 @@ def addHistory(resp, item) {
         try {
             def start = new Date() - 7
             def thestates = item.eventsSince(start,["max":4])
-            logger(thestates.toString(),"trace")
             def i = 0;
             def priorval = ""
             def dateFormat = "MM/dd HH:mm:ss"
@@ -267,12 +267,22 @@ def addHistory(resp, item) {
     return resp
 }
 
+def addBattery(resp, item) {
+    if ( item.hasAttribute("battery") ) {
+        resp.put("battery", item.currentValue("battery"))
+    }
+    return resp
+}
+
 def getSwitch(swid, item=null) {
-    item = item? item : myswitches.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, switch: item.currentValue("switch")
-                         ] : false
-    resp = addHistory(resp, item)
-    logger("Switch response = ${resp}", "debug")
+    def resp = false
+    item = item ? item : myswitches.find {it.id == swid }
+    if ( item ) {
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
+        resp.put("switch", item.currentValue("switch"))
+        resp = addHistory(resp, item)
+    }
     return resp
 }
 
@@ -287,10 +297,14 @@ def getLight(swid, item=null) {
 def getMomentary(swid, item=null) {
     def resp = false
     item = item ? item : mymomentaries.find {it.id == swid }
-    if ( item && item.hasCapability("Switch") ) {
-        def curval = item.currentValue("switch")
-        if (curval!="on" && curval!="off") { curval = "off" }
-        resp = [name: item.displayName, momentary: curval]
+    if ( item ) {
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
+        if ( item.hasCapability("Switch") ) {
+            def curval = item.currentValue("switch")
+            if (curval!="on" && curval!="off") { curval = "off" }
+            resp.put("momentary", curval)
+        }
         resp = addHistory(resp, item)
     }
     return resp
@@ -300,8 +314,8 @@ def getDimmer(swid, item=null) {
     getThing(mydimmers, swid, item)
 }
 
-def getSensor(swid, item=null) {
-    getThing(mysensors, swid, item)
+def getMotion(swid, item=null) {
+    getThing(mymotions, swid, item)
 }
 
 def getContact(swid, item=null) {
@@ -311,16 +325,13 @@ def getContact(swid, item=null) {
 // change to only return lock status and battery
 def getLock(swid, item=null) {
     item = item? item : mylocks.find {it.id == swid }
-    def resp = item ? [:] : false
+    def resp = false
     if ( item ) {
-        resp.put("name",item.displayName)
-        if ( item.hasCapability("Battery") ) {
-            resp.put("battery", item.currentValue("battery"))
-        }
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
         resp.put("lock", item.currentValue("lock"))
+        resp = addHistory(resp, item)
     }
-    resp = addHistory(resp, item)
-    logger("Lock response = ${resp}", "debug")
     return resp
 }
 
@@ -328,14 +339,18 @@ def getLock(swid, item=null) {
 // note -changes were also made in housepanel.php and elsewhere to support this
 def getMusic(swid, item=null) {
     item = item? item : mymusics.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, 
-                              trackDescription: item.currentValue("trackDescription"),
-                              status: item.currentValue("status"),
-                              level: item.currentValue("level"),
-                              mute: item.currentValue("mute")
-                        ] : false
-    resp = addHistory(resp, item)
-    logger("Music response = ${resp}", "debug")
+    def resp = false
+    if ( item ) {
+        resp = [
+            name: item.displayName, 
+            trackDescription: item.currentValue("trackDescription"),
+            status: item.currentValue("status"),
+            level: item.currentValue("level"),
+            mute: item.currentValue("mute")
+        ]
+        resp = addBattery(resp, item)
+        resp = addHistory(resp, item)
+    }
     return resp
 }
 
@@ -343,31 +358,36 @@ def getMusic(swid, item=null) {
 // note -changes were also made in housepanel.php and elsewhere to support this
 def getThermostat(swid, item=null) {
     item = item? item : mythermostats.find {it.id == swid }
-    def resp = item ?   [name: item.displayName, 
-                              temperature: item.currentValue("temperature"),
-                              heatingSetpoint: item.currentValue("heatingSetpoint"),
-                              coolingSetpoint: item.currentValue("coolingSetpoint"),
-                              thermostatFanMode: item.currentValue("thermostatFanMode"),
-                              thermostatMode: item.currentValue("thermostatMode"),
-                              thermostatOperatingState: item.currentValue("thermostatOperatingState")
-                         ] : false
-    if ( item.hasAttribute("humidity") ) {
-        resp.put("humidity", item.currentValue("humidity"))
+    def resp = false
+    if ( item ) {
+        resp = [name: item.displayName, 
+            temperature: item.currentValue("temperature"),
+            heatingSetpoint: item.currentValue("heatingSetpoint"),
+            coolingSetpoint: item.currentValue("coolingSetpoint"),
+            thermostatFanMode: item.currentValue("thermostatFanMode"),
+            thermostatMode: item.currentValue("thermostatMode"),
+            thermostatOperatingState: item.currentValue("thermostatOperatingState")
+        ]
+        resp = addBattery(resp, item)
+        if ( item.hasAttribute("humidity") ) {
+            resp.put("humidity", item.currentValue("humidity"))
+        }
+        resp = addHistory(resp, item)
     }
-    if ( item.hasCapability("Battery") ) {
-        resp.put("battery", item.currentValue("battery"))
-    }
-    resp = addHistory(resp, item)
-    logger("Thermostat response = ${resp}", "debug")
     return resp
 }
 
 // use absent instead of "not present" for absence state
 def getPresence(swid, item=null) {
     item = item ? item : mypresences.find {it.id == swid }
-    def resp = item ? [name: item.displayName, presence : (item.currentValue("presence")=="present") ? "present" : "absent"] : false
-    resp = addHistory(resp, item)
-    logger("Presence response = ${resp}", "debug")
+    def resp = false
+    if ( item ) {
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
+        def pval = (item.currentValue("presence")=="present") ? "present" : "absent"
+        resp.put("presence", pval)
+        resp = addHistory(resp, item)
+    }
     return resp
 }
 
@@ -381,13 +401,16 @@ def getValve(swid, item=null) {
 def getDoor(swid, item=null) {
     getThing(mydoors, swid, item)
 }
-// return just illuminance
+
 def getIlluminance(swid, item=null) {
-    // getThing(myilluminances, swid, item)
     item = item ? item : myilluminances.find {it.id == swid }
-    def resp = item ? [name: item.displayName, illuminance : item.currentValue("illuminance")] : false
-    resp = addHistory(resp, item)
-    logger("Illuminance response = ${resp}", "debug")
+    def resp = false
+    if ( item ) {
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
+        resp.put("illuminance", item.currentValue("illuminance") )
+        resp = addHistory(resp, item)
+    }
     return resp
 }
 def getSmoke(swid, item=null) {
@@ -396,14 +419,17 @@ def getSmoke(swid, item=null) {
 
 // return temperature for this capability and humidity if it has one
 def getTemperature(swid, item=null) {
-    // getThing(mytemperatures, swid, item)
     item = item ? item : mytemperatures.find {it.id == swid }
-    def resp = item ? [name: item.displayName, temperature : item.currentValue("temperature")] : false
-    if ( resp && item.hasAttribute("humidity") ) {
-        resp.put("humidity", item.currentValue("humidity"))
+    def resp = false
+    if ( item ) {
+        resp = [name: item.displayName]
+        resp = addBattery(resp, item)
+        resp.put("temperature", item.currentValue("temperature") )
+        if ( resp && item.hasAttribute("humidity") ) {
+            resp.put("humidity", item.currentValue("humidity"))
+        }
+        resp = addHistory(resp, item)
     }
-    resp = addHistory(resp, item)
-    logger("Temperature response = ${resp}", "debug")
     return resp
 }
 
@@ -416,7 +442,7 @@ def getOther(swid, item=null) {
 }
 
 def getPower(swid, item=null) {
-    getThing(mypower, swid, item)
+    getThing(mypowers, swid, item)
 }
 
 def extractName(swid, prefix) {
@@ -428,10 +454,15 @@ def extractName(swid, prefix) {
     def thename = "$prefix $postfix"
 }
 
-def getmyMode(swid, item=null) {
+def getMyMode(swid, item=null) {
+    def allmodes = location.getModes()
     def curmode = location.getCurrentMode()
     def resp = [ name: extractName(swid, "Mode"), 
         sitename: location.getName(), themode: curmode?.getName() ];
+    for (defcmd in allmodes) {
+        def modename = defcmd.getName()
+        resp.put("_${modename}",modename)
+    }
     return resp
 }
 
@@ -526,27 +557,6 @@ def getDevice(mydevices, swid, item=null) {
     return resp
 }
 
-def setOther(swid, cmd, attr, subid ) {
-    def resp = false
-    def item  = myothers.find {it.id == swid }
-    
-    if (item && subid.startsWith("_")) {
-        subid = subid.substring(1)
-        logger("Activating other device " + item + " command: " + subid, "debug")
-        resp = [:]
-        if ( item.hasCommand(subid) ) {
-            item."$subid"()
-            resp = getOther(swid, item)
-        }
-    }
-    
-    else if ( subid == "switch" ) {
-        def onoff = setOnOff(myothers, "switch", swid, cmd, swattr, subid)
-        resp = onoff ? [switch: onoff] : false
-    }
-    return resp
-}
-
 // make a generic thing getter to streamline the code
 def getThing(things, swid, item=null) {
     item = item ? item : things.find {it.id == swid }
@@ -633,7 +643,7 @@ def getAllThings() {
     run = logStepAndIncrement(run)
     resp = getLocks(resp)
     run = logStepAndIncrement(run)
-    resp = getSensors(resp)
+    resp = getMotions(resp)
     run = logStepAndIncrement(run)
     resp = getPresences(resp)
     run = logStepAndIncrement(run)
@@ -689,7 +699,7 @@ def getModes(resp) {
     def vals = ["m1x1","m1x2","m2x1","m2x2"]
     def val
     vals.each {
-        val = getmyMode(it)
+        val = getMyMode(it)
         resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "mode"]
     }
     return resp
@@ -761,8 +771,8 @@ def getDimmers(resp) {
     getThings(resp, mydimmers, "switchlevel")
 }
 
-def getSensors(resp) {
-    getThings(resp, mysensors, "motion")
+def getMotions(resp) {
+    getThings(resp, mymotions, "motion")
 }
 
 def getContacts(resp) {
@@ -865,11 +875,11 @@ def getOthers(resp) {
 }
 
 def getPowers(resp) {
-    def n  = mypower ? mypower.size() : 0
+    def n  = mypowers ? mypowers.size() : 0
     if ( n > 0 ) { logger("Number of selected power things = ${n}","debug"); }
-    mypower?.each {
+    mypowers?.each {
         def thatid = it.id;
-        def multivalue = getThing(mypower, thatid, it)
+        def multivalue = getThing(mypowers, thatid, it)
         resp << [name: it.displayName, id: thatid, value: multivalue, type: "power"]
     }
     return resp
@@ -894,7 +904,7 @@ def autoType(swid) {
     else if ( mythermostats?.find {it.id == swid} ) { swtype = "thermostat" }
     else if ( mypresences?.find {it.id == swid } ) { swtype= "presence" }
     else if ( myweathers?.find {it.id == swid } ) { swtype= "weather" }
-    else if ( mysensors?.find {it.id == swid } ) { swtype= "motion" }
+    else if ( mymotions?.find {it.id == swid } ) { swtype= "motion" }
     else if ( mydoors?.find {it.id == swid } ) { swtype= "door" }
     else if ( mycontacts?.find {it.id == swid } ) { swtype= "contact" }
     else if ( mywaters?.find {it.id == swid } ) { swtype= "water" }
@@ -903,7 +913,7 @@ def autoType(swid) {
     else if ( mysmokes?.find {it.id == swid } ) { swtype= "smoke" }
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
-    else if ( mypower?.find {it.id == swid } ) { swtype= "power" }
+    else if ( mypowers?.find {it.id == swid } ) { swtype= "power" }
     else if ( swid=="${hubprefix}shm" ) { swtype= "shm" }
     else if ( swid=="${hubprefix}hsm" ) { swtype= "hsm" }
     else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
@@ -924,10 +934,10 @@ def doAction() {
     def swattr = params.swattr
     def subid = params.subid
     def cmdresult = false
-    logger("doaction params: cmd = $cmd type = $swtype id = $swid subid = $subid", "info")
+    logger("doaction params: cmd= $cmd type= $swtype id= $swid subid= $subid attr= $swattr", "debug")
    
     // get the type if auto is set
-    if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
+    if ( (swtype=="auto" || swtype=="none" || !swtype) && swid ) {
         swtype = autoType(swid)
     }
 
@@ -966,7 +976,7 @@ def doAction() {
          
       // note: this requires a special handler for motion to manually set it
       case "motion" :
-    	cmdresult = setSensor(swid, cmd, swattr, subid)
+    	cmdresult = setMotion(swid, cmd, swattr, subid)
         break
 
       case "mode" :
@@ -1004,7 +1014,7 @@ def doAction() {
           cmdresult = setOther(swid, cmd, swattr, subid)
           break
     }
-    logger("doAction: cmd= $cmd type= $swtype id= $swid attr= $swattr subid= $subid cmdresult= $cmdresult", "debug");
+    logger("doAction results: " + cmdresult.toString() , "debug");
     return cmdresult
 }
 
@@ -1014,7 +1024,9 @@ def doQuery() {
     def cmdresult = false
 
     // get the type if auto is set
-    if ( (swtype=="auto" || swtype=="none" || swtype=="") && swid ) {
+    if ( swid=="all" ) {
+        swtype = "all"
+    } else if ( (swtype=="auto" || swtype=="none" || !swtype) && swid ) {
         swtype = autoType(swid)
     }
 
@@ -1047,7 +1059,7 @@ def doQuery() {
         break
         
     case "motion" :
-        cmdresult = swid ? getSensor(swid) : getSensors( [] )
+        cmdresult = swid ? getMotion(swid) : getMotions( [] )
         break
         
     case "contact" :
@@ -1106,7 +1118,7 @@ def doQuery() {
         cmdresult = getPower(swid)
         
     case "mode" :
-        cmdresult = getmyMode(swid)
+        cmdresult = getMyMode(swid)
         break
         
     case "shm" :
@@ -1127,34 +1139,13 @@ def doQuery() {
     return cmdresult
 }
 
-// changed these to just return values of entire tile
-def setOnOff(items, itemtype, swid, cmd, swattr, subid) {
-    def newonoff = false
-    def item  = items.find {it.id == swid }
-    if (item) {
-        if ( subid=="switch" && swattr.endsWith("on") ) {
-            newonoff = "off"
-        } else if ( subid=="switch" && swattr.endsWith("off") ) {
-            newonoff = "on"
-        } else if (cmd=="on" || cmd=="off") {
-            newonoff = cmd
-        } else if ( cmd=="toggle" ) {
-            newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
-        } else {
-            newonoff = item.currentValue(itemtype)=="off" ? "on" : "off"
-        }
-        newonoff=="on" ? item.on() : item.off()
-    }
-    return newonoff
-}
-
 def setSwitch(swid, cmd, swattr, subid) {
-    def onoff = setOnOff(myswitches, "switch", swid, cmd, swattr, subid)
-    def resp = onoff ? [switch: onoff] : false
+    def resp = setGenericLight(myswitches, swid, cmd, swattr, subid)
     return resp
 }
 
 def setDoor(swid, cmd, swattr, subid) {
+    logcaller("setDoor", swid, cmd, swattr, subid)
     def newonoff
     def resp = false
     def item  = mydoors.find {it.id == swid }
@@ -1176,15 +1167,17 @@ def setDoor(swid, cmd, swattr, subid) {
         if ( item.hasAttribute("contact") ) {
             resp.put("contact", newonoff)
         }
+        resp = addBattery(resp, item)
     }
     return resp
 }
 
 // special function to set motion status
-def setSensor(swid, cmd, swattr, subid) {
+def setMotion(swid, cmd, swattr, subid) {
     def resp = false
     def newsw
-    def item  = mysensors.find {it.id == swid }
+    def item  = mymotions.find {it.id == swid }
+    logcaller("setMotion", swid, cmd, swattr, subid)
     // anything but active will set the motion to inactive
     if (item && item.hasCommand("startmotion") && item.hasCommand("stopmotion") ) {
         if (cmd=="active" || cmd=="move") {
@@ -1195,9 +1188,7 @@ def setSensor(swid, cmd, swattr, subid) {
             newsw = "inactive"
         }
         resp = [motion: newsw]
-        if ( item.hasCapability("Battery") ) {
-            resp.put("battery", item.currentValue("battery"))
-        }
+        resp = addBattery(resp, item)
     }
     return resp
 }
@@ -1208,28 +1199,71 @@ def setBulb(swid, cmd, swattr, subid) {
     return resp
 }
 
-// changed these to just return values of entire tile
+// treat just like bulbs - note: light types are deprecated
 def setLight(swid, cmd, swattr, subid) {
     def resp = setGenericLight(mylights, swid, cmd, swattr, subid)
     return resp
 }
 
-def setMode(swid, cmd, swattr, subid) {
-    def resp
-    def themode = swattr.substring(swattr.lastIndexOf(" ")+1)
-    def newsw = themode
-    def allmodes = location.getModes()
-    def idx=allmodes.findIndexOf{it.name == themode}
+// other types have actions starting with _ 
+// and we accommodate switches and api calls with valid cmd values
+def setOther(swid, cmd, attr, subid ) {
+    def resp = false
+    def item  = myothers.find {it.id == swid }
+    def lightflags = ["switch","level","hue","saturation","colorTemperature"]
+    
+    if ( item ) {
+        logcaller(item.getDisplayName(), swid, cmd, swattr, subid)
+        if (subid.startsWith("_")) {
+            subid = subid.substring(1)
+            resp = [:]
+            if ( item.hasCommand(subid) ) {
+                item."$subid"()
+                resp = getOther(swid, item)
+            }
+        }
+        else if ( lightflags.contains(subid) ) {
+            resp = setGenericLight(myothers, swid, cmd, swattr, subid)
+        }
+        else if ( item.hasCommand(cmd) ) {
+            item."$cmd"()
+            resp = getOther(swid, item)
+        }
+    }
+    return resp
+}
 
-    if (idx!=null) {
-        idx = idx+1
-        if (idx == allmodes.size() ) { idx = 0 }
-        newsw = allmodes[idx].getName()
+def setMode(swid, cmd, swattr, subid) {
+    logcaller("setMode", swid, cmd, swattr, subid)
+    def resp = false
+    def newsw
+    def idx
+    def allmodes = location.getModes()
+    
+    if ( subid=="themode" ) {
+        def themode = swattr.substring(swattr.lastIndexOf(" ")+1)
+        idx=allmodes.findIndexOf{it.name == themode}
+
+        if (idx!=null) {
+            idx = idx+1
+            if (idx == allmodes.size() ) { idx = 0 }
+            newsw = allmodes[idx].getName()
+        } else {
+            newsw = allmodes[0].getName()
+        }
+    // handle commands sent by GUI or user
+    } else if (subid.startsWith("_")) {
+        cmd = subid.substring(1)
+        idx=allmodes.findIndexOf{it.name == cmd}
+        newsw = (idx!=null) ? cmd : allmodes[0].getName()
+    } else if ( cmd ) {
+        idx=allmodes.findIndexOf{it.name == cmd}
+        newsw = (idx!=null) ? cmd : allmodes[0].getName()
     } else {
         newsw = allmodes[0].getName()
     }
 
-    logger("Mode changed from $themode to $newsw index = $idx subid = $subid", "debug");
+    logger("Mode changed to $newsw", "info");
     location.setMode(newsw);
     resp =  [   sitename: location.getName(),
                 themode: newsw
@@ -1241,6 +1275,7 @@ def setMode(swid, cmd, swattr, subid) {
 def setSHMState(swid, cmd, swattr, subid){
     def cmds = ["away", "stay", "night", "off"]
     def keynames = ["Away", "Home", "Night", "Disarmed"]
+    logcaller("setSHMState", swid, cmd, swattr, subid)
 
     // first handle toggling on icon in gui using attr information
     // default is disarm if something isn't understood
@@ -1307,6 +1342,7 @@ def hsmAlertHandler(evt) {
 
 def setHSMState(swid, cmd, swattr, subid){
 
+    logcaller("setHSMState", swid, cmd, swattr, subid)
     def key = location.hsmStatus?: false
     if ( !key ) {
         def noresp = [name : "Hubitat Safety Monitor", state: "Not Installed"]
@@ -1362,9 +1398,14 @@ def setDimmer(swid, cmd, swattr, subid) {
     return resp
 }
 
+// handle functions for bulbs, dimmers, and lights
+// hardened this to also handle regular switches
+// this is way more complex than I like but it has to handle a bunch
+// of potential GUI options for processing dimmers and colors
+// up and down arrows, sliders, etc. 
+// and it has to handle API calls that could have all sorts of options
 def setGenericLight(mythings, swid, cmd, swattr, subid) {
     def resp = false
-
     def item  = mythings.find {it.id == swid }
     def newsw = false
     def hue = false
@@ -1373,58 +1414,65 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
     def newcolor = false
     
     if (item ) {
-    
+        
+        logcaller(item.getDisplayName(), swid, cmd, swattr, subid)
         def newonoff = item.currentValue("switch")
         logger("setGenericLight: swid = $swid cmd = $cmd swattr = $swattr subid = $subid", "debug");
         // bug fix for grabbing right swattr when long classes involved
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
+        // we start by handling base GUI case with attr ending in on or off or flash
         if ( subid=="switch" && swattr.endsWith(" on" ) ) {
+            swattr = "on"
+        } else if ( subid=="switch" && swattr.endsWith(" flash" ) ) {
             swattr = "on"
         } else if ( subid=="switch" && swattr.endsWith(" off" ) ) {
             swattr = "off"
         }
         
         switch(swattr) {
-              
+        
+        // this branch is legacy - gui no longer sends toggle as attr
+        // i left this in code since API could still send toggle as attr
         case "toggle":
-            if (cmd=="on" || cmd=="off") {
-                newonoff = cmd
-            } else {
-                newonoff = newonoff=="off" ? "on" : "off"
-            }
-            // newonoff=="on" ? item.on() : item.off()
+            newonoff = newonoff=="off" ? "on" : "off"
             break
          
         case "level-up":
-            newsw = item.currentValue("level")
-            newsw = newsw.toInteger()
-            newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
-            item.setLevel(newsw)
-            if ( item.hasAttribute("hue") ) {
-                def h = item.currentValue("hue").toInteger()
-                def s = item.currentValue("saturation").toInteger()
-                newcolor = hsv2rgb(h, s, newsw)
+            if ( item.hasAttribute("level") ) {
+                newsw = item.currentValue("level")
+                newsw = newsw.toInteger()
+                newsw = (newsw >= 95) ? 100 : newsw - (newsw % 5) + 5
+                item.setLevel(newsw)
+                if ( item.hasAttribute("hue") ) {
+                    def h = item.currentValue("hue").toInteger()
+                    def s = item.currentValue("saturation").toInteger()
+                    newcolor = hsv2rgb(h, s, newsw)
+                }
             }
             newonoff = "on"
             break
               
         case "level-dn":
-            newsw = item.currentValue("level")
-            newsw = newsw.toInteger()
-            def del = (newsw % 5) == 0 ? 5 : newsw % 5
-            newsw = (newsw <= 5) ? 5 : newsw - del
-            item.setLevel(newsw)
-            if ( item.hasAttribute("hue") ) {
-                def h = item.currentValue("hue").toInteger()
-                def s = item.currentValue("saturation").toInteger()
-                newcolor = hsv2rgb(h, s, newsw)
+            if ( item.hasAttribute("level") ) {
+                newsw = item.currentValue("level")
+                newsw = newsw.toInteger()
+                def del = (newsw % 5) == 0 ? 5 : newsw % 5
+                newsw = (newsw <= 5) ? 5 : newsw - del
+                item.setLevel(newsw)
+                if ( item.hasAttribute("hue") ) {
+                    def h = item.currentValue("hue").toInteger()
+                    def s = item.currentValue("saturation").toInteger()
+                    newcolor = hsv2rgb(h, s, newsw)
+                }
+                newonoff = "on"
+            } else {
+                newonoff = "off"
             }
-            newonoff = "on"
             break
          
         case "level":
-            if ( cmd.isNumber() ) {
+            if ( cmd.isNumber() && item.hasAttribute("level") ) {
                 newsw = cmd.toInteger()
                 newsw = (newsw >100) ? 100 : newsw
                 item.setLevel(newsw)
@@ -1433,8 +1481,8 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                     def s = item.currentValue("saturation").toInteger()
                     newcolor = hsv2rgb(h, s, newsw)
                 }
+                newonoff = (newsw == 0) ? "off" : "on"
             }
-            newonoff = (newsw == 0) ? "off" : "on"
             break
          
         case "hue-up":
@@ -1455,7 +1503,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def s = item.currentValue("saturation").toInteger()
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(hue, s, v)
-                newonoff = "on"
+                newonoff = (v == 0) ? "off" : "on"
             break
               
         case "saturation-up":
@@ -1476,7 +1524,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 def h = item.currentValue("hue").toInteger()
                 def v = item.currentValue("level").toInteger()
                 newcolor = hsv2rgb(h, saturation, v)
-                newonoff = "on"
+                newonoff = (v == 0) ? "off" : "on"
             break
               
         case "colorTemperature-up":
@@ -1505,14 +1553,17 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 }
                 newonoff = "on"
             break
-              
+
+        // if the middle value is clicked on we toggle the light
+        // this is a legacy behavior from the very old HP days
         case "level-val":
         case "hue-val":
         case "saturation-val":
         case "colorTemperature-val":
             newonoff = newonoff=="off" ? "on" : "off"
             break
-              
+
+        // we also use opposite for GUI sending state in attr variable
         case "on":
             newonoff = "off"
             break
@@ -1520,43 +1571,46 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         case "off":
             newonoff = "on"
             break
-            
+
+        // this supports api calls and clicking on color circle
+        // the level is not returned to prevent slider from moving around
         case "color":
-            if (cmd.startsWith("hsl(") && cmd.length()==16) {  // hsl(123,123,123)
+            if (cmd.startsWith("hsl(") && cmd.length()==16) {
                 hue = cmd.substring(4,7).toInteger()
                 saturation = cmd.substring(8,11).toInteger()
-                newsw = cmd.substring(12,15).toInteger()
+                def v = cmd.substring(12,15).toInteger()
                 item.setHue(hue)
                 item.setSaturation(saturation)
-                item.setLevel(newsw)
-                newcolor = hsv2rgb(hue, saturation, newsw)
+                item.setLevel(v)
+                newcolor = hsv2rgb(hue, saturation, v)
                 newonoff = "on"
-                newsw = false
             }
             break
               
         default:
-            if (cmd=="on" || cmd=="off") {
+            if (cmd=="on" || cmd=="off" || cmd=="flash") {
                 newonoff = cmd
             } else if (subid.startsWith("_")) {
                 newonoff = subid.substring(1)
             } else {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
-            
-            if ( swattr.isNumber() ) {
+
+            // set the level if a number is given for attr
+            if ( swattr.isNumber() && item.hasAttribute("level") ) {
                 newsw = swattr.toInteger()
                 item.setLevel(newsw)
             }
             break               
               
         }
-        
-        // newonoff=="on" ? item.on() : item.off()
+
+        // execute the new command
         if ( item.hasCommand(newonoff) ) {
             item."$newonoff"()
         }
-        
+
+        // return the fields that were changed
         resp = [switch: newonoff]
         if ( newsw ) { resp.put("level", newsw) }
         if ( newcolor ) { resp.put("color", newcolor) }
@@ -1564,9 +1618,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         if ( saturation ) { resp.put("saturation", saturation) }
         if ( temperature ) { resp.put("colorTemperature", temperature) }
     }
-
     return resp
-    
 }
 
 def hsv2rgb(h, s, v) {
@@ -1603,6 +1655,7 @@ def hsv2rgb(h, s, v) {
 }
 
 def setMomentary(swid, cmd, swattr, subid) {
+    logcaller("setMomentary", swid, cmd, swattr, subid)
     def resp = false
     def item  = mymomentaries.find {it.id == swid }
     if (item) {
@@ -1613,11 +1666,10 @@ def setMomentary(swid, cmd, swattr, subid) {
 }
 
 def setLock(swid, cmd, swattr, subid) {
+    logcaller("setLock", swid, cmd, swattr, subid)
     def resp = false
     def newsw
     def item  = mylocks.find {it.id == swid }
-
-    logger("Performing setLock command with cmd = ${cmd} and swattr = ${swattr}", "debug")
     if (item) {
         if (cmd=="toggle") {
             newsw = item.currentLock=="locked" ? "unlocked" : "locked"
@@ -1652,54 +1704,45 @@ def setLock(swid, cmd, swattr, subid) {
 }
 
 def setValve(swid, cmd, swattr, subid) {
+    logcaller("setValve", swid, cmd, swattr, subid)
     def resp = false
     def item  = myvalves.find {it.id == swid }
     if (item) {
         def newsw = item.currentValue
-        if ( subid=="valve" && swattr.endsWith("open") ) {
+        if ( subid=="valve" && swattr.endsWith(" open") ) {
             item.close()
-        } else if ( subid=="valve" && swattr.endsWith("closed") ) {
+        } else if ( subid=="valve" && swattr.endsWith(" closed") ) {
             item.open()
-        } else if ( subid=="switch" && swattr.endsWith("on") ) {
+        } else if ( subid=="switch" && swattr.endsWith(" on") ) {
             item.off()
-        } else if ( subid=="switch" && swattr.endsWith("off") ) {
+        } else if ( subid=="switch" && swattr.endsWith(" off") ) {
             item.on()
-        } else if (cmd=="open") {
-            item.open()
-        } else if (cmd=="close") {
-            item.close()
-        } else if (cmd=="on") {
-            item.on()
-        } else if (cmd=="off") {
-            item.off()
         } else if ( subid.startsWith("_") ) {
             subid = subid.substring(1)
-            resp = [:]
             if ( item.hasCommand(subid) ) {
                 item."$subid"()
             }
+        } else if ( item.hasCommand(cmd) ) {
+            item."$cmd"()
         }
-     
         resp = getThing(myvalves, swid, item)
     }
     return resp
 }
 
-def setThermostat(swid, curtemp, swattr, subid) {
+def setThermostat(swid, cmd, swattr, subid) {
+    logcaller("setThermostat", swid, cmd, swattr, subid)
     def resp = false
     def newsw = 72
     def tempint
-
-    def cmd = curtemp
     def item  = mythermostats.find {it.id == swid }
     if (item) {
-          logger("setThermostat attr = $swattr for id = $swid curtemp = $curtemp", "debug")
         
           resp = getThermostat(swid, item)
           // switch (swattr) {
           // case "heat-up":
           if ( subid=="heatingSetpoint-up" || swattr.contains("heatingSetpoint-up") ) {
-              newsw = curtemp.toInteger() + 1
+              newsw = cmd.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
@@ -1709,7 +1752,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           
           // case "cool-up":
           else if ( subid=="coolingSetpoint-up" || swattr.contains("coolingSetpoint-up") ) {
-              newsw = curtemp.toInteger() + 1
+              newsw = cmd.toInteger() + 1
               if (newsw > 85) newsw = 85
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
@@ -1719,7 +1762,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
 
           // case "heat-dn":
           else if ( subid=="heatingSetpoint-dn" || swattr.contains("heatingSetpoint-dn")) {
-              newsw = curtemp.toInteger() - 1
+              newsw = cmd.toInteger() - 1
               if (newsw < 50) newsw = 50
               // item.heat()
               item.setHeatingSetpoint(newsw.toString())
@@ -1729,7 +1772,7 @@ def setThermostat(swid, curtemp, swattr, subid) {
           
           // case "cool-dn":
           else if ( subid=="coolingSetpoint-dn" || swattr.contains("coolingSetpoint-dn")) {
-              newsw = curtemp.toInteger() - 1
+              newsw = cmd.toInteger() - 1
               if (newsw < 60) newsw = 60
               // item.cool()
               item.setCoolingSetpoint(newsw.toString())
@@ -1856,13 +1899,9 @@ def setThermostat(swid, curtemp, swattr, subid) {
 }
 
 def setMusic(swid, cmd, swattr, subid) {
+    logcaller("setMusic", swid, cmd, swattr, subid)
     def resp = false
     def item  = mymusics.find {it.id == swid }
-//    if ((item == null) && (swattr == "music-tunein") & (cmd != null))
-//    {
-//        logger("do special for momentary ${swattr} ${cmd}", "trace")
-//        item = mymomentaries.find {it.id == swid } 
-//    }
     def newsw
     if (item) {
         resp = getMusic(swid, item)
@@ -1918,6 +1957,7 @@ def setMusic(swid, cmd, swattr, subid) {
 }
 
 def setRoutine(swid, cmd, swattr, subid) {
+    logcaller("setRoutine", swid, cmd, swattr, subid)
     def routine = location.helloHome?.getPhrases().find{ it.id == swid }
     if (subid=="label" && routine) {
         location.helloHome?.execute(routine.label)
@@ -1955,13 +1995,12 @@ def registerBulbs() {
 
 def registerDoors() {
     registerCapabilities(mycontacts,"contact")
-    registerCapabilities(mysensors,"motion")
     registerCapabilities(mydoors,"door")
     registerCapabilities(mylocks,"lock")
 }
 
 def registerMotions() {
-    registerCapabilities(mysensors,"motion")
+    registerCapabilities(mymotions,"motion")
 }
 
 def registerOthers() {
@@ -1974,8 +2013,8 @@ def registerOthers() {
 def registerSlows() {
      registerCapabilities(mytemperatures, "temperature")
      registerCapabilities(myilluminances, "illuminance")
-     registerCapabilities(mypower, "power")
-     registerCapabilities(mypower, "energy")
+     registerCapabilities(mypowers, "power")
+     registerCapabilities(mypowers, "energy")
 }
 
 def registerCapabilities(devices, capability) {
@@ -1989,7 +2028,7 @@ def registerThermostats() {
     registerCapabilities(mythermostats, "thermostatFanMode")
     registerCapabilities(mythermostats, "thermostatMode")
     registerCapabilities(mythermostats, "thermostatSetpoint")
-    registerCapabilities(mythermostats, "coolingSetpoint")
+    registerCapabilities(mythermostats, "temperature")
     logger("Registering all thermostats", "trace")
 }
 
@@ -2079,6 +2118,10 @@ def postHub(message) {
  *
  *  Wrapper function for all logging.
  **/
+private logcaller(caller, swid, cmd, swattr, subid) {
+    logger("${caller}: swid= $swid cmd= $cmd swattr= $swattr subid= $subid", "debug");
+}
+
 private logger(msg, level = "debug") {
 
     switch(level) {

@@ -195,12 +195,22 @@ div#catalog {
     display: block;
     position: absolute;
     top: 0px;
-    left: 1192px;
+    left: 1200px;
     border: 2px solid rgb(128, 128, 128);
     background-color: rgba(255, 255, 255, 1);
     
     /* set z-index above all tiles but below dragged tiles set to 999 */
     z-index: 500;
+}
+@media (orientation: landscape) {
+    div#catalog {
+        left: 1200px;
+    }
+}
+@media (orientation: portrait) {
+    div#catalog {
+        left: 750px;
+    }
 }
 
 .ui-widget.ui-widget-content{
@@ -1674,6 +1684,14 @@ div.rule {
 div.event_1, div.event_2, div.event_3, div.event_4 {
     display: none;
 }
+
+/* styling for direct ST routine defaults */
+/* any custom routines will show unless supressed here as shown with Movies */
+div.mode._Home, div.mode._Away, div.mode._Night, div.mode._Movies {
+    display: none;
+    cursor: pointer;
+}
+
 div.clicked {
     filter: invert(1);
 }
