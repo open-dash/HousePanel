@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.055      Update version number in Groovy file and more error checking
  2.054      Clean up groovy file; add direct mode action buttons
  2.053      Misc bug fixes: LINK on/off; tile editor tweaks
             - new feature in Tile Editor to pick inline/blcok & absolute/relative

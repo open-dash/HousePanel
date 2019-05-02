@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 05/01/2019 - add try/catch for most things to prevent errors and more cleanup
  * 04/30/2019 - clean up this groovy file
  * 04/22/2019 - clean up SHM and HSM to return similar display fields
  *              - mimic Night setting in SHM to match how HSM works
@@ -60,7 +61,8 @@
  *            - Remove old code block of getHistory code
  * 
  */
-public static String version() { return "v1.987" }
+
+public static String version() { return "V2.055" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -77,12 +79,13 @@ definition(
 preferences {
     section("HousePanel Configuration") {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel."
-        paragraph "This prefix is used to uniquely identify certain tiles like blanks and images for this hub."
-        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: true, defaultValue: "st_")
+        paragraph "prefix to uniquely identify certain tiles (modes, blanks, and images) for this hub. " +
+                  "If left blank, hub type will determine prefix; e.g., st_ for SmartThings or h_ for Hubitat"
+        input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "st_")
         paragraph "Set Hubitat Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
                   "When this is true the cloud URL will be shown for use in HousePanel. When calls are through the Cloud endpoint " +
                   "actions will be slower than local installations. This only applies to Hubitat. SmartThings always uses Cloud calls."
-        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: true, displayDuringSetup: true)
+        input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: false, displayDuringSetup: true)
         paragraph "Enable Pistons? You must have WebCore installed for this to work. Beta feature for Hubitat hubs."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
         paragraph "Timezone for event time fields; e.g., America/Detroit, Europe/London, or America/Los_Angeles"
@@ -175,19 +178,20 @@ def updated() {
 }
 
 def initialize() {
-    state.hubtype = getPlatform()
+    def hubtype = getPlatform()
     state.usepistons = settings?.usepistons ?: false
     state.directIP = settings?.webSocketHost ?: ""
     state.directPort = settings?.webSocketPort ?: "19234"
     state.tz = settings?.timezone ?: "America/Detroit"
+    state.prefix = settings?.hubprefix ?: getPrefix()
     configureHub();
     if ( state.usepistons ) {
         webCoRE_init()
     }
     state.loggingLevelIDE = settings.configLogLevel?.toInteger() ?: 3
-    logger("Installed with settings: ${settings} ", "debug")
+    logger("Installed ${hubtype} hub with settings: ${settings} ", "debug")
     
-    if ( state.hubtype=="Hubitat" ) {
+    if ( isHubitat() ) {
         subscribe(location, "hsmStatus", hsmStatusHandler)
         subscribe(location, "hsmAlerts", hsmAlertHandler)
     }
@@ -199,10 +203,22 @@ def initialize() {
     }
 }
 
+// detection routines - the commented line is more efficient but less foolproof
+private Boolean isHubitat() {
+    def istrue = physicalgraph?.device?.HubAction ? false : true
+    // def istrue = hubUID ? true : false
+    return istrue
+}
+private Boolean isST() {
+    return ( ! isHubitat() )
+}
 private String getPlatform() {
-    def hubt = physicalgraph?.device?.HubAction ? 'SmartThings' : 'Hubitat'
-    logger("Platform = ${hubt}", "debug")
-    return hubt
+    def hubtype = isHubitat() ? 'Hubitat' : 'SmartThings'
+    return hubtype
+}
+private String getPrefix() {
+    def hubpre = isHubitat() ? 'h_' : 'st_'
+    return hubpre
 }
 
 def configureHub() {
@@ -214,7 +230,7 @@ def configureHub() {
     def firmware = hub?.firmwareVersionString ?: "unknown"
 
     // detect ST based on ID
-    if ( state.hubtype=="SmartThings" ) {
+    if ( !isHubitat() ) {
         state.hubid = hub.id
         hubip = hub.localIP
         logger("You must go through the OAUTH flow to obtain a proper SmartThings AccessToken", "info")
@@ -234,6 +250,7 @@ def configureHub() {
     }
     
     logger("Use this information on the Auth page of HousePanel.", "info")
+    logger("Hub Platform = ${getPlatform()}", "info")
     logger("Hub IP = ${hubip}", "info")
     logger("Hub ID = ${state.hubid}", "info")
     logger("Hub Firmware = ${firmware}", "info")
@@ -447,8 +464,8 @@ def getPower(swid, item=null) {
 
 def extractName(swid, prefix) {
     def postfix = swid ?: ""
-    if ( hubprefix && swid && swid.startsWith(hubprefix) ) {
-        def k = hubprefix.length()
+    if ( state.prefix && swid && swid.startsWith(state.prefix) ) {
+        def k = state.prefix.length()
         postfix = swid.substring(k)
     }
     def thename = "$prefix $postfix"
@@ -548,9 +565,13 @@ def getDevice(mydevices, swid, item=null) {
             resp = [:]
             def attrs = item.getSupportedAttributes()
             attrs.each {att ->
-                def attname = att.name
-                def attval = item.currentValue(attname)
-                resp.put(attname,attval)
+                try {
+                    def attname = att.name
+                    def attval = item.currentValue(attname)
+                    resp.put(attname,attval)
+                } catch (e) {
+                    logger("Attempt to read device for ${swid} failed ${e}", "error")
+                }
             }
     	}
     }
@@ -609,8 +630,10 @@ def getThings(resp, things, thingtype) {
     def n  = things ? things.size() : 0
     logger("Number of things of type ${thingtype} = ${n}", "debug")
     things?.each {
-        def val = getThing(things, it.id, it)
-        resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
+        try {
+            def val = getThing(things, it.id, it)
+            resp << [name: it.displayName, id: it.id, value: val, type: thingtype]
+        } catch (e) {}
     }
     return resp
 }
@@ -652,7 +675,7 @@ def getAllThings() {
     resp = getTemperatures(resp)
     run = logStepAndIncrement(run)
     resp = getIlluminances(resp)
-    if ( state.hubtype == "SmartThings" ) {
+    if ( isST() ) {
         run = logStepAndIncrement(run)
         resp = getWeathers(resp)
     }
@@ -666,13 +689,13 @@ def getAllThings() {
     resp = getSmokes(resp)
     run = logStepAndIncrement(run)
     resp = getModes(resp)
-    if ( state.hubtype == "SmartThings" ) {
+    if ( isST() ) {
         run = logStepAndIncrement(run)
         resp = getSHMStates(resp)
         run = logStepAndIncrement(run)
         resp = getRoutines(resp)
     }
-    if ( state.hubtype == "Hubitat" ) {
+    if ( isHubitat() ) {
         run = logStepAndIncrement(run)
         resp = getHSMStates(resp)
     }
@@ -695,67 +718,78 @@ def getAllThings() {
 }
 
 def getModes(resp) {
-    logger("Getting 4 ${state.hubtype} mode tiles","debug");
+    logger("Getting 4 mode tiles","debug");
     def vals = ["m1x1","m1x2","m2x1","m2x2"]
-    def val
-    vals.each {
-        val = getMyMode(it)
-        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "mode"]
-    }
+    try {
+        vals.each {
+            def val = getMyMode(it)
+            resp << [name: val.name, id: "${state.prefix}${it}", value: val, type: "mode"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getSHMStates(resp) {
     logger("Getting Smart Home Monitor state for SmartThings Hub","debug");
-    def val = getSHMState("${hubprefix}shm")
-    resp << [name: "Smart Home Monitor", id: "${hubprefix}shm", value: val, type: "shm"]
+    try {
+        def val = getSHMState("${state.prefix}shm")
+        resp << [name: "Smart Home Monitor", id: "${state.prefix}shm", value: val, type: "shm"]
+    } catch (e) {}
     return resp
 }
 
 def getHSMStates(resp) {
     logger("Getting Hubitat Safety Monitor state for Hubitat Hub","debug");
-    def val = getHSMState("${hubprefix}hsm")
-    if ( val ) {
-        resp << [name: "Hubitat Safety Monitor", id: "${hubprefix}hsm", value: val, type: "hsm"]
-    }
+    try{
+        def val = getHSMState("${state.prefix}hsm")
+        if ( val ) {
+            resp << [name: "Hubitat Safety Monitor", id: "${state.prefix}hsm", value: val, type: "hsm"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getBlanks(resp) {
     def vals = ["b1x1","b1x2","b2x1","b2x2"]
-    def val
-    vals.each {
-        val = getBlank("${hubprefix}${it}")
-        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "blank"]
-    }
+    try {
+        vals.each {
+            def val = getBlank("${state.prefix}${it}")
+            resp << [name: val.name, id: "${state.prefix}${it}", value: val, type: "blank"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getImages(resp) {
     def vals = ["img1","img2","img3","img4"]
-    def val
-    vals.each {
-        val = getImage("${hubprefix}${it}")
-        resp << [name: val.name, id: "${hubprefix}${it}", value: val, type: "image"]
-    }
+    try {
+        vals.each {
+            def val = getImage("${state.prefix}${it}")
+            resp << [name: val.name, id: "${state.prefix}${it}", value: val, type: "image"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getPistons(resp) {
     def plist = webCoRE_list()
     logger("Number of pistons = " + plist?.size() ?: 0, "debug")
-    plist?.each {
-        def val = getPiston(it.id, it)
-        resp << [name: it.name, id: it.id, value: val, type: "piston"]
-    }
+    try {
+        plist?.each {
+            def val = getPiston(it.id, it)
+            resp << [name: it.name, id: it.id, value: val, type: "piston"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getSwitches(resp) {
-    myswitches?.each {
-        def multivalue = getSwitch(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
-    }
+    try {
+        myswitches?.each {
+            def multivalue = getSwitch(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "switch" ]
+        }
+    } catch (e) {}
     return resp
 }
 
@@ -780,44 +814,54 @@ def getContacts(resp) {
 }
 
 def getMomentaries(resp) {
-    mymomentaries?.each {
-        if ( it.hasCapability("Switch") ) {
-            def val = getMomentary(it.id, it)
-            resp << [name: it.displayName, id: it.id, value: val, type: "momentary" ]
+    try {
+        mymomentaries?.each {
+            if ( it.hasCapability("Switch") ) {
+                def val = getMomentary(it.id, it)
+                resp << [name: it.displayName, id: it.id, value: val, type: "momentary" ]
+            }
         }
-    }
+    } catch (e) {}
     return resp
 }
 
 def getLocks(resp) {
-    mylocks?.each {
-        def multivalue = getLock(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
-    }
+    try {
+        mylocks?.each {
+            def multivalue = getLock(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "lock"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getMusics(resp) {
-    mymusics?.each {
-        def multivalue = getMusic(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
-    }
+    try {
+        mymusics?.each {
+            def multivalue = getMusic(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getThermostats(resp) {
-    mythermostats?.each {
-        def multivalue = getThermostat(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
-    }
+    try {
+        mythermostats?.each {
+            def multivalue = getThermostat(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "thermostat" ]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getPresences(resp) {
-    mypresences?.each {
-        def multivalue = getPresence(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
-    }
+    try {
+        mypresences?.each {
+            def multivalue = getPresence(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "presence"]
+        }
+    } catch (e) {}
     return resp
 }
 def getWaters(resp) {
@@ -836,59 +880,69 @@ def getSmokes(resp) {
     getThings(resp, mysmokes, "smoke")
 }
 def getTemperatures(resp) {
-    mytemperatures?.each {
-        def val = getTemperature(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
-    }
+    try {
+        mytemperatures?.each {
+            def val = getTemperature(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: val, type: "temperature"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getWeathers(resp) {
-    myweathers?.each {
-        def multivalue = getWeather(it.id, it)
-        resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
-    }
+    try {
+        myweathers?.each {
+            def multivalue = getWeather(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "weather"]
+        }
+    } catch (e) {}
     return resp
 }
 
 // get hellohome routines - thanks to ady264 for the tip
 def getRoutines(resp) {
-    def routines = location.helloHome?.getPhrases()
-    def n  = routines ? routines.size() : 0
-    if ( n > 0 ) { logger("Number of routines = ${n}","debug"); }
-    routines?.each {
-        def multivalue = getRoutine(it.id, it)
-        resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
-    }
+    try {
+        def routines = location.helloHome?.getPhrases()
+        def n  = routines ? routines.size() : 0
+        if ( n > 0 ) { logger("Number of routines = ${n}","debug"); }
+        routines?.each {
+            def multivalue = getRoutine(it.id, it)
+            resp << [name: it.label, id: it.id, value: multivalue, type: "routine"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getOthers(resp) {
-    def n  = myothers ? myothers.size() : 0
-    if ( n > 0 ) { logger("Number of other sensors = ${n}","debug"); }
-    myothers?.each {
-        def thatid = it.id;
-        def multivalue = getThing(myothers, thatid, it)
-        resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
-    }
+    try {
+        def n  = myothers ? myothers.size() : 0
+        if ( n > 0 ) { logger("Number of other sensors = ${n}","debug"); }
+        myothers?.each {
+            def thatid = it.id;
+            def multivalue = getThing(myothers, thatid, it)
+            resp << [name: it.displayName, id: thatid, value: multivalue, type: "other"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getPowers(resp) {
-    def n  = mypowers ? mypowers.size() : 0
-    if ( n > 0 ) { logger("Number of selected power things = ${n}","debug"); }
-    mypowers?.each {
-        def thatid = it.id;
-        def multivalue = getThing(mypowers, thatid, it)
-        resp << [name: it.displayName, id: thatid, value: multivalue, type: "power"]
-    }
+    try {
+        def n  = mypowers ? mypowers.size() : 0
+        if ( n > 0 ) { logger("Number of selected power things = ${n}","debug"); }
+        mypowers?.each {
+            def thatid = it.id;
+            def multivalue = getThing(mypowers, thatid, it)
+            resp << [name: it.displayName, id: thatid, value: multivalue, type: "power"]
+        }
+    } catch (e) {}
     return resp
 }
 
 def getHubInfo() {
     def resp =  [ sitename: location.getName(),
                   hubId: state.hubid,
-                  hubtype: state.hubtype ]
+                  hubtype: getPlatform() ]
     return resp
 }
 
@@ -914,11 +968,11 @@ def autoType(swid) {
     else if ( mytemperatures?.find {it.id == swid } ) { swtype= "temperature" }
     else if ( myothers?.find {it.id == swid } ) { swtype= "other" }
     else if ( mypowers?.find {it.id == swid } ) { swtype= "power" }
-    else if ( swid=="${hubprefix}shm" ) { swtype= "shm" }
-    else if ( swid=="${hubprefix}hsm" ) { swtype= "hsm" }
-    else if ( swid=="${hubprefix}m1x1" || swid=="${hubprefix}m1x2" || swid=="${hubprefix}m2x1" || swid=="${hubprefix}m2x2" ) { swtype= "mode" }
-    else if ( swid=="${hubprefix}b1x1" || swid=="${hubprefix}b1x2" || swid=="${hubprefix}b2x1" || swid=="${hubprefix}b2x2" ) { swtype= "blank" }
-    else if ( swid=="${hubprefix}img1" || swid=="${hubprefix}img2" || swid=="${hubprefix}img3" || swid=="${hubprefix}img4" ) { swtype= "image" }
+    else if ( swid=="${state.prefix}shm" ) { swtype= "shm" }
+    else if ( swid=="${state.prefix}hsm" ) { swtype= "hsm" }
+    else if ( swid=="${state.prefix}m1x1" || swid=="${state.prefix}m1x2" || swid=="${state.prefix}m2x1" || swid=="${state.prefix}m2x2" ) { swtype= "mode" }
+    else if ( swid=="${state.prefix}b1x1" || swid=="${state.prefix}b1x2" || swid=="${state.prefix}b2x1" || swid=="${state.prefix}b2x2" ) { swtype= "blank" }
+    else if ( swid=="${state.prefix}img1" || swid=="${state.prefix}img2" || swid=="${state.prefix}img3" || swid=="${state.prefix}img4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
     else { swtype = "" }
     return swtype
@@ -1960,9 +2014,13 @@ def setRoutine(swid, cmd, swattr, subid) {
     logcaller("setRoutine", swid, cmd, swattr, subid)
     def routine = location.helloHome?.getPhrases().find{ it.id == swid }
     if (subid=="label" && routine) {
-        location.helloHome?.execute(routine.label)
+        try {
+            location.helloHome?.execute(routine.label)
+        } catch (e) {}
     } else if (cmd) {
-        location.helloHome?.execute(cmd)
+        try {
+            location.helloHome?.execute(cmd)
+        } catch (e) {}
     }
     return routine
 }
@@ -2073,7 +2131,7 @@ def changeHandler(evt) {
             ]
         ]
         def result
-        if ( state.hubtype=="SmartThings" ) {
+        if ( isST() ) {
             result = physicalgraph.device.HubAction.newInstance(params)
         } else {
             result = hubitat.device.HubAction.newInstance(params)
@@ -2102,7 +2160,7 @@ def postHub(message) {
             ]
         ]
         def result
-        if ( state.hubtype=="SmartThings" ) {
+        if ( isST() ) {
             result = physicalgraph.device.HubAction.newInstance(params)
         } else {
             result = hubitat.device.HubAction.newInstance(params)
@@ -2113,13 +2171,9 @@ def postHub(message) {
     
 }
 
-/**
- *  logger()
- *
- *  Wrapper function for all logging.
- **/
+// Wrapper function for all logging.
 private logcaller(caller, swid, cmd, swattr, subid) {
-    logger("${caller}: swid= $swid cmd= $cmd swattr= $swattr subid= $subid", "debug");
+    logger("${caller}: swid= $swid cmd= $cmd swattr= $swattr subid= $subid", "debug")
 }
 
 private logger(msg, level = "debug") {
