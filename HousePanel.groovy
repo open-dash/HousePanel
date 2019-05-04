@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 05/03/2019 - user option to specify format of event time fields
  * 05/01/2019 - add try/catch for most things to prevent errors and more cleanup
  * 04/30/2019 - clean up this groovy file
  * 04/22/2019 - clean up SHM and HSM to return similar display fields
@@ -62,7 +63,7 @@
  * 
  */
 
-public static String version() { return "V2.055" }
+public static String version() { return "V2.056" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -88,8 +89,9 @@ preferences {
         input (name: "cloudcalls", type: "bool", title: "Cloud Calls", defaultValue: false, required: false, displayDuringSetup: true)
         paragraph "Enable Pistons? You must have WebCore installed for this to work. Beta feature for Hubitat hubs."
         input (name: "usepistons", type: "bool", multiple: false, title: "Use Pistons?", required: false, defaultValue: false)
-        paragraph "Timezone for event time fields; e.g., America/Detroit, Europe/London, or America/Los_Angeles"
+        paragraph "Timezone and Format for event time fields; e.g., America/Detroit, Europe/London, or America/Los_Angeles"
         input (name: "timezone", type: "text", multiple: false, title: "Timezone Name:", required: false, defaultValue: "America/Detroit")
+        input (name: "dateformat", type: "text", multiple: false, title: "Date Format:", required: false, defaultValue: "M/dd h:mm")
         paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
         input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
         input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
@@ -184,6 +186,8 @@ def initialize() {
     state.directPort = settings?.webSocketPort ?: "19234"
     state.tz = settings?.timezone ?: "America/Detroit"
     state.prefix = settings?.hubprefix ?: getPrefix()
+    state.dateFormat = settings?.dateformat ?: "M/dd h:mm"
+
     configureHub();
     if ( state.usepistons ) {
         webCoRE_init()
@@ -256,6 +260,8 @@ def configureHub() {
     logger("Hub Firmware = ${firmware}", "info")
     logger("rPI IP Address = ${state.directIP}", "info")
     logger("webSocket Port = ${state.directPort}", "info")
+    logger("date Timezone for events = ${state.tz}", "info")
+    logger("date Format for events = ${state.dateFormat}", "info")
 }
 
 def addHistory(resp, item) {
@@ -266,13 +272,11 @@ def addHistory(resp, item) {
             def thestates = item.eventsSince(start,["max":4])
             def i = 0;
             def priorval = ""
-            def dateFormat = "MM/dd HH:mm:ss"
-            // def tz = Calendar.getInstance().getTimeZone()
             def tz = TimeZone.getTimeZone( state.tz ?: "America/Detroit" )
             thestates.each {
                 if ( it.value!=priorval ) {
                     i++
-                    def evtvalue = it.value + " @" + it.date.format(dateFormat, tz)
+                    def evtvalue = it.value + " " + it.date.format(state.dateFormat ?: "M/dd h:mm", tz)
                     resp.put("event_${i}", evtvalue )
                     priorval = it.value
                 }
