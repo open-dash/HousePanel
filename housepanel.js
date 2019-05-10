@@ -1820,7 +1820,7 @@ function updateTile(aid, presult) {
             // handle updating album art info
             } else if ( key === "trackDescription") {
                 var oldvalue = $("#a-"+aid+"-trackDescription").html();
-                if ( value!=="None" && value!==oldvalue && !value.startsWith("Grouped with") ) {
+                if ( value!=="None" && value!==oldvalue ) {
                     console.log("track changed from: " + oldvalue + " to: " + value);
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 0, type: "music", value: value},
