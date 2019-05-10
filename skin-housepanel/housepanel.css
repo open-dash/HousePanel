@@ -83,7 +83,7 @@ div.temperature, div.overlay div.themode, div.shm, div.hsm {
 }
 
 div.switch, div.bulb, div.light, div.switchlevel, div.momentary, div.motion, div.lock, 
-div.contact, div.music, div.presence, div.piston, div.valve, div.overlay div.door,
+div.contact, div.presence, div.piston, div.valve, div.overlay div.door,
 div.overlay div.themode, 
 div.temperature-thing, div.thingname.temperature {
     width: 120px;
@@ -571,18 +571,21 @@ div.thing.music-thing {
     height: auto;
 }
 /* use italic serif font for music titles and a custom size */
-div.music.track, div.custom.track, div.music.trackDescription {
+div.overlay.track div.music.track, 
+div.overlay.track div.custom.track, 
+div.overlay.trackDescription div.music.trackDescription,
+div.overlay.trackDescription div.custom.trackDescription
+{
     font-family: "Raleway",serif;
     font-size: 11pt;
     font-style: italic;
     height: 40px;
-    width: 180px;
+    width: 100%;
     padding-top: 10px;
     border-bottom: none;
     background-color: rgba(80, 80, 80, 0.7);
 }
-div.music.musicstatus, div.music.musicmute, div.custom.musicstatus, div.custom.musicmute,
-div.music.status, div.music.mute {
+div.overlay.status div.music.status, div.overlay.mute div.music.mute {
     height: 24px;
     width: 100%;
     font-size: 11pt;

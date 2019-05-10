@@ -1214,6 +1214,9 @@ div.thingname:hover {
 div.music-thing div.thingname.music {
     width: 100%;
 }
+div.overlay.trackData, div.overlay.switch div.music.switch {
+    display: none;
+}
 
 /* blank tiles styling */
 div.thing.blank-thing {
@@ -1681,7 +1684,7 @@ div.rule {
 }
 
 /* by default turn off all history displays */
-div.event_1, div.event_2, div.event_3, div.event_4 {
+div.overlay.event_1, div.overlay.event_2, div.overlay.event_3, div.overlay.event_4 {
     display: none;
 }
 

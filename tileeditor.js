@@ -74,9 +74,7 @@ function getOnOff(str_type, subid) {
         onoff = ["muted","unmuted"];
     } else if ( subid.startsWith("presence" ) ) {
         onoff = ["present","absent"];
-    } else if ( str_type==="shm" && subid.startsWith("state" ) ) {
-        onoff = ["Away","Home","Night","Disarmed"];
-    } else if ( str_type==="hsm" && subid.startsWith("state" ) ) {
+    } else if ( subid.startsWith("state" ) ) {
         onoff = ["Away","Home","Night","Disarmed"];
     }
     
@@ -240,7 +238,7 @@ function toggleTile(target, str_type, subid, thingindex) {
     var swval = $(target).html();
     // var currentclass = $(target).attr("class");
     // var subid = $(target).attr("subid");
-    console.log("toggleTile: target= " + target + " tile type= "+str_type+" subid= "+subid + " swval= "+swval);
+    console.log("toggleTile: target= ", target, " tile type= "+str_type+" subid= "+subid + " swval= "+swval);
     $('#onoffTarget').html("");
     
     // activate the icon click to use this
@@ -263,10 +261,6 @@ function toggleTile(target, str_type, subid, thingindex) {
                 break;
             }
         }
-        // $(target).addClass( onoff[newsub] );
-        // $('#onoffTarget').html(onoff[newsub]);
-        
-        // alert(onoff[newsub]);
     }
 };
 
@@ -1863,9 +1857,23 @@ function initColor(str_type, subid, thingindex) {
     
     // set initial hidden status
     if ( subid!=="wholetile" ) {
-        var ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");
-        var ish3 = $("div.overlay." + subid).css("display");
-        if ( ish2 === "none" || ish3 ==="none") {
+        var ish1;
+        var ish2;
+        var ish3;
+        var ish4;
+        if ( subid==="head" ) {
+            ish1 = $("div.thingname." + str_type).css("display");
+            ish2= $("div.thingname."+str_type+".t_"+thingindex).css("display");
+            ish3 = ish1;
+            ish4 = $("div.thingname."+str_type+".t_"+thingindex + " span.original.n_" + thingindex).css("display");
+        } else {
+            ish1 = $("div." + subid).css("display");
+            ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");
+            ish3 = $("div.overlay." + subid).css("display");
+            ish4 = $("div.overlay." + subid +".v_"+thingindex + " div." + subid + ".p_"+thingindex).css("display");
+        }
+        console.log ("hidden check: ", subid, ish1, ish2, ish3, ish4);
+        if ( ish1 === "none" || ish2 === "none" || ish3 ==="none" || ish4==="none") {
             $("#isHidden").prop("checked", true);
             defaultOverlay = "block";
         } else {

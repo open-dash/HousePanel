@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.060      Auto detect and grab artist, album title, and album art image
+ 2.057      Minor cleanup including proper detection of hidden status in editor
  2.056      Groovy file update only to specify event date format
  2.055      Update version number in Groovy file and more error checking
  2.054      Clean up groovy file; add direct mode action buttons
@@ -366,7 +368,7 @@ function putdiv($value, $class) {
 }
 
 // function to make a curl call
-function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET")
+function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET", $webcall=false)
 {
 
     $debug = "host= $host header= $headertype nvpstr = $nvpstr calltype= $calltype";
@@ -385,10 +387,16 @@ function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET")
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     if ($calltype==="POST" && $nvpstr) {
     	curl_setopt($ch, CURLOPT_POST, TRUE);
+    	curl_setopt($ch, CURLOPT_PUT, FALSE);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
+    } else if ($calltype==="PUT" && $nvpstr) {
+    	curl_setopt($ch, CURLOPT_POST, FALSE);
+    	curl_setopt($ch, CURLOPT_PUT, TRUE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
     } else {
     	curl_setopt($ch, CURLOPT_POST, FALSE);
-        if ($calltype!="GET") { curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $calltype); }
+    	curl_setopt($ch, CURLOPT_PUT, FALSE);
+        // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $calltype);
         if ($nvpstr) { curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr); }
     }
 
@@ -397,17 +405,39 @@ function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET")
     
     // handle errors
     if (curl_errno($ch)) {
-        $nvpResArray = false; // array( "error" => curl_errno($ch), "response" => print_r($response,true) );
+        $nvpResArray = false;
     } else {
         // convert json returned by Groovy into associative array
-        $nvpResArray = json_decode($response, TRUE);
-        if (!$nvpResArray) {
-            $nvpResArray = false;
+        if ( $webcall ) {
+            $nvpResArray = $response;
+        } else {
+            $nvpResArray = json_decode($response, TRUE);
+            if (!$nvpResArray) {
+                $nvpResArray = false;
+            }
         }
     }
     curl_close($ch);
 
     return $nvpResArray;
+}
+
+function getImage($artist, $album) {
+
+    $query = "https://www.google.com/search";
+    $nvpstr = "as_st=y&tbm=isch&as_epq=" . urlencode("$album by $artist");
+    $tc = curl_call($query . "?$nvpstr", false, "", "GET", true);
+
+    // get the location of the first image returned by Google
+    $ipos = strpos($tc, "table class=\"images_table\"");
+    if ( $ipos ) {
+        $imgpos = strpos($tc, "<img", $ipos);
+        $imgend = strpos($tc, ">", $imgpos);
+        $image = substr($tc, $imgpos, $imgend - $imgpos + 1);
+    } else {
+        $image = "No Album Art";
+    }
+    return $image;
 }
 
 // return all devices in one call
@@ -1681,14 +1711,32 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
             $thingvalue["video"] = returnVideo($customname, $fw, $fh);
-        } 
-        
-        if ( $thingtype==="frame" && $customname ) {
+        } else if ( $thingtype==="frame" && $customname ) {
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
             $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
+        } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
+            $trackname = $thingvalue["trackDescription"];
+            
+            // search the track name for an artist
+            $astart = strpos($trackname,"by ");
+            $astop = strpos($trackname,"from ");
+            $thingvalue["currentArtist"] = "";
+            $thingvalue["currentAlbum"] = "";
+            $thingvalue["albumart"] = "";
+            
+            // check for artist in the track description
+            // we don't need to check the zero position since that will always have a song
+            if ( $astart && $astop ) {
+                $artist = substr($trackname, $astart+3, $astop-$astart-4);
+                $album = substr($trackname, $astop+5);
+                if ( $artist && $album ) {
+                    $thingvalue["currentArtist"] = $artist;
+                    $thingvalue["currentAlbum"] = $album;
+                    $thingvalue["albumart"] = getImage($artist, $album);
+                }
+            }
         }
-
         $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
         $tc.= "</div>";
@@ -1817,8 +1865,10 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
     } else {
         // add state of thing as a class if it isn't a number and is a single word
         // also prevent dates and times from being added
+        // also do not include any music album or artist names in the class
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ( $tkey==="track" || $tkey=="time" || $tkey==="date" || $tkey==="color" ||
+        $extra = ( (substr($tval,0,5)==="track") || $tkey=="time" || $tkey==="date" || $tkey==="color" ||
+                   $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="albumart" ||
                    is_numeric($tval) || $thingtype==$tval || $tval=="" || 
                    (substr($tval,0,7)==="number_") || (substr($tval,0,4)==="http") ||
                    strpos($tval," ") || strpos($tval,"\"") || strpos($tval,",") ) ? "" : " " . $tval;
@@ -2864,17 +2914,17 @@ function refactorOptions($allthings) {
 
             // replace all instances of the old "idx" with the new "cnt" in customtiles
             if ( $customcss && $idx!==$cnt ) {
-                $customcss = str_replace("p_$idx.", "p_$cnt.", $customcss);
-                $customcss = str_replace("p_$idx ", "p_$cnt ", $customcss);
+                $customcss = str_replace(".p_$idx.", ".p_$cnt.", $customcss);
+                $customcss = str_replace(".p_$idx ", ".p_$cnt ", $customcss);
 
-                $customcss = str_replace("v_$idx.", "v_$cnt.", $customcss);
-                $customcss = str_replace("v_$idx ", "v_$cnt ", $customcss);
+                $customcss = str_replace(".v_$idx.", ".v_$cnt.", $customcss);
+                $customcss = str_replace(".v_$idx ", ".v_$cnt ", $customcss);
 
-                $customcss = str_replace("t_$idx.", "t_$cnt.", $customcss);
-                $customcss = str_replace("t_$idx ", "t_$cnt ", $customcss);
+                $customcss = str_replace(".t_$idx.", ".t_$cnt.", $customcss);
+                $customcss = str_replace(".t_$idx ", ".t_$cnt ", $customcss);
 
-                $customcss = str_replace("n_$idx.", "n_$cnt.", $customcss);
-                $customcss = str_replace("n_$idx ", "n_$cnt ", $customcss);
+                $customcss = str_replace(".n_$idx.", ".n_$cnt.", $customcss);
+                $customcss = str_replace(".n_$idx ", ".n_$cnt ", $customcss);
 
                 $updatecss = true;
             }
@@ -3563,7 +3613,13 @@ function processOptions($optarray) {
             }
             
             // add any new ones that were not there before
+            // set position to next to last one unless it is moved a lot
+            // the 400 distance is subjective but works in most cases
             $newthings = $options["things"][$roomname];
+            if ( $lasttop < -400 || $lasttop > 400 || $lastleft < -400 || $lastleft > 400 ) {
+                $lasttop = 0;
+                $lastleft = 0; 
+            }
             foreach ($val as $tilestr) {
                 $tilenum = intval($tilestr,10);
                 if ( ! inroom($tilenum, $newthings) ) {
@@ -4853,6 +4909,29 @@ function is_ssl() {
                 // $_SESSION["hpcode"] = "redoauth";
                 // header("Location: $returnURL");
                 // exit(0);
+                break;
+                
+            case "trackupdate":
+                $trackname = $swval;
+
+                // search the track name for an artist
+                $astart = strpos($trackname,"by ");
+                $astop = strpos($trackname,"from ");
+                $artist = "Unknown";
+                $album = "Unknown";
+                $art = "";
+
+                // check for artist in the track description
+                // we don't need to check the zero position since that will always have a song
+                if ( $astart && $astop ) {
+                    $artist = substr($trackname, $astart+3, $astop-$astart-4);
+                    $album = substr($trackname, $astop+5);
+                    if ( $artist && $album ) {
+                        $art = getImage($artist, $album);
+                    }
+                }
+                $results = array("artist"=> $artist, "album"=> $album, "art"=> $art);
+                echo json_encode($results);
                 break;
               
             default:

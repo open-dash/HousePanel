@@ -359,6 +359,7 @@ def getLock(swid, item=null) {
 // this was updated to use the real key names so that push updates work
 // note -changes were also made in housepanel.php and elsewhere to support this
 def getMusic(swid, item=null) {
+    // getThing(mymusics, swid, item)
     item = item? item : mymusics.find {it.id == swid }
     def resp = false
     if ( item ) {
@@ -2007,6 +2008,11 @@ def setMusic(swid, cmd, swattr, subid) {
         } else if ( subid=="music-next" || swattr.contains("music-next") ) {
             item.nextTrack()
             resp['trackDescription'] = item.currentValue("trackDescription")
+        } else if ( subid.startsWith("_") ) {
+            subid = subid.substring(1)
+            if ( item.hasCommand(subid) ) {
+                item."$subid"()
+            }
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
         }

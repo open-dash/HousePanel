@@ -121,7 +121,7 @@ $(document).ready(function() {
         setupTabclick();
 
         setupColors();
-
+        
         // try to get the hubs
         try {
             var hubstr = $("input[name='allHubs']").val();
@@ -599,7 +599,7 @@ function setupSliders() {
                 linktype = $(usertile).attr("linktype");  // type of tile linked to
             }
             
-            console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
+            console.log(ajaxcall + ": id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval= "+linkval);
             
             // handle music volume different than lights
             if ( thetype != "music") {
@@ -1817,6 +1817,31 @@ function updateTile(aid, presult) {
             } else if ( key === "skin" && value.startsWith("CoolClock") ) {
                 value = '<canvas id="clock_' + aid + '" class="' + value + '"></canvas>';
                 isclock = true;
+            // handle updating album art info
+            } else if ( key === "trackDescription") {
+                var oldvalue = $("#a-"+aid+"-trackDescription").html();
+                if ( value!=="None" && value!==oldvalue && !value.startsWith("Grouped with") ) {
+                    console.log("track changed from: " + oldvalue + " to: " + value);
+                    $.post(returnURL, 
+                           {useajax: "trackupdate", id: 0, type: "music", value: value},
+                           function (presult, pstatus) {
+                                if (pstatus==="success" ) {
+                                    try {
+                                        $("#a-"+aid+"-currentArtist").html(presult.artist);
+                                        $("#a-"+aid+"-currentAlbum").html(presult.album);
+                                        $("#a-"+aid+"-albumart").html(presult.art);
+                                    } catch (err) {}
+                                }
+                           }, "json"
+                    );
+                } else {
+                    try {
+                        $("#a-"+aid+"-currentArtist").html("");
+                        $("#a-"+aid+"-currentAlbum").html("");
+                        $("#a-"+aid+"-albumart").html("");
+                    } catch (err) {}
+                }
+                
             } else if ( oldclass && oldvalue && value &&
                      key!=="name" &&
                      $.isNumeric(value)===false && 
