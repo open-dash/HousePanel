@@ -1823,7 +1823,7 @@ function updateTile(aid, presult) {
                 if ( value!=="None" && value!==oldvalue ) {
                     console.log("track changed from: " + oldvalue + " to: " + value);
                     $.post(returnURL, 
-                           {useajax: "trackupdate", id: 0, type: "music", value: value},
+                           {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
                                 if (pstatus==="success" ) {
                                     try {

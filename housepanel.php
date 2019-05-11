@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.061      Custom frame and video tile name bugfix
  2.060      Auto detect and grab artist, album title, and album art image
  2.057      Minor cleanup including proper detection of hidden status in editor
  2.056      Groovy file update only to specify event date format
@@ -1258,12 +1259,12 @@ function getAllThings($reset = false) {
             // so we can take into account user adjusted names and sizes
             // below code is the default setup you get with a refresh
             if ( $i===2 || $i===4 ) { 
-                $defaultname = "AccuWeather"; 
-                $fw = "inherit";
+                $defaultname = "accuweather"; 
+                $fw = "auto";
                 $fh = "200";
             } else {
-                $defaultname = "Forecast";
-                $fw = "480";
+                $defaultname = "forecast";
+                $fw = "auto";
                 $fh = "212";
             }
             $frameid = "frame" . $i;
@@ -1310,7 +1311,18 @@ function getAllThings($reset = false) {
                 if ( array_key_exists("refresh",$thing["value"]) ) {
                    $thing["refresh"] = $thing["value"]["refresh"];
                 }
-                
+                // update frame and video with custom name and width and height values
+                if ( $thing["type"] === "frame" ) {
+                    $fn = $thing["value"]["name"];
+                    $fw = $thing["value"]["width"];
+                    $fh = $thing["value"]["height"];
+                    $thing["value"]["frame"] = returnFrame($fn, $fw, $fh);
+                } else if ( $thing["type"] === "video" ) {
+                    $fn = $thing["value"]["name"];
+                    $fw = $thing["value"]["width"];
+                    $fh = $thing["value"]["height"];
+                    $thing["value"]["video"]= returnVideo($fn, $fw, $fh);
+                }
                 $allthings[$idx] = $thing;
             }
         }
@@ -2574,9 +2586,6 @@ function doAction($hubnum, $path, $swid, $swtype,
                          ( $thing["refresh"]==="normal" || 
                            $thing["refresh"]==="fast" ) ) && 
                          array_key_exists($idx, $options["index"]) ) {
-                        // $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
-                        // $thing["value"] = $thevalue;
-                        // $allthings[$idx] = $thing;
                         $tileid = $options["index"][$idx];
                         $respvals[$tileid] = $thing;
                     }
