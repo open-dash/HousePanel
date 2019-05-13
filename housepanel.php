@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.062      Retain edit and custom names upon refresh; minor bug fixes
  2.061      Custom frame and video tile name bugfix
  2.060      Auto detect and grab artist, album title, and album art image
  2.057      Minor cleanup including proper detection of hidden status in editor
@@ -1173,6 +1174,32 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     return $tc;
 }
 
+function getCustomName($defname, $swid, $swtype, $options) {
+    $customname= "";
+    $rooms = $options["rooms"];
+    $thingoptions = $options["things"];
+    $tileid = $options["index"][$swtype . "|" . $swid];
+    foreach ($rooms as $room => $ridx) {
+        if ( array_key_exists($room, $thingoptions) ) {
+           $things = $thingoptions[$room];
+           foreach ($things as $kindexarr) {
+              // only do this if we have custom names defined in rooms
+              if ( is_array($kindexarr) && count($kindexarr) > 3 ) {
+                 $kindex = $kindexarr[0];
+                 // if our tile matches and there is a custom name, use it
+                 if ( intval($kindex)===intval($tileid) ) {
+                    $customname = $kindexarr[4];
+                    if ( $customname!=="" ) { break; }
+                 }
+              }
+           }
+        }
+        if ( $customname!=="" ) { break; }
+    }
+    if ( $customname!=="" ) { $defname = $customname; }
+    return $defname;
+}
+
 // rewrite this to use our new groovy code to get all things
 // this should be considerably faster
 // updated to now include 4 video tiles and make both hub calls consistent
@@ -1213,7 +1240,7 @@ function getAllThings($reset = false) {
         $customcnt = getCustomCount($options["index"]);
         
         // add digital clock tile if not there
-        $clockname = "Digital Clock";
+        $clockname = getCustomName("Digital Clock", "clockdigital", "clock", $options);
         $weekday = date("l");
         $dateofmonth = date("M d, Y");
         $timeofday = date("h:i:s A");
@@ -1229,7 +1256,7 @@ function getAllThings($reset = false) {
             "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"fast", "value" => $dclock);
 
         // add analog clock tile - uses dclock settings by default
-        $clockname = "Analog Clock";
+        $clockname = getCustomName("Analog Clock", "clockanalog", "clock", $options);
         // $clockskin = "CoolClock:classic";
         $clockskin = "CoolClock:swissRail:72";
         $aclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
@@ -1246,12 +1273,17 @@ function getAllThings($reset = false) {
         // the file must exist as a playable mp4 video file - name can be customized now in TileEditor
         // frame names are now also editable by the user
         for ($i=1; $i<5; $i++) {
+
+            // get custom tile name if it was defined in tile editor and stored
+            // in the room array - this is a temp fix until I change the architecture
+            // to stre custom names in the index of things instead
             $vidid = "vid" . $i;
             $vidurl = "video" . $i . ".mp4";
+            $vidurl = getCustomName($vidurl, $vidid, "video", $options);
             $fw = "inherit";
             $fh = "inherit";
-            $fval = returnVideo($vidurl, $fw, $fh);
-            $vidtile = array("name"=>$vidurl, "video"=>$fval, "width"=> $fw, "height"=>$fh);
+            $vval = returnVideo($vidurl, $fw, $fh);
+            $vidtile = array("name"=>$vidurl, "video"=>$vval, "width"=> $fw, "height"=>$fh);
             $allthings["video|$vidid"] = array("id" => $vidid, "name" => $vidtile["name"], 
                 "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "refresh"=>"fast", "value" => $vidtile);
 
@@ -1259,17 +1291,16 @@ function getAllThings($reset = false) {
             // so we can take into account user adjusted names and sizes
             // below code is the default setup you get with a refresh
             if ( $i===2 || $i===4 ) { 
-                $defaultname = "accuweather"; 
-                $fw = "auto";
+                $fn = "accuweather"; 
+                $fw = "400";
                 $fh = "200";
             } else {
-                $defaultname = "forecast";
-                $fw = "auto";
+                $fn = "forecast";
+                $fw = "400";
                 $fh = "212";
             }
             $frameid = "frame" . $i;
-            
-            $fn = $defaultname;
+            $fn = getCustomName($fn, $frameid, "frame", $options);
             $fval = returnFrame($fn, $fw, $fh);
             $frametile = array("name"=>$fn, "frame"=>$fval, "width"=> $fw, "height"=>$fh);
             $allthings["frame|$frameid"] = array("id" => $frameid, "name" => $frametile["name"], "hubnum" => $hubnum, 
@@ -1292,8 +1323,8 @@ function getAllThings($reset = false) {
         for ($i=1; $i<= $customcnt; $i++ ) {
             $customid = "custom_" . strval($i);
             $customname = "Custom " . strval($i);
+            $customname = getCustomName($customname, $customid, "custom", $options);
             $custom_val = array("name"=> $customname);
-            // $custom_val = getCustomTile($custom_val, "custom", $customid, $options, $allthings);
             $allthings["custom|$customid"] = array("id" => $customid, "name" => $custom_val["name"], 
                 "hubnum" => -1, "hubtype" => "None", "type" => "custom", "refresh"=>"fast",
                 "value" => $custom_val);
@@ -1574,12 +1605,17 @@ function returnFrame($framename, $width, $height) {
     } else if ( file_exists(strtolower($framename) . ".html") ) {
         $fn= strtolower($framename) . ".html";
     } else {
-        $fn= "error.html";
+        // if not found then we generate the file
+        $weatherframe = "<!DOCTYPE html><html>";
+        $weatherframe.= '<a target="_blank" href="https://www.booked.net/weather/ann-arbor-1066"><img src="https://w.bookcdn.com/weather/picture/3_1066_0_1_137AE9_380_ffffff_333333_08488D_1_ffffff_333333_0_6.png?scode=2&domid=w209&anc_id=17949"  alt="booked.net"/></a>';
+        $weatherframe.= "</html>";
+        $fn = "forecast.html";
+        file_put_contents($fn, $weatherframe);
     }
     $f = "<iframe width=\"$width\" height=\"$height\" src=\"$fn\" frameborder=\"0\"></iframe>";
-    if ( $fn==="error.html" ) {
-        $f.= "<div class=\"error\">File: [" . $framename . "] Not Found</div>";
-    }
+//    if ( $fn==="error.html" ) {
+//        $f.= "<div class=\"error\">File: [" . $framename . "] Not Found</div>";
+//    }
     return $f;
 }
 
@@ -1656,7 +1692,9 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     
     // now we use custom name in both places
     $thingvalue["name"] = $thingpr;
-    // $thingvalue = getCustomTile($thingvalue, $thingtype, $bid, $options, $allthings);
+    
+    // update fields with custom settings
+    $thingvalue = getCustomTile($thingvalue, $thingtype, $bid, $options, $allthings);
     
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
@@ -1742,6 +1780,10 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             if ( $astart && $astop ) {
                 $artist = substr($trackname, $astart+3, $astop-$astart-4);
                 $album = substr($trackname, $astop+5);
+                $bstop = strpos($album,"Grouped with ");
+                if (  $bstop !== false ) {
+                    $album = substr($album, 0, $bstop);
+                }
                 if ( $artist && $album ) {
                     $thingvalue["currentArtist"] = $artist;
                     $thingvalue["currentAlbum"] = $album;
@@ -2220,9 +2262,10 @@ function doAction($hubnum, $path, $swid, $swtype,
     } else if ($swtype==="video" && $subid==="video") {
         if ( $allthings ) {
             $thingvalue = $allthings["video|$swid"]["value"];
+            $thingvalue = getCustomTile($thingvalue, "video", $swid, $options, $allthings);
+            $fn = getCustomName($thingvalue["name"], $swid, "video", $options);
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
-            $fn = $thingvalue["name"];
             $videoval = returnVideo($fn, $fw, $fh);
             $thingvalue["video"] = $videoval;
             $response = $thingvalue;
@@ -2230,14 +2273,15 @@ function doAction($hubnum, $path, $swid, $swtype,
             $videoval = returnVideo($swval,"inherit","inherit");
             $response = array("video" => $videoval);
         }
-        $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
+        // $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
         
     } else if ($swtype==="frame" && $subid==="frame" ) {
         if ( $allthings ) {
             $thingvalue = $allthings["frame|$swid"]["value"];
+            $thingvalue = getCustomTile($thingvalue, "frame", $swid, $options, $allthings);
+            $fn = getCustomName($thingvalue["name"], $swid, "frame", $options);
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
-            $fn = $thingvalue["name"];
             $frameval = returnFrame($fn, $fw, $fh);
             $thingvalue["frame"] = $frameval;
             $response = $thingvalue;
@@ -2245,7 +2289,7 @@ function doAction($hubnum, $path, $swid, $swtype,
             $frameval = returnFrame($swval,"inherit","inherit");
             $response = array("frame" => $frameval);
         }
-        $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
+        // $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
 
     // if the new fast type is requested return things that can be updated
     // without making a call out to the hub
@@ -2292,19 +2336,6 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $thing["value"] = $response2;
                     }
                     $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"],$options, $allthings);
-                    
-                    // update any thing that has time elements
-                    // for speed sake we skip dates since they don't change that fast
-                    // this is disabled because I added a specific clock timer in js
-                    // that updates all clocks every second and normal does every minute
-//                    if ( array_key_exists("time", $thing["value"]) ) {
-//                        if ( array_key_exists("fmt_time", $thing["value"]) ) {
-//                            $fmt_time = $thing["value"]["fmt_time"];
-//                            $thing["value"]["time"] = date($fmt_time);
-//                        } else {
-//                            $thing["value"]["time"] = $timeofday;
-//                        }
-//                    }
                     $response[$tileid] = $thing;
                     
                 }
@@ -2329,11 +2360,48 @@ function doAction($hubnum, $path, $swid, $swtype,
             // and return those that are updated slowly
             // these are also ignored in the main query loop
             foreach ($allthings as $fidx => $thing) {
-                $type = $thing["type"];
+                $thingtype = $thing["type"];
+                $thingvalue = $thing["value"];
                 $tileid = $indexoptions[$fidx];
                 if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="slow" ) {
-                // if ( $type==="frame" ) {
-                    $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"], $options, $allthings);
+                    $thingvalue = getCustomTile($thingvalue, $thingtype, $thing["id"], $options, $allthings);
+                    $customname = getCustomName($thingvalue["name"], $swid, $thingtype, $options);
+                    
+                    if ( $thingtype==="video" && $customname ) {
+                        $fw = $thingvalue["width"];
+                        $fh = $thingvalue["height"];
+                        $thingvalue["video"] = returnVideo($customname, $fw, $fh);
+                    } else if ( $thingtype==="frame" && $customname ) {
+                        $fw = $thingvalue["width"];
+                        $fh = $thingvalue["height"];
+                        $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
+                    } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
+                        $trackname = $thingvalue["trackDescription"];
+
+                        // search the track name for an artist
+                        $astart = strpos($trackname,"by ");
+                        $astop = strpos($trackname,"from ");
+                        $thingvalue["currentArtist"] = "";
+                        $thingvalue["currentAlbum"] = "";
+                        $thingvalue["albumart"] = "";
+
+                        // check for artist in the track description
+                        // we don't need to check the zero position since that will always have a song
+                        if ( $astart && $astop ) {
+                            $artist = substr($trackname, $astart+3, $astop-$astart-4);
+                            $album = substr($trackname, $astop+5);
+                            $bstop = strpos($album,"Grouped with ");
+                            if (  $bstop !== false ) {
+                                $album = substr($album, 0, $bstop);
+                            }
+                            if ( $artist && $album ) {
+                                $thingvalue["currentArtist"] = $artist;
+                                $thingvalue["currentAlbum"] = $album;
+                                $thingvalue["albumart"] = getImage($artist, $album);
+                            }
+                        }
+                    }
+                    $thing["value"]= $thingvalue;
                     $response[$tileid] = $thing;
                 }
             }
@@ -2547,9 +2615,38 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $oldthing = $allthings[$idx];
                         $newvalue = array_merge($oldthing["value"], $thing["value"]);
                         $newthing = array_merge($oldthing, $thing);
+                        $thingtype = $thing["type"];
                         
-                        $newvalue = getCustomTile($newvalue, $thing["type"], $thing["id"], $options, $allthings);
-                        $newthing["value"] = $newvalue;
+                        $thingvalue = getCustomTile($newvalue, $thingtype, $thing["id"], $options, $allthings);
+                        // $customname = getCustomName($thingvalue["name"], $swid, $thingtype, $options);
+                        $customname = $thingvalue["name"];
+                        if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
+                            $trackname = $thingvalue["trackDescription"];
+
+                            // search the track name for an artist
+                            $astart = strpos($trackname,"by ");
+                            $astop = strpos($trackname,"from ");
+                            $thingvalue["currentArtist"] = "";
+                            $thingvalue["currentAlbum"] = "";
+                            $thingvalue["albumart"] = "";
+
+                            // check for artist in the track description
+                            // we don't need to check the zero position since that will always have a song
+                            if ( $astart && $astop ) {
+                                $artist = substr($trackname, $astart+3, $astop-$astart-4);
+                                $album = substr($trackname, $astop+5);
+                                $bstop = strpos($album,"Grouped with ");
+                                if (  $bstop !== false ) {
+                                    $album = substr($album, 0, $bstop);
+                                }
+                                if ( $artist && $album ) {
+                                    $thingvalue["currentArtist"] = $artist;
+                                    $thingvalue["currentAlbum"] = $album;
+                                    $thingvalue["albumart"] = getImage($artist, $album);
+                                }
+                            }
+                        }
+                        $newthing["value"] = $thingvalue;
                         $allthings[$idx] = $newthing;
                     }
                 }

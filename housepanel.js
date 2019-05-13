@@ -275,6 +275,7 @@ function setupWebsocket()
                 try {
                     var aid = $(this).attr("id").substring(2);
                     linktile = $(this).attr("tile");
+                    // console.log("aid= "+aid+" linktile= "+linktile+" pvalue= ",pvalue);
                     updateTile(aid, pvalue);
                 } catch (e) {
                     console.log("Error updating tile of type: "+ thetype + " and id: " + bid + " with value: ", pvalue);
@@ -1853,6 +1854,7 @@ function updateTile(aid, presult) {
             }
 
             // update the content 
+            // console.log("oldvalue= ",oldvalue," value= ", value, " targetid= ", targetid);
             if (oldvalue || value) {
                 $(targetid).html(value);
                 // if ( aid=="91" ) { alert("key= " + key + " changed value to: " + value); }
@@ -2324,7 +2326,7 @@ function setupPage(trigger) {
                                     
                                     // update the linked item
                                     // note - the events of any linked item will replace the events of master tile
-                                    if ( command==="LINK" ) {
+                                    if ( command==="LINK" && presult["LINK"] ) {
                                         var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
                                         var realsubid = presult["LINK"]["realsubid"];
                                         // alert(linkaid+ " lt= " + linktype + " lv= "+linkval);

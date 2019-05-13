@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 05/11/2019 - clean up and tweak music; longer delays in subscribes
  * 05/03/2019 - user option to specify format of event time fields
  * 05/01/2019 - add try/catch for most things to prevent errors and more cleanup
  * 04/30/2019 - clean up this groovy file
@@ -63,7 +64,7 @@
  * 
  */
 
-public static String version() { return "V2.056" }
+public static String version() { return "V2.062" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",
@@ -359,7 +360,7 @@ def getLock(swid, item=null) {
 // this was updated to use the real key names so that push updates work
 // note -changes were also made in housepanel.php and elsewhere to support this
 def getMusic(swid, item=null) {
-    // getThing(mymusics, swid, item)
+    // def resp = getThing(mymusics, swid, item)
     item = item? item : mymusics.find {it.id == swid }
     def resp = false
     if ( item ) {
@@ -370,9 +371,10 @@ def getMusic(swid, item=null) {
             level: item.currentValue("level"),
             mute: item.currentValue("mute")
         ]
-        resp = addBattery(resp, item)
+        // resp = addBattery(resp, item)
         resp = addHistory(resp, item)
     }
+    // log.debug resp
     return resp
 }
 
@@ -847,6 +849,7 @@ def getMusics(resp) {
             resp << [name: it.displayName, id: it.id, value: multivalue, type: "music"]
         }
     } catch (e) {}
+    
     return resp
 }
 
@@ -2036,13 +2039,14 @@ def setRoutine(swid, cmd, swattr, subid) {
 }
 
 def registerAll() {
-    runIn(10, "registerLights");
-    runIn(10, "registerBulbs");
-    runIn(10, "registerDoors");
-    runIn(10, "registerMotions");
-    runIn(10, "registerOthers");
-    runIn(10, "registerThermostats");
-    runIn(10, "registerMusics");
+    runIn(200, "registerLights");
+    runIn(200, "registerBulbs");
+    runIn(200, "registerDoors");
+    runIn(200, "registerMotions");
+    runIn(200, "registerOthers");
+    runIn(200, "registerThermostats");
+    runIn(200, "registerTracks");
+    runIn(200, "registerMusics");
     
     // skip these on purpose because they change slowly and report often
     // runIn(10, "registerSlows");
@@ -2085,11 +2089,6 @@ def registerSlows() {
      registerCapabilities(mypowers, "energy")
 }
 
-def registerCapabilities(devices, capability) {
-    subscribe(devices, capability, changeHandler)
-    logger("Registering ${capability} for ${devices?.size() ?: 0} things", "trace")
-}
-
 def registerThermostats() {
     registerCapabilities(mythermostats, "heatingSetpoint")
     registerCapabilities(mythermostats, "coolingSetpoint")
@@ -2097,15 +2096,21 @@ def registerThermostats() {
     registerCapabilities(mythermostats, "thermostatMode")
     registerCapabilities(mythermostats, "thermostatSetpoint")
     registerCapabilities(mythermostats, "temperature")
-    logger("Registering all thermostats", "trace")
 }
 
 def registerMusics() {
     registerCapabilities(mymusics, "status")
     registerCapabilities(mymusics, "level")
     registerCapabilities(mymusics, "mute")
+}
+
+def registerTracks() {
     registerCapabilities(mymusics, "trackDescription")
-    logger("Registering all musics", "trace")
+}
+
+def registerCapabilities(devices, capability) {
+    subscribe(devices, capability, changeHandler)
+    logger("Registering ${capability} for ${devices?.size() ?: 0} things", "trace")
 }
 
 def changeHandler(evt) {
@@ -2152,6 +2157,8 @@ def changeHandler(evt) {
 
 def postHub(message) {
 
+    logger("ip= ${state.directIP} port= ${state.directPort} message= ${message}", "info" )
+    
     if ( message && state?.directIP && state?.directPort ) {
         // Send Using the Direct Mechanism
         logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
