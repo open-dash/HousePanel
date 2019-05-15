@@ -1774,6 +1774,8 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             if ( array_key_exists("trackImage", $thingvalue) ) {
                 $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
                 $thingvalue["trackImage"] = $imgvalue;
+                $astart = 0;
+                $astop = 0;
                 
             // otherwise search the track name for an artist and album
             } else {
@@ -2390,6 +2392,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                         if ( array_key_exists("trackImage", $thingvalue) ) {
                             $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
                             $thingvalue["trackImage"] = $imgvalue;
+                            $astart = 0;
+                            $astop = 0;
 
                         // otherwise search the track name for an artist and album
                         } else {
@@ -2641,6 +2645,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                             if ( array_key_exists("trackImage", $thingvalue) ) {
                                 $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
                                 $thingvalue["trackImage"] = $imgvalue;
+                                $astart = 0;
+                                $astop = 0;
 
                             // otherwise search the track name for an artist and album
                             } else {

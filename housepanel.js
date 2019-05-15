@@ -1846,7 +1846,9 @@ function updateTile(aid, presult) {
                 }
             // update album art for native track image returns
             } else if ( key === "trackImage" ) {
-                value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
+                if ( value.startsWith("http") ) {
+                    value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
+                }
                 // $("#a-"+aid+"-albumart").html(value);
                 
             } else if ( oldclass && oldvalue && value &&
