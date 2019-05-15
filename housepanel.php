@@ -438,7 +438,7 @@ function getImage($artist, $album) {
         $imgend = strpos($tc, ">", $imgpos);
         $image = substr($tc, $imgpos, $imgend - $imgpos + 1);
     } else {
-        $image = "No Album Art";
+        $image = "";
     }
     return $image;
 }
@@ -1772,8 +1772,10 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             
             // use native if there
             if ( array_key_exists("trackImage", $thingvalue) ) {
-                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                $thingvalue["trackImage"] = $imgvalue;
+                if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
+                    $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                    $thingvalue["trackImage"] = $imgvalue;
+                }
                 $astart = 0;
                 $astop = 0;
                 
@@ -1941,6 +1943,10 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // fix track names for groups, empty, and super long
         if ($tkey==="trackDescription" || $tkey==="track") {
             $tval = fixTrack($tval);
+        } else if ($tkey==="trackImage") {
+            if ( substr($tval,0,4) === "http" ) {
+                $tval = "<img width='120' height='120' src='" . $tval . "'>";
+            }
         } else if ( $tkey == "battery") {
             $powmod = intval($tval);
             $powmod = (string)($powmod - ($powmod % 10));
@@ -2390,8 +2396,10 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $trackname = $thingvalue["trackDescription"];
 
                         if ( array_key_exists("trackImage", $thingvalue) ) {
-                            $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                            $thingvalue["trackImage"] = $imgvalue;
+                            if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
+                                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                                $thingvalue["trackImage"] = $imgvalue;
+                            }
                             $astart = 0;
                             $astop = 0;
 
@@ -2643,8 +2651,10 @@ function doAction($hubnum, $path, $swid, $swtype,
                             $trackname = $thingvalue["trackDescription"];
 
                             if ( array_key_exists("trackImage", $thingvalue) ) {
-                                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                                $thingvalue["trackImage"] = $imgvalue;
+                                if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
+                                    $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                                    $thingvalue["trackImage"] = $imgvalue;
+                                }
                                 $astart = 0;
                                 $astop = 0;
 

@@ -1827,7 +1827,7 @@ function updateTile(aid, presult) {
                     try {
                         $("#a-"+aid+"-currentArtist").html("");
                         $("#a-"+aid+"-currentAlbum").html("");
-                        $("#a-"+aid+"-albumart").html("");
+                        $("#a-"+aid+"-trackImage").html("");
                     } catch (err) {}
                 } else if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
                     console.log("track changed from: " + oldvalue + " to: ["+value+"]");
@@ -1838,7 +1838,7 @@ function updateTile(aid, presult) {
                                     try {
                                         $("#a-"+aid+"-currentArtist").html(presult.artist);
                                         $("#a-"+aid+"-currentAlbum").html(presult.album);
-                                        $("#a-"+aid+"-albumart").html(presult.art);
+                                        $("#a-"+aid+"-trackImage").html(presult.art);
                                     } catch (err) {}
                                 }
                            }, "json"
@@ -1846,6 +1846,7 @@ function updateTile(aid, presult) {
                 }
             // update album art for native track image returns
             } else if ( key === "trackImage" ) {
+                value = value.trim();
                 if ( value.startsWith("http") ) {
                     value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
                 }
