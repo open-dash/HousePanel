@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 05/14/2019 - add native music artist, album, art fields when present
  * 05/11/2019 - clean up and tweak music; longer delays in subscribes
  * 05/03/2019 - user option to specify format of event time fields
  * 05/01/2019 - add try/catch for most things to prevent errors and more cleanup
@@ -290,8 +291,12 @@ def addHistory(resp, item) {
 }
 
 def addBattery(resp, item) {
-    if ( item.hasAttribute("battery") ) {
-        resp.put("battery", item.currentValue("battery"))
+    addAttr(resp, item, "battery")
+}
+
+def addAttr(resp, item, attr) {
+    if ( resp && item && item.hasAttribute(attr) ) {
+        resp.put(attr, item.currentValue(attr))
     }
     return resp
 }
@@ -371,7 +376,13 @@ def getMusic(swid, item=null) {
             level: item.currentValue("level"),
             mute: item.currentValue("mute")
         ]
-        // resp = addBattery(resp, item)
+        
+        // add native track information if attributes exist
+        // this code is from @rsb in the ST forum
+        resp = addAttr(resp, item, "currentArtist")
+        resp = addAttr(resp, item, "currentAlbum")
+        resp = addAttr(resp, item, "trackImage")
+        resp = addBattery(resp, item)
         resp = addHistory(resp, item)
     }
     // log.debug resp
@@ -393,9 +404,7 @@ def getThermostat(swid, item=null) {
             thermostatOperatingState: item.currentValue("thermostatOperatingState")
         ]
         resp = addBattery(resp, item)
-        if ( item.hasAttribute("humidity") ) {
-            resp.put("humidity", item.currentValue("humidity"))
-        }
+        resp = addAttr(resp, item, "humidity")
         resp = addHistory(resp, item)
     }
     return resp
@@ -449,9 +458,7 @@ def getTemperature(swid, item=null) {
         resp = [name: item.displayName]
         resp = addBattery(resp, item)
         resp.put("temperature", item.currentValue("temperature") )
-        if ( resp && item.hasAttribute("humidity") ) {
-            resp.put("humidity", item.currentValue("humidity"))
-        }
+        resp = addAttr(resp, item, "humidity")
         resp = addHistory(resp, item)
     }
     return resp
@@ -1226,9 +1233,7 @@ def setDoor(swid, cmd, swattr, subid) {
         }
         newonoff=="open" ? item.open() : item.close()
         resp = [door: newonoff]
-        if ( item.hasAttribute("contact") ) {
-            resp.put("contact", newonoff)
-        }
+        resp = addAttr(resp, item, "contact")
         resp = addBattery(resp, item)
     }
     return resp

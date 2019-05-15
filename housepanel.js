@@ -1820,9 +1820,17 @@ function updateTile(aid, presult) {
                 isclock = true;
             // handle updating album art info
             } else if ( key === "trackDescription") {
-                var oldvalue = $("#a-"+aid+"-trackDescription").html();
-                if ( value!=="None" && value!==oldvalue ) {
-                    console.log("track changed from: " + oldvalue + " to: " + value);
+                var oldvalue = $("#a-"+aid+"-trackDescription").html().trim();
+                value = value.trim();
+                if ( value==="None" || !value ) {
+                    value = "None";
+                    try {
+                        $("#a-"+aid+"-currentArtist").html("");
+                        $("#a-"+aid+"-currentAlbum").html("");
+                        $("#a-"+aid+"-albumart").html("");
+                    } catch (err) {}
+                } else if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
+                    console.log("track changed from: " + oldvalue + " to: ["+value+"]");
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
@@ -1835,13 +1843,11 @@ function updateTile(aid, presult) {
                                 }
                            }, "json"
                     );
-                } else {
-                    try {
-                        $("#a-"+aid+"-currentArtist").html("");
-                        $("#a-"+aid+"-currentAlbum").html("");
-                        $("#a-"+aid+"-albumart").html("");
-                    } catch (err) {}
                 }
+            // update album art for native track image returns
+            } else if ( key === "trackImage" ) {
+                value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
+                // $("#a-"+aid+"-albumart").html(value);
                 
             } else if ( oldclass && oldvalue && value &&
                      key!=="name" &&
@@ -1856,8 +1862,9 @@ function updateTile(aid, presult) {
             // update the content 
             // console.log("oldvalue= ",oldvalue," value= ", value, " targetid= ", targetid);
             if (oldvalue || value) {
-                $(targetid).html(value);
-                // if ( aid=="91" ) { alert("key= " + key + " changed value to: " + value); }
+                try {
+                    $(targetid).html(value);
+                } catch (err) {}
             }
         }
     });

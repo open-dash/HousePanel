@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.063      Implement music icons for native Echo Speaks and Generic music
  2.062      Retain edit and custom names upon refresh; minor bug fixes
  2.061      Custom frame and video tile name bugfix
  2.060      Auto detect and grab artist, album title, and album art image
@@ -1767,16 +1768,23 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
         } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
             $trackname = $thingvalue["trackDescription"];
+
             
-            // search the track name for an artist
-            $astart = strpos($trackname,"by ");
-            $astop = strpos($trackname,"from ");
-            $thingvalue["currentArtist"] = "";
-            $thingvalue["currentAlbum"] = "";
-            $thingvalue["albumart"] = "";
+            // use native if there
+            if ( array_key_exists("trackImage", $thingvalue) ) {
+                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                $thingvalue["trackImage"] = $imgvalue;
+                
+            // otherwise search the track name for an artist and album
+            } else {
+                $astart = strpos($trackname,"by ");
+                $astop = strpos($trackname,"from ");
+                $thingvalue["currentArtist"] = "";
+                $thingvalue["currentAlbum"] = "";
+                $thingvalue["trackImage"] = "";
+                $imgvalue = false;
+            }
             
-            // check for artist in the track description
-            // we don't need to check the zero position since that will always have a song
             if ( $astart && $astop ) {
                 $artist = substr($trackname, $astart+3, $astop-$astart-4);
                 $album = substr($trackname, $astop+5);
@@ -1787,10 +1795,11 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
                 if ( $artist && $album ) {
                     $thingvalue["currentArtist"] = $artist;
                     $thingvalue["currentAlbum"] = $album;
-                    $thingvalue["albumart"] = getImage($artist, $album);
+                    $thingvalue["trackImage"] = getImage($artist, $album);
                 }
             }
-        }
+        } 
+        
         $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
         $tc.= "</div>";
@@ -1922,7 +1931,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // also do not include any music album or artist names in the class
         // and finally if the value is complex with spaces or other characters, skip
         $extra = ( (substr($tval,0,5)==="track") || $tkey=="time" || $tkey==="date" || $tkey==="color" ||
-                   $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="albumart" ||
+                   $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="trackImage" ||
                    is_numeric($tval) || $thingtype==$tval || $tval=="" || 
                    (substr($tval,0,7)==="number_") || (substr($tval,0,4)==="http") ||
                    strpos($tval," ") || strpos($tval,"\"") || strpos($tval,",") ) ? "" : " " . $tval;
@@ -2378,13 +2387,19 @@ function doAction($hubnum, $path, $swid, $swtype,
                     } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
                         $trackname = $thingvalue["trackDescription"];
 
-                        // search the track name for an artist
-                        $astart = strpos($trackname,"by ");
-                        $astop = strpos($trackname,"from ");
-                        $thingvalue["currentArtist"] = "";
-                        $thingvalue["currentAlbum"] = "";
-                        $thingvalue["albumart"] = "";
+                        if ( array_key_exists("trackImage", $thingvalue) ) {
+                            $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                            $thingvalue["trackImage"] = $imgvalue;
 
+                        // otherwise search the track name for an artist and album
+                        } else {
+                            $astart = strpos($trackname,"by ");
+                            $astop = strpos($trackname,"from ");
+                            $thingvalue["currentArtist"] = "";
+                            $thingvalue["currentAlbum"] = "";
+                            $thingvalue["trackImage"] = "";
+                        }
+                        
                         // check for artist in the track description
                         // we don't need to check the zero position since that will always have a song
                         if ( $astart && $astop ) {
@@ -2397,7 +2412,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                             if ( $artist && $album ) {
                                 $thingvalue["currentArtist"] = $artist;
                                 $thingvalue["currentAlbum"] = $album;
-                                $thingvalue["albumart"] = getImage($artist, $album);
+                                $thingvalue["trackImage"] = getImage($artist, $album);
                             }
                         }
                     }
@@ -2623,12 +2638,18 @@ function doAction($hubnum, $path, $swid, $swtype,
                         if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
                             $trackname = $thingvalue["trackDescription"];
 
-                            // search the track name for an artist
-                            $astart = strpos($trackname,"by ");
-                            $astop = strpos($trackname,"from ");
-                            $thingvalue["currentArtist"] = "";
-                            $thingvalue["currentAlbum"] = "";
-                            $thingvalue["albumart"] = "";
+                            if ( array_key_exists("trackImage", $thingvalue) ) {
+                                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+                                $thingvalue["trackImage"] = $imgvalue;
+
+                            // otherwise search the track name for an artist and album
+                            } else {
+                                $astart = strpos($trackname,"by ");
+                                $astop = strpos($trackname,"from ");
+                                $thingvalue["currentArtist"] = "";
+                                $thingvalue["currentAlbum"] = "";
+                                $thingvalue["trackImage"] = "";
+                            }
 
                             // check for artist in the track description
                             // we don't need to check the zero position since that will always have a song
@@ -2642,7 +2663,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                                 if ( $artist && $album ) {
                                     $thingvalue["currentArtist"] = $artist;
                                     $thingvalue["currentAlbum"] = $album;
-                                    $thingvalue["albumart"] = getImage($artist, $album);
+                                    $thingvalue["trackImage"] = getImage($artist, $album);
                                 }
                             }
                         }
