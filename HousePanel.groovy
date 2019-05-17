@@ -65,7 +65,7 @@
  * 
  */
 
-public static String version() { return "V2.062" }
+public static String version() { return "V2.064" }
 public static String handle() { return "HousePanel" }
 definition(
     name: "${handle()}",

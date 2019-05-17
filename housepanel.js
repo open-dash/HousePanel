@@ -1830,15 +1830,15 @@ function updateTile(aid, presult) {
                         $("#a-"+aid+"-trackImage").html("");
                     } catch (err) {}
                 } else if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
-                    console.log("track changed from: " + oldvalue + " to: ["+value+"]");
+                    console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
-                                if (pstatus==="success" ) {
+                                if (pstatus==="success" && presult.trackImage ) {
                                     try {
-                                        $("#a-"+aid+"-currentArtist").html(presult.artist);
-                                        $("#a-"+aid+"-currentAlbum").html(presult.album);
-                                        $("#a-"+aid+"-trackImage").html(presult.art);
+                                        $("#a-"+aid+"-currentArtist").html(presult.currentArtist);
+                                        $("#a-"+aid+"-currentAlbum").html(presult.currentAlbum);
+                                        $("#a-"+aid+"-trackImage").html(presult.trackImage);
                                     } catch (err) {}
                                 }
                            }, "json"
@@ -2191,6 +2191,16 @@ function setupPage(trigger) {
         // get the targetid used to aim values at
         var bid = $(tile).attr("bid");
         var hubnum = $(tile).attr("hub");
+
+        // use first hub as defualt if needed
+//        if ( hubnum === "-1" ) {
+//            try {
+//                var hubstr = $("input[name='allHubs']").val();
+//                var hubs = JSON.parse(hubstr);
+//                hubnum = hubs[0].hubId;
+//            } catch(err) {}
+//        }
+        
         var targetid;
         if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {
             var slen = subid.length;
@@ -2214,21 +2224,27 @@ function setupPage(trigger) {
             thevalue = $("#a-"+aid+"-temperature").html();
         }
         
-        // handle music commands
-        if ( subid.startsWith("music-" ) ) {
-            thevalue = subid.substring(6);
-        }
-        
+        // handle music commands (which need to get subid command) and
+        // there is only one sibling for each of the music controls
         // check for companion sibling element for handling customizations
         // this includes easy references for a URL or TEXT link
         // using jQuery sibling feature and check for valid http string
         // if found then switch the type to the linked type for calls
         // and grab the proper hub number
+        var ismusic = false;
+        if ( subid.startsWith("music-" ) ) {
+            thevalue = subid.substring(6);
+            ismusic = true;
+        }
         var usertile = $(this).siblings(".user_hidden");
         var userval = "";
         if ( usertile && $(usertile).attr("command") ) {
             command = $(usertile).attr("command");    // command type
-            userval = $(usertile).attr("value");      // raw user provided val
+            if ( ismusic ) {
+                userval = thevalue;
+            } else  {
+                userval = $(usertile).attr("value");      // raw user provided val
+            }
             linkval = $(usertile).attr("linkval");    // urlencooded val
             linktype = $(usertile).attr("linktype");  // type of tile linked to
             
@@ -2332,7 +2348,7 @@ function setupPage(trigger) {
                             try {
                                 var keys = Object.keys(presult);
                                 if ( keys && keys.length) {
-                                    console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
+                                    console.log( ajaxcall + " POST returned:", presult );
                                     
                                     // update the linked item
                                     // note - the events of any linked item will replace the events of master tile

@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.064      Fix music control siblings and improve Album Art reliability
  2.063      Implement music icons for native Echo Speaks and Generic music
  2.062      Retain edit and custom names upon refresh; minor bug fixes
  2.061      Custom frame and video tile name bugfix
@@ -1766,42 +1767,8 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
             $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
-        } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
-            $trackname = $thingvalue["trackDescription"];
-
-            
-            // use native if there
-            if ( array_key_exists("trackImage", $thingvalue) ) {
-                if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
-                    $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                    $thingvalue["trackImage"] = $imgvalue;
-                }
-                $astart = 0;
-                $astop = 0;
-                
-            // otherwise search the track name for an artist and album
-            } else {
-                $astart = strpos($trackname,"by ");
-                $astop = strpos($trackname,"from ");
-                $thingvalue["currentArtist"] = "";
-                $thingvalue["currentAlbum"] = "";
-                $thingvalue["trackImage"] = "";
-                $imgvalue = false;
-            }
-            
-            if ( $astart && $astop ) {
-                $artist = substr($trackname, $astart+3, $astop-$astart-4);
-                $album = substr($trackname, $astop+5);
-                $bstop = strpos($album,"Grouped with ");
-                if (  $bstop !== false ) {
-                    $album = substr($album, 0, $bstop);
-                }
-                if ( $artist && $album ) {
-                    $thingvalue["currentArtist"] = $artist;
-                    $thingvalue["currentAlbum"] = $album;
-                    $thingvalue["trackImage"] = getImage($artist, $album);
-                }
-            }
+        } else if ( $thingtype==="music" ) {
+            $thingvalue = getMusicArt($thingvalue);
         } 
         
         $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
@@ -1955,9 +1922,13 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         
         // for music status show a play bar in front of it
         // now use the real item name and back enable old one
+        // note that we add the sibling to the music controls
+        // so that linked tiles will operate properly
+        // only one sibling for all the controls. The js file deals with this.
         if ($tkey==="musicstatus" || ($thingtype==="music" && $tkey==="status") ) {
             // print controls for the player
             $tc.= "<div class=\"overlay music-controls" . $subtype . " v_$kindex\">";
+            if ($sibling) { $tc.= $sibling; }
             $tc.= "<div  aid=\"$i\" subid=\"music-previous\" title=\"Previous\" class=\"$thingtype music-previous p_$kindex\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"music-pause\" title=\"Pause\" class=\"$thingtype music-pause p_$kindex\"></div>";
             $tc.= "<div  aid=\"$i\" subid=\"music-play\" title=\"Play\" class=\"$thingtype music-play p_$kindex\"></div>";
@@ -2392,41 +2363,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $fw = $thingvalue["width"];
                         $fh = $thingvalue["height"];
                         $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
-                    } else if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
-                        $trackname = $thingvalue["trackDescription"];
-
-                        if ( array_key_exists("trackImage", $thingvalue) ) {
-                            if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
-                                $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                                $thingvalue["trackImage"] = $imgvalue;
-                            }
-                            $astart = 0;
-                            $astop = 0;
-
-                        // otherwise search the track name for an artist and album
-                        } else {
-                            $astart = strpos($trackname,"by ");
-                            $astop = strpos($trackname,"from ");
-                            $thingvalue["currentArtist"] = "";
-                            $thingvalue["currentAlbum"] = "";
-                            $thingvalue["trackImage"] = "";
-                        }
-                        
-                        // check for artist in the track description
-                        // we don't need to check the zero position since that will always have a song
-                        if ( $astart && $astop ) {
-                            $artist = substr($trackname, $astart+3, $astop-$astart-4);
-                            $album = substr($trackname, $astop+5);
-                            $bstop = strpos($album,"Grouped with ");
-                            if (  $bstop !== false ) {
-                                $album = substr($album, 0, $bstop);
-                            }
-                            if ( $artist && $album ) {
-                                $thingvalue["currentArtist"] = $artist;
-                                $thingvalue["currentAlbum"] = $album;
-                                $thingvalue["trackImage"] = getImage($artist, $album);
-                            }
-                        }
+                    } else if ( $thingtype==="music" ) {
+                        $thingvalue = getMusicArt($thingvalue);
                     }
                     $thing["value"]= $thingvalue;
                     $response[$tileid] = $thing;
@@ -2615,9 +2553,16 @@ function doAction($hubnum, $path, $swid, $swtype,
                           "&swtype=" . urlencode($swtype);
                 if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
+                if ( $swtype==="music" ) {
+                    $response = getMusicArt($response);
+                }
+                if ( $allthings && array_key_exists($mainidx, $allthings) ) {
+                    $allthings[$mainidx]["value"] = $response;
+                }
                 
                 // if nothing returned and an action request, act like a query
-                if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
+                // otherwise update main array if something returned to keep it current
+                if ( !$response && path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $thing = $allthings[$mainidx];
                     $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
                     $response = array($subid => $thevalue[$subid]);
@@ -2645,43 +2590,9 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $thingtype = $thing["type"];
                         
                         $thingvalue = getCustomTile($newvalue, $thingtype, $thing["id"], $options, $allthings);
-                        // $customname = getCustomName($thingvalue["name"], $swid, $thingtype, $options);
-                        $customname = $thingvalue["name"];
-                        if ( $thingtype==="music" && array_key_exists("trackDescription", $thingvalue) ) {
-                            $trackname = $thingvalue["trackDescription"];
-
-                            if ( array_key_exists("trackImage", $thingvalue) ) {
-                                if ( substr($thingvalue["trackImage"],0,4) === "http" ) {
-                                    $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-                                    $thingvalue["trackImage"] = $imgvalue;
-                                }
-                                $astart = 0;
-                                $astop = 0;
-
-                            // otherwise search the track name for an artist and album
-                            } else {
-                                $astart = strpos($trackname,"by ");
-                                $astop = strpos($trackname,"from ");
-                                $thingvalue["currentArtist"] = "";
-                                $thingvalue["currentAlbum"] = "";
-                                $thingvalue["trackImage"] = "";
-                            }
-
-                            // check for artist in the track description
-                            // we don't need to check the zero position since that will always have a song
-                            if ( $astart && $astop ) {
-                                $artist = substr($trackname, $astart+3, $astop-$astart-4);
-                                $album = substr($trackname, $astop+5);
-                                $bstop = strpos($album,"Grouped with ");
-                                if (  $bstop !== false ) {
-                                    $album = substr($album, 0, $bstop);
-                                }
-                                if ( $artist && $album ) {
-                                    $thingvalue["currentArtist"] = $artist;
-                                    $thingvalue["currentAlbum"] = $album;
-                                    $thingvalue["trackImage"] = getImage($artist, $album);
-                                }
-                            }
+                        // $thingvalue["name"] = getCustomName($thingvalue["name"], $thing["id"], $thingtype, $options);
+                        if ( $thingtype==="music" ) {
+                            $thingvalue = getMusicArt($thingvalue);
                         }
                         $newthing["value"] = $thingvalue;
                         $allthings[$idx] = $newthing;
@@ -2759,6 +2670,42 @@ function doAction($hubnum, $path, $swid, $swtype,
     }
     // return json_encode(array_merge($response,array("access_token" => $access_token, "endpt" => $endpt)));
     return json_encode($response);
+}
+
+function getMusicArt($thingvalue) {
+               
+    if (array_key_exists("trackDescription", $thingvalue) && $thingvalue["trackDescription"] ) {
+        $trackname = $thingvalue["trackDescription"];
+        $astart = strpos($trackname,"by ");
+        $astop = strpos($trackname,"from ");
+    } else {
+        $astart = 0;
+        $astop = 0;
+    }
+    
+    // check for artist in the track description
+    // we don't need to check the zero position since that will always have a song
+    if ( $astart && $astop ) {
+        $artist = substr($trackname, $astart+3, $astop-$astart-4);
+        $album = substr($trackname, $astop+5);
+        $bstop = strpos($album,"Grouped with ");
+        if (  $bstop !== false ) {
+            $album = substr($album, 0, $bstop);
+        }
+        if ( $artist && $album ) {
+            $thingvalue["currentArtist"] = $artist;
+            $thingvalue["currentAlbum"] = $album;
+            $thingvalue["trackImage"] = getImage($artist, $album);
+        }
+    
+    // use native if there which will be true if it starts with http
+    } else if ( array_key_exists("trackImage", $thingvalue) && 
+         substr($thingvalue["trackImage"],0,4) === "http" ) {
+        $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+        $thingvalue["trackImage"] = $imgvalue;
+    }
+    
+    return $thingvalue;
 }
 
 function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
@@ -4738,6 +4685,9 @@ function is_ssl() {
                     $idx = $swtype . "|" . $swid;
                     $allthings = getAllThings();
                     $thesensor = $allthings[$idx];
+                    if ( $swtype==="music" ) {
+                        $thesensor = getMusicArt($thesensor);
+                    }
                     echo makeThing($idx, 0, $tileid, $thesensor, "Options", 0, 0, 99, "", $useajax);
                 }
                 break;
@@ -5060,8 +5010,8 @@ function is_ssl() {
                 // search the track name for an artist
                 $astart = strpos($trackname,"by ");
                 $astop = strpos($trackname,"from ");
-                $artist = "Unknown";
-                $album = "Unknown";
+                $artist = "";
+                $album = "";
                 $art = "";
 
                 // check for artist in the track description
@@ -5073,7 +5023,7 @@ function is_ssl() {
                         $art = getImage($artist, $album);
                     }
                 }
-                $results = array("artist"=> $artist, "album"=> $album, "art"=> $art);
+                $results = array("currentArtist"=> $artist, "currentAlbum"=> $album, "trackImage"=> $art);
                 echo json_encode($results);
                 break;
               

@@ -603,7 +603,7 @@ div.shm.state, div.hsm.state, div.custom.state {
     color: rgba(255, 255, 255, 1);
     background-size: 50px;
     background-repeat: no-repeat;
-    height: 102px;
+    height: 80px;
     background-position-x: center;
     background-position-y: bottom;
 }
