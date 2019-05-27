@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 05/27/2019 - remove blanks and images from groovy
  * 05/14/2019 - add native music artist, album, art fields when present
  * 05/11/2019 - clean up and tweak music; longer delays in subscribes
  * 05/03/2019 - user option to specify format of event time fields
@@ -82,7 +83,7 @@ definition(
 preferences {
     section("HousePanel Configuration") {
         paragraph "Welcome to HousePanel. Below you will authorize your things for HousePanel."
-        paragraph "prefix to uniquely identify certain tiles (modes, blanks, and images) for this hub. " +
+        paragraph "prefix to uniquely identify certain tiles for this hub. " +
                   "If left blank, hub type will determine prefix; e.g., st_ for SmartThings or h_ for Hubitat"
         input (name: "hubprefix", type: "text", multiple: false, title: "Hub Prefix:", required: false, defaultValue: "st_")
         paragraph "Set Hubitat Cloud Calls option to True if your HousePanel app is NOT on your local LAN. " +
@@ -715,10 +716,10 @@ def getAllThings() {
     }
     run = logStepAndIncrement(run)
     resp = getOthers(resp)
-    run = logStepAndIncrement(run)
-    resp = getBlanks(resp)
-    run = logStepAndIncrement(run)
-    resp = getImages(resp)
+    // run = logStepAndIncrement(run)
+    // resp = getBlanks(resp)
+    // run = logStepAndIncrement(run)
+    // resp = getImages(resp)
     run = logStepAndIncrement(run)
     resp = getPowers(resp)
 
@@ -986,8 +987,8 @@ def autoType(swid) {
     else if ( swid=="${state.prefix}shm" ) { swtype= "shm" }
     else if ( swid=="${state.prefix}hsm" ) { swtype= "hsm" }
     else if ( swid=="${state.prefix}m1x1" || swid=="${state.prefix}m1x2" || swid=="${state.prefix}m2x1" || swid=="${state.prefix}m2x2" ) { swtype= "mode" }
-    else if ( swid=="${state.prefix}b1x1" || swid=="${state.prefix}b1x2" || swid=="${state.prefix}b2x1" || swid=="${state.prefix}b2x2" ) { swtype= "blank" }
-    else if ( swid=="${state.prefix}img1" || swid=="${state.prefix}img2" || swid=="${state.prefix}img3" || swid=="${state.prefix}img4" ) { swtype= "image" }
+    // else if ( swid=="${state.prefix}b1x1" || swid=="${state.prefix}b1x2" || swid=="${state.prefix}b2x1" || swid=="${state.prefix}b2x2" ) { swtype= "blank" }
+    // else if ( swid=="${state.prefix}img1" || swid=="${state.prefix}img2" || swid=="${state.prefix}img3" || swid=="${state.prefix}img4" ) { swtype= "image" }
     else if ( state.usepistons && webCoRE_list().find {it.id == swid} ) { swtype= "piston" }
     else { swtype = "" }
     return swtype

@@ -426,7 +426,7 @@ function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET", $webca
     return $nvpResArray;
 }
 
-function getImage($artist, $album) {
+function getAlbumArt($artist, $album) {
 
     $query = "https://www.google.com/search";
     $nvpstr = "as_st=y&tbm=isch&as_epq=" . urlencode("$album by $artist");
@@ -606,11 +606,6 @@ function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort, $fas
     $tc.= "<div><span class='typeopt'>(blank to keep prior)<br/></span><label for=\"pword\" class=\"startupinp\">Set New Password: </label>";
     $tc.= "<input id=\"pword\" class=\"startupinp\" name=\"pword\" width=\"80\" type=\"password\" value=\"\"/></div>"; 
 
-//    $tc.= "<div>";
-//    if ( $kiosk ) { $kstr = "checked"; } else { $kstr = ""; }
-//    $tc.= "<input class=\"indent\" name=\"use_kiosk\" width=\"6\" type=\"checkbox\" $kstr/>";
-//    $tc.= "<label for=\"use_kiosk\" class=\"startupinp\"> Kiosk Mode? </label>";
-//    $tc.= "</div>"; 
     $tc.= hidden("use_kiosk", $kiosk);
     return $tc;
     
@@ -626,7 +621,6 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // this will show only if the user hasn't set up HP
     // it will be bypassed if Hubitat is manually sst up
     $tc.= "<div class=\"greeting\">";
-//    $tc.= "<p><strong>Welcome to HousePanel</strong></p>";
 
     $tc.="<p>You are seeing this because you either requested a re-authentication " .
             "or you have not yet authorized a valid SmartThings or Hubitat hub for" .
@@ -641,30 +635,6 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
             "unless the site is secured via some means such as password protection. <strong>A locally hosted " . 
             "website on a Raspberry Pi is the strongly preferred option</strong>.</p>";
-
-//    $tc.= "<p>The Authorize Hub #n button below will " .
-//            "begin the typical OAUTH process for hub #n. " .
-//            "If you provide a manual Access Token and Endpoint your hub will " .
-//            "be authorized immediately and not sent through the OAUTH flow process, so your " .
-//            "devices will have to be selected or modified from the hub app instead of here.</p>";
-//
-//    $tc.= "<p>After a successful OAUTH flow authorization, you will be redirected back here to repeat " .
-//            "the process for another hub. If you are done, select Done Authorizing. " . 
-//            "This will take you to the main HousePanel page. " .
-//            "A default configuration will be attempted if your pages are empty.</p>";
-//
-//    $tc.= "<p>If you have trouble authorizing, check your file permissions " .
-//            "to ensure that you can write to the home directory where HousePanel is installed. " .
-//            "You should also confirm that your PHP is set up to use cURL. " .
-//            "View your <a href=\"phpinfo.php\" target=\"_blank\">PHP settings here</a> " . 
-//            "(opens in a new window or tab).</p>";
-//
-//    $tc.= "<p>The username and password are used to identify this tablet. You can " .
-//            "leave the username set to admin and the password blank to ignore this feature. " .
-//            "Otherwise, set the username and password to anything you want. If you leave " .
-//            "the password field blank, the prior password will be retained. Any non-blank username " . 
-//            "will create or switch to a custom room configuration from file named: \"hm_username.cfg\"</p>";
-
     $tc.= "</div>";
 
     if ( defined("DONATE") && DONATE===true ) {
@@ -1202,6 +1172,24 @@ function getCustomName($defname, $swid, $swtype, $options) {
     return $defname;
 }
 
+function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
+    $clockname = getCustomName($clockname, $clockid, "clock", $options);
+    $weekday = date("l");
+    $dateofmonth = date($fmtdate);
+    $timeofday = date($fmttime);
+    $timezone = date("T");
+    $dclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
+                    "fmt_date"=>$fmtdate, "fmt_time"=> $fmttime);
+    $dclock = getCustomTile($dclock, "clock", $clockid, $options);
+    
+    // adjust format of date and time based on custom time config
+    $dateofmonth = date($dclock["fmt_date"]);
+    $timeofday = date($dclock["fmt_time"]);
+    $dclock["date"] = $dateofmonth;
+    $dclock["time"] = $timeofday;
+    return $dclock;
+}
+
 // rewrite this to use our new groovy code to get all things
 // this should be considerably faster
 // updated to now include 4 video tiles and make both hub calls consistent
@@ -1239,77 +1227,62 @@ function getAllThings($reset = false) {
         // set hub number to nothing for manually created tiles
         $hubnum = -1;
         $hubType = "None";
-        $customcnt = getCustomCount($options["index"]);
         
-        // add digital clock tile if not there
-        $clockname = getCustomName("Digital Clock", "clockdigital", "clock", $options);
-        $weekday = date("l");
-        $dateofmonth = date("M d, Y");
-        $timeofday = date("h:i:s A");
-        $timezone = date("T");
-        $dclock = array("name" => $clockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>"M d, Y", "fmt_time"=> "h:i:s A");
-        $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
-        $dateofmonth = date($dclock["fmt_date"]);
-        $timeofday = date($dclock["fmt_time"]);
-        $dclock["date"] = $dateofmonth;
-        $dclock["time"] = $timeofday;
-        $allthings["clock|clockdigital"] = array("id" => "clockdigital", "name" => $dclock["name"], 
-            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"fast", "value" => $dclock);
+        // add digital clock tile
+        // never refresh since clocks have their own refresh timer built into the javascript code
+        $clockid = "clockdigital";
+        $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A");
+        $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
+            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
 
-        // add analog clock tile - uses dclock settings by default
-        $clockname = getCustomName("Analog Clock", "clockanalog", "clock", $options);
-        // $clockskin = "CoolClock:classic";
-        $clockskin = "CoolClock:swissRail:72";
-        $aclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>$dclock["fmt_date"], "fmt_time"=> $dclock["fmt_time"]);
-        $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
-        $dateofmonth = date($aclock["fmt_date"]);
-        $timeofday = date($aclock["fmt_time"]);
-        $aclock["date"] = $dateofmonth;
-        $aclock["time"] = $timeofday;
-        $allthings["clock|clockanalog"] = array("id" => "clockanalog", "name" => $aclock["name"], 
-             "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"fast", "value" => $aclock);
-
-        // add video and frame tiles with customization
-        // the file must exist as a playable mp4 video file - name can be customized now in TileEditor
-        // frame names are now also editable by the user
-        for ($i=1; $i<5; $i++) {
-
-            // get custom tile name if it was defined in tile editor and stored
-            // in the room array - this is a temp fix until I change the architecture
-            // to stre custom names in the index of things instead
-            $vidid = "vid" . $i;
-            $vidurl = "video" . $i . ".mp4";
-            $vidurl = getCustomName($vidurl, $vidid, "video", $options);
-            $fw = "inherit";
-            $fh = "inherit";
-            $vval = returnVideo($vidurl, $fw, $fh);
-            $vidtile = array("name"=>$vidurl, "video"=>$vval, "width"=> $fw, "height"=>$fh);
-            $allthings["video|$vidid"] = array("id" => $vidid, "name" => $vidtile["name"], 
-                "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "video", "refresh"=>"fast", "value" => $vidtile);
-
-            // we now create the frame item dynamically upon render
-            // so we can take into account user adjusted names and sizes
-            // below code is the default setup you get with a refresh
-            if ( $i===2 || $i===4 ) { 
-                $fn = "accuweather"; 
-                $fw = "400";
-                $fh = "200";
-            } else {
-                $fn = "forecast";
-                $fw = "400";
-                $fh = "212";
+        // add analog clock tile - no longer use dclock format settings by default
+        $clockid = "clockanalog";
+        $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
+        $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
+            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
+        
+        // add special tiles based on type and user provided count
+        // this replaces the old code that handled only video and frame tiles
+        // this also creates image and blank tiles here that used to be made in groovy
+        // putting this here allows them to be handled just like other modifiable tiles
+        // these tiles all refresh fast except first 4 frames that are reserved for weather
+        $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+        $blankids = array(array("b1x1",120,120),array("b1x2",120,240),array("b2x1",240,120),array("b2x2",240,240));
+        $frameids = array(array("forecast",480,220),array("accuweather",480,220),array("forecast2",480,220),array("forecast3",480,220));
+        foreach ($specialtiles as $stype => $sid) {
+            $speed = "fast";
+            $fcnt = getCustomCount($options["index"], $stype);
+            if ($fcnt < 4) { $fcnt= 4; }
+            for ($i=0; $i<$fcnt; $i++) {
+                
+                // handle back compatible old blanks and frames for first 4
+                if ( $stype==="blank" && $i<4 ) {
+                    $fid = $blankids[$i][0];
+                    $fw = $blankids[$i][1];
+                    $fh = $blankids[$i][2];
+                } else if ( $stype==="frame" && $i<4 ) {
+                    $fid = $frameids[$i][0];
+                    $fw = $frameids[$i][1];
+                    $fh = $frameids[$i][2];
+                    $speed = "slow";
+                } else {
+                    $k = strval($i + 1);
+                    $fid = $sid . $k;
+                    $fw = "auto";
+                    $fh = "auto";
+                }
+                $fn = getCustomName($fid, $fid, $stype, $options);
+                
+                // just store temporary name for now since we get real value later
+                // this saves some compute and file searching time
+                $fval = $fn;  //  returnFile($fn, $fw, $fh, $stype);
+                $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
+                $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
+                    "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
             }
-            $frameid = "frame" . $i;
-            $fn = getCustomName($fn, $frameid, "frame", $options);
-            $fval = returnFrame($fn, $fw, $fh);
-            $frametile = array("name"=>$fn, "frame"=>$fval, "width"=> $fw, "height"=>$fh);
-            $allthings["frame|$frameid"] = array("id" => $frameid, "name" => $frametile["name"], "hubnum" => $hubnum, 
-                "hubtype" => $hubType, "type" => "frame", "refresh"=>"slow", "value" => $frametile);
         }
     
-        // create the new controller tile
+        // create the controller tile
         // keys starting with c__ will get the confirm class added to it
         // this tile cannot be customized by the user due to its unique nature
         // but it can be visually styled just like any other tile
@@ -1319,42 +1292,29 @@ function getAllThings($reset = false) {
                      "blackout"=>"Blackout","operate"=>"Operate","reorder"=>"Reorder","edit"=>"Edit");
         $allthings["control|control_1"] = array("id" => "control_1", "name" => $controlval["name"], "hubnum" => $hubnum, 
                     "hubtype" => $hubType, "type" => "control", "refresh"=>"never", "value" => $controlval);
-
-        // add custom ad-hoc tiles
-        // custom tiles can only reference things in the first hub
-        for ($i=1; $i<= $customcnt; $i++ ) {
-            $customid = "custom_" . strval($i);
-            $customname = "Custom " . strval($i);
-            $customname = getCustomName($customname, $customid, "custom", $options);
-            $custom_val = array("name"=> $customname);
-            $allthings["custom|$customid"] = array("id" => $customid, "name" => $custom_val["name"], 
-                "hubnum" => -1, "hubtype" => "None", "type" => "custom", "refresh"=>"fast",
-                "value" => $custom_val);
-        }
         
-        // now loop through all things and all all customizations
+        // now loop through all things and all customizations
         // we do it here in a second loop instead of inside getDevices
         // so that references between tiles work
         // we skip the control tile since it has its own refresh field that means something else
+        // this final loop also sets the value for our special tiles by calling returnFile
+        // this is why I didn't bother calling it above to save some comnpute time
         foreach ($allthings as $idx => $thing) {
-            if ( $thing["type"]!=="control" ) {
+            $stype = $thing["type"];
+            if ( $stype!=="control" ) {
                 $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
                 
                 // adjust refresh if user gave a custom refresh type
                 if ( array_key_exists("refresh",$thing["value"]) ) {
                    $thing["refresh"] = $thing["value"]["refresh"];
                 }
-                // update frame and video with custom name and width and height values
-                if ( $thing["type"] === "frame" ) {
+                
+                // update special tiles with custom name and width and height values
+                if ( array_key_exists($stype, $specialtiles) && array_key_exists($stype, $thing["value"]) ) {
                     $fn = $thing["value"]["name"];
                     $fw = $thing["value"]["width"];
                     $fh = $thing["value"]["height"];
-                    $thing["value"]["frame"] = returnFrame($fn, $fw, $fh);
-                } else if ( $thing["type"] === "video" ) {
-                    $fn = $thing["value"]["name"];
-                    $fw = $thing["value"]["width"];
-                    $fh = $thing["value"]["height"];
-                    $thing["value"]["video"]= returnVideo($fn, $fw, $fh);
+                    $thing["value"][$stype] = returnFile($fn, $fw, $fh, $stype);
                 }
                 $allthings[$idx] = $thing;
             }
@@ -1555,70 +1515,78 @@ function processName($thingname, $thingtype) {
                 $subtype.= " " . $key;
                 $k++;
             }
-            if ($k === 2) break;
+            if ($k === 2) { break; }
         }
     }
     
     return array($thingname, $subtype);
 }
 
-// return video tag by name
-// it must be an existing video file of type mp4 or ogg
-// searches in main folder and media subfolder
-function returnVideo($vidname, $width, $height) {
-    $v= "<video width=\"$width\" height=\"$height\" autoplay>";
-    if ( file_exists($vidname) ) {
-        $v.= "<source src=\"$vidname\" type=\"video/mp4\">";
-    } else if ( file_exists($vidname . ".mp4") ) {
-        $vn = $vidname . ".mp4";
-        $v.= "<source src=\"$vn\" type=\"video/mp4\">";
-    } else if ( file_exists("media/" . $vidname) ) {
-        $vn = "media/" . $vidname;
-        $v.= "<source src=\"$vn\" type=\"video/mp4\">";
-    } else if ( file_exists("media/" . $vidname . ".mp4") ) {
-        $vn = "media/" . $vidname . ".mp4";
-        $v.= "<source src=\"$vn\" type=\"video/mp4\">";
+// returns proper html to display an image, video, or frame
+// if some other type is requested it returns a div of requested size and skips search
+// searches in main folder and media subfolder for file name
+function returnFile($fname, $width, $height, $ctype) {
+
+    switch ($ctype) {
+        case "image":
+            $grtypes = array("",".jpg",".png",".gif");
+            break;
+        case "video":
+            $grtypes = array("",".mp4",".ogg");
+            break;
+        case "frame":
+            $grtypes = array("",".html",".htm");
+            break;
+        default:
+            $grtypes = false;
+            break;
     }
     
-    if ( file_exists($vidname . ".ogg") ) {
-        $vn.= $vidname . ".ogg";
-        $v.= "<source src=\"$vn\" type=\"video/ogg\">";
-    } else if ( file_exists("media/" . $vidname . ".ogg") ) {
-        $vn.= "media/" . $vidname . ".ogg";
-        $v.= "<source src=\"$vn\" type=\"video/ogg\">";
+    $vn = "";
+    if ( $fname && $grtypes ) {
+        foreach ($grtypes as $ext) {
+            if ( file_exists($fname . $ext) ) {
+                $vn = $fname . $ext;
+                break;
+                
+            } else if ( file_exists("media/" . $fname . $ext) ) {
+                $vn = "media/" . $fname . $ext;
+                break;
+            }
+        }
     }
-    $v.= "Video Not Supported</video>";
-    return $v;
-}
-
-// this function returns a frame tag that loads the framename which must exist
-// searches for name with and without html extension given and lower case conversion
-function returnFrame($framename, $width, $height) {
-
-    // remove spaces from any user supplied name
-    $framename = str_replace(" ","", $framename);
     
-    if ( file_exists($framename) ) {
-        $fn = $framename;
-    } else if ( file_exists(strtolower($framename)) ) {
-        $fn = strtolower($framename);
-    } else if ( file_exists($framename . ".html") ) {
-        $fn= $framename . ".html";
-    } else if ( file_exists(strtolower($framename) . ".html") ) {
-        $fn= strtolower($framename) . ".html";
+    if ( $vn ) {
+        $pathparts = pathinfo($vn);
+        $ve = $pathparts["extension"];
+        
+        switch ($ve) {
+            case "jpg":
+            case "png":
+            case "gif":
+                $v = "<img width=\"$width\" height=\"$height\" src=\"$vn\">";
+                break;
+            
+            case "mp4":
+            case "ogg":
+                $v= "<video width=\"$width\" height=\"$height\" autoplay>";
+                $v.= "<source src=\"$vn\" type=\"video/$ve\">";
+                $v.= "Video Not Supported</video>";
+                break;
+                
+            case "html":
+            case "htm":
+                $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn\" frameborder=\"0\"></iframe>";
+                break;
+                
+            default:
+                $v = "<div width=\"$width\" height=\"$height\">$vn</div>";
+                break;
+        }
     } else {
-        // if not found then we generate the file
-        $weatherframe = "<!DOCTYPE html><html>";
-        $weatherframe.= '<a target="_blank" href="https://www.booked.net/weather/ann-arbor-1066"><img src="https://w.bookcdn.com/weather/picture/3_1066_0_1_137AE9_380_ffffff_333333_08488D_1_ffffff_333333_0_6.png?scode=2&domid=w209&anc_id=17949"  alt="booked.net"/></a>';
-        $weatherframe.= "</html>";
-        $fn = "forecast.html";
-        file_put_contents($fn, $weatherframe);
+        $v= "<div width=\"$width\" height=\"$height\"></div>";
     }
-    $f = "<iframe width=\"$width\" height=\"$height\" src=\"$fn\" frameborder=\"0\"></iframe>";
-//    if ( $fn==="error.html" ) {
-//        $f.= "<div class=\"error\">File: [" . $framename . "] Not Found</div>";
-//    }
-    return $f;
+    return $v;
 }
 
 function getWeatherIcon($num) {
@@ -1647,6 +1615,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     // grab options
     $options = readOptions();
     $allthings = getAllThings();
+    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
    
     $bid = $thesensor["id"];
     $thingvalue = $thesensor["value"];
@@ -1684,17 +1653,18 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     }
 
     // set the custom name
+    // limit to 132 visual columns but show all for special tiles and custom names
+    // now we use custom name in both places
+    $thingvalue["name"] = $thingname;
     if ( $customname ) { 
         $thingpr = $customname; 
-    } else if ( strlen($thingname) > 132 && $thingtype!=="video" && $thingtype!=="frame" ) {
+        $thingvalue["name"] = $customname;
+    } else if ( strlen($thingname) > 132 && !array_key_exists($thingtype, $specialtiles) ) {
         $thingpr = substr($thingname,0,132) . " ...";
     } else {
         $thingpr = $thingname;
     }
-    
-    // now we use custom name in both places
-    $thingvalue["name"] = $thingpr;
-    
+
     // update fields with custom settings
     $thingvalue = getCustomTile($thingvalue, $thingtype, $bid, $options, $allthings);
     
@@ -1715,14 +1685,14 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     if ($thingtype==="weather") {
         if ( $customname ) {
             $weathername = $customname;
-            $thingname = $customname;
         } else {
             $weathername = $thingname . "<br />" . $thingvalue["city"];
         }
-        $tc.= "<div aid=\"$i\" title=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
+        $tc.= "<div aid=\"$i\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        // $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
+        $tc.= $weathername;
         $tc.= "</div>";
-        $tc.= putElement($kindex, $i, 0, $thingtype, $thingname, "name");
+        $tc.= putElement($kindex, $i, 0, $thingtype, $thingvalue["name"], "name");
         $tc.= putElement($kindex, $i, 1, $thingtype, $thingvalue["city"], "city");
         $tc.= "<div class=\"weather_temps\">";
         $tc.= putElement($kindex, $i, 2, $thingtype, $thingvalue["temperature"], "temperature");
@@ -1758,21 +1728,24 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
         
     } else {
 
-        // handle video and frame dynamically created values
-        if ( $thingtype==="video" && $customname ) {
+        // handle video, frame, image, and blank tiles
+        if ( array_key_exists($thingtype, $specialtiles) &&
+                array_key_exists("width", $thingvalue) && 
+                array_key_exists("height", $thingvalue) ) 
+        {
             $fw = $thingvalue["width"];
             $fh = $thingvalue["height"];
-            $thingvalue["video"] = returnVideo($customname, $fw, $fh);
-        } else if ( $thingtype==="frame" && $customname ) {
-            $fw = $thingvalue["width"];
-            $fh = $thingvalue["height"];
-            $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
-        } else if ( $thingtype==="music" ) {
+            $fn = $thingvalue["name"];
+            $thingvalue[$thingtype] = returnFile($fn, $fw, $fh, $thingtype );
+        }
+        
+        if ( $thingtype==="music" ) {
             $thingvalue = getMusicArt($thingvalue);
         } 
         
-        $tc.= "<div aid=\"$i\" title=\"$thingtype status\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
-        $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        // $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
+        $tc.= $thingpr;
         $tc.= "</div>";
 	
         // create a thing in a HTML page using special tags so javascript can manipulate it
@@ -2126,6 +2099,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                   $swval="", $swattr="", $subid="", 
                   $command="", $content="", $macro=true ) {
     
+    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
     $save = $swval;
     $options = readOptions();
     $configoptions = $options["config"];
@@ -2247,6 +2221,18 @@ function doAction($hubnum, $path, $swid, $swtype,
         $aclock["date"] = date($fmt_date);
         $aclock["time"] = date($fmt_time);
         $response = $aclock;
+        
+    } else if (array_key_exists($thingtype, $specialtiles) && 
+                array_key_exists("width", $thingvalue) && 
+                array_key_exists("height", $thingvalue) &&
+                array_key_exists($thingtype, $thingvalue) ) 
+    {
+            $fw = $thingvalue["width"];
+            $fh = $thingvalue["height"];
+            $fn = $thingvalue["name"];
+            $thingvalue[$thingtype] = returnFile($fn, $fw, $fh, $thingtype );
+        
+        
     } else if ($swtype==="video" && $subid==="video") {
         if ( $allthings ) {
             $thingvalue = $allthings["video|$swid"]["value"];
@@ -2695,7 +2681,7 @@ function getMusicArt($thingvalue) {
         if ( $artist && $album ) {
             $thingvalue["currentArtist"] = $artist;
             $thingvalue["currentAlbum"] = $album;
-            $thingvalue["trackImage"] = getImage($artist, $album);
+            $thingvalue["trackImage"] = getAlbumArt($artist, $album);
         }
     
     // use native if there which will be true if it starts with http
@@ -2976,14 +2962,10 @@ function refactorOptions($allthings) {
     // load in custom css strings
     $customcss = readCustomCss();
     $updatecss = false;
-        
-   
     $thingtypes = getTypes();
     $cnt = 0;
-    
     $options = readOptions();
     $oldoptions = $options;
-    
     $options["useroptions"] = $thingtypes;
     $options["things"] = array();
     $options["index"] = array();
@@ -3196,6 +3178,11 @@ function getTypes() {
     return $thingtypes;
 }
 
+function getSpecials() {
+    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+    return $specialtiles;
+}
+
 function mysortfunc($cmpa, $cmpb) {
     $thingtypes = getTypes();
     $namea = $cmpa["name"];
@@ -3212,10 +3199,11 @@ function mysortfunc($cmpa, $cmpb) {
     return $t;
 }
 
-function getCustomCount($indexoptions) {
+function getCustomCount($indexoptions, $swtype) {
     $cnt= 0;
+    $n = strlen($swtype) + 1;
     foreach ( array_keys($indexoptions) as $idx ) {
-        if ( substr($idx,0,7) === "custom|" ) {
+        if ( substr($idx,0,$n) === $swtype . "|" ) {
             $cnt++;
         }
     }
@@ -3227,6 +3215,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
     $thingtypes = getTypes();
+    $specials = getSpecials();
     sort($thingtypes);
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
@@ -3256,10 +3245,13 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/>";
     // $tc.= "</div>";
 
-    $customcnt = getCustomCount($indexoptions);
-    // $tc.= "<div class=\"filteroption\">";
-    $tc.= "<br /><label for=\"customcntid\" class=\"kioskoption\">Number of Custom Tiles: </label>";
-    $tc.= "<input id=\"customcntid\" name=\"customcnt\" width=\"10\" type=\"number\"  min='0' max='50' step='1' value=\"$customcnt\" />";
+    foreach ($specials as $stype => $sid) {
+        $customcnt = getCustomCount($indexoptions,$stype);
+        $stypeid = $stype . "cntid";
+        // $tc.= "<div class=\"filteroption\">";
+        $tc.= "<br /><label for=\"$stypeid\" class=\"kioskoption\">Number of $stype tiles: </label>";
+        $tc.= "<input id=\"$stypeid\" name=\"$stype" . "id\" width=\"10\" type=\"number\"  min='0' max='50' step='1' value=\"$customcnt\" />";
+    }
     $tc.= "</div>";
     
     $tc.= "<br /><div class=\"filteroption\">Option Filters: ";
@@ -3276,7 +3268,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
             $tc.= "<td><input type=\"checkbox\" name=\"useroptions[]\" value=\"" . $opt . "\"></td>";
         }
         $tc.= "<td class=\"optname\">" .  $opt . "</td>";
-        if ( $i % 5 == 0) {
+        if ( $i % 5 == 0 && $i < count($thingtypes) ) {
             $tc.= "</tr><tr>";
         }
     }
@@ -3334,12 +3326,17 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         }
         
         // write the table row
+        if ( array_key_exists($thetype, $specials) ) {
+            $special = " special";
+        } else {
+            $special = "";
+        }
         if (in_array($thetype, $useroptions)) {
             $evenodd = !$evenodd;
             $evenodd ? $odd = " odd" : $odd = "";
-            $tc.= "<tr type=\"$thetype\" tile=\"$thingindex\" class=\"showrow" . $odd . "\">";
+            $tc.= "<tr type=\"$thetype\" tile=\"$thingindex\" class=\"showrow" . $odd . $special . "\">";
         } else {
-            $tc.= "<tr type=\"$thetype\" tile=\"$thingindex\" class=\"hiderow\">";
+            $tc.= "<tr type=\"$thetype\" tile=\"$thingindex\" class=\"hiderow" . $special . "\">";
         }
         
         $tc.= "<td class=\"thingname\">";
@@ -5020,7 +5017,7 @@ function is_ssl() {
                     $artist = substr($trackname, $astart+3, $astop-$astart-4);
                     $album = substr($trackname, $astop+5);
                     if ( $artist && $album ) {
-                        $art = getImage($artist, $album);
+                        $art = getAlbumArt($artist, $album);
                     }
                 }
                 $results = array("currentArtist"=> $artist, "currentAlbum"=> $album, "trackImage"=> $art);

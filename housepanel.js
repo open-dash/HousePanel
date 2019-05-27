@@ -103,15 +103,17 @@ $(document).ready(function() {
     
     getMaxZindex();
     
-    // set up option box clicks
-    setupFilters();
-    
     // actions for custom tile count changes
     setupCustomCount();
     
     setupButtons();
     
     setupSaveButton();
+    
+    if (pagename==="options") {
+        // set up option box clicks
+        setupFilters();
+    }
     
     if ( pagename==="main" ) {
         setupSliders();
@@ -788,7 +790,12 @@ function setupSortable() {
             var things = [];
             var num = 0;
             $("div.thing[panel="+roomtitle+"]").each(function(){
-                var tilename = $(this).find("span").text();
+                // first comment below uses old span this is gone now
+                // next two lines are possibly faster way to get same info - need to test to confirm
+                // var tilename = $(this).find("span").text();
+                // var aid = $(this).attr("id").substring(2);
+                // var tilename = $("#s-"+aid).text();
+                var tilename = $(this).find(".thingname").text();
                 var tile = $(this).attr("tile");
                 things.push([tile, tilename]);
                 num++;
@@ -942,8 +949,11 @@ function setupDraggable() {
                     dragthing["id"] = $(thing).attr("id");
                     dragthing["tile"] = tile;
                     dragthing["panel"] = $(thing).attr("panel");
-                    var customname = $("span.customname.m_"+tile).html();
-                    if ( !customname ) { customname = ""; }
+                    var customname = $("div." + thingtype + ".name.p_"+tile).html();
+                    // moving a tile will result in setting the custom field
+                    // this preserves custom fields
+                    // var customname = $("span.customname.m_"+tile).html();
+                    if ( !customname ) { customname = thingname; }
                     dragthing["custom"] = customname;
                     dragZindex = parseInt(dragZindex,10);
                     
@@ -992,7 +1002,8 @@ function setupDraggable() {
                 var id = $(thing).attr("id");
                 var tile = $(thing).attr("tile");
                 // var tilename = $("#s-"+aid).text();
-                var tilename = $("span.original.n_"+tile).html();
+                // var tilename = $("span.original.n_"+tile).html();
+                var tilename = $(thing).find(".thingname").text();
                 var pos = {top: 100, left: 10};
 
                 createModal("modaladd","Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
@@ -1434,7 +1445,8 @@ function addEditLink() {
         var bid = $(thing).attr("bid");
         var panel = $(thing).attr("panel");
         var hubnum = $(thing).attr("hub");
-        var tilename = $("span.original.n_"+tile).html();
+        // var tilename = $("span.original.n_"+tile).html();
+        var tilename = $(thing).find(".thingname").text();
         var offset = $(thing).offset();
         var thigh = $(thing).height();
         var twide = $(thing).width();
@@ -1564,13 +1576,9 @@ function setupFilters() {
     
 //    alert("Setting up filters");
    // set up option box clicks
-    $('input[name="useroptions[]"]').click(function() {
+    function updateClick() {
         var theval = $(this).val();
         var ischecked = $(this).prop("checked");
-        $("#allid").prop("checked", false);
-        $("#noneid").prop("checked", false);
-        $("#allid").attr("checked", false);
-        $("#noneid").attr("checked", false);
         
         // set the class of all rows to invisible or visible
         var rowcnt = 0;
@@ -1605,29 +1613,54 @@ function setupFilters() {
                 }
             });
         }
-    });
+    }
+    
+    $('input[name="useroptions[]"]').each(updateClick);
+    $('input[name="useroptions[]"]').click(updateClick);
     
     $("#allid").click(function() {
 //        alert("clicked all");
-        $("#allid").prop("checked", true);
+        // $("#allid").prop("checked", true);
         $('input[name="useroptions[]"]').each(function() {
-            if ( !$(this).prop("checked") ) {
-                $(this).click()
-            }
+            $(this).prop("checked",true);
+            $(this).attr("checked",true);
         });
-        $("#noneid").attr("checked", false);
-        $("#noneid").prop("checked", false);
+        if ( $("#optionstable") ) {
+            $('table.roomoptions tr').each(function() {
+                var rowcnt= 0;
+                rowcnt++;
+                rowcnt % 2 == 0 ? odd = " odd" : odd = "";
+                $(this).attr("class", "showrow"+odd);
+            });
+        }
+        if ( $("#catalog") ) {
+            $("#catalog div.thing").each(function(){
+                // alert( $(this).attr("class"));
+                if ( $(this).hasClass("hidden") ) {
+                    $(this).removeClass("hidden");
+                }
+            });
+        }
     });
     
     $("#noneid").click(function() {
-        $("#noneid").prop("checked", true);
+        // $("#noneid").prop("checked", true);
         $('input[name="useroptions[]"]').each(function() {
-            if ( $(this).prop("checked") ) {
-                $(this).click()
-            }
+            $(this).prop("checked",false);
+            $(this).attr("checked",false);
         });
-        $("#allid").attr("checked", false);
-        $("#allid").prop("checked", false);
+        if ( $("#optionstable") ) {
+            $('table.roomoptions tr').each(function() {
+                $(this).attr("class", "hiderow");
+            });
+        }
+        if ( $("#catalog") ) {
+            $("#catalog div.thing").each(function(){
+                if ( ! $(this).hasClass("hidden") ) {
+                    $(this).addClass("hidden");
+                }
+            });
+        }
     });
 }
 
@@ -1820,7 +1853,7 @@ function updateTile(aid, presult) {
                 isclock = true;
             // handle updating album art info
             } else if ( key === "trackDescription") {
-                var oldvalue = $("#a-"+aid+"-trackDescription").html().trim();
+                oldvalue = oldvalue.trim();
                 value = value.trim();
                 if ( value==="None" || !value ) {
                     value = "None";
@@ -1881,10 +1914,6 @@ function updateTile(aid, presult) {
 // it then calls the updateTile function to update each subitem in the tile
 function refreshTile(aid, bid, thetype, hubnum) {
     var ajaxcall = "doquery";
-//    if ( bid.startsWith("h_") ) {
-//        // ajaxcall = "queryhubitat";
-//        bid = bid.substring(2);
-//    }
     $.post(returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubid: hubnum},
         function (presult, pstatus) {
@@ -2331,7 +2360,10 @@ function setupPage(trigger) {
         } else if ( thetype==="frame" && subid==="frame" ) {
             console.log("Reloading the frame: " + thevalue);
             $(targetid).html(thevalue);
-
+            
+        } else if ( thetype==="image" && subid==="url" ) {
+            console.log("Clicked on image: " + thevalue);
+            $(targetid).html(thevalue);
         } else {
             console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
 

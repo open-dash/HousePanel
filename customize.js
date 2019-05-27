@@ -136,6 +136,7 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
             function(ui, content) {
                 // reload window unless modal Tile Editor window is open
                 // but always skip if we didn't actually change anything
+                cm_Globals.thingindex = false;
                 if ( (et_Globals.reload || cm_Globals.reload) && ( modalWindows["modalid"] === 0 || typeof modalWindows["modalid"] === "undefined" ) ) {
                     location.reload(true);
                 }
