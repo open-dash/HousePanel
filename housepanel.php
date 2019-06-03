@@ -9,6 +9,9 @@
  * Revision History
  */
 $devhistory = "
+ 2.065      Migrate image and blank tiles over to php server side
+             - provide user way to select city in AccuWeather
+             - but user must find the Location Code first
  2.064      Fix music control siblings and improve Album Art reliability
  2.063      Implement music icons for native Echo Speaks and Generic music
  2.062      Retain edit and custom names upon refresh; minor bug fixes
@@ -261,7 +264,8 @@ $version = trim(substr($devhistory,1,10));
 define('HPVERSION', 'Version ' . $version);
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
-
+define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
+// Ann Arbor = 329380
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
 // option3 can stay on and will just print lots of stuff on each page
@@ -372,14 +376,19 @@ function putdiv($value, $class) {
 }
 
 // function to make a curl call
-function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET", $webcall=false)
+function curl_call($host, $headertype="", $nvpstr="", $calltype="GET", $webcall=false)
 {
+    //setting the curl parameters for GET to tack onto host
+    if ( $calltype==="GET" && $nvpstr) {
+        $host = $host . "?$nvpstr";
+        $nvpstr = "";
+    }
 
-    $debug = "host= $host header= $headertype nvpstr = $nvpstr calltype= $calltype";
-    
-	//setting the curl parameters.
+    // tell curl where to go
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $host);
+    
+    // add header setting if provided
     if ($headertype) {
     	curl_setopt($ch, CURLOPT_HTTPHEADER, $headertype);
     }
@@ -387,24 +396,26 @@ function curl_call($host, $headertype=false, $nvpstr="", $calltype="GET", $webca
     //turning off peer verification
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
     curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    if ($calltype==="POST" && $nvpstr) {
+    
+    if ($calltype==="POST") {
     	curl_setopt($ch, CURLOPT_POST, TRUE);
     	curl_setopt($ch, CURLOPT_PUT, FALSE);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
-    } else if ($calltype==="PUT" && $nvpstr) {
+    } else if ($calltype==="PUT") {
     	curl_setopt($ch, CURLOPT_POST, FALSE);
     	curl_setopt($ch, CURLOPT_PUT, TRUE);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
     } else {
     	curl_setopt($ch, CURLOPT_POST, FALSE);
     	curl_setopt($ch, CURLOPT_PUT, FALSE);
-        // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $calltype);
-        if ($nvpstr) { curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr); }
+        if ( $calltype!=="GET" ) {
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $calltype);           
+        }
+    }
+    if ($nvpstr) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $nvpstr);
     }
 
-	//getting response from server
+    //getting response from server
     $response = curl_exec($ch);
     
     // handle errors
@@ -449,6 +460,7 @@ function getAlbumArt($artist, $album) {
 function getDevices($allthings, $options, $hubnum, $hubType, $hubAccess, $hubEndpt, $clientId, $clientSecret) {
 
     // we now always get all things at once
+    $specialtiles = getSpecials();
     $host = $hubEndpt . "/getallthings";
     $headertype = array("Authorization: Bearer " . $hubAccess);
     $nvpreq = "client_secret=" . urlencode($clientSecret) . "&scope=app&client_id=" . urlencode($clientId);
@@ -464,27 +476,33 @@ function getDevices($allthings, $options, $hubnum, $hubType, $hubAccess, $hubEnd
     // configure returned array with the "id"
     if ($response && is_array($response) && count($response)) {
         foreach ($response as $k => $content) {
-            $id = $content["id"];
             $thetype = $content["type"];
+            $thevalue = $content["value"];
+            $id = $content["id"];
+            $thename = $content["name"];
             
-            // ** IMPT ** Users can hack the code here and add other types to fast poll
-            // like what is shown in comments below will fast poll all bulb types
+            // ** IMPT ** Users can hack the code here and add other tiles to fast poll
+            // like what is shown in comments below will fast poll Office Light
             // be careful with this feature because polling is cloud intensive
             // so you should only activate a small number of devices
-            // the default blank and image fast polls do not require a hub call
-            // if ( $thetype==="blank" || $thetype==="image" || $thetype==="bulb" ) {
-            if ( $thetype==="blank" || $thetype==="image" ) {
-                $reftype = "fast";
-            } else {
-                $reftype = "normal";
-            }
-           
+            // this hack is obsolete because any tile can change refresh 
+            // to fast by changing the text of refresh in the customizer
+            // but this is still available
+            $reftype = "normal";
+//            if ( $thename==="Office Light" ) {
+//                $reftype = "fast";
+//            }
+            
             // make a unique index for this thing based on id and type
             // new to this array is the hub number and hub type
-            $idx = $thetype . "|" . $id;
-            $custom_val = $content["value"];
-            $allthings[$idx] = array("id" => $id, "name" => $content["name"], "hubnum" => $hubnum,
-                                     "hubtype" => $hubType, "type" => $thetype, "refresh"=>$reftype, "value" => $custom_val );
+            // we also skip making any legacy type special tiles
+            if ( !array_key_exists($thetype, $specialtiles) ) {
+                $idx = $thetype . "|" . $id;
+                $allthings[$idx] = array("id" => $id, "name" => $thename, 
+                        "hubnum" => $hubnum,
+                        "hubtype" => $hubType, "type" => $thetype, 
+                        "refresh"=>$reftype, "value" => $thevalue );
+            }
         }
     }
     return $allthings;
@@ -1201,7 +1219,7 @@ function getAllThings($reset = false) {
         $insession = true;
     } else {
     
-        $options = readOptions();
+        $options = readOptions(true);
         $configoptions = $options["config"];
         $tz = $configoptions["timezone"];
         date_default_timezone_set($tz);
@@ -1246,36 +1264,29 @@ function getAllThings($reset = false) {
         // this also creates image and blank tiles here that used to be made in groovy
         // putting this here allows them to be handled just like other modifiable tiles
         // these tiles all refresh fast except first 4 frames that are reserved for weather
-        $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
-        $blankids = array(array("b1x1",120,120),array("b1x2",120,240),array("b2x1",240,120),array("b2x2",240,240));
-        $frameids = array(array("forecast",480,220),array("accuweather",480,220),array("forecast2",480,220),array("forecast3",480,220));
+        // renamed accuweather to forecast2 for simplicity sake and to make sorting work
+        // array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+        $specialtiles = getSpecials();
         foreach ($specialtiles as $stype => $sid) {
-            $speed = "fast";
-            $fcnt = getCustomCount($options["index"], $stype);
-            if ($fcnt < 4) { $fcnt= 4; }
+            $speed = ($stype==="frame") ? "slow" : "normal";
+            $fcnt = getCustomCount($stype, $options);
             for ($i=0; $i<$fcnt; $i++) {
                 
-                // handle back compatible old blanks and frames for first 4
-                if ( $stype==="blank" && $i<4 ) {
-                    $fid = $blankids[$i][0];
-                    $fw = $blankids[$i][1];
-                    $fh = $blankids[$i][2];
-                } else if ( $stype==="frame" && $i<4 ) {
-                    $fid = $frameids[$i][0];
-                    $fw = $frameids[$i][1];
-                    $fh = $frameids[$i][2];
-                    $speed = "slow";
-                } else {
-                    $k = strval($i + 1);
-                    $fid = $sid . $k;
-                    $fw = "auto";
-                    $fh = "auto";
-                }
-                $fn = getCustomName($fid, $fid, $stype, $options);
+                $k = strval($i + 1);
+                // if ( $i < 9 ) { $k = "0" . $k; }
+                $fid = $sid[0] . $k;
+                
+                // the forecasts now must be in files frame1.html through frame4.html
+                // or you can just change the name in the editor to a valid file
+                $fw = $sid[1];
+                $fh = $sid[2];
+                $fn = getCustomName($stype . $k, $fid, $stype, $options);
                 
                 // just store temporary name for now since we get real value later
-                // this saves some compute and file searching time
-                $fval = $fn;  //  returnFile($fn, $fw, $fh, $stype);
+                // this saves compute and file searching time
+                // later below we set all special tiles using a line like:
+                // $fval = returnFile($fn, $fw, $fh, $stype);
+                $fval = $fn;
                 $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
                 $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
                     "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
@@ -1310,16 +1321,37 @@ function getAllThings($reset = false) {
                 }
                 
                 // update special tiles with custom name and width and height values
-                if ( array_key_exists($stype, $specialtiles) && array_key_exists($stype, $thing["value"]) ) {
+                if ( array_key_exists($stype, $specialtiles) ) {
                     $fn = $thing["value"]["name"];
-                    $fw = $thing["value"]["width"];
-                    $fh = $thing["value"]["height"];
+                    if ( array_key_exists("width", $thing["value"]) ) {
+                        $fw = $thing["value"]["width"];
+                    } else {
+                        $fw = $specialtiles[$stype][1];
+                    }
+                    if ( array_key_exists("height", $thing["value"]) ) {
+                        $fh = $thing["value"]["height"];
+                    } else {
+                        $fh = $specialtiles[$stype][2];
+                    }
                     $thing["value"][$stype] = returnFile($fn, $fw, $fh, $stype);
                 }
                 $allthings[$idx] = $thing;
             }
         }
-
+        
+        // remove anything from the options index that is no longer authorized
+//        $copyindex = $options["index"];
+//        $rewrite = false;
+//        foreach ($copyindex as $idx => $tileid) {
+//            if ( !array_key_exists($idx, $allthings) ) {
+//                unset( $options["index"][$idx] );
+//                $rewrite = true;
+//            }
+//        }
+//        if ( $rewrite ) {
+//            writeOptions($options);
+//        }
+        
         // save the things
         $_SESSION["allthings"] = $allthings;
     }
@@ -1580,13 +1612,26 @@ function returnFile($fname, $width, $height, $ctype) {
                 break;
                 
             default:
-                $v = "<div width=\"$width\" height=\"$height\">$vn</div>";
+                $v = "<div style=\"width: " . $width . "px; height: " . $height . "px;\">$vn</div>";
                 break;
         }
     } else {
-        $v= "<div width=\"$width\" height=\"$height\"></div>";
+        $v = "<div style=\"width: " . $width . "px; height: " . $height . "px;\"></div>";
     }
     return $v;
+}
+
+// experimental function to create frame2.html with AccuWeather for a city
+// the City Name, Country Code, and the Location Code from AccuWeather must be provided
+// getAccuWeather("ann-arbor-mi","us","329380");
+function getAccuWeather($city, $region, $code, $unit="f") {
+    $tc = "<!DOCTYPE html>";
+    $tc.= "<html><body>";
+    $tc.= "<a href=\"https://www.accuweather.com/en/$region/$city/$code/weather-forecast/$code\" class=\"aw-widget-legal\">";
+    $tc.= "</a><div id=\"awcc1531959686475\" class=\"aw-widget-current\"  data-locationkey=\"$code\" data-unit=\"$unit\" data-language=\"en-us\" data-useip=\"false\" data-uid=\"awcc1531959686475\"></div>";
+    $tc.= "<script type=\"text/javascript\" src=\"https://oap.accuweather.com/launch.js\"></script>";
+    $tc.= "</body></html>";
+    file_put_contents("frame2.html", $tc);
 }
 
 function getWeatherIcon($num) {
@@ -1615,7 +1660,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
     // grab options
     $options = readOptions();
     $allthings = getAllThings();
-    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+    $specialtiles = getSpecials();
    
     $bid = $thesensor["id"];
     $thingvalue = $thesensor["value"];
@@ -1728,14 +1773,20 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $poslef
         
     } else {
 
-        // handle video, frame, image, and blank tiles
-        if ( array_key_exists($thingtype, $specialtiles) &&
-                array_key_exists("width", $thingvalue) && 
-                array_key_exists("height", $thingvalue) ) 
+        // handle special tiles
+        if ( array_key_exists($thingtype, $specialtiles) ) 
         {
-            $fw = $thingvalue["width"];
-            $fh = $thingvalue["height"];
             $fn = $thingvalue["name"];
+            if ( array_key_exists("width", $thingvalue) ) {
+                $fw = $thingvalue["width"];
+            } else {
+                $fw = $specialtiles[$thingtype][1];
+            }
+            if ( array_key_exists("height", $thingvalue) ) {
+                $fh = $thingvalue["height"];
+            } else {
+                $fh = $specialtiles[$thingtype][2];
+            }
             $thingvalue[$thingtype] = returnFile($fn, $fw, $fh, $thingtype );
         }
         
@@ -2099,7 +2150,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                   $swval="", $swattr="", $subid="", 
                   $command="", $content="", $macro=true ) {
     
-    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+    $specialtiles = getSpecials();
     $save = $swval;
     $options = readOptions();
     $configoptions = $options["config"];
@@ -2222,49 +2273,32 @@ function doAction($hubnum, $path, $swid, $swtype,
         $aclock["time"] = date($fmt_time);
         $response = $aclock;
         
-    } else if (array_key_exists($thingtype, $specialtiles) && 
-                array_key_exists("width", $thingvalue) && 
-                array_key_exists("height", $thingvalue) &&
-                array_key_exists($thingtype, $thingvalue) ) 
-    {
-            $fw = $thingvalue["width"];
-            $fh = $thingvalue["height"];
-            $fn = $thingvalue["name"];
-            $thingvalue[$thingtype] = returnFile($fn, $fw, $fh, $thingtype );
-        
-        
-    } else if ($swtype==="video" && $subid==="video") {
+    // this logic is complex so let me explain. First we get the value if available
+    // then we get any provided custom name from tile editor
+    // next we check customizer to see if name and width and height changed
+    // finally, we send name, width, height to returnFile routine to get the html tag
+    // if this is an API call then allthings won't be available so we just do our best
+    } else if (array_key_exists($swtype, $specialtiles) && $subid===$swtype ) {
         if ( $allthings ) {
-            $thingvalue = $allthings["video|$swid"]["value"];
-            $thingvalue = getCustomTile($thingvalue, "video", $swid, $options, $allthings);
-            $fn = getCustomName($thingvalue["name"], $swid, "video", $options);
-            $fw = $thingvalue["width"];
-            $fh = $thingvalue["height"];
-            $videoval = returnVideo($fn, $fw, $fh);
-            $thingvalue["video"] = $videoval;
-            $response = $thingvalue;
+            $thingvalue = $allthings["$swtype|$swid"]["value"];
+            $thingvalue["name"] = getCustomName($thingvalue["name"], $swid, $swtype, $options);
+            $thingvalue = getCustomTile($thingvalue, $swtype, $swid, $options, $allthings);
+            if ( array_key_exists("width", $thingvalue) ) {
+                $fw = $thingvalue["width"];
+            } else {
+                $fw = $specialtiles[$swtype][1];
+            }
+            if ( array_key_exists("height", $thingvalue) ) {
+                $fh = $thingvalue["height"];
+            } else {
+                $fh = $specialtiles[$swtype][2];
+            }
+            $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
         } else {
-            $videoval = returnVideo($swval,"inherit","inherit");
-            $response = array("video" => $videoval);
+            $thingval = returnFile($swval, "auto", "auto", $swtype );
+            $response = array($subid => $thingval);
         }
-        // $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
         
-    } else if ($swtype==="frame" && $subid==="frame" ) {
-        if ( $allthings ) {
-            $thingvalue = $allthings["frame|$swid"]["value"];
-            $thingvalue = getCustomTile($thingvalue, "frame", $swid, $options, $allthings);
-            $fn = getCustomName($thingvalue["name"], $swid, "frame", $options);
-            $fw = $thingvalue["width"];
-            $fh = $thingvalue["height"];
-            $frameval = returnFrame($fn, $fw, $fh);
-            $thingvalue["frame"] = $frameval;
-            $response = $thingvalue;
-        } else {
-            $frameval = returnFrame($swval,"inherit","inherit");
-            $response = array("frame" => $frameval);
-        }
-        // $response = getCustomTile($response, $swtype, $swid, $options, $allthings);
-
     // if the new fast type is requested return things that can be updated
     // without making a call out to the hub
     // this can be used to create stop-time videos in 
@@ -2279,7 +2313,7 @@ function doAction($hubnum, $path, $swid, $swtype,
 
             // go through all the tiles available in the system
             // and return those that don't require hub reading
-            // for now this just does image and blank tiles
+            // any tile with fast set in refresh will work
             // note that the js routine will ignore those not in use
             // this is much faster than going room by room
             // we could skip customizations for speed but this would
@@ -2290,13 +2324,11 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $hubnum2 = $thing["hubnum"];
                 
                 if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="fast" ) {
-                // if ( $type==="image" || $type==="blank" || $type==="clock" || $type==="custom" ) {
-                    
                     // check if this fast thing requires a hub call other than blanks and images
                     // this is basically the old individual polling method and will be slow
                     // so you should not enable very many tiles to be polled in the fast loop
-                    $hub2 = $hubs[findHub($hubnum2, $hubs)];
-                    if ( $hub2 && $type!=="blank" && $type!=="image" ) {
+                    $hub2 = strval($hubnum2) === "-1" ? false : $hubs[findHub($hubnum2, $hubs)];
+                    if ( $hub2 ) {
                         // $hub = $hubs[$hubnum2];
                         $access_token2 = $hub2["hubAccess"];
                         $endpt2 = $hub2["hubEndpt"];
@@ -2311,7 +2343,6 @@ function doAction($hubnum, $path, $swid, $swtype,
                     }
                     $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"],$options, $allthings);
                     $response[$tileid] = $thing;
-                    
                 }
             }
           
@@ -2338,17 +2369,20 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $thingvalue = $thing["value"];
                 $tileid = $indexoptions[$fidx];
                 if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="slow" ) {
+                    $thingvalue["name"] = getCustomName($thingvalue["name"], $thing["id"], $thingtype, $options);
                     $thingvalue = getCustomTile($thingvalue, $thingtype, $thing["id"], $options, $allthings);
-                    $customname = getCustomName($thingvalue["name"], $swid, $thingtype, $options);
-                    
-                    if ( $thingtype==="video" && $customname ) {
-                        $fw = $thingvalue["width"];
-                        $fh = $thingvalue["height"];
-                        $thingvalue["video"] = returnVideo($customname, $fw, $fh);
-                    } else if ( $thingtype==="frame" && $customname ) {
-                        $fw = $thingvalue["width"];
-                        $fh = $thingvalue["height"];
-                        $thingvalue["frame"] = returnFrame($customname, $fw, $fh);
+                    if ( array_key_exists($thingtype, $specialtiles) ) {
+                        if ( array_key_exists("width", $thingvalue) ) {
+                            $fw = $thingvalue["width"];
+                        } else {
+                            $fw = $specialtiles[$thingtype][1];
+                        }
+                        if ( array_key_exists("height", $thingvalue) ) {
+                            $fh = $thingvalue["height"];
+                        } else {
+                            $fh = $specialtiles[$thingtype][2];
+                        }
+                        $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $thingtype);
                     } else if ( $thingtype==="music" ) {
                         $thingvalue = getMusicArt($thingvalue);
                     }
@@ -2575,8 +2609,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $newthing = array_merge($oldthing, $thing);
                         $thingtype = $thing["type"];
                         
+                        $newvalue["name"] = getCustomName($newvalue["name"], $thing["id"], $thingtype, $options);
                         $thingvalue = getCustomTile($newvalue, $thingtype, $thing["id"], $options, $allthings);
-                        // $thingvalue["name"] = getCustomName($thingvalue["name"], $thing["id"], $thingtype, $options);
                         if ( $thingtype==="music" ) {
                             $thingvalue = getMusicArt($thingvalue);
                         }
@@ -2789,7 +2823,7 @@ function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
 }
 
 // updated to use session for speed if it is there
-function readOptions() {
+function readOptions($reset = false) {
 //    if ( isset($_SESSION["hmoptions"]) ) {
 //        $options = $_SESSION["hmoptions"];
 //    } else if ( file_exists("hmoptions.cfg") ) {
@@ -2799,49 +2833,59 @@ function readOptions() {
         $options = json_decode($serialnew,true);
         $oldthingsarr = $options["things"];
 //        $_SESSION["hmoptions"] = $options;
-
     
         // make the room config file to support custom users
-        if ( isset($_COOKIE["uname"]) ) {
+        if ( isset($_COOKIE["uname"]) && trim($_COOKIE["uname"]) ) {
+            
             $uname = trim($_COOKIE["uname"]);
-            $customfname = "hm_" . $uname . ".cfg";
-            if ( file_exists($customfname) ) {
-                $fc = fopen($customfname,"rb");
-                $str_rooms = fgets($fc);
-                $str_rooms = str_replace(array("\n","\r","\t"), "", $str_rooms);
-                $opt_rooms = json_decode($str_rooms, true);
-                $str_things = fgets($fc); 
-                $str_things = str_replace(array("\n","\r","\t"), "", $str_things);
-                $opt_things = json_decode($str_things, true);
+            if ( $reset ) {
+                $customfname = "hm_" . $uname . ".cfg";
+                $fc = fopen($customfname,"wb");
+                $str_rooms = json_encode($options["rooms"]);
+                $str_things = json_encode($options["things"]);
+                fwrite($fc, $str_rooms . "\n" . $str_things);
+                fflush($fc);
                 fclose($fc);
-                
-                // load in custom settings
-                $options["rooms"] = $opt_rooms;
-                // $options["things"] = $opt_things;
-                $options["things"] = array();
-                
-                // protect against having a custom name and an empty custom user name
-                foreach ($opt_rooms as $room => $ridx) {
-                    if ( array_key_exists($room, $opt_things) ) {
-                        $things = $opt_things[$room];
-                        $newthings = array();
-                        foreach ($things as $kindexarr) {
-                            // check for a blank custom name
-                            if ( is_array($kindexarr) && count($kindexarr)>3 && $kindexarr[4]==="" ) {
-                                $kindex = $kindexarr[0];
-                                $oldthings = $oldthingsarr[$room];
-                                foreach($oldthings as $okidx) {
-                                    if ( is_array($okidx) && $okidx[0]===$kindex && count($okidx)>3 && $okidx[4] ) {
-                                       $kindexarr[4] = $okidx[4]; 
+            } else {
+                $customfname = "hm_" . $uname . ".cfg";
+                if ( file_exists($customfname) ) {
+                    $fc = fopen($customfname,"rb");
+                    $str_rooms = fgets($fc);
+                    $str_rooms = str_replace(array("\n","\r","\t"), "", $str_rooms);
+                    $opt_rooms = json_decode($str_rooms, true);
+                    $str_things = fgets($fc); 
+                    $str_things = str_replace(array("\n","\r","\t"), "", $str_things);
+                    $opt_things = json_decode($str_things, true);
+                    fclose($fc);
+
+                    // load in custom settings
+                    $options["rooms"] = $opt_rooms;
+                    // $options["things"] = $opt_things;
+                    $options["things"] = array();
+
+                    // protect against having a custom name and an empty custom user name
+                    foreach ($opt_rooms as $room => $ridx) {
+                        if ( array_key_exists($room, $opt_things) ) {
+                            $things = $opt_things[$room];
+                            $newthings = array();
+                            foreach ($things as $kindexarr) {
+                                // check for a blank custom name
+                                if ( is_array($kindexarr) && count($kindexarr)>3 && $kindexarr[4]==="" ) {
+                                    $kindex = $kindexarr[0];
+                                    $oldthings = $oldthingsarr[$room];
+                                    foreach($oldthings as $okidx) {
+                                        if ( is_array($okidx) && $okidx[0]===$kindex && count($okidx)>3 && $okidx[4] ) {
+                                           $kindexarr[4] = $okidx[4]; 
+                                        }
                                     }
                                 }
+                                $newthings[] = $kindexarr;
                             }
-                            $newthings[] = $kindexarr;
+                            $options["things"][$room] = $newthings;
                         }
-                        $options["things"][$room] = $newthings;
                     }
+
                 }
-                
             }
         }
         
@@ -2964,7 +3008,7 @@ function refactorOptions($allthings) {
     $updatecss = false;
     $thingtypes = getTypes();
     $cnt = 0;
-    $options = readOptions();
+    $options = readOptions(true);
     $oldoptions = $options;
     $options["useroptions"] = $thingtypes;
     $options["things"] = array();
@@ -3074,6 +3118,33 @@ function refactorOptions($allthings) {
     
 }
 
+function createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options) {
+    $n = strlen($stype) + 1;
+
+    // remove all special types of this type
+    foreach ($oldindex as $idx => $tileid) {
+        if ( substr($idx,0,$n) === $stype . "|" ) {
+            unset($options["index"][$idx]);
+        }
+    }
+    $maxindex = getMaxIndex($options);
+
+    // add back in the requested number
+    for ( $i=0; $i<$customcnt; $i++) {
+        $k = strval($i + 1);
+        $fid = $spid . $k;
+        $sidnum = $stype . "|" . $fid;
+        if ( array_key_exists($sidnum, $oldindex) ) {
+            $theindex = $oldindex[$sidnum];
+        } else {
+            $maxindex++;
+            $theindex = $maxindex;
+        }
+        $options["index"][$sidnum] = $theindex;
+    }
+    return $options;
+}
+
 function getOptions($options, $newthings) {
     
     // get list of supported types
@@ -3088,14 +3159,10 @@ function getOptions($options, $newthings) {
     if ( !file_exists($options["config"]["skin"] . "/housepanel.css") ) {
         $options["config"]["skin"] = "skin-housepanel";
     }
-
+    
     // find the largest index number for a sensor in our index
     // and undo the old flawed absolute positioning
-    $cnt = 0;
-    foreach ($options["index"] as $thingid => $idx) {
-        $idx = intval($idx);
-        $cnt = ($idx > $cnt) ? $idx : $cnt;
-    }
+    $cnt = getMaxIndex($options);
     $cnt++;
 
     // set zindex and custom names if not there
@@ -3120,6 +3187,32 @@ function getOptions($options, $newthings) {
             $options["index"][$thingid] = $cnt;
             $cnt++;
         }
+    }
+    
+    // make exactly the right number of special tiles
+    $specialtiles = getSpecials();
+    $oldindex = $options["index"];
+    foreach ($specialtiles as $stype => $sid) {
+//        if ( array_key_exists("specialtiles", $options["config"]) ) {
+//            $specialarr = $options["config"]["specialtiles"];
+//            if ( array_key_exists($stype, $specialarr) ) {
+//                $customcnt = intval($specialarr[$stype]);
+//                if ( !$customcnt || $customcnt < 1 ) { 
+//                    $customcnt = 1; 
+//                    $specialarr[$stype] = $customcnt;
+//                }
+//            } else {
+//                $customcnt = 4;
+//                $specialarr[$stype] = $customcnt;
+//            }
+//        } else {
+//            $customcnt = 4;
+//            $specialarr[$stype] = $customcnt;
+//        }
+//        $options["config"]["specialtiles"] = $specialarr;
+        $customcnt = getCustomCount($stype, $options);
+        $spid = $sid[0];
+        $options = createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options);
     }
 
     return $options;
@@ -3179,7 +3272,11 @@ function getTypes() {
 }
 
 function getSpecials() {
-    $specialtiles = array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+    $specialtiles = array("video" =>array("vid",640,480), 
+                          "frame" =>array("frame",480,212),
+                          "image" =>array("img",480,240),
+                          "blank" =>array("blank",120,150),
+                          "custom"=>array("custom_",120,150));
     return $specialtiles;
 }
 
@@ -3199,15 +3296,25 @@ function mysortfunc($cmpa, $cmpb) {
     return $t;
 }
 
-function getCustomCount($indexoptions, $swtype) {
-    $cnt= 0;
-    $n = strlen($swtype) + 1;
-    foreach ( array_keys($indexoptions) as $idx ) {
-        if ( substr($idx,0,$n) === $swtype . "|" ) {
-            $cnt++;
+function getCustomCount($stype, &$options) {
+    if ( array_key_exists("specialtiles", $options["config"]) ) {
+        $specialarr = $options["config"]["specialtiles"];
+        if ( array_key_exists($stype, $specialarr) ) {
+            $customcnt = intval($specialarr[$stype]);
+            if ( !$customcnt || $customcnt < 1 ) { 
+                $customcnt = 1; 
+                $specialarr[$stype] = $customcnt;
+            }
+        } else {
+            $customcnt = 4;
+            $specialarr[$stype] = $customcnt;
         }
+    } else {
+        $customcnt = 4;
+        $specialarr[$stype] = $customcnt;
     }
-    return $cnt;
+    $options["config"]["specialtiles"] = $specialarr;
+    return $customcnt;
 }
 
 function getOptionsPage($options, $retpage, $allthings, $sitename) {
@@ -3215,7 +3322,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     // show an option tabls within a form
     // $tc.= "<div id=\"options-tab\">";
     $thingtypes = getTypes();
-    $specials = getSpecials();
+    $specialtiles = getSpecials();
     sort($thingtypes);
     $roomoptions = $options["rooms"];
     $thingoptions = $options["things"];
@@ -3238,19 +3345,26 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= hidden("useajax", "saveoptions");
     $tc.= hidden("id", "none");
     $tc.= hidden("type", "none");
-    $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/></div>";
+    $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
     $kstr = ($kioskoptions===true || $kioskoptions=="true" || $kioskoptions==="1" || $kioskoptions==="yes") ? "checked" : "";
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/>";
-    // $tc.= "</div>";
-
-    foreach ($specials as $stype => $sid) {
-        $customcnt = getCustomCount($indexoptions,$stype);
-        $stypeid = $stype . "cntid";
-        // $tc.= "<div class=\"filteroption\">";
+    $tc.= "</div>";
+    
+    $tc.= "<div class=\"filteroption\">Accuweather City: <input id=\"accucityid\" width=\"120\" type=\"text\" name=\"accucity\"  value=\"\"/>";
+    $tc.= " Region: <input id=\"accuregionid\" width=\"6\" type=\"text\" name=\"accuregion\"  value=\"us\"/>";
+    $tc.= " Code: <input id=\"accucodeid\" width=\"40\" type=\"text\" name=\"accucode\"  value=\"329380\"/>";
+    $tc.= "<br><span class='typeopt'>(The Code above is only good for ann-arbor-mi You must find your code to use this feature.)</span>";
+    $tc.= "</div>";
+    
+    $tc.= "<div class=\"filteroption\">";
+    $specialcnt = array();
+    foreach ($specialtiles as $stype => $sid) {
+        $customcnt = getCustomCount($stype, $options);
+        $stypeid = "cnt_" . $stype;
         $tc.= "<br /><label for=\"$stypeid\" class=\"kioskoption\">Number of $stype tiles: </label>";
-        $tc.= "<input id=\"$stypeid\" name=\"$stype" . "id\" width=\"10\" type=\"number\"  min='0' max='50' step='1' value=\"$customcnt\" />";
+        $tc.= "<input class=\"specialtile\" id=\"$stypeid\" name=\"$stypeid\" width=\"10\" type=\"number\"  min='0' max='99' step='1' value=\"$customcnt\" />";
     }
     $tc.= "</div>";
     
@@ -3326,7 +3440,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         }
         
         // write the table row
-        if ( array_key_exists($thetype, $specials) ) {
+        if ( array_key_exists($thetype, $specialtiles) ) {
             $special = " special";
         } else {
             $special = "";
@@ -3600,16 +3714,18 @@ function processOptions($optarray) {
         $options["things"][$room][] = array($onlytile,0,0,1,"");
     }
 
+    $options["config"]["specialtiles"] = array();
+
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
     $options["config"]["kiosk"] = "false";
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
-        if ($key=="options" || $key=="submitoption" || $key=="submitrefresh" ||
-            $key=="allid" || $key=="noneid" ) { continue; }
+        if ($key==="options" || $key==="submitoption" || $key==="submitrefresh" ||
+            $key==="allid" || $key==="noneid" || $key==="accuregion" || $key==="accucode" ) { continue; }
         
         // set skin
-        if ($key=="skin") {
+        if ($key==="skin") {
             $skin = $val;
             
             // change the skin if there is a housepanel.css file in that folder
@@ -3627,34 +3743,42 @@ function processOptions($optarray) {
             }
             
         }
-        else if ( $key=="kiosk") {
+        else if ( $key==="kiosk") {
             $options["config"]["kiosk"] = "true";
         }
-        else if ( $key=="customcnt" ) {
-            $customcnt = intval($val);
-            $oldcnt = getCustomCount($oldoptions["index"]);
-            
-            if ( $customcnt > $oldcnt ) {
-                $maxindex = getMaxIndex($oldoptions);
-                for ( $i = $oldcnt+1;  $i <= $customcnt; $i++ ) {
-                    $maxindex++;
-                    $options["index"]["custom|custom_" . $i] = $maxindex;
-                }
-                
-            // if we request fewer customs than before just delete the extras
-            } else if ( $customcnt < $oldcnt ) {
-                foreach ( array_keys($indexoptions) as $idx ) {
-                    if ( substr($idx,0,14) === "custom|custom_" ) {
-                        $idcnt = intval(substr($idx,14));
-                        if ( $idcnt > $customcnt ) {
-                            unset( $options["index"][$idx] );
-                        }
-                    }
+        
+//        else if ($key==="widgetcity") {
+//            if ( $val ) {
+//                getWeatherWidget($val);
+//            }
+//        }
+//        
+        else if ($key==="accucity") {
+            $city = $val;
+            $region = $optarray["accuregion"];
+            $code = $optarray["accucode"];
+            if ( $city && $region && $code ) {
+                getAccuWeather($city, $region, $code);
+            }
+        }
+        
+        // handle user selected special tile count
+        else if ( substr($key,0,4)==="cnt_" ) {
+            $specialtiles = getSpecials();
+            $stype = substr($key,4);
+            if ( array_key_exists($stype, $specialtiles) ) {
+                $oldindex = $oldoptions["index"];
+                $spid = $specialtiles[$stype][0];
+                $oldcnt = getCustomCount($stype, $oldoptions);
+                $customcnt = intval($val);
+                if ( $customcnt !== $oldcnt ) {
+                    $options = createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options);
                 }
             }
             
         }
-        else if ( $key=="useroptions" && is_array($val) ) {
+        
+        else if ( $key==="useroptions" && is_array($val) ) {
             $newuseroptions = $val;
             $options["useroptions"] = $newuseroptions;
         }
@@ -3720,7 +3844,7 @@ function processOptions($optarray) {
             }
         }
     }
-        
+
     // write options to file
     writeOptions($options);
     
@@ -3732,6 +3856,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
     $options = readOptions();
     $configoptions = $options["config"];
     $hubs = $configoptions["hubs"];
+    $specialtiles = getSpecials();
     
     $tc = "";
     $tc.= "<h3>HousePanel " . HPVERSION . " Information Display</h3>";
@@ -3795,8 +3920,8 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
         if (is_array($thing["value"])) {
             $value = "";
             foreach ($thing["value"] as $key => $val) {
-                if ( $key === "frame" ) {
-                    $value.= $key . "= <strong>EmbeddedFrame</strong> ";
+                if ( array_key_exists($key, $specialtiles) ) {
+                    $value.= $key . "= <strong>embedded $key</strong><br/>";
                 } else {
                     if ( $thing["type"]==="custom" && is_array($val) ) { $val = "Custom Array... "; }
                     if ( strlen($val) > 128 ) {

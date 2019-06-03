@@ -108,9 +108,8 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
             if ( useall===0 ) { target+= '.tab-'+thingindex; }
             // target+= ",.tab-" +thingindex + ">a.ui-tabs-anchor";
         } else if ( subid==="head" ) {
-            target = "div.thingname";
-            if ( useall < 2 ) { target+= "." + str_type; }
-            if ( useall < 1 ) { 
+            target = "div.thingname.page";
+            if ( useall < 2 ) { 
                 target+= '.t_'+thingindex;
             }
         } else {
@@ -121,7 +120,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
     // if a tile isn't specified we default to changing all things
     } else if ( thingindex===null || thingindex===undefined || thingindex==="all" ) {
         target = "div.thing";
-        if ( str_type && useall!==2 ) {
+        if ( str_type && useall < 2 ) {
             target+= "." + str_type + "-thing";
         }
     } else if ( subid==="head" ) {
@@ -302,7 +301,8 @@ function initDialogBinds(str_type, thingindex) {
     
     $("#editName").on('input', function () {
         var thingindex = $("#tileDialog").attr("thingindex");
-        var target1 = "span.n_"+thingindex;
+        // var target1 = "span.n_"+thingindex;
+        var target1 = getCssRuleTarget(str_type, "head", thingindex)
 
         var newname = $("#editName").val();
         $(target1).html(newname);
@@ -334,7 +334,8 @@ function initDialogBinds(str_type, thingindex) {
     
 
     // set the header name
-    var target1 = "span.n_"+thingindex;
+    // var target1 = "span.n_"+thingindex;
+    var target1 = getCssRuleTarget(str_type, "head", thingindex)
     var newname = $(target1).html();
     $("#editName").val(newname);
     
@@ -684,26 +685,27 @@ function getScope(str_type, ftime) {
 
 function effectspicker(str_type, thingindex) {
     var dh = "";
-    // var target = "div." + str_type + "-thing span.n_" + thingindex;
     var target = getCssRuleTarget(str_type, "head", thingindex);
-    target = target +  " span.n_" + thingindex;
     var name = $(target).html();
-    var labelname = "Tile Name:";
+    var labelname;
     if ( str_type==="page" ) {
-        name = thingindex;
         labelname = "Page Name:";
+    } else {
+        labelname = "Tile Name:";
+        
     }
+    // alert("Name = " + name);
 
     // Title changes and options
-	dh += "<div class='colorgroup'><label id=\"labelName\">" + labelname + "</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
+    dh += "<div class='colorgroup'><label id=\"labelName\">" + labelname + "</label><input name=\"editName\" id=\"editName\" class=\"ddlDialog\" value=\"" + name +"\"></div>";
     dh += "<div class='colorgroup'><button id='processName' type='button'>Save Name</button></div>";
         
-	//Effects
-	dh += "<div class='colorgroup'><label>Effect Scope:</label>";
-	dh += "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
-        dh += getScope(str_type, true);
-	dh += "</select>";
-	dh += "</div>";
+    //Effects
+    dh += "<div class='colorgroup'><label>Effect Scope:</label>";
+    dh += "<select name=\"scopeEffect\" id=\"scopeEffect\" class=\"ddlDialog\">";
+    dh += getScope(str_type, true);
+    dh += "</select>";
+    dh += "</div>";
     return dh;    
 }
 
@@ -1865,7 +1867,7 @@ function initColor(str_type, subid, thingindex) {
             ish1 = $("div.thingname." + str_type).css("display");
             ish2= $("div.thingname."+str_type+".t_"+thingindex).css("display");
             ish3 = ish1;
-            ish4 = $("div.thingname."+str_type+".t_"+thingindex + " span.original.n_" + thingindex).css("display");
+            ish4 = ish2;
         } else {
             ish1 = $("div." + subid).css("display");
             ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");

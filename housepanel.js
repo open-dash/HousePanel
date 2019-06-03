@@ -1572,6 +1572,42 @@ function setupSaveButton() {
     });
 }
 
+function showType(ischecked, theval) {
+    
+    if ( pagename==="options" ) {
+        $('table.roomoptions tr[type="'+theval+'"]').each(function() {
+            if ( ischecked ) {
+                $(this).attr("class", "showrow");
+            } else {
+                $(this).attr("class", "hiderow");
+           }
+        });
+
+        var rowcnt = 0;
+        $('table.roomoptions tr').each(function() {
+            var odd = "";
+            var theclass = $(this).attr("class");
+            if ( theclass !== "hiderow" ) {
+                rowcnt++;
+                rowcnt % 2 === 0 ? odd = " odd" : odd = "";
+                $(this).attr("class", "showrow"+odd);
+           }
+        });
+    }
+    
+    // handle main screen catalog
+    if ( $("#catalog") ) {
+        $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
+            // alert( $(this).attr("class"));
+            if ( ischecked && $(this).hasClass("hidden") ) {
+                $(this).removeClass("hidden");
+            } else if ( ! ischecked && ! $(this).hasClass("hidden") ) {
+                $(this).addClass("hidden");
+            }
+        });
+    }
+}
+
 function setupFilters() {
     
 //    alert("Setting up filters");
@@ -1579,40 +1615,7 @@ function setupFilters() {
     function updateClick() {
         var theval = $(this).val();
         var ischecked = $(this).prop("checked");
-        
-        // set the class of all rows to invisible or visible
-        var rowcnt = 0;
-        var odd = "";
-        if ( $("#optionstable") ) {
-            $('table.roomoptions tr[type="'+theval+'"]').each(function() {
-                if ( ischecked ) {
-                    $(this).attr("class", "showrow");
-                } else {
-                    $(this).attr("class", "hiderow");
-               }
-            });
-        
-            $('table.roomoptions tr').each(function() {
-                var theclass = $(this).attr("class");
-                if ( theclass != "hiderow" ) {
-                    rowcnt++;
-                    rowcnt % 2 == 0 ? odd = " odd" : odd = "";
-                    $(this).attr("class", "showrow"+odd);
-               }
-            });
-        }
-        
-        // handle main screen catalog
-        if ( $("#catalog") ) {
-            $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
-                // alert( $(this).attr("class"));
-                if ( ischecked && $(this).hasClass("hidden") ) {
-                    $(this).removeClass("hidden");
-                } else if ( ! ischecked && ! $(this).hasClass("hidden") ) {
-                    $(this).addClass("hidden");
-                }
-            });
-        }
+        showType(ischecked, theval);
     }
     
     $('input[name="useroptions[]"]').each(updateClick);
@@ -1626,8 +1629,8 @@ function setupFilters() {
             $(this).attr("checked",true);
         });
         if ( $("#optionstable") ) {
+            var rowcnt= 0;
             $('table.roomoptions tr').each(function() {
-                var rowcnt= 0;
                 rowcnt++;
                 rowcnt % 2 == 0 ? odd = " odd" : odd = "";
                 $(this).attr("class", "showrow"+odd);
@@ -1666,33 +1669,15 @@ function setupFilters() {
 
 function setupCustomCount() {
 
-    // define the customs array
-    var customtag = $("tr[type='custom']");
-    var hubstr = $("tr[type='custom']:first td:eq(1)").html();
+    // use clock to get hubstr and rooms arrays
+    var hubstr = $("tr[type='clock']:first td:eq(1)").html();
     var tdrooms = $("tr[type='clock']:first input");
     
-    var currentcnt = customtag.size();
-    var initialcnt = currentcnt;
-    var customs = [];
-    
-    var i = 0;
-    customtag.each( function() {
-        customs[i] = $(this);
-        i++;
-    });
-    
-    // get biggest id number
-    var maxid = 0;
-    $("table[class='roomoptions'] tr").each( function() {
-        var tileid = parseInt($(this).attr("tile"));
-        maxid = ( tileid > maxid ) ? tileid : maxid;
-    });
-    maxid++;
-    
     // this creates a new row
-    function createRow(tilenum, k) {
-        var row = '<tr type="custom" tile="' + tilenum + '" class="showrow">';
-        row+= '<td class="thingname">Custom ' + k + '<span class="typeopt"> (custom)</span></td>';
+    function createRow(tilenum, k, tiletype) {
+        var row = '<tr type="' + tiletype + '" tile="' + tilenum + '" class="showrow">';
+        // var kstr = (k < 10) ? k : k;
+        row+= '<td class="thingname">' + tiletype + k + '<span class="typeopt"> (' + tiletype + ')</span></td>';
         row+= '<td>' + hubstr + '</td>';
 
         tdrooms.each( function() {
@@ -1705,20 +1690,37 @@ function setupCustomCount() {
         return row;
     }
     
-    $("#customcntid").change( function() {
+    $("div.filteroption input.specialtile").on("change", function() {
+        var sid = $(this).attr("id");
+        var stype = sid.substring(4);
+        var customtag = $("table.roomoptions tr[type='" + stype + "']");
+        var currentcnt = customtag.size();
+        var newcnt = parseInt($(this).val());
+        console.log("Id= ", sid," Type= ", stype, " Current count= ", currentcnt, " New count= ", newcnt);
+        
+        var customs = [];
+        $("table.roomoptions tr[type='" + stype +"']").each( function() {
+            customs.push($(this));
+        });
+        
+        // get biggest id number
+        var maxid = 0;
+        $("table.roomoptions tr").each( function() {
+            var tileid = parseInt($(this).attr("tile"));
+            maxid = ( tileid > maxid ) ? tileid : maxid;
+        });
+        maxid++;
+        console.log("Biggest id number= ", maxid);
         
         // turn on the custom check box
-        var custombox = $("input[type='checkbox'][name='useroptions[]'][value='custom']");
-        if ( !custombox.prop("checked") ) {
-            custombox.click();
+        var custombox = $("input[name='useroptions[]'][value='" + stype + "']");
+        if ( custombox ) {
             custombox.prop("checked",true);
             custombox.attr("checked",true);
         };
-
-        customtag = $("tr[type='custom']");
-        currentcnt = customtag.size();
-        var newcnt = parseInt($(this).val());
-        // alert("current count= " + currentcnt + " new count = " + newcnt );
+        
+        // show the items of this type
+        showType(true, stype);
         
         // remove excess if we are going down
         if ( newcnt>0 && newcnt < currentcnt ) {
@@ -1731,8 +1733,7 @@ function setupCustomCount() {
         // add new rows
         if ( newcnt > currentcnt ) {
            for ( var k= currentcnt; k < newcnt; k++ ) {
-                var newrow = createRow(maxid, k+1);
-                // alert("inserting new row: " + k + " tile: " + maxid);
+                var newrow = createRow(maxid, k+1, stype);
                 customs[k] = $(newrow);
                 customs[k-1].after(customs[k]);
                 if ( !customs[k-1].hasClass("odd") ) {

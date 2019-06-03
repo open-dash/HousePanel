@@ -1210,6 +1210,9 @@ div.thingname:hover {
     background-color: #5050a0; 
     color: #cccccc;
 }
+div.thermostat-thing div.thingname {
+    width: 120px;
+}
 
 div.music-thing div.thingname.music {
     width: 100%;
@@ -1227,25 +1230,6 @@ div.thing.blank-thing {
     box-shadow: none;
     width: auto;
     height: auto;
-}
-div.blank.size.b1x1, div.blank.size.b1x2, div.blank.size.b2x1, div.blank.size.b2x2 {
-    width: 120px;    height: 160px;
-}
-div.blank.size.h1x1, div.blank.size.h1x2, div.blank.size.h2x1, div.blank.size.h2x2 {
-    width: 120px;    height: 160px;
-}
-/* add special sizes for the b1x2, b2x1, and b2x2 tiles  */
-div.blank.size.b2x1, div.blank.size.b2x2 {
-    width: 244px;
-}
-div.blank.size.h2x1, div.blank.size.h2x2 {
-    width: 244px;
-}
-div.blank.size.b1x2, div.blank.size.b2x2 {
-    height: 320px;
-}
-div.blank.size.h1x2, div.blank.size.h2x2 {
-    height: 320px;
 }
 
 /* mode and ST shm and Hubitat hsm styles */
@@ -1468,8 +1452,18 @@ div.custom-thing {
 div.custom-thing div.post, div.custom-thing div.text {
     overflow-wrap: break-word;
 }
-div.video-thing div.thingname.video, 
+
+/* hide names for special tiles and the custom element */
+div.video-thing div.thingname,
+div.blank-thing div.thingname,
+div.image-thing div.thingname,
+div.custom-thing div.thingname,
+div.custom-thing dive.overlay.custom,
+div.frame-thing div.thingname,
 div.video.width, div.video.height,
+div.blank.width, div.blank.height,
+div.image.width, div.image.height,
+div.custom.width, div.custom.height,
 div.frame.width, div.frame.height {
     display: none;
 }
