@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.070      Bugfix to beta 2.065, code cleanup, ignore DeviceWatch-Enroll
  2.065      Migrate image and blank tiles over to php server side
              - provide user way to select city in AccuWeather
              - but user must find the Location Code first
@@ -426,8 +427,9 @@ function curl_call($host, $headertype="", $nvpstr="", $calltype="GET", $webcall=
         if ( $webcall ) {
             $nvpResArray = $response;
         } else {
-            $nvpResArray = json_decode($response, TRUE);
-            if (!$nvpResArray) {
+            if ( $response ) {
+                $nvpResArray = json_decode($response, TRUE);
+            } else {
                 $nvpResArray = false;
             }
         }
@@ -1190,7 +1192,7 @@ function getCustomName($defname, $swid, $swtype, $options) {
     return $defname;
 }
 
-function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
+function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A", $allthings= false) {
     $clockname = getCustomName($clockname, $clockid, "clock", $options);
     $weekday = date("l");
     $dateofmonth = date($fmtdate);
@@ -1206,6 +1208,65 @@ function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, 
     $dclock["date"] = $dateofmonth;
     $dclock["time"] = $timeofday;
     return $dclock;
+}
+
+function addSpecials(&$allthings, $options) {
+    // set hub number to nothing for manually created tiles
+    $hubnum = -1;
+    $hubType = "None";
+
+    // add digital clock tile
+    // never refresh since clocks have their own refresh timer built into the javascript code
+    $clockid = "clockdigital";
+    $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A", $allthings);
+    $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
+        "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
+
+    // add analog clock tile - no longer use dclock format settings by default
+    $clockid = "clockanalog";
+    $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A", $allthings);
+    $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
+        "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
+
+    // add special tiles based on type and user provided count
+    // this replaces the old code that handled only video and frame tiles
+    // this also creates image and blank tiles here that used to be made in groovy
+    // putting this here allows them to be handled just like other modifiable tiles
+    // these tiles all refresh fast except first 4 frames that are reserved for weather
+    // renamed accuweather to forecast2 for simplicity sake and to make sorting work
+    // array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
+    $specialtiles = getSpecials();
+    foreach ($specialtiles as $stype => $sid) {
+        $speed = ($stype==="frame") ? "slow" : "normal";
+        $fcnt = getCustomCount($stype, $options);
+        for ($i=0; $i<$fcnt; $i++) {
+
+            $k = strval($i + 1);
+            // if ( $i < 9 ) { $k = "0" . $k; }
+            $fid = $sid[0] . $k;
+
+            // the forecasts now must be in files frame1.html through frame4.html
+            // or you can just change the name in the editor to a valid file
+            $fw = $sid[1];
+            $fh = $sid[2];
+            $fn = getCustomName($stype . $k, $fid, $stype, $options);
+            $fval = returnFile($fn, $fw, $fh, $stype);
+            $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
+            $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
+                "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
+        }
+    }
+        
+    // create the controller tile
+    // keys starting with c__ will get the confirm class added to it
+    // this tile cannot be customized by the user due to its unique nature
+    // but it can be visually styled just like any other tile
+    $controlval = array("name"=>"Controller", "showoptions"=>"Options","refresh"=>"Refresh","c__refactor"=>"Reset",
+                 "c__reauth"=>"Re-Auth","showid"=>"Show Info","toggletabs"=>"Toggle Tabs",
+                 "showdoc"=>"Documentation",
+                 "blackout"=>"Blackout","operate"=>"Operate","reorder"=>"Reorder","edit"=>"Edit");
+    $allthings["control|control_1"] = array("id" => "control_1", "name" => $controlval["name"], "hubnum" => $hubnum, 
+                "hubtype" => $hubType, "type" => "control", "refresh"=>"never", "value" => $controlval);
 }
 
 // rewrite this to use our new groovy code to get all things
@@ -1241,68 +1302,7 @@ function getAllThings($reset = false) {
                 $allthings = getDevices($allthings, $options, $hubId, $hubType, $access_token, $endpt, $clientId, $clientSecret);
             }
         }
-        
-        // set hub number to nothing for manually created tiles
-        $hubnum = -1;
-        $hubType = "None";
-        
-        // add digital clock tile
-        // never refresh since clocks have their own refresh timer built into the javascript code
-        $clockid = "clockdigital";
-        $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A");
-        $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
-            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
-
-        // add analog clock tile - no longer use dclock format settings by default
-        $clockid = "clockanalog";
-        $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
-        $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
-            "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
-        
-        // add special tiles based on type and user provided count
-        // this replaces the old code that handled only video and frame tiles
-        // this also creates image and blank tiles here that used to be made in groovy
-        // putting this here allows them to be handled just like other modifiable tiles
-        // these tiles all refresh fast except first 4 frames that are reserved for weather
-        // renamed accuweather to forecast2 for simplicity sake and to make sorting work
-        // array("video" =>"vid", "frame" =>"frame", "image"=>"img", "blank"=>"blank", "custom"=>"custom_");
-        $specialtiles = getSpecials();
-        foreach ($specialtiles as $stype => $sid) {
-            $speed = ($stype==="frame") ? "slow" : "normal";
-            $fcnt = getCustomCount($stype, $options);
-            for ($i=0; $i<$fcnt; $i++) {
-                
-                $k = strval($i + 1);
-                // if ( $i < 9 ) { $k = "0" . $k; }
-                $fid = $sid[0] . $k;
-                
-                // the forecasts now must be in files frame1.html through frame4.html
-                // or you can just change the name in the editor to a valid file
-                $fw = $sid[1];
-                $fh = $sid[2];
-                $fn = getCustomName($stype . $k, $fid, $stype, $options);
-                
-                // just store temporary name for now since we get real value later
-                // this saves compute and file searching time
-                // later below we set all special tiles using a line like:
-                // $fval = returnFile($fn, $fw, $fh, $stype);
-                $fval = $fn;
-                $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
-                $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
-                    "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
-            }
-        }
-    
-        // create the controller tile
-        // keys starting with c__ will get the confirm class added to it
-        // this tile cannot be customized by the user due to its unique nature
-        // but it can be visually styled just like any other tile
-        $controlval = array("name"=>"Controller", "showoptions"=>"Options","refresh"=>"Refresh","c__refactor"=>"Reset",
-                     "c__reauth"=>"Re-Auth","showid"=>"Show Info","toggletabs"=>"Toggle Tabs",
-                     "showdoc"=>"Documentation",
-                     "blackout"=>"Blackout","operate"=>"Operate","reorder"=>"Reorder","edit"=>"Edit");
-        $allthings["control|control_1"] = array("id" => "control_1", "name" => $controlval["name"], "hubnum" => $hubnum, 
-                    "hubtype" => $hubType, "type" => "control", "refresh"=>"never", "value" => $controlval);
+        addSpecials($allthings, $options);
         
         // now loop through all things and all customizations
         // we do it here in a second loop instead of inside getDevices
@@ -1318,9 +1318,11 @@ function getAllThings($reset = false) {
                 // adjust refresh if user gave a custom refresh type
                 if ( array_key_exists("refresh",$thing["value"]) ) {
                    $thing["refresh"] = $thing["value"]["refresh"];
+                   unset($thing["value"]["refresh"]);
                 }
                 
                 // update special tiles with custom name and width and height values
+                // this will call returnFile a second time to get any custom naems or sizes
                 if ( array_key_exists($stype, $specialtiles) ) {
                     $fn = $thing["value"]["name"];
                     if ( array_key_exists("width", $thing["value"]) ) {
@@ -1338,19 +1340,6 @@ function getAllThings($reset = false) {
                 $allthings[$idx] = $thing;
             }
         }
-        
-        // remove anything from the options index that is no longer authorized
-//        $copyindex = $options["index"];
-//        $rewrite = false;
-//        foreach ($copyindex as $idx => $tileid) {
-//            if ( !array_key_exists($idx, $allthings) ) {
-//                unset( $options["index"][$idx] );
-//                $rewrite = true;
-//            }
-//        }
-//        if ( $rewrite ) {
-//            writeOptions($options);
-//        }
         
         // save the things
         $_SESSION["allthings"] = $allthings;
@@ -1568,6 +1557,9 @@ function returnFile($fname, $width, $height, $ctype) {
             break;
         case "frame":
             $grtypes = array("",".html",".htm");
+            break;
+        case "custom":
+            $grtypes = array("",".jpg",".png",".gif",".mp4",".ogg",".html",".htm");
             break;
         default:
             $grtypes = false;
@@ -2235,42 +2227,12 @@ function doAction($hubnum, $path, $swid, $swtype,
         $allthings = false;
     }
 
-    // always use the digital clock to specify time formats
-    // analog clock borrows these formats if it shows digital data
-    if ( $allthings ) {
-        $baseclock = $allthings["clock|clockdigital"]["value"];
-        $baseclock = getCustomTile($baseclock, "clock", "clockdigital", $options, $allthings);
-        $fmt_date = $baseclock["fmt_date"];
-        $fmt_time = $baseclock["fmt_time"];
-    } else {
-        $fmt_date = "M d, Y";
-        $fmt_time = "h:i:s A";
-    }
-    $dateofmonth = date($fmt_date);
-    $timeofday = date($fmt_time);
-    $weekday = date("l");
-    $timezone = date("T");
-        
+    // handle clocks
     if ( $swid==="clockdigital") {
-        $dclockname = "Digital Clock";
-        $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-        $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
-        $fmt_date = $dclock["fmt_date"];
-        $fmt_time = $dclock["fmt_time"];
-        $dclock["date"] = date($fmt_date);
-        $dclock["time"] = date($fmt_time);
+        $dclock = getClock("Digital Clock", "clockdigital", $options, "", "M d, Y", "h:i:s A", $allthings);
         $response = $dclock;
     } else if ( $swid==="clockanalog" ) {
-        $aclockname = "Analog Clock";
-        $clockskin = "CoolClock:swissRail:72";
-        $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                        "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-        $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
-        $fmt_date = $aclock["fmt_date"];
-        $fmt_time = $aclock["fmt_time"];
-        $aclock["date"] = date($fmt_date);
-        $aclock["time"] = date($fmt_time);
+        $aclock = getClock("Analog Clock", "clockanalog", $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A", $allthings);
         $response = $aclock;
         
     // this logic is complex so let me explain. First we get the value if available
@@ -2278,7 +2240,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // next we check customizer to see if name and width and height changed
     // finally, we send name, width, height to returnFile routine to get the html tag
     // if this is an API call then allthings won't be available so we just do our best
-    } else if (array_key_exists($swtype, $specialtiles) && $subid===$swtype ) {
+    } else if (array_key_exists($swtype, $specialtiles) ) {
         if ( $allthings ) {
             $thingvalue = $allthings["$swtype|$swid"]["value"];
             $thingvalue["name"] = getCustomName($thingvalue["name"], $swid, $swtype, $options);
@@ -2293,7 +2255,8 @@ function doAction($hubnum, $path, $swid, $swtype,
             } else {
                 $fh = $specialtiles[$swtype][2];
             }
-            $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
+            $thingvalue[$swtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
+            $response = $thingvalue;
         } else {
             $thingval = returnFile($swval, "auto", "auto", $swtype );
             $response = array($subid => $thingval);
@@ -2319,7 +2282,8 @@ function doAction($hubnum, $path, $swid, $swtype,
             // we could skip customizations for speed but this would
             // make custom tiles useless for doing stop-motion effects
             foreach ($allthings as $fidx => $thing) {
-                $type = $thing["type"];
+                $thingtype = $thing["type"];
+                $thingvalue = $thing["value"];
                 $tileid = $indexoptions[$fidx];
                 $hubnum2 = $thing["hubnum"];
                 
@@ -2337,11 +2301,27 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $nvpreq = "swid=" . urlencode($thing["id"]) . 
                                   "&swattr=" . urlencode("") . 
                                   "&swvalue=" . urlencode("") . 
-                                  "&swtype=" . urlencode($type);
+                                  "&swtype=" . urlencode($thingtype);
                         $response2 = curl_call($host2, $headertype, $nvpreq, "POST");
                         $thing["value"] = $response2;
                     }
-                    $thing["value"] = getCustomTile($thing["value"],$thing["type"],$thing["id"],$options, $allthings);
+                    $thingvalue = getCustomTile($thingvalue,$thing["type"],$thing["id"],$options, $allthings);
+                    if ( array_key_exists($thingtype, $specialtiles) ) {
+                        if ( array_key_exists("width", $thingvalue) ) {
+                            $fw = $thingvalue["width"];
+                        } else {
+                            $fw = $specialtiles[$thingtype][1];
+                        }
+                        if ( array_key_exists("height", $thingvalue) ) {
+                            $fh = $thingvalue["height"];
+                        } else {
+                            $fh = $specialtiles[$thingtype][2];
+                        }
+                        $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $thingtype);
+                    } else if ( $thingtype==="music" ) {
+                        $thingvalue = getMusicArt($thingvalue);
+                    }
+                    $thing["value"]= $thingvalue;
                     $response[$tileid] = $thing;
                 }
             }
@@ -2576,16 +2556,18 @@ function doAction($hubnum, $path, $swid, $swtype,
                 if ( $swtype==="music" ) {
                     $response = getMusicArt($response);
                 }
-                if ( $allthings && array_key_exists($mainidx, $allthings) ) {
+                // $response[$subid] = $allthings[$mainidx]["value"][$subid];
+                
+                if ( $response && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $allthings[$mainidx]["value"] = $response;
                 }
                 
                 // if nothing returned and an action request, act like a query
                 // otherwise update main array if something returned to keep it current
-                if ( !$response && path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
+                if ( !$response && $path==="doaction" && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $thing = $allthings[$mainidx];
-                    $thevalue = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
-                    $response = array($subid => $thevalue[$subid]);
+                    $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
+                    $response = array($subid => $thing["value"][$subid]);
                 }
                 break;
         }
@@ -2601,8 +2583,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 foreach($response as $thing) {
                     $idx = $thing["type"] . "|" . $thing["id"];
                     if ( ( !array_key_exists("refresh", $thing) || 
-                           $thing["refresh"]==="normal" || 
-                           $thing["refresh"]==="fast" ) && 
+                           $thing["refresh"]==="normal" ) && 
                           array_key_exists($idx, $allthings) ) {
                         $oldthing = $allthings[$idx];
                         $newvalue = array_merge($oldthing["value"], $thing["value"]);
@@ -2618,38 +2599,14 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $allthings[$idx] = $newthing;
                     }
                 }
-                
-                // update our clocks taking into account custom formats
-                $dclockname = "Digital Clock";
-                $dclock = array("name" => $dclockname, "skin" => "", "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                                "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-                $dclock = getCustomTile($dclock, "clock", "clockdigital", $options, $allthings);
-                $fmt_date = $dclock["fmt_date"];
-                $fmt_time = $dclock["fmt_time"];
-                $dclock["date"] = date($fmt_date);
-                $dclock["time"] = date($fmt_time);
-                $allthings["clock|clockdigital"]["value"] = $dclock;
 
-                $aclockname = "Analog Clock";
-                $clockskin = "CoolClock:swissRail:72";
-                $aclock = array("name" => $aclockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
-                                "fmt_date"=>$fmt_date, "fmt_time"=> $fmt_time);
-                $aclock = getCustomTile($aclock, "clock", "clockanalog", $options, $allthings);
-                $fmt_date = $aclock["fmt_date"];
-                $fmt_time = $aclock["fmt_time"];
-                $aclock["date"] = date($fmt_date);
-                $aclock["time"] = date($fmt_time);
-                $allthings["clock|clockanalog"]["value"] = $aclock;
+                // add in clocks and special tiles
+                addSpecials($allthings, $options);
                 
-                // update custom links and save to allthings
-                // we use two passes to make links work properly
-                // this pass also ensures we update clocks and other manual tiles
-                // custom tiles are included in this loop too
-                // but skip frames because they are in the slow update
+                // send all normal frequency tiles to update script
                 foreach($allthings as $idx => $thing) {
                     if ( (!array_key_exists("refresh", $thing) || 
-                         ( $thing["refresh"]==="normal" || 
-                           $thing["refresh"]==="fast" ) ) && 
+                          $thing["refresh"]==="normal") && 
                          array_key_exists($idx, $options["index"]) ) {
                         $tileid = $options["index"][$idx];
                         $respvals[$tileid] = $thing;
@@ -2688,6 +2645,7 @@ function doAction($hubnum, $path, $swid, $swtype,
             "access"=> $linked_access, "host" => $linked_host, $subid => $response[$subid]);
         $response = array_merge($response, $debugres);
     }
+                
     // return json_encode(array_merge($response,array("access_token" => $access_token, "endpt" => $endpt)));
     return json_encode($response);
 }
@@ -3272,7 +3230,7 @@ function getTypes() {
 }
 
 function getSpecials() {
-    $specialtiles = array("video" =>array("vid",640,480), 
+    $specialtiles = array("video" =>array("vid",480,240), 
                           "frame" =>array("frame",480,212),
                           "image" =>array("img",480,240),
                           "blank" =>array("blank",120,150),

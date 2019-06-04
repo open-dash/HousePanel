@@ -604,7 +604,7 @@ def getThing(things, swid, item=null) {
             // def capname = cap.getName()
             cap.attributes?.each {attr ->
                 try {
-                    def reservedcap = ["DeviceWatch-DeviceStatus", "checkInterval", "healthStatus"]
+                    def reservedcap = ["DeviceWatch-DeviceStatus", "DeviceWatch-Enroll", "checkInterval", "healthStatus"]
                     def othername = attr.getName()
                     def othervalue = item.currentValue(othername)
                     if ( !reservedcap.contains(othername) ) {

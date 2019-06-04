@@ -1149,7 +1149,7 @@ function setsubid(str_type) {
             break;
             
         case "image":
-            subid = "url";
+            subid = "image";
             break;
             
         default:
