@@ -1,7 +1,7 @@
 <?php
 /*
  * House Panel application for SmartThings and Hubitat
- * author: Ken Washington  (c) 2017, 2018
+ * author: Ken Washington  (c) 2017, 2018, 2019
  *
  * Must be paired with housepanel.groovy on the SmartThings or Hubitat side
  * HousePanel now obtains all auth information from the setup step upon first run
@@ -1192,7 +1192,7 @@ function getCustomName($defname, $swid, $swtype, $options) {
     return $defname;
 }
 
-function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A", $allthings= false) {
+function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
     $clockname = getCustomName($clockname, $clockid, "clock", $options);
     $weekday = date("l");
     $dateofmonth = date($fmtdate);
@@ -1218,13 +1218,13 @@ function addSpecials(&$allthings, $options) {
     // add digital clock tile
     // never refresh since clocks have their own refresh timer built into the javascript code
     $clockid = "clockdigital";
-    $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A", $allthings);
+    $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
         "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
 
     // add analog clock tile - no longer use dclock format settings by default
     $clockid = "clockanalog";
-    $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A", $allthings);
+    $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
         "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
 
@@ -2229,17 +2229,16 @@ function doAction($hubnum, $path, $swid, $swtype,
 
     // handle clocks
     if ( $swid==="clockdigital") {
-        $dclock = getClock("Digital Clock", "clockdigital", $options, "", "M d, Y", "h:i:s A", $allthings);
+        $dclock = getClock("Digital Clock", "clockdigital", $options, "", "M d, Y", "h:i:s A");
         $response = $dclock;
     } else if ( $swid==="clockanalog" ) {
-        $aclock = getClock("Analog Clock", "clockanalog", $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A", $allthings);
+        $aclock = getClock("Analog Clock", "clockanalog", $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
         $response = $aclock;
         
     // this logic is complex so let me explain. First we get the value if available
     // then we get any provided custom name from tile editor
     // next we check customizer to see if name and width and height changed
     // finally, we send name, width, height to returnFile routine to get the html tag
-    // if this is an API call then allthings won't be available so we just do our best
     } else if (array_key_exists($swtype, $specialtiles) ) {
         if ( $allthings ) {
             $thingvalue = $allthings["$swtype|$swid"]["value"];
@@ -2257,9 +2256,22 @@ function doAction($hubnum, $path, $swid, $swtype,
             }
             $thingvalue[$swtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
             $response = $thingvalue;
+            
+        // if this is an API call there is no way of knowing the real name
+        // if value parameter starts with type then this signals which one
+        // otherwise we just return the first name of the type
         } else {
-            $thingval = returnFile($swval, "auto", "auto", $swtype );
-            $response = array($subid => $thingval);
+            $m = strlen($swtype);
+            if ( substr($swval,0,$m) === $swtype ) {
+                $fn = $swval;
+            } else {
+                $fn = $swtype . "1";
+            }
+            $fn = getCustomName($fn, $swid, $swtype, $options);
+            $fw = $specialtiles[$swtype][1];
+            $fh = $specialtiles[$swtype][2];
+            $thingval = returnFile($fn, $fw, $fh, $swtype );
+            $response = array("name"=>$fn, $swtype => $thingval);
         }
         
     // if the new fast type is requested return things that can be updated
@@ -2331,8 +2343,6 @@ function doAction($hubnum, $path, $swid, $swtype,
         }
 
     // if the new slow type is requested return things that can be updated seldomly
-    // without making a call out to the hub
-    // this is used by frames but others can be added later
     // all things must be in session for this to work
     // and slow actions are only supported in query mode
     } else if ( $swid==="slow" && $swtype==="slow" ) {
