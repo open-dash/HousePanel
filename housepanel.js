@@ -2353,18 +2353,14 @@ function setupPage(trigger) {
                 }, "json");
                 
         // for clicking on the video link simply reload the video which forces a replay
-        } else if ( thetype==="video" && subid==="video" ) {
-            console.log("Replaying latest embedded video: " + thevalue);
-            $(targetid).html(thevalue);
-        
-        // for clicking on the frame link simply reload the frame
-        } else if ( thetype==="frame" && subid==="frame" ) {
-            console.log("Reloading the frame: " + thevalue);
+        } else if (     (thetype==="video" && subid==="video")
+                     || (thetype==="frame" && subid==="frame")
+                     || (thetype==="image" && subid==="image")
+                     || (thetype==="blank" && subid==="blank")
+                     || (thetype==="custom" && subid==="custom") ) {
+            console.log("Rereshing " + thetype + ": " + thevalue);
             $(targetid).html(thevalue);
             
-        } else if ( thetype==="image" && subid==="url" ) {
-            console.log("Clicked on image: " + thevalue);
-            $(targetid).html(thevalue);
         } else {
             console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
 

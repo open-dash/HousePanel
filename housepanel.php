@@ -9,7 +9,10 @@
  * Revision History
  */
 $devhistory = "
- 2.070      Bugfix to beta 2.065, code cleanup, ignore DeviceWatch-Enroll
+ 2.070      Bugfixes to beta 2.065, code cleanup, ignore DeviceWatch-Enroll
+             - includes error checking for bogus hub calls
+             - also fixed hidden check in tile editor for fields that match type
+             - handled obscure cases for refreshing special tiles properly
  2.065      Migrate image and blank tiles over to php server side
              - provide user way to select city in AccuWeather
              - but user must find the Location Code first
@@ -303,7 +306,7 @@ function htmlHeader($skin="skin-housepanel") {
     
     // load jQuery and themes
     $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
-    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.js"></script>';
+    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
 
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
@@ -417,25 +420,24 @@ function curl_call($host, $headertype="", $nvpstr="", $calltype="GET", $webcall=
     }
 
     //getting response from server
-    $response = curl_exec($ch);
+    try {
+        $response = curl_exec($ch);
+    } catch (Exception $e) {
+        $response = false;
+    }
+    curl_close($ch);
     
     // handle errors
-    if (curl_errno($ch)) {
+    if ($response===false) {
         $nvpResArray = false;
     } else {
         // convert json returned by Groovy into associative array
         if ( $webcall ) {
             $nvpResArray = $response;
         } else {
-            if ( $response ) {
-                $nvpResArray = json_decode($response, TRUE);
-            } else {
-                $nvpResArray = false;
-            }
+            $nvpResArray = json_decode($response, TRUE);
         }
     }
-    curl_close($ch);
-
     return $nvpResArray;
 }
 
@@ -1166,11 +1168,11 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     return $tc;
 }
 
-function getCustomName($defname, $swid, $swtype, $options) {
-    $customname= "";
+function getCustomName($defname, $idx, $options) {
+    $customname= $defname;
     $rooms = $options["rooms"];
     $thingoptions = $options["things"];
-    $tileid = $options["index"][$swtype . "|" . $swid];
+    $tileid = $options["index"][$idx];
     foreach ($rooms as $room => $ridx) {
         if ( array_key_exists($room, $thingoptions) ) {
            $things = $thingoptions[$room];
@@ -1188,12 +1190,11 @@ function getCustomName($defname, $swid, $swtype, $options) {
         }
         if ( $customname!=="" ) { break; }
     }
-    if ( $customname!=="" ) { $defname = $customname; }
-    return $defname;
+    return $customname;
 }
 
 function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
-    $clockname = getCustomName($clockname, $clockid, "clock", $options);
+    $clockname = getCustomName($clockname, "clock" . "|" . $clockid, $options);
     $weekday = date("l");
     $dateofmonth = date($fmtdate);
     $timeofday = date($fmttime);
@@ -1249,7 +1250,8 @@ function addSpecials(&$allthings, $options) {
             // or you can just change the name in the editor to a valid file
             $fw = $sid[1];
             $fh = $sid[2];
-            $fn = getCustomName($stype . $k, $fid, $stype, $options);
+            $idx = $stype . "|" . $fid;
+            $fn = getCustomName($stype . $k, $idx, $options);
             $fval = returnFile($fn, $fw, $fh, $stype);
             $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
             $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
@@ -1313,7 +1315,9 @@ function getAllThings($reset = false) {
         foreach ($allthings as $idx => $thing) {
             $stype = $thing["type"];
             if ( $stype!=="control" ) {
+                $thing["value"]["name"] = getCustomName($thing["value"]["name"], $idx, $options);
                 $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
+                $thing["name"] = $thing["value"]["name"];
                 
                 // adjust refresh if user gave a custom refresh type
                 if ( array_key_exists("refresh",$thing["value"]) ) {
@@ -1604,11 +1608,11 @@ function returnFile($fname, $width, $height, $ctype) {
                 break;
                 
             default:
-                $v = "<div style=\"width: " . $width . "px; height: " . $height . "px;\">$vn</div>";
+                $v = "<div style=\"width: $width" . "px; height: $height" . "px;\">$vn</div>";
                 break;
         }
     } else {
-        $v = "<div style=\"width: " . $width . "px; height: " . $height . "px;\"></div>";
+        $v = "<div style=\"width: $width" . "px; height: $height" . "px\"></div>";
     }
     return $v;
 }
@@ -2242,37 +2246,27 @@ function doAction($hubnum, $path, $swid, $swtype,
     } else if (array_key_exists($swtype, $specialtiles) ) {
         if ( $allthings ) {
             $thingvalue = $allthings["$swtype|$swid"]["value"];
-            $thingvalue["name"] = getCustomName($thingvalue["name"], $swid, $swtype, $options);
-            $thingvalue = getCustomTile($thingvalue, $swtype, $swid, $options, $allthings);
-            if ( array_key_exists("width", $thingvalue) ) {
-                $fw = $thingvalue["width"];
-            } else {
-                $fw = $specialtiles[$swtype][1];
-            }
-            if ( array_key_exists("height", $thingvalue) ) {
-                $fh = $thingvalue["height"];
-            } else {
-                $fh = $specialtiles[$swtype][2];
-            }
-            $thingvalue[$swtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
-            $response = $thingvalue;
-            
-        // if this is an API call there is no way of knowing the real name
-        // if value parameter starts with type then this signals which one
-        // otherwise we just return the first name of the type
         } else {
-            $m = strlen($swtype);
-            if ( substr($swval,0,$m) === $swtype ) {
-                $fn = $swval;
-            } else {
-                $fn = $swtype . "1";
-            }
-            $fn = getCustomName($fn, $swid, $swtype, $options);
             $fw = $specialtiles[$swtype][1];
             $fh = $specialtiles[$swtype][2];
-            $thingval = returnFile($fn, $fw, $fh, $swtype );
-            $response = array("name"=>$fn, $swtype => $thingval);
+            $thingvalue = array("name"=> $swtype . "1", "id"=> $swid, "width"=> $fw, "height"=> $fh, "type"=> $swtype);
         }
+        
+        $idx = $swtype . "|" . $swid;
+        $thingvalue["name"] = getCustomName($thingvalue["name"], $idx, $options);
+        $thingvalue = getCustomTile($thingvalue, $swtype, $swid, $options, $allthings);
+        if ( array_key_exists("width", $thingvalue) ) {
+            $fw = $thingvalue["width"];
+        } else {
+            $fw = $specialtiles[$swtype][1];
+        }
+        if ( array_key_exists("height", $thingvalue) ) {
+            $fh = $thingvalue["height"];
+        } else {
+            $fh = $specialtiles[$swtype][2];
+        }
+        $thingvalue[$swtype] = returnFile($thingvalue["name"], $fw, $fh, $swtype );
+        $response = $thingvalue;
         
     // if the new fast type is requested return things that can be updated
     // without making a call out to the hub
@@ -2359,7 +2353,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $thingvalue = $thing["value"];
                 $tileid = $indexoptions[$fidx];
                 if ( array_key_exists("refresh", $thing) && $thing["refresh"]==="slow" ) {
-                    $thingvalue["name"] = getCustomName($thingvalue["name"], $thing["id"], $thingtype, $options);
+                    $thingvalue["name"] = getCustomName($thingvalue["name"], $fidx, $options);
                     $thingvalue = getCustomTile($thingvalue, $thingtype, $thing["id"], $options, $allthings);
                     if ( array_key_exists($thingtype, $specialtiles) ) {
                         if ( array_key_exists("width", $thingvalue) ) {
@@ -2598,20 +2592,49 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $oldthing = $allthings[$idx];
                         $newvalue = array_merge($oldthing["value"], $thing["value"]);
                         $newthing = array_merge($oldthing, $thing);
-                        $thingtype = $thing["type"];
-                        
-                        $newvalue["name"] = getCustomName($newvalue["name"], $thing["id"], $thingtype, $options);
-                        $thingvalue = getCustomTile($newvalue, $thingtype, $thing["id"], $options, $allthings);
-                        if ( $thingtype==="music" ) {
-                            $thingvalue = getMusicArt($thingvalue);
-                        }
-                        $newthing["value"] = $thingvalue;
                         $allthings[$idx] = $newthing;
                     }
                 }
 
                 // add in clocks and special tiles
                 addSpecials($allthings, $options);
+                
+                // process customizations for timer query
+                foreach ($allthings as $idx => $thing) {
+                    $stype = $thing["type"];
+                    if ( $stype!=="control" ) {
+                        $thing["name"] = getCustomName($thing["name"], $idx, $options);
+                        $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
+                        if ( $thing["type"]==="music" ) {
+                            $thing["value"] = getMusicArt($thing["value"]);
+                        }
+
+                        // adjust refresh if user gave a custom refresh type
+                        if ( array_key_exists("refresh",$thing["value"]) ) {
+                           $thing["refresh"] = $thing["value"]["refresh"];
+                           unset($thing["value"]["refresh"]);
+                        }
+
+                        // update special tiles with custom name and width and height values
+                        // this will call returnFile a second time to get any custom naems or sizes
+                        if ( array_key_exists($stype, $specialtiles) ) {
+                            $fn = $thing["value"]["name"];
+                            if ( array_key_exists("width", $thing["value"]) ) {
+                                $fw = $thing["value"]["width"];
+                            } else {
+                                $fw = $specialtiles[$stype][1];
+                            }
+                            if ( array_key_exists("height", $thing["value"]) ) {
+                                $fh = $thing["value"]["height"];
+                            } else {
+                                $fh = $specialtiles[$stype][2];
+                            }
+                            $thing["value"][$stype] = returnFile($fn, $fw, $fh, $stype);
+                        }
+                        $thing["name"] = $thing["value"]["name"];
+                        $allthings[$idx] = $thing;
+                    }
+                }
                 
                 // send all normal frequency tiles to update script
                 foreach($allthings as $idx => $thing) {
@@ -2655,8 +2678,7 @@ function doAction($hubnum, $path, $swid, $swtype,
             "access"=> $linked_access, "host" => $linked_host, $subid => $response[$subid]);
         $response = array_merge($response, $debugres);
     }
-                
-    // return json_encode(array_merge($response,array("access_token" => $access_token, "endpt" => $endpt)));
+
     return json_encode($response);
 }
 
@@ -4016,7 +4038,7 @@ function is_ssl() {
 //    print_r($_POST);
 //    echo "</pre>";
 //    exit(0);
-    
+
     $useajax= false;
     $reserved = array("index","rooms","things","config","control","time","useroptions");
     
@@ -4289,7 +4311,7 @@ function is_ssl() {
     $fast_timer = $configoptions["fast_timer"];
     $slow_timer = $configoptions["slow_timer"];
 
-    /* 
+/* 
  * *****************************************************************************
  * Handle user provided authentication including Smartthings OAUTH flow
  * *****************************************************************************
@@ -4591,7 +4613,7 @@ function is_ssl() {
     // check for custom link parameters - can only be post type
     if ( isset($_POST["command"]) ) { $command = $_POST["command"]; }
     if ( isset($_POST["linkval"]) ) { $linkval = $_POST["linkval"]; }
-    
+
     // take care of auto and multiple tile stuff
     // note - multiple tiles must be from the same hub
     $multicall = false;
@@ -4947,7 +4969,7 @@ function is_ssl() {
                     $newname = str_replace(" ", "_", $newname);
                     $oldname = $tileid;
                     $updcss = changePageName($oldname, $newname);
-                    if ( $updated ) {
+                    if ( $updcss ) {
                         $result = "old page= $oldname new page = $newname";
                     } else {
                         $result = "old page= $oldname not found for $newname to replace";
@@ -4956,27 +4978,31 @@ function is_ssl() {
                     $newname = $swattr;
                     $options = readOptions();
                     $thingoptions = $options["things"];
-                    $updated = false;
-                    $updcss = true;
+                    $updcss = false;
                     $nupd = 0;
                     foreach ($thingoptions as $room => $things) {
+                        // look for matching options item
+                        // and update to new value if it changed
+                        // also guard against old style that wasn't an array
+                        // or arrays that were not at least 4 elements long
+                        // the 4th element of the array is the custom name
                         foreach ($things as $k => $tiles) {
-                            if ( intval($tiles[0]) === intval($tileid) ) {
+                            if ( is_array($tiles) && (count($tiles)>3) &&
+                                 (intval($tiles[0]) === intval($tileid)) &&
+                                 ($tiles[4]!==$newname)  ) {
                                 $tiles[4] = $newname;
                                 $options["things"][$room][$k] = $tiles;
                                 $nupd++;
-                                $updated = true;
+                                $updcss = true;
                             }
                         }
                     }
-                    if ( $updated ) {
+                    if ( $updcss ) {
                         writeOptions($options);
                         $result = "$nupd names changed for type= $swtype tileid= $tileid newname= $newname";
                     } else {
                         $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
                     }
-                }
-                if ( $updcss ) {
                     $skin = $options["config"]["skin"];
                     writeCustomCss("customtiles.css",$swval,$skin);
                 }
@@ -5272,7 +5298,7 @@ function is_ssl() {
                 $tc.= "<hr><h2>Options</h2>";
                 $tc.= "<div class='debug'><pre>" . print_r($options,true) . "</pre></div>";
             }
-
+            
             // new wrapper around catalog and things but excluding buttons
             $tc.= '<div id="dragregion">';
 

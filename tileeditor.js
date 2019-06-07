@@ -1869,7 +1869,10 @@ function initColor(str_type, subid, thingindex) {
             ish3 = ish1;
             ish4 = ish2;
         } else {
-            ish1 = $("div." + subid).css("display");
+            // skip first check if subid is same as the type
+            ish1 = (str_type===subid) ? "" : $("div." + subid).css("display");
+            
+            // the other tests could all set the item to hidden
             ish2= $("div.overlay."+subid+".v_"+thingindex).css("display");
             ish3 = $("div.overlay." + subid).css("display");
             ish4 = $("div.overlay." + subid +".v_"+thingindex + " div." + subid + ".p_"+thingindex).css("display");
