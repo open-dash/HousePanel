@@ -13,6 +13,7 @@ $devhistory = "
              - minor bug fix to tile editor for tile name setting
              - fix bug where special tile count was not being saved
              - fix bug that screwed up max number of custom tiles
+             - fix bug for page changes not sticking
  2.070      Bugfixes to beta 2.065, code cleanup, ignore DeviceWatch-Enroll
              - includes error checking for bogus hub calls
              - also fixed hidden check in tile editor for fields that match type
@@ -3978,9 +3979,8 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
     return $tc;
 }
 
-function changePageName($oldname, $pagename) {
+function changePageName($oldname, $pagename, &$options) {
     
-    $options = readOptions();
     $roomnames = $options["rooms"];
     if ( $oldname && $pagename && array_key_exists($oldname, $roomnames) ) {
         $pagenum = $roomnames[$oldname];
@@ -4980,19 +4980,19 @@ function is_ssl() {
             case "savetileedit":
                 // grab the new tile name and set all tiles with matching id
                 
+                $options = readOptions();
+                $newname = $swattr;
                 if ( $swtype === "page" ) {
-                    $newname = $swattr;
                     $newname = str_replace(" ", "_", $newname);
                     $oldname = $tileid;
-                    $updcss = changePageName($oldname, $newname);
+                    $updcss = changePageName($oldname, $newname, $options);
                     if ( $updcss ) {
+                        writeOptions($options);
                         $result = "old page= $oldname new page = $newname";
                     } else {
                         $result = "old page= $oldname not found for $newname to replace";
                     }
                 } else {
-                    $newname = $swattr;
-                    $options = readOptions();
                     $thingoptions = $options["things"];
                     $updcss = false;
                     $nupd = 0;
@@ -5019,9 +5019,12 @@ function is_ssl() {
                     } else {
                         $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
                     }
-                    $skin = $options["config"]["skin"];
-                    writeCustomCss("customtiles.css",$swval,$skin);
+                    // $skin = $options["config"]["skin"];
+                    // writeCustomCss("customtiles.css",$swval,$skin);
                 }
+                $skin = $options["config"]["skin"];
+                writeCustomCss("customtiles.css",$swval,$skin);
+                
                 echo $result;
                 break;
                 
