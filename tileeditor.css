@@ -1470,6 +1470,23 @@ div.frame.width, div.frame.height {
 iframe body {
     margin: 0px;
 }
+/* set default width and height of special tiles */
+div.thing.frame-thing, div.thing.video-thing, div.thing.image-thing,
+div.thing.blank-thing, div.thing.custom-thing {
+    width: auto; height: auto;
+    background-color: rgba(0, 0, 0, 0.01);
+    border: none;
+}
+div.thing.frame-thing, div.thing.video-thing, div.thing.image-thing,
+div.thing.blank-thing, div.thing.custom-thing {
+    border-top: 2px solid #cccccc; 
+    border-right: 2px solid #666666;
+    border-bottom: 2px solid #666666;
+    border-left: 2px solid #cccccc;
+}
+iframe body {
+    margin: 0px;
+}
 
 div.weather-thing div.overlay {
     display: inline;

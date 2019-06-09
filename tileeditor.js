@@ -228,16 +228,10 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
     return target;
 }
 
-// function toggleTile(target, str_type, thingindex) {
-// function toggleTile(str_type, subid, thingindex) {
-function toggleTile(target, str_type, subid, thingindex) {
-    // alert(subid);
+function toggleTile(target, str_type, subid) {
     // var target = "#tileDialog " + getCssRuleTarget(str_type, subid, thingindex);
-    // var target = "#tileDisplay " + getCssRuleTarget(str_type, subid, thingindex);
     var swval = $(target).html();
-    // var currentclass = $(target).attr("class");
-    // var subid = $(target).attr("subid");
-    console.log("toggleTile: target= ", target, " tile type= "+str_type+" subid= "+subid + " swval= "+swval);
+    console.log("toggleTile: target= ", target, " tile type= "+str_type+" subid= "+subid + " swval= ", swval);
     $('#onoffTarget').html("");
     
     // activate the icon click to use this
@@ -298,32 +292,16 @@ function initDialogBinds(str_type, thingindex) {
             }
         }
     });
-    
-    $("#editName").on('input', function () {
-        var thingindex = $("#tileDialog").attr("thingindex");
-        // var target1 = "span.n_"+thingindex;
-        var target1 = getCssRuleTarget(str_type, "head", thingindex)
-
-        var newname = $("#editName").val();
-        $(target1).html(newname);
-        cm_Globals.reload = true;
-    });
-    
-    // new button to process the name change
-    $("#editName").on('change', function () {
-        var newname = $("#editName").val();
-        $(target1).html(newname);
-        cm_Globals.reload = true;
-        saveTileEdit(str_type, thingindex, newname, "false");
-        event.stopPropagation;
-    });
-    
+        
     // new button to process the name change
     $("#processName").on("click", function (event) {
+        var target1 = getCssRuleTarget(str_type, "head", thingindex)
+        var target2 = getCssRuleTarget(str_type, "name", thingindex)
         var newname = $("#editName").val();
         $(target1).html(newname);
-        cm_Globals.reload = true;
-        saveTileEdit(str_type, thingindex, newname, "false");
+        $(target2).html(newname);
+        cm_Globals.reload = false;
+        saveTileEdit(str_type, thingindex, newname);
         event.stopPropagation;
     });
 
@@ -920,11 +898,7 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
                 // alert("clk = "+clk);
                 if ( clk==="okay" ) {
                     var newname = $("#editName").val();
-                    var fastpoll = ""
-//                    if ( $("#fastPoll").prop("checked") ) {
-//                        fastpoll = "fast";
-//                    }
-                    saveTileEdit(str_type, thingindex, newname, fastpoll);
+                    saveTileEdit(str_type, thingindex, newname);
                 } else if ( clk==="cancel" ) {
                     cancelTileEdit(str_type, thingindex);
                 }
@@ -955,7 +929,9 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
 
 function setupClicks(str_type, thingindex) {
     var firstsub = setsubid(str_type);
-    // toggleTile(str_type, firstsub, thingindex);
+    var target1 = getCssRuleTarget(str_type, firstsub, thingindex);
+    toggleTile($(target1), str_type, firstsub);
+    // alert("target= " + target1 + " type= " + str_type + " firstsub= " + firstsub);
     initColor(str_type, firstsub, thingindex);
     initDialogBinds(str_type, thingindex);
     loadSubSelect(str_type, firstsub, thingindex);
@@ -966,12 +942,9 @@ function setupClicks(str_type, thingindex) {
         // load up our silent tags
         $("#tileDialog").attr("str_type",str_type);
         $("#tileDialog").attr("thingindex",thingindex);
-        
-        // alert("toggling class= " + $(event.target).attr("class") + " id= " + $(event.target).attr("id") );
-        // if ( $(event.target).attr("id") &&  $(event.target).attr("subid") ) {
         var subid = $(event.target).attr("subid");
         if ( !subid || subid===undefined ) {
-            if ( $(event.target).hasClass("thingname") || $(event.target).hasClass("original")  ) {
+            if ( $(event.target).hasClass("thingname") ) {
                 subid = "head";
             } else {
                 subid = "wholetile";
@@ -979,7 +952,8 @@ function setupClicks(str_type, thingindex) {
         }
         
         // update everything to reflect current tile
-        toggleTile(event.target, str_type, subid, thingindex);
+        toggleTile(event.target, str_type, subid);
+        // alert("target= " + event.target.toString() + " type= " + str_type + " subid= " + subid);
         initColor(str_type, subid, thingindex);
         initDialogBinds(str_type, thingindex);
         loadSubSelect(str_type, subid, thingindex);
@@ -1159,7 +1133,7 @@ function setsubid(str_type) {
     return subid;
 }
 
-function saveTileEdit(str_type, thingindex, newname, fastpoll) {
+function saveTileEdit(str_type, thingindex, newname) {
     var returnURL;
     try {
         returnURL = $("input[name='returnURL']").val();
@@ -1177,24 +1151,24 @@ function saveTileEdit(str_type, thingindex, newname, fastpoll) {
     var regex = /[{;}]/g;
     var subst = "$&\n";
     sheetContents = sheetContents.replace(regex, subst);
-
     var results = "";
     
     // post changes to save them in a custom css file
-    // send fastpoll in the subid
+    // the new name of this tile is passed in the attr variable
     $.post(returnURL, 
-        {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex, subid: fastpoll},
+        {useajax: "savetileedit", id: "1", type: str_type, value: sheetContents, attr: newname, tile: thingindex},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
                 results = "success: msg = " + presult;
                 console.log("POST " + results);
-                if ( cm_Globals.reload && ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) ) {
+                if ( cm_Globals.reload && ( typeof modalWindows["modalcustom"] === "undefined" || modalWindows["modalcustom"] === 0 ) ) {
                     location.reload(true);
                 }
             } else {
                 results = "error: pstatus = " + pstatus + " msg = " + presult;
                 console.log("POST " + results);
             }
+            cm_Globals.reload = true;
         }
     );
     
@@ -1349,10 +1323,6 @@ function initColor(str_type, subid, thingindex) {
     if ( subid!=="wholetile" && subid!=="head" ) {
         var editwidth = $(target).css("width");
         var editheight = $(target).css("height");
-        
-//        alert("width = " + editwidth + " height= " + editheight + " autoH? " +
-//                $(target).isAuto("height") + " autoW? " + $(target).isAuto('width') );
-        
         if ( $(target).isAuto("height") ) {
             $("#autoHeight").prop("checked", true);
             $("#editHeight").prop("disabled", true);
@@ -2144,8 +2114,6 @@ function removeCSSRule(strMatchSelector, thingindex, target, ignoreall){
     // console.log("Remove rule: " + strMatchSelector );
     for (var i=sheet.cssRules.length; i--;) {
         var current_style = sheet.cssRules[i];
-        // alert(current_style.style.cssText );
-//        console.log("Del: " + current_style.selectorText );
         if ( useall===2 || ( thingindex && current_style.selectorText.indexOf("_"+thingindex) !== -1 ) || 
              (current_style.selectorText === strMatchSelector &&
                ( !target || current_style.style.cssText.indexOf(target) !== -1 ) ) ) {

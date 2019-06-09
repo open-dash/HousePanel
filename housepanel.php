@@ -9,6 +9,10 @@
  * Revision History
  */
 $devhistory = "
+ 2.071      Bypass cache for updated frames and other special tiles
+             - minor bug fix to tile editor for tile name setting
+             - fix bug where special tile count was not being saved
+             - fix bug that screwed up max number of custom tiles
  2.070      Bugfixes to beta 2.065, code cleanup, ignore DeviceWatch-Enroll
              - includes error checking for bogus hub calls
              - also fixed hidden check in tile editor for fields that match type
@@ -277,6 +281,7 @@ define('DEBUG',  false);  // all debugs
 define('DEBUG2', false); // authentication flow debug
 define('DEBUG3', false); // room display debug - show all things
 define('DEBUG4', false); // options processing debug
+define('DEBUG4b', false); // options processing debug
 define('DEBUG5', false); // debug print included in output table
 define('DEBUG6', false); // debug misc
 define('DEBUG7', false); // debug misc
@@ -1243,7 +1248,6 @@ function addSpecials(&$allthings, $options) {
         for ($i=0; $i<$fcnt; $i++) {
 
             $k = strval($i + 1);
-            // if ( $i < 9 ) { $k = "0" . $k; }
             $fid = $sid[0] . $k;
 
             // the forecasts now must be in files frame1.html through frame4.html
@@ -1258,7 +1262,7 @@ function addSpecials(&$allthings, $options) {
                 "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
         }
     }
-        
+    
     // create the controller tile
     // keys starting with c__ will get the confirm class added to it
     // this tile cannot be customized by the user due to its unique nature
@@ -1560,10 +1564,10 @@ function returnFile($fname, $width, $height, $ctype) {
             $grtypes = array("",".mp4",".ogg");
             break;
         case "frame":
-            $grtypes = array("",".html",".htm");
+            $grtypes = array("",".html",".htm",".php");
             break;
         case "custom":
-            $grtypes = array("",".jpg",".png",".gif",".mp4",".ogg",".html",".htm");
+            $grtypes = array("",".jpg",".png",".gif",".mp4",".ogg",".html",".htm",".php");
             break;
         default:
             $grtypes = false;
@@ -1592,23 +1596,28 @@ function returnFile($fname, $width, $height, $ctype) {
             case "jpg":
             case "png":
             case "gif":
-                $v = "<img width=\"$width\" height=\"$height\" src=\"$vn\">";
+                $vnhash = md5_file($vn);
+                $v = "<img width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\">";
                 break;
             
             case "mp4":
             case "ogg":
+                $vnhash = md5_file($vn);
                 $v= "<video width=\"$width\" height=\"$height\" autoplay>";
-                $v.= "<source src=\"$vn\" type=\"video/$ve\">";
+                $v.= "<source src=\"$vn" . "?v=$vnhash" ."\" type=\"video/$ve\">";
                 $v.= "Video Not Supported</video>";
                 break;
                 
             case "html":
             case "htm":
-                $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn\" frameborder=\"0\"></iframe>";
+            case "php":
+                $vnhash = md5_file($vn);
+                $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\" frameborder=\"0\"></iframe>";
                 break;
                 
             default:
-                $v = "<div style=\"width: $width" . "px; height: $height" . "px;\">$vn</div>";
+                $contents = file_get_contents($vn, NULL, NULL, 0, 1024);
+                $v = "<div style=\"width: $width" . "px; height: $height" . "px;\">$contents</div>";
                 break;
         }
     } else {
@@ -2823,6 +2832,16 @@ function readOptions($reset = false) {
         $options = json_decode($serialnew,true);
         $oldthingsarr = $options["things"];
 //        $_SESSION["hmoptions"] = $options;
+        
+        // add special count if not there
+        if ( !array_key_exists("specialtiles", $options["config"]) ) {
+            $specialtiles = getSpecials();
+            $specialcounts = array();
+            foreach ($specialtiles as $stype) {
+                $specialcounts[$stype] = 4;
+            }
+            $options["config"]["specialtiles"] = $specialcounts;
+        }
     
         // make the room config file to support custom users
         if ( isset($_COOKIE["uname"]) && trim($_COOKIE["uname"]) ) {
@@ -3108,8 +3127,9 @@ function refactorOptions($allthings) {
     
 }
 
-function createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options) {
+function createSpecialIndex($customcnt, $stype, $spid, $options) {
     $n = strlen($stype) + 1;
+    $oldindex = $options["index"];
 
     // remove all special types of this type
     foreach ($oldindex as $idx => $tileid) {
@@ -3118,6 +3138,11 @@ function createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options) {
         }
     }
     $maxindex = getMaxIndex($options);
+    if ( !array_key_exists("specialtiles", $options["config"]) ) {
+        $options["config"]["specialtiles"] = array($stype => $customcnt);
+    } else {
+        $options["config"]["specialtiles"][$stype] = $customcnt; 
+    }
 
     // add back in the requested number
     for ( $i=0; $i<$customcnt; $i++) {
@@ -3125,7 +3150,10 @@ function createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options) {
         $fid = $spid . $k;
         $sidnum = $stype . "|" . $fid;
         if ( array_key_exists($sidnum, $oldindex) ) {
-            $theindex = $oldindex[$sidnum];
+            $theindex = intval($oldindex[$sidnum]);
+            if ( $theindex > $maxindex ) {
+                $maxindex= $theindex;
+            }
         } else {
             $maxindex++;
             $theindex = $maxindex;
@@ -3181,28 +3209,11 @@ function getOptions($options, $newthings) {
     
     // make exactly the right number of special tiles
     $specialtiles = getSpecials();
-    $oldindex = $options["index"];
+    // $oldindex = $options["index"];
     foreach ($specialtiles as $stype => $sid) {
-//        if ( array_key_exists("specialtiles", $options["config"]) ) {
-//            $specialarr = $options["config"]["specialtiles"];
-//            if ( array_key_exists($stype, $specialarr) ) {
-//                $customcnt = intval($specialarr[$stype]);
-//                if ( !$customcnt || $customcnt < 1 ) { 
-//                    $customcnt = 1; 
-//                    $specialarr[$stype] = $customcnt;
-//                }
-//            } else {
-//                $customcnt = 4;
-//                $specialarr[$stype] = $customcnt;
-//            }
-//        } else {
-//            $customcnt = 4;
-//            $specialarr[$stype] = $customcnt;
-//        }
-//        $options["config"]["specialtiles"] = $specialarr;
         $customcnt = getCustomCount($stype, $options);
         $spid = $sid[0];
-        $options = createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options);
+        $options = createSpecialIndex($customcnt, $stype, $spid, $options);
     }
 
     return $options;
@@ -3286,24 +3297,20 @@ function mysortfunc($cmpa, $cmpb) {
     return $t;
 }
 
-function getCustomCount($stype, &$options) {
+function getCustomCount($stype, $options) {
     if ( array_key_exists("specialtiles", $options["config"]) ) {
         $specialarr = $options["config"]["specialtiles"];
         if ( array_key_exists($stype, $specialarr) ) {
             $customcnt = intval($specialarr[$stype]);
             if ( !$customcnt || $customcnt < 1 ) { 
-                $customcnt = 1; 
-                $specialarr[$stype] = $customcnt;
+                $customcnt = 0; 
             }
         } else {
-            $customcnt = 4;
-            $specialarr[$stype] = $customcnt;
+            $customcnt = 0;
         }
     } else {
-        $customcnt = 4;
-        $specialarr[$stype] = $customcnt;
+        $customcnt = 0;
     }
-    $options["config"]["specialtiles"] = $specialarr;
     return $customcnt;
 }
 
@@ -3349,7 +3356,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "</div>";
     
     $tc.= "<div class=\"filteroption\">";
-    $specialcnt = array();
     foreach ($specialtiles as $stype => $sid) {
         $customcnt = getCustomCount($stype, $options);
         $stypeid = "cnt_" . $stype;
@@ -3682,7 +3688,7 @@ function processOptions($optarray) {
         echo "<h2>Debug Print for Options Returned</h2><pre>";
         print_r($optarray);
         echo "</pre>";
-        exit(0);
+        // exit(0);
     }
     $thingtypes = getTypes();
     $oldoptions = readOptions();
@@ -3690,9 +3696,20 @@ function processOptions($optarray) {
     // make an empty options array for saving
     $options = $oldoptions;
     $options["things"] = array();
-    $options["useroptions"] = $thingtypes;
+    // $options["useroptions"] = $thingtypes;
     $roomnames = array_keys($options["rooms"]);
     $indexoptions = $oldoptions["index"];
+    $specialtiles = getSpecials();
+    if ( array_key_exists("specialtiles", $oldoptions["config"]) ) {
+        $specialcounts = $oldoptions["config"]["specialtiles"];
+    } else {
+        $specialcounts = array();
+        foreach ($specialtiles as $stype) {
+            $specialcounts[$stype] = 4;
+        }
+        $oldoptions["config"]["specialtiles"] = $specialcounts;
+        $options["config"]["specialtiles"] = $specialcounts;
+    }
     
     // use clock instead of blank for default only tile
     $onlytile = $oldoptions["index"]["clock|clockdigital"];
@@ -3703,8 +3720,6 @@ function processOptions($optarray) {
         $options["things"][$room] = array();
         $options["things"][$room][] = array($onlytile,0,0,1,"");
     }
-
-    $options["config"]["specialtiles"] = array();
 
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
@@ -3737,12 +3752,7 @@ function processOptions($optarray) {
             $options["config"]["kiosk"] = "true";
         }
         
-//        else if ($key==="widgetcity") {
-//            if ( $val ) {
-//                getWeatherWidget($val);
-//            }
-//        }
-//        
+        // write the frame2 html file
         else if ($key==="accucity") {
             $city = $val;
             $region = $optarray["accuregion"];
@@ -3754,18 +3764,17 @@ function processOptions($optarray) {
         
         // handle user selected special tile count
         else if ( substr($key,0,4)==="cnt_" ) {
-            $specialtiles = getSpecials();
             $stype = substr($key,4);
             if ( array_key_exists($stype, $specialtiles) ) {
-                $oldindex = $oldoptions["index"];
                 $spid = $specialtiles[$stype][0];
-                $oldcnt = getCustomCount($stype, $oldoptions);
+                $oldcnt = $specialcounts[$stype];
                 $customcnt = intval($val);
                 if ( $customcnt !== $oldcnt ) {
-                    $options = createSpecialIndex($customcnt, $stype, $spid, $oldindex, $options);
+                    $options = createSpecialIndex($customcnt, $stype, $spid, $options);
+                    // $oldoptions = $options;
                 }
+                
             }
-            
         }
         
         else if ( $key==="useroptions" && is_array($val) ) {
@@ -3833,6 +3842,13 @@ function processOptions($optarray) {
                 $options["things"][$roomname][] = array($onlytile,0,0,1,"");
             }
         }
+    }
+    if (DEBUG || DEBUG4) {
+        // echo "<html><body>";
+        echo "<h2>Debug Print for New Options Created</h2><pre>";
+        print_r($options);
+        echo "</pre>";
+        exit(0);
     }
 
     // write options to file
@@ -5012,6 +5028,7 @@ function is_ssl() {
             case "saveoptions":
                 if ( isset($_POST["options"]) ) {
                     processOptions($_POST);
+                    $options = readOptions();
                     header("Location: $returnURL");
                     exit(0);
                 } else {

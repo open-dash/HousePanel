@@ -723,7 +723,7 @@ function initExistingFields() {
                 var linkid = helpers[3];
                 if ( oldval!== "LINK" ) {
                     $("#cm_customtype").prop("value", "LINK");
-                    $("#cm_customtype option[value='LINK']").prop('selected',true)
+                    $("#cm_customtype option[value='LINK']").prop('selected',true);
                     var content = loadLinkPanel(cm_Globals.thingindex);
                     $("#cm_dynoContent").html(content);
                 }
@@ -733,7 +733,11 @@ function initExistingFields() {
         } else {
             $("#cm_delButton").addClass("disabled"); // prop("disabled", true).css("background-color","#cccccc").css("cursor","default");
             $("#cm_delButton").removeClass("cm_button");
-            $("#cm_text").val("");
+            
+//            var cmtext = decodeURIComponent(value[subid]);
+//            cmtext = cmtext.replace( /\+/g, ' ' );
+//            $("#cm_text").val(cmtext);
+            $("#cm_text").val(value[subid]);
         }
         
         // change button label to Add or Replace based on existing or not

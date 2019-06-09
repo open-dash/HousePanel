@@ -41,10 +41,10 @@ div.thing {
     margin: 3px;
     text-align: center;
     vertical-align: top;
-    border-top: 2px solid #999999; 
-    border-right: 2px solid #333333;
-    border-bottom: 2px solid #333333; 
-    border-left: 2px solid #999999;
+    border-top: 2px solid #cccccc; 
+    border-right: 2px solid #666666;
+    border-bottom: 2px solid #666666;
+    border-left: 2px solid #cccccc;
     background-color: rgba(0, 51, 204, 0.6);
     box-shadow: 2px 2px 7px black;
     color: rgba(250, 250, 250, 1);
@@ -789,32 +789,6 @@ div.illuminance-thing .illuminance.humidity:after {
 
 div.switchlevel.colorTemperature, div.bulb.colorTemperature {
     height: 4px;
-}
-
-iframe body {
-    margin: 0px;
-}
-div.thing.frame-thing.weather div.thingname.frame {
-    width: 480px;
-    margin-left: 13px;
-    padding: 0;
-}
-div.thing.frame-thing.weather {
-    width: 500px;
-    height: 250px;
-    background-color: rgba(0, 0, 0, 0.01);
-    border: 0; 
-}
-div.thing.frame-thing div.overlay.status {
-    display: none;
-}
-
-div.thing.video-thing {
-    width: 246px;
-    height: 147px;
-}
-div.thingname.video {
-    display: none;
 }
 
 /* user overlay name for locks instead of title bar */

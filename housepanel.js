@@ -261,7 +261,7 @@ function setupWebsocket()
             var thetype = presult.type;
             var client = presult.client;
             var clientcount = presult.clientcount;
-            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," type= ",thetype," value= ",pvalue);
+            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," client:",client," of:",clientcount," type= ",thetype," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
@@ -290,21 +290,21 @@ function setupWebsocket()
         var ontrigger = null;
         if ( client===clientcount ) {
             if ( thetype==="motion" ) {
-                console.log("motion rule trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
+                console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
                 if ( pvalue.motion ==="active") { 
                     ontrigger = "on";
                 } else {
                     ontrigger = "";
                 }
             } else if ( thetype==="contact") {
-                console.log("contact rule trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
+                console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
                 if ( pvalue.contact ==="open") { 
                     ontrigger = "on";
                 } else {
                     ontrigger = "off";
                 }
             } else if ( typeof pvalue.switch !== "undefined" ) {
-                console.log("switch rule trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
+                console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
                 if ( pvalue.switch ==="on") { 
                     ontrigger = "on";
                 } else {
@@ -312,7 +312,9 @@ function setupWebsocket()
                 }
             }
         }
-            
+        
+        // process linked auto triggers such that contacts, motions, and switches
+        // linked into any other switch will turn it one and off upon a state change
         if ( linktile && ontrigger ) {
             $('div.user_hidden[linkval="' + linktile + '"]').each(function() {
                 var tile = $(this).parents("div.thing").last();
