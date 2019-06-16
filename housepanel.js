@@ -1947,34 +1947,46 @@ function clockUpdater(tz) {
         var utc = old.getTime() + (old.getTimezoneOffset() * 60000);
         var d = new Date(utc + (1000*tz));        
         
-        var ds = d.toString().split(" ");    
-        var timestr = ds[4];
-        var hour = d.getHours();
-        // var sec = d.getSeconds();
-        
-        if ( hour=== 0 ) {
-            timestr = "12" + timestr.substring(2);
-            timestr+= " AM";
-        } else if ( hour === 12 ) {
-            timestr+= " PM";
-        } else if ( hour > 12 ) {
-            hour = (hour - 12).toLocaleString();
-            timestr = hour + timestr.substring(2);
-            timestr+= " PM";
-        } else {
-            timestr+= " AM";
+        // var ds = d.toString().split(" ");    
+        // var defaultstr = ds[4];
+        var hour24 = d.getHours();
+        var hour = hour24;
+        var min = d.getMinutes();
+        var sec = d.getSeconds();
+        if ( hour24=== 0 ) {
+            hour = "12";
+        } else if ( hour24 > 12 ) {
+            hour = (hour24 - 12).toLocaleString();
         }
+        var defaultstr = hour + ":" + min + ":" + sec;
         
         // update the time of all things on the main page
         // this skips the wysiwyg items in edit boxes
         // only update times that have a :s format type or has nothing specified
         $("div.panel div.clock.time").each(function() {
             if ( $(this).parent().siblings("div.overlay.fmt_time").length > 0 ) {
-                var fmt = $(this).parent().siblings("div.overlay.fmt_time").children("div.fmt_time").html();
-                if ( (fmt && fmt.includes(":s")) || !fmt ) {
-                    $(this).html(timestr);
+                var timestr = $(this).parent().siblings("div.overlay.fmt_time").children("div.fmt_time").html();
+                timestr = timestr.replace("g",hour);
+                timestr = timestr.replace("h",hour);
+                timestr = timestr.replace("G",hour24);
+                timestr = timestr.replace("H",hour24);
+                timestr = timestr.replace("i",min);
+                timestr = timestr.replace("s",sec);
+                if ( hour24 >= 12 ) {
+                    timestr = timestr.replace("a","pm");
+                    timestr = timestr.replace("A","PM");
+                } else {
+                    timestr = timestr.replace("a","am");
+                    timestr = timestr.replace("A","AM");
                 }
+                $(this).html(timestr);
             } else {
+                var timestr = defaultstr;
+                if ( hour24 >= 12 ) {
+                    timestr+= " PM";
+                } else {
+                    timestr+= " AM";
+                }
                 $(this).html(timestr);
             }
         });

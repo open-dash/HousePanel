@@ -25,45 +25,48 @@ function getAllthings(modalwindow) {
                 if (pstatus==="success" && keys && keys.length ) {
                     cm_Globals.allthings = presult;
                     console.log("customize: getthings call returned: " + keys.length + " things");
-                    getOptions();
+                    getOptions(modalwindow);
                 } else {
                     console.log("Error: failure reading things from HP");
-                }
-                if ( modalwindow ) {
-                    closeModal(modalwindow);
+                    if ( modalwindow ) {
+                        closeModal(modalwindow);
+                    }
                 }
             }, "json"
         );
 }
 
-function getOptions() {
-        $.post(cm_Globals.returnURL, 
-           {useajax: "getoptions", id: "none", type: "none"},
-           function (presult, pstatus) {
-                var keys = Object.keys(presult);
-                if (pstatus==="success" && keys && keys.length && presult.index ) {
-                    cm_Globals.options = presult;
-                    var indexkeys = Object.keys(presult.index);
-                    var roomkeys = Object.keys(presult.rooms);
-                    console.log("Your hmoptions.cfg file successfully loaded. Returned: " + 
-                                indexkeys.length + " things" + " and " + roomkeys.length + " rooms.");
+function getOptions(modalwindow) {
+    $.post(cm_Globals.returnURL, 
+        {useajax: "getoptions", id: "none", type: "none"},
+        function (presult, pstatus) {
+            var keys = Object.keys(presult);
+            if (pstatus==="success" && keys && keys.length && presult.index ) {
+                cm_Globals.options = presult;
+                var indexkeys = Object.keys(presult.index);
+                var roomkeys = Object.keys(presult.rooms);
+                console.log("Your hmoptions.cfg file successfully loaded. Returned: " + 
+                            indexkeys.length + " things" + " and " + roomkeys.length + " rooms.");
 
-                    // setup dialog box if it is open
-                    if ( cm_Globals.thingindex ) {
-                        try {
-                            getDefaultSubids();
-                            var idx = cm_Globals.thingidx;
-                            var allthings = cm_Globals.allthings;
-                            var thing = allthings[idx];
-                            var subtitle = thing.name;
-                            $("#cm_subheader").html(subtitle);
-                        } catch (e) { }
-                    }
-                } else {
-                    console.log("HousePanel Error: failure reading your hmoptions.cfg file");
+                // setup dialog box if it is open
+                if ( cm_Globals.thingindex ) {
+                    try {
+                        getDefaultSubids();
+                        var idx = cm_Globals.thingidx;
+                        var allthings = cm_Globals.allthings;
+                        var thing = allthings[idx];
+                        var subtitle = thing.name;
+                        $("#cm_subheader").html(subtitle);
+                    } catch (e) { }
                 }
-           }, "json"
-        );
+            } else {
+                console.log("HousePanel Error: failure reading your hmoptions.cfg file");
+            }
+            if ( modalwindow ) {
+                closeModal(modalwindow);
+            }
+        }, "json"
+    );
 }
 
 function getDefaultSubids() {
@@ -146,7 +149,9 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
 
                 // grab the global list of all things and options
                 if ( !cm_Globals.allthings || !cm_Globals.options ) {
-                    getAllthings();
+                    var pos = {top: 5, left: 5, zindex: 99999, background: "blue", color: "white"};
+                    createModal("waitloading", "Loading data. Please wait...", "table.cm_table", false, pos);
+                    getAllthings("waitloading");
                 } else {
                     try {
                         getDefaultSubids();
@@ -806,12 +811,11 @@ function applyCustomField(action) {
             {useajax: action, id: id, type: customtype, attr: content, tile: tileid, subid: subid},
             function (presult, pstatus) {
                 if (pstatus==="success" && !presult.startsWith("error") ) {
-                    console.log (action + " performed successfully. presult: " + strObject(presult));
-                    console.log("Updating information...");
+                    console.log (action + " performed successfully. presult: ", presult);
                     getAllthings("waitbox");
                 } else {
                     // alert("Error attempting to perform " + action + ": " + presult);
-                    console.log("Error attempting to perform " + action + ": " + presult);
+                    console.log("Error attempting to perform " + action + ". presult: ", presult);
                     closeModal("waitbox");
                 }
             }

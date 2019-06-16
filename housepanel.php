@@ -9,6 +9,11 @@
  * Revision History
  */
 $devhistory = "
+ 2.072      Honor time format in js updates every second
+             - merge in README clean up pull request
+             - enable multiple things in a query request
+             - minor bugfix for auto of non-groovy tiles
+             - update hpapi.py demo to work with current version
  2.071      Bypass cache for updated frames and other special tiles
              - minor bug fix to tile editor for tile name setting
              - fix bug where special tile count was not being saved
@@ -4064,6 +4069,13 @@ function is_ssl() {
     
     if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
     else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
+    
+    // fix up old use of dohubitat since all calls are now doaction
+    if ( $useajax==="dohubitat" ) {
+        $useajax = "doaction";
+    } else if ( $useajax==="queryhubitat" ) {
+        $useajax = "doquery";
+    }
 
     if ( $useajax==="cancelauth" ) { 
         unset($_SESSION["hpcode"]);
@@ -4299,7 +4311,7 @@ function is_ssl() {
     if ( !$options || !array_key_exists("config", $options) ) {
         // if making an API call return error unless configuring Hubitat
         if ( $useajax ) {
-            echo "error - API cannot be used because HousePanel has not been authorized.";
+            echo "error - API cannot be used because HousePanel has not been authorized, or a valid hmoptions.cfg file cannot be located.";
         // otherwise return an auth page
         } else {
             unset($_SESSION["allthings"]);
@@ -4599,7 +4611,6 @@ function is_ssl() {
  * updated this logic to enable auto calling of any type of id
  * *****************************************************************************
  */
-    // $useajax = false;
     $swtype = "auto";
     $swid = "";
     $swval = "";
@@ -4609,8 +4620,6 @@ function is_ssl() {
     $command = "";
     $linkval = "";
 
-//    if ( isset($_GET["useajax"]) ) { $useajax = filter_input(INPUT_GET, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
-//    else if ( isset($_POST["useajax"]) ) { filter_input(INPUT_POST, "useajax", FILTER_SANITIZE_SPECIAL_CHARS); }
     if ( isset($_GET["type"]) ) { $swtype = $_GET["type"]; }
     else if ( isset($_POST["type"]) ) { $swtype = $_POST["type"]; }
     if ( isset($_GET["id"]) ) { $swid = $_GET["id"]; }
@@ -4638,8 +4647,7 @@ function is_ssl() {
             
             // check for a tile array for multiple calls
             $len = strlen($tileid)-1;
-            if ( ($useajax==="doaction" || $useajax==="dohubitat") &&
-                 strpos($tileid,",")!==false ) {
+            if ( strpos($tileid,",")!==false ) {
                 $multicall = true;
                 $tilearray = explode(",",$tileid);
                 $valsave = $swval;
@@ -4670,16 +4678,7 @@ function is_ssl() {
             }
         }
 
-        // fix up useajax for hubitat
-//        if ( (substr($swid,0,2) === "h_") && $useajax==="doquery" ) {
-//            $useajax = "queryhubitat";
-//        } else if ( (substr($swid,0,2) == "h_") && $useajax=="doaction" ) {
-//            $useajax = "dohubitat";
-//        }
-        
-        if ( !$multicall &&
-             ($useajax==="doaction" || $useajax==="dohubitat") &&
-             strpos($swid,",")!==false ) {
+        if ( !$multicall && strpos($swid,",")!==false ) {
             $multicall = true;
             $tilearray = explode(",",$swid);
             $typesave = $swtype;
@@ -4693,44 +4692,52 @@ function is_ssl() {
             $subid = array();
             foreach($tilearray as $atile) {
                 $swid[] = $atile;
-                $swtype[] = $typesave;
+                if ( substr($atile,0,5)=="clock") {
+                    $swtype[] = "clock";
+                } else if ( substr($atile,0,3)=="vid") {
+                    $swtype[] = "video";
+                } else if ( substr($atile,0,5) == "frame" ) {
+                    $swtype[] = "frame";
+                } else if ( substr($atile,0,5) == "image" ) {
+                    $swtype[] = "image";
+                } else if ( substr($atile,0,5) == "blank" ) {
+                    $swtype[] = "blank";
+                } else if ( substr($atile,0,6)=="custom") {
+                    $swtype[] = "custom";
+                } else if ( substr($atile,0,7)=="control") {
+                    $swtype[] = "control";
+                } else {
+                    $swtype[] = $typesave;
+                }
                 $swval[] = $valsave;
                 $swattr[] = $attrsave;
                 $subid[] = $subidsave;
             }
         }
 
-        // fix up old use of dohubitat since all calls are now doaction
-        if ( $useajax==="dohubitat" ) {
-            $useajax = "doaction";
-        }
-        
-        if ( $useajax==="queryhubitat" ) {
-            $useajax = "doquery";
-        }
-        
         // fix up id for hubitat
         if ( (substr($swid,0,2) === "h_") && $hubType==="Hubitat" ) {
             $swid = substr($swid,2);
         } 
 
         // handle special non-groovy based tile types
-        if ( $swtype==="auto" && $swid && $useajax!=="addcustom") {
+        if ( !$multicall && $swtype==="auto" && $swid && $useajax!=="addcustom") {
             if ( substr($swid,0,5)=="clock") {
                 $swtype = "clock";
             } else if ( substr($swid,0,3)=="vid") {
                 $swtype = "video";
             } else if ( substr($swid,0,5) == "frame" ) {
                 $swtype = "frame";
+            } else if ( substr($swid,0,5) == "image" ) {
+                $swtype = "image";
+            } else if ( substr($swid,0,5) == "blank" ) {
+                $swtype = "blank";
             } else if ( substr($swid,0,6)=="custom") {
                 $swtype = "custom";
             } else if ( substr($swid,0,7)=="control") {
                 $swtype = "control";
             }
         }
-    }
-
-    if ( $valid ) {
         
         // if the hub number is given then use that hub
         // this will typically be true for GUI invoked calls to the api
@@ -4757,12 +4764,12 @@ function is_ssl() {
         }
 
         // set tileid from options if it isn't provided
-        if ( !$multicall && $tileid==="" && $swid && strtolower($swid)!=="none" && $swtype!=="auto" && $options && $options["index"] ) {
-            $idx = $swtype . "|" . $swid;
-            if ( array_key_exists($idx, $options["index"]) ) { 
-                $tileid = $options["index"][$idx]; 
-            }
-        }
+//        if ( !$multicall && $tileid==="" && $swid && strtolower($swid)!=="none" && $swtype!=="auto" && $options && $options["index"] ) {
+//            $idx = $swtype . "|" . $swid;
+//            if ( array_key_exists($idx, $options["index"]) ) { 
+//                $tileid = $options["index"][$idx]; 
+//            }
+//        }
     }
 /*
  * *****************************************************************************
@@ -4778,11 +4785,12 @@ function is_ssl() {
             case "dohubitat":
                 if ( $hubnum ) {
                     if ( $multicall ) {
-                        $result = "";
+                        $result = array();
                         for ($i= 0; $i < count($swid); $i++) {
-                            $result.= doAction($hubnum, "doaction", $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i], "", "", false);
+                            $oneres= doAction($hubnum, "doaction", $swid[$i], $swtype[$i], $swval[$i], $swattr[$i], $subid[$i], "", "", false);
+                            $result[] = json_decode($oneres);
                         }
-                        echo $result;
+                        echo json_encode($result);
                     } else {
                         echo doAction($hubnum, "doaction", $swid, $swtype, $swval, $swattr, $subid, $command, $linkval);
                     }
@@ -4794,7 +4802,16 @@ function is_ssl() {
             case "doquery":
             case "queryhubitat":
                 if ( $hubnum ) {
-                    echo doAction($hubnum, "doquery", $swid, $swtype);
+                    if ( $multicall ) {
+                        $result = array();
+                        for ($i= 0; $i < count($swid); $i++) {
+                            $oneres= doAction($hubnum, "doquery", $swid[$i], $swtype[$i]);
+                            $result[] = json_decode($oneres);
+                        }
+                        echo json_encode($result);
+                    } else {
+                        echo doAction($hubnum, "doquery", $swid, $swtype);
+                    }
                 } else {
                     echo $nothing;
                 }
@@ -5063,6 +5080,7 @@ function is_ssl() {
                 echo "success";
                 break;
             
+            // TODO - avoid creating duplicates by searching for existing
             case "addcustom":
                 $options = readOptions();
                 $userid = "user_" . $swid;
