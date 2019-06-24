@@ -1959,6 +1959,11 @@ function clockUpdater(tz) {
             min = min.toString();
         }
         var sec = d.getSeconds();
+        if ( sec < 10 ) { 
+            sec = "0" + sec.toString();
+        } else {
+            sec = sec.toString();
+        }
         if ( hour24=== 0 ) {
             hour = "12";
         } else if ( hour24 > 12 ) {
