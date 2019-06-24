@@ -9,6 +9,9 @@
  * Revision History
  */
 $devhistory = "
+ 2.073      Major speedup in Tile Customizer (customize.js)
+             - prep work for sorting feature - not yet implemented
+             - minor bug fixes
  2.072      Honor time format in js updates every second
              - merge in README clean up pull request
              - enable multiple things in a query request
@@ -5093,15 +5096,43 @@ function is_ssl() {
                     $options[$userid] = array();
                 }
     
-                $newitem = array($swtype, strval($swattr), strval($subid));
-                $options[$userid][] = $newitem;
+                $newitem = array($swval, strval($swattr), strval($subid));
+                $newoptitem = array();
+                $doneit = false;
+                foreach( $options[$userid] as $val ) {
+                    if ( $val[2] === strval($subid) ) {
+                        if ( !$doneit ) {
+                            $newoptitem[] = $newitem;
+                            $doneit = true;
+                        }
+                    } else {
+                        $newoptitem[] = $val;
+                    }
+                }
+                if ( !$doneit ) {
+                    $newoptitem[] = $newitem;
+                }
+                $options[$userid] = $newoptitem;
                 writeOptions($options);
-                $allthings = getAllThings(true);
-                echo json_encode($options[$userid]);
+                
+                $allthings = getAllThings();
+                $idx = $swtype . "|" . $swid;
+                
+                // make the new custom field using the updated options above
+                $thingval = getCustomTile($allthings[$idx]["value"], $swtype, $swid, $options, $allthings);
+
+                // save it in the main array and update our session
+                // this is way faster than re-reading everything
+                $allthings[$idx]["value"] = $thingval;
+                $_SESSION["allthings"] = $allthings;
+                
+                // $allthings = getAllThings(true);
+                echo json_encode($thingval);
                 break;
                 
             case "delcustom":
                 $options = readOptions();
+                $allthings = getAllThings();
                 $userid = "user_" . $swid;
                 if ( array_key_exists($swid, $options) && 
                         !in_array ($swid, $reserved) && 
@@ -5127,11 +5158,23 @@ function is_ssl() {
                         $options[$userid] = $lines;
                     }
                     writeOptions($options);
-                    $allthings = getAllThings(true);
-                } else {
-                    $lines = array();
+                    // $allthings = getAllThings(true);
                 }
-                echo json_encode($lines);
+                
+                $idx = $swtype . "|" . $swid;
+                $companion = "user_" + $subid;
+                $thingval = $allthings[$idx]["value"];
+                
+                // remove this field and any companion if it exists
+                unset($thingval[$subid]);
+                if ( array_key_exists($companion, $thingval) ) {
+                    unset($thingval[$companion]);
+                }
+                
+                // update the main array
+                $allthings[$idx]["value"] = $thingval;
+                $_SESSION["allthings"] = $allthings;
+                echo json_encode($thingval);
                 break;
                 
             case "hubdelete":

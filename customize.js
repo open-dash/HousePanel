@@ -12,6 +12,7 @@ cm_Globals.id = "clockdigital";
 cm_Globals.thingidx = cm_Globals.currentidx;
 cm_Globals.usertext = "";
 cm_Globals.reload = false;
+cm_Globals.thingindex = null;
 
 $(document).ready(function() {
     getAllthings();
@@ -21,10 +22,10 @@ function getAllthings(modalwindow) {
         $.post(cm_Globals.returnURL, 
             {useajax: "getthings", id: "none", type: "none"},
             function (presult, pstatus) {
-                var keys = Object.keys(presult);
-                if (pstatus==="success" && keys && keys.length ) {
+                if (pstatus==="success" && typeof presult === "object" ) {
+                    var keys = Object.keys(presult);
                     cm_Globals.allthings = presult;
-                    console.log("customize: getthings call returned: " + keys.length + " things");
+                    console.log("customize: getAllthings call returned: " + keys.length + " things");
                     getOptions(modalwindow);
                 } else {
                     console.log("Error: failure reading things from HP");
@@ -40,12 +41,11 @@ function getOptions(modalwindow) {
     $.post(cm_Globals.returnURL, 
         {useajax: "getoptions", id: "none", type: "none"},
         function (presult, pstatus) {
-            var keys = Object.keys(presult);
-            if (pstatus==="success" && keys && keys.length && presult.index ) {
+            if (pstatus==="success" && typeof presult === "object" && presult.index && presult.rooms ) {
                 cm_Globals.options = presult;
                 var indexkeys = Object.keys(presult.index);
                 var roomkeys = Object.keys(presult.rooms);
-                console.log("Your hmoptions.cfg file successfully loaded. Returned: " + 
+                console.log("customize: getOptions returned: " + 
                             indexkeys.length + " things" + " and " + roomkeys.length + " rooms.");
 
                 // setup dialog box if it is open
@@ -73,20 +73,20 @@ function getDefaultSubids() {
     var thingindex = cm_Globals.thingindex;
     var options = cm_Globals.options;
     var indexoptions = options.index;
-    var keys = Object.keys(indexoptions);
-//    var vals = Object.values(indexoptions);
-//    var n = vals.indexOf(thingindex);
-//    var idx = keys[n];
-    var idx = "";
-    $.each(keys, function() {
-        if ( indexoptions[this].toString() === thingindex ) {
-            idx = this;
+    // var keys = Object.keys(indexoptions);
+    var idx = cm_Globals.thingidx;
+    
+    // $.each(keys, function(index, val) {
+    $.each(indexoptions, function(index, val) {
+        if ( val.toString() === thingindex ) {
+            idx = index;
         }
     });
+
     cm_Globals.thingidx = idx;
     var n = idx.indexOf("|");
     cm_Globals.id = idx.substring(n+1);
-    console.log("tile= " + thingindex + " idx= " + cm_Globals.thingidx + " id= " + cm_Globals.id);
+    // console.log("tile= " + thingindex + " idx= " + cm_Globals.thingidx + " id= " + cm_Globals.id);
     
     loadExistingFields(cm_Globals.thingidx);
     $("#cm_customtype option[value='TEXT']").prop('selected',true);
@@ -149,9 +149,9 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
 
                 // grab the global list of all things and options
                 if ( !cm_Globals.allthings || !cm_Globals.options ) {
-                    var pos = {top: 5, left: 5, zindex: 99999, background: "blue", color: "white"};
-                    createModal("waitloading", "Loading data. Please wait...", "table.cm_table", false, pos);
-                    getAllthings("waitloading");
+                    var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
+                    createModal("waitbox", "Loading data. Please wait...", "div.modalbuttons", false, pos);
+                    getAllthings("waitbox");
                 } else {
                     try {
                         getDefaultSubids();
@@ -207,8 +207,12 @@ function customTypePanel() {
     // this whole section will be hidden with LINK types
     dh+= "<div id='cm_existingpick' class='cm_group'>";
         dh+= "<div>Existing Fields: <span class='ital'>(* custom fields)</span></div>";
-        dh+= "<select size='6' class='cm_builtinfields' id='cm_builtinfields' name='cm_builtinfields'>"; 
-        dh+="</select>";
+        dh+= "<table class='cm_builtin'><tbody><tr>";
+        dh+= "<td><select size='6' class='cm_builtinfields' id='cm_builtinfields' name='cm_builtinfields'>"; 
+        dh+= "</select></td>";
+        dh+= "<td><button id='cm_upfield'><img src='media/uparrow.jpg' width='30'></button><br>";
+        dh+= "<button id='cm_dnfield'><img src='media/dnarrow.jpg' width='30'></button></td>";
+        dh+= "</tr></table>";
         
         dh+= "<br><br><strong>OR...</strong><br><br>";
         dh+= "<div><label for='cm_userfield'>User Field Name:</label></div>";
@@ -292,7 +296,9 @@ function loadLinkPanel(thingindex) {
         "your selection, click the \"Add\" button and this field will be added to the list of \"Existing Fields\" " +
         "shown on the left side of this dialog box. You can mix and match this with any other addition. " +
         "You can add text or numbers to the end of the field name to make the link subid unique, or you can " +
-        "leave it as-is. If the field name exists in the list on the left it will be replaced.";
+        "leave it as-is. If the field name exists in the list on the left it will be replaced. " +
+        "The existing fields list will be disabled when this type is selected. Change the type to move to " +
+        "a different existing field or to change the type of this field away from a LINK.";
     $("#cm_dynoInfo").html(infotext);
     
     return dh;
@@ -415,16 +421,17 @@ function actionButtons() {
 
 // returns an options list of available fields of a given tile
 function loadLinkItem(idx, allowuser) {
-    var allthings = cm_Globals.allthings;
-    var thing = allthings[idx];
-    var value = thing.value;
-    var subids = Object.keys(value);
+    var thing = cm_Globals.allthings[idx];
+    var thevalue = thing.value;
+    var subids = Object.keys(thevalue);
+    // console.log("value= ", thevalue, " subids= ", subids);
+    
     var numthings = 0;
     var results = "";
     var firstitem = "";
     
-    $.each(subids, function() {
-        var subid = this;
+    $.each(subids, function(index, val) {
+        var subid = val;
         // skip user configuration items
         if ( !subid.startsWith("user_") ) {
             
@@ -458,9 +465,9 @@ function loadLinkItem(idx, allowuser) {
     // if we pass an existing link, start with that
     if ( linkid ) {
         for ( var idx in options.index ) {
-            if ( options.index[idx] == linkid ) {
+            if ( options.index[idx].toString() === linkid ) {
                 cm_Globals.currentidx = idx;
-                console.log("Found linked idx: ", idx, " = ", linkid);
+                // console.log("Found linked idx: ", idx, " = ", linkid);
                 break;
             }
         }
@@ -535,9 +542,6 @@ function initLinkSelect() {
         
         // get the subids of the tile being customized
         var allthings = cm_Globals.allthings;
-//        var options = cm_Globals.options;
-//        var tileid = cm_Globals.thingindex;
-//        var idx = options[tileid];
         var idx = cm_Globals.thingidx;
         var thing = allthings[idx];
         var value = thing.value;
@@ -593,7 +597,7 @@ function initCustomActions() {
             } else {
                 content = loadLinkPanel(thingindex);
                 $("#cm_dynoContent").html(content);
-                initLinkActions();
+                initLinkActions(null, null);
             }
         } else if ( customType ==="URL" ) {
             content = loadUrlPanel();
@@ -618,11 +622,13 @@ function initCustomActions() {
         event.stopPropagation;
     });
     
+    $("#cm_addButton").off("click");
     $("#cm_addButton").on("click", function(event) {
         applyCustomField("addcustom");
         event.stopPropagation;
     });
     
+    $("#cm_delButton").off("click");
     $("#cm_delButton").on("click", function(event) {
         
         if ( $(this).hasClass("disabled") ) {
@@ -645,7 +651,7 @@ function initCustomActions() {
     $("#cm_text").on("change", function(event) {
         cm_Globals.usertext = $(this).val();
     });
- }
+}
  
 function loadExistingFields(idx) {
     // show the existing fields
@@ -661,6 +667,13 @@ function loadExistingFields(idx) {
     // $("#cm_builtinfields > option").first().prop('selected',true).click();
 }
 
+function sortExistingFields(item, up) {
+    $("#cm_builtinfields option").each(function() {
+       console.log($(this).attr("value")); 
+    });
+    console.log(item, up);
+}
+
 function initExistingFields() {
     var idx = cm_Globals.thingidx;
     
@@ -671,7 +684,7 @@ function initExistingFields() {
     $("#cm_userfield").off('input');
     $("#cm_userfield").on('input', function(event) {
         var subid = $("#cm_userfield").val();
-        console.log("subid = " + subid);
+        // console.log("subid = " + subid);
         
         var allthings = cm_Globals.allthings;
         var thing = allthings[idx];
@@ -686,6 +699,20 @@ function initExistingFields() {
             $("#cm_delButton").addClass("disabled");
             $("#cm_delButton").removeClass("cm_button");
         }
+    });
+    
+    $("#cm_upfield").off('click');
+    $("#cm_upfield").on('click', function(event) {
+        var sortval = $("#cm_userfield").val();
+        sortExistingFields(sortval, true);
+        event.stopPropagation();
+    });
+    
+    $("#cm_dnfield").off('click');
+    $("#cm_dnfield").on('click', function(event) {
+        var sortval = $("#cm_userfield").val();
+        sortExistingFields(sortval, false);
+        event.stopPropagation();
     });
     
     // fill in the user item with our selected item
@@ -711,7 +738,7 @@ function initExistingFields() {
             // fill in existing user info
             var helperval = value[companion];
             var helpers = helperval.split("::");
-            console.log(helperval, helpers);
+            // console.log(helperval, helpers);
             if ( helpers.length ===3 ) {
                 var cmtype = helpers[1];
                 var cmtext = decodeURIComponent(helpers[2]);
@@ -724,7 +751,7 @@ function initExistingFields() {
                 cm_Globals.usertext = cmtext;
             } else if ( helpers.length===4 && helpers[2]==="LINK" ) {
                 var oldval = $("#cm_customtype").val();
-                var linktype = helpers[1];
+                // var linktype = helpers[1];
                 var linkid = helpers[3];
                 if ( oldval!== "LINK" ) {
                     $("#cm_customtype").prop("value", "LINK");
@@ -767,17 +794,18 @@ function initExistingFields() {
 }
 
 // function uses php to save the custom info to hmoptions.cfg
-// for this call type and attr mean something different than usual
+// for this call value and attr mean something different than usual
+// changed type back to what it usually is
 function applyCustomField(action) {
     var id = cm_Globals.id;
     var tileid = cm_Globals.thingindex;
+    var idx = cm_Globals.thingidx;
     var customtype = $("#cm_customtype").val();
     var subid = $("#cm_userfield").val();
     var content = "";
+    var options = cm_Globals.options;
     if ( customtype==="LINK" ) {
-        var options = cm_Globals.options;
         content = options.index[cm_Globals.currentidx];
-        // content = $("#cm_linkbid").html();
     } else {
         content = $("#cm_text").val();
     }
@@ -799,26 +827,72 @@ function applyCustomField(action) {
         var errstr = errors.join("\n  ");
         alert("Invalid entries:\n" + errstr);
     } else {
+        
+        // signal relaod upon close
+        cm_Globals.reload = true;
+        
+        // first update the options array
+        var cid = "user_" + id;
+        var userfields = options[cid];
+        var newitem = [customtype, content, subid];
+        var newfields = [];
+        var isdone = false;
+        $.each(userfields, function(index, val) {
+            if ( val[2]===subid ) {
+                if ( !isdone && action==="addcustom" ) {
+                    newfields.push(newitem);
+                    isdone = true;
+                }
+            } else {
+                newfields.push(val);
+            }
+        });
+        if ( !isdone && action==="addcustom" ) {
+            newfields.push(newitem);
+        }
+        options[cid] = newfields;
+        cm_Globals.options = options;
+        
+        // remove item from allthings if this is a delete
+//        if ( action=="delcustom" ) {
+//            var value = cm_Globals.allthings[idx].value;
+//            var companion = "user_" + subid;
+//            if ( typeof value[subid] !== undefined ) {
+//                delete value[subid];
+//            }
+//            if ( typeof value[companion] !== undefined ) {
+//                delete value[companion];
+//            }
+//            cm_Globals.allthings[idx].value = value;
+//        }
     
         // show processing window
         var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
         createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
         
         // make the call
-        cm_Globals.reload = true;
-        console.log(action + ": id= " + id + " type= " +customtype + " content= " + content + " tile= " + tileid + " subid= " + subid);
+        // console.log(action + ": id= " + id + " type= " +customtype + " content= " + content + " tile= " + tileid + " subid= " + subid);
         $.post(cm_Globals.returnURL, 
-            {useajax: action, id: id, type: customtype, attr: content, tile: tileid, subid: subid},
+            {useajax: action, id: id, type: cm_Globals.type, value: customtype, attr: content, tile: tileid, subid: subid},
             function (presult, pstatus) {
-                if (pstatus==="success" && !presult.startsWith("error") ) {
+                if (pstatus==="success") {
                     console.log (action + " performed successfully. presult: ", presult);
-                    getAllthings("waitbox");
+
+                    // we returned the updated thing
+                    cm_Globals.allthings[idx].value = presult;
+                    console.log("options",options);
+                    getDefaultSubids();
+//                    var thing = cm_Globals.allthings[idx];
+//                    var subtitle = thing.name;
+//                    $("#cm_subheader").html(subtitle);
+                    closeModal("waitbox");
+                    // getAllthings("waitbox");
                 } else {
                     // alert("Error attempting to perform " + action + ": " + presult);
                     console.log("Error attempting to perform " + action + ". presult: ", presult);
                     closeModal("waitbox");
                 }
-            }
+            }, "json"
         );
     }
    

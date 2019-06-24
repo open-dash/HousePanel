@@ -1677,7 +1677,9 @@ table.cm_table {
 table.cm_table td {
     vertical-align: top;
 }
-
+table.cm_builtin td {
+    vertical-align: middle;
+}
 #cm_subheader {
     font-size: 20pt; color: #000000;
 }

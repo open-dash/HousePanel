@@ -503,6 +503,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
             closeModal(modalid);
         });
     } else {
+        $("body").off("click");
         $("body").on("click",function(evt) {
             if ( evt.target.id === modalid || modalid==="waitbox") {
                 evt.stopPropagation();
