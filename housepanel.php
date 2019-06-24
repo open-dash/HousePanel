@@ -11,6 +11,7 @@
 $devhistory = "
  2.073      Major speedup in Tile Customizer (customize.js)
              - prep work for sorting feature - not yet implemented
+             - fix minute bug in js file
              - minor bug fixes
  2.072      Honor time format in js updates every second
              - merge in README clean up pull request

@@ -1953,6 +1953,11 @@ function clockUpdater(tz) {
         var hour24 = d.getHours();
         var hour = hour24;
         var min = d.getMinutes();
+        if ( min < 10 ) { 
+            min = "0" + min.toString();
+        } else {
+            min = min.toString();
+        }
         var sec = d.getSeconds();
         if ( hour24=== 0 ) {
             hour = "12";
