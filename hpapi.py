@@ -7,8 +7,8 @@ __date__ = "$Jun 15, 2019 7:22:28 PM$"
 import json
 import urllib
 
-def callAPI(tileid, hubnum):
-    weburl = "http://192.168.11.20/smartthings/housepanel.php"
+def callAPI(weburl, tileid, hubnum):
+    # weburl = "http://192.168.11.20/smartthings/housepanel.php"
     url = weburl + "?api=doquery&tile=" + str(tileid) + "&hubnum=" + str(hubnum)
     f = urllib.urlopen(url)
     responsestr = f.read().encode('utf-8')
@@ -17,8 +17,15 @@ def callAPI(tileid, hubnum):
 def getThings():
     fp = open("hmoptions.cfg","r")
     things = json.load(fp)
+    return things
+
+if __name__ == "__main__":
+
+    things = getThings()
+
     ids = list(things["index"].keys())
     hubs = list(things["config"]["hubs"])
+    hpurl = things["config"]["housepanel_url"].encode('utf-8')
     idlist = []
     typelist = []
     tilelist = []
@@ -29,26 +36,22 @@ def getThings():
             typelist.append(i[:k].encode('utf-8'))
             idlist.append(i[k+1:].encode('utf-8'))
             tilelist.append(things["index"][i])
-    return (typelist, idlist, tilelist, hubidlist)
 
-if __name__ == "__main__":
-
-    mytypes, myids, mytiles, myhubs = getThings()
-    print ("Your config file has", len(mytypes), "things detected from your hubs by HousePanel")
-    print ("Your config file has", len(myhubs), " hubs configured")
+    print ("Your config file has", len(typelist), "things detected from your hubs by HousePanel")
+    print ("Your config file has", len(hubs), " hubs configured")
     print ("----------------------------------------------------------------------------------- \n\n")
 
-    for i in range(len(mytiles)):
+    for i in range(len(tilelist)):
 
-        if ( mytypes[i]=="switchlevel" or mytypes[i]=="contact" ):
+        if ( typelist[i]=="switchlevel" or typelist[i]=="contact" ):
             hubnum = 0
             response = "false"
-            while ( hubnum < len(myhubs) and response=="false" ):
-                hubId = str(myhubs[hubnum]).encode('utf-8')
-                response = callAPI(mytiles[i], hubnum)
+            while ( hubnum < len(hubs) and response=="false" ):
+                hubId = str(hubidlist[hubnum]).encode('utf-8')
+                response = callAPI(hpurl, tilelist[i], hubnum)
                 hubnum = hubnum + 1
 
             if ( response!="false" ):
-                print ("Thing type= ", mytypes[i]," id= ", myids[i]," tile= ", mytiles[i]," hubId= ", hubId)
+                print ("Thing type= ", typelist[i]," id= ", idlist[i]," tile= ", tilelist[i]," hubId= ", hubId)
                 print (response)
                 print ("----------------------------------------------------------------------------------- \n\n")

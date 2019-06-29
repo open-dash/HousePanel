@@ -963,18 +963,10 @@ function applyCustomField(action) {
         options[cid] = newfields;
         cm_Globals.options = options;
         
-        // remove item from allthings if this is a delete
-//        if ( action=="delcustom" ) {
-//            var value = cm_Globals.allthings[idx].value;
-//            var companion = "user_" + subid;
-//            if ( typeof value[subid] !== undefined ) {
-//                delete value[subid];
-//            }
-//            if ( typeof value[companion] !== undefined ) {
-//                delete value[companion];
-//            }
-//            cm_Globals.allthings[idx].value = value;
-//        }
+        // encrypt any password provided custom field
+        if ( subid==="password" && content.length > 0 ) {
+            content = md5(content);
+        }
     
         // show processing window
         var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
