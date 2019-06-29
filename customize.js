@@ -799,6 +799,11 @@ function applyCustomField(action) {
         var errstr = errors.join("\n  ");
         alert("Invalid entries:\n" + errstr);
     } else {
+        
+        // encrypt any password provided custom field
+        if ( subid==="password" && content.length > 0 ) {
+            content = md5(content);
+        }
     
         // show processing window
         var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};

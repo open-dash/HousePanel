@@ -409,7 +409,7 @@ function getMaxZindex() {
 function convertToModal(modalcontent, addok) {
     if ( typeof addok === "string" )
     {
-        modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">' + addok + '</button>';
+        modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">' + addok + '</button></div>';
     } else {
         modalcontent = modalcontent + '<div class="modalbuttons"><button name="okay" id="modalokay" class="dialogbtn okay">Okay</button>';
         modalcontent = modalcontent + '<button name="cancel" id="modalcancel" class="dialogbtn cancel">Cancel</button></div>';
@@ -2107,7 +2107,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
             refreshTile(aid, bid, thetype, hubnum);
         }, 3000);
     }
-    
+        
     // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
         setTimeout(function() {
@@ -2117,18 +2117,16 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
         
     // go through all the tiles this bid and type (easy ones)
     // this will include the trigger tile so we skip it
-    $('div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
-        var otheraid = $(this).attr("id").substring(2);
-        if (otheraid !== aid) { updateTile(otheraid, pvalue); }
-    });
+    if (thetype!=="switch" && thetype!=="switchlevel" && thetype!=="bulb" && thetype!=="light") {
+        $('div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
+            var otheraid = $(this).attr("id").substring(2);
+            if (otheraid !== aid) { updateTile(otheraid, pvalue); }
+        });
+    }
     
     // if this is a switch on/off trigger go through and set all light types
-    // change to use refreshTile function so it triggers PHP session update
-    // but we have to do this after waiting a few seconds for ST to catch up
-    // actually we do both for instant on screen viewing
-    // the second call is needed to make screen refreshes work properly
-//    if (thetype==="switch" || thetype==="bulb" || thetype==="light") {
-    if (trigger==="switch") {
+    // but only if the triggering tile is a light type
+    if (trigger==="switch" && (thetype==="switch" || thetype==="switchlevel" || thetype==="bulb" || thetype==="light") ) {
         // updateMode();
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -2156,13 +2154,11 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
     }
     
     // if this is a switchlevel go through and set all switches
-    // change to use refreshTile function so it triggers PHP session update
-    // but we have to do this after waiting a few seconds for ST to catch up
-    // NOTE: removed the above logic because our updates are now faster and frequent
-    if (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
-        trigger==="hue-up" || trigger==="hue-dn" ||
-        trigger==="saturation-up" || trigger==="saturation-dn" ||
-        trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" ) {
+    if ( (trigger==="level-up" || trigger==="level-dn" || trigger==="slider" ||
+          trigger==="hue-up" || trigger==="hue-dn" ||
+          trigger==="saturation-up" || trigger==="saturation-dn" ||
+          trigger==="colorTemperature-up" || trigger==="colorTemperature-dn" )
+        && (thetype==="switch" || thetype==="switchlevel" || thetype==="bulb" || thetype==="light") ) {
 //        alert("level trigger: bid= "+bid+" pvalue= "+strObject(pvalue));
         $('div.thing[bid="'+bid+'"][type="switch"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
@@ -2186,12 +2182,13 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
 
 // setup trigger for clicking on the action portion of this thing
 // this used to be done by page but now it is done by sensor type
-function setupPage(trigger) {
+function setupPage() {
+    
     $("div.overlay > div").off("click.tileactions");
     $("div.overlay > div").on("click.tileactions", function(evt) {
-        
+
+        var that = this;
         var aid = $(this).attr("aid");
-        var theattr = $(this).attr("class");
         var subid = $(this).attr("subid");
         
         // avoid doing click if the target was the title bar
@@ -2205,17 +2202,17 @@ function setupPage(trigger) {
         
         var tile = '#t-'+aid;
         var thetype = $(tile).attr("type");
-        var linktype = thetype;
-        var linkval = "";
-        var command = "";
+        var thingname = $("#s-"+aid).html();
         
         // handle special control type tiles that perform javascript actions
         // if we are not in operate mode only do this if click is on operate
         // this is the only type tile that cannot be customized
+        // which means it also cannot be password protected
+        // TODO - change this in the future
         if ( thetype==="control" && (priorOpmode==="Operate" || subid==="operate") ) {
             if ( $(this).hasClass("confirm") ) {
                 var pos = {top: 100, left: 100};
-                createModal("modalexec","Perform " + subid + " operation... Are you sure?", "body", true, pos, function(ui) {
+                createModal("modalexec","<p>Perform " + subid + " operation ... Are you sure?</p>", "body", true, pos, function(ui) {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(subid);
@@ -2227,209 +2224,251 @@ function setupPage(trigger) {
             return;
         }
 
-        // ignore all other tiles if not in operate mode
+        // ignore all other clicks if not in operate mode
+        // including any password protected ones
         if ( priorOpmode!=="Operate" ) {
             return;
         }
-
-        // get the targetid used to aim values at
-        var bid = $(tile).attr("bid");
-        var hubnum = $(tile).attr("hub");
-
-        // use first hub as defualt if needed
-//        if ( hubnum === "-1" ) {
-//            try {
-//                var hubstr = $("input[name='allHubs']").val();
-//                var hubs = JSON.parse(hubstr);
-//                hubnum = hubs[0].hubId;
-//            } catch(err) {}
-//        }
         
-        var targetid;
-        if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {
-            var slen = subid.length;
-            targetid = '#a-'+aid+'-'+subid.substring(0,slen-3);
+        // check for clicking on a password field
+        // or any other field of a tile with a password sibling
+        // this can only be true if user has added one using tile customizer
+        var pw = false;
+        if ( subid==="password" ) {
+            pw = $(this).html();
         } else {
-            targetid = '#a-'+aid+'-'+subid;
-        }
-
-        // all hubs now use the same doaction call name
-        var ajaxcall = "doaction";
-        var thevalue = $(targetid).html();
-        var presult = {};
-        
-        // moved switch toggle treatment to the groovy code to detect swattr
-        // moved the special case for SHM to the groovy code so it only impacts SHM tiles
-        // 
-        // special case of thermostat clicking on things without values
-        // send the temperature as the value - think we can remove this
-        if ( !thevalue && thetype=="thermostat" &&
-             ( subid.endsWith("-up") || subid.endsWith("-dn") ) ) {
-            thevalue = $("#a-"+aid+"-temperature").html();
-        }
-        
-        // handle music commands (which need to get subid command) and
-        // there is only one sibling for each of the music controls
-        // check for companion sibling element for handling customizations
-        // this includes easy references for a URL or TEXT link
-        // using jQuery sibling feature and check for valid http string
-        // if found then switch the type to the linked type for calls
-        // and grab the proper hub number
-        var ismusic = false;
-        if ( subid.startsWith("music-" ) ) {
-            thevalue = subid.substring(6);
-            ismusic = true;
-        }
-        var usertile = $(this).siblings(".user_hidden");
-        var userval = "";
-        if ( usertile && $(usertile).attr("command") ) {
-            command = $(usertile).attr("command");    // command type
-            if ( ismusic ) {
-                userval = thevalue;
-            } else  {
-                userval = $(usertile).attr("value");      // raw user provided val
+            var pwsib = $(this).parent().siblings("div.overlay.password");
+            if ( pwsib && pwsib.length > 0 ) {
+                pw = pwsib.children("div.password").html();
             }
-            linkval = $(usertile).attr("linkval");    // urlencooded val
-            linktype = $(usertile).attr("linktype");  // type of tile linked to
+        }
             
-            // handle redirects to a user provided web page
-            if ( ( command==="URL" || command==="TEXT" ) 
-                   && userval.startsWith("http") ) {
-                window.open(userval,'_blank');
+        // now ask user to provide a password to activate this tile
+        // or if an empty password is given this becomes a confirm box
+        // the dynamically created dialog box includes an input string if pw given
+        // uses a simple md5 hash to store user password - this is not strong security
+        if ( typeof pw === "string" && pw!==false ) {
+            var userpw = "";
+            var tpos = $(tile).offset();
+            var ttop = (tpos.top > 95) ? tpos.top - 90 : 5;
+            var pos = {top: ttop, left: tpos.left};
+            var htmlcontent;
+            if ( pw==="" ) {
+                htmlcontent = "<p>Operate action=" + subid+" for tile [" + thingname + "] Are you sure?</p>";
+            } else {
+                htmlcontent = "<p>Tile " + thingname + " is Password Protected</p>";
+                htmlcontent += "<div class='ddlDialog'><label for='userpw'>Password:</label>";
+                htmlcontent += "<input class='ddlDialog' id='userpw' type='password' size='20' value='' />";
+                htmlcontent += "</div>";
+            }
+            createModal("modalexec", htmlcontent, "body", true, pos, function(ui) {
+                var clk = $(ui).attr("name");
+                if ( clk==="okay" ) {
+                    if ( pw!=="" ) {
+                        userpw = md5($("#userpw").val());
+                    }
+                    if ( userpw===pw ) {
+                        console.log("Protected or confirmation tile [" + thingname + "] access granted.");
+                        processClick(that, thingname);
+                        evt.stopPropagation();
+                        return; 
+                    }
+                }
+                console.log("Protected or confirmation tile [" + thingname + "] access denied.");
                 return;
-                
-            // handle replacing text with user provided text that isn't a URL
-            // for this case there is nothing to do on the server so we just
-            // update the text on screen and return it to the log
-            } else if ( command==="TEXT" ) {
+            });
+        } else {
+            processClick(that, thingname);
+            evt.stopPropagation();
+        }
+    });
+   
+}
+
+function processClick(that, thingname) {
+    var aid = $(that).attr("aid");
+    var theattr = $(that).attr("class");
+    var subid = $(that).attr("subid");
+    var tile = '#t-'+aid;
+    var thetype = $(tile).attr("type");
+    var linktype = thetype;
+    var linkval = "";
+    var command = "";
+    var bid = $(tile).attr("bid");
+    var hubnum = $(tile).attr("hub");
+    var targetid;
+    if ( subid.endsWith("-up") || subid.endsWith("-dn") ) {
+        var slen = subid.length;
+        targetid = '#a-'+aid+'-'+subid.substring(0,slen-3);
+    } else {
+        targetid = '#a-'+aid+'-'+subid;
+    }
+
+    // all hubs now use the same doaction call name
+    var ajaxcall = "doaction";
+    var thevalue = $(targetid).html();
+
+    // special case of thermostat clicking on things without values
+    // send the temperature as the value
+    if ( !thevalue && thetype=="thermostat" &&
+         ( subid.endsWith("-up") || subid.endsWith("-dn") ) ) {
+        thevalue = $("#a-"+aid+"-temperature").html();
+    }
+
+    // handle music commands (which need to get subid command) and
+    var ismusic = false;
+    if ( subid.startsWith("music-" ) ) {
+        thevalue = subid.substring(6);
+        ismusic = true;
+    }
+    
+    // handle linked tiles by looking for sibling
+    // there is only one sibling for each of the music controls
+    // check for companion sibling element for handling customizations
+    // includes easy references for a URL or TEXT link
+    // using jQuery sibling feature and check for valid http string
+    // if found then switch the type to the linked type for calls
+    // and grab the proper hub number
+    var usertile = $(that).siblings(".user_hidden");
+    var userval = "";
+    if ( usertile && $(usertile).attr("command") ) {
+        command = $(usertile).attr("command");    // command type
+        if ( ismusic ) {
+            userval = thevalue;
+        } else  {
+            userval = $(usertile).attr("value");      // raw user provided val
+        }
+        linkval = $(usertile).attr("linkval");    // urlencooded val
+        linktype = $(usertile).attr("linktype");  // type of tile linked to
+
+        // handle redirects to a user provided web page
+        if ( command==="URL" && userval.startsWith("http") ) {
+            window.open(userval,'_blank');
+            return;
+
+        // handle replacing text with user provided text that isn't a URL
+        // for this case there is nothing to do on the server so we just
+        // update the text on screen and return it to the log
+        } else if ( command==="TEXT" ) {
             $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
-                    attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
+                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
+                attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                 function(presult, pstatus) {
                     if (pstatus==="success") {
                         console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
                         updateTile(aid, presult);
                     }
                 }, "json");
-                // presult[subid] = userval;
-                // console.log( "Clicked on custom TEXT tile with: "+ strObject(presult) );
-                // just update this customized tile since clicking on text doesn't really do anything
-                // updateTile(aid, presult);
-                return;
-            }
-            
-            // all the other command types are handled on the PHP server side
-            // this is enabled by the settings above for command, linkval, and linktype
-        } else {
-            linkval = "";
-            command = "";
-            linktype = thetype;
+            return;
         }
-        
-        // turn momentary and piston items on or off temporarily
-        // but only for the subid items that expect it
-        // and skip if this is a custom action since it could be anything
-        // also, for momentary buttons we don't do any tile updating
-        // other than visually pushing the button by changing the class for 1.5 seconds
-        if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid.startsWith("piston")) ) ) {
-            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
-            var tarclass = $(targetid).attr("class");
-            var that = targetid;
-            // define a class with method to reset momentary button
-            var classarray = [$(that), tarclass, thevalue];
-            classarray.myMethod = function() {
-                this[0].attr("class", this[1]);
-                this[0].html(this[2]);
-            };
-            
-            $.post(returnURL, 
-                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
-                    attr: subid, subid: subid, hubid: hubnum},
-                function(presult, pstatus) {
-                    if (pstatus==="success") {
-                        console.log( ajaxcall + " POST returned:\n"+ strObject(presult) );
-                        // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
-                        if (thetype==="piston") {
-                            $(that).addClass("firing");
-                            $(that).html("firing");
-                        } else if ( $(that).hasClass("on") ) {
-                            $(that).removeClass("on");
-                            $(that).addClass("off");
-                            $(that).html("off");
-                        } else if ( $(that).hasClass("off") )  {
-                            $(that).removeClass("off");
-                            $(that).addClass("on");
-                            $(that).html("on");
-                        }
-                        setTimeout(function(){classarray.myMethod();}, 1500);
-                        updateMode();
-                    }
-                }, "json");
-                
-        // for clicking on the video link simply reload the video which forces a replay
-        } else if (     (thetype==="video" && subid==="video")
-                     || (thetype==="frame" && subid==="frame")
-                     || (thetype==="image" && subid==="image")
-                     || (thetype==="blank" && subid==="blank")
-                     || (thetype==="custom" && subid==="custom") ) {
-            console.log("Rereshing " + thetype + ": " + thevalue);
-            $(targetid).html(thevalue);
-            
-        } else {
-            console.log(ajaxcall + ": command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
 
-            // create a visual cue that we clicked on this item
-            $(targetid).addClass("clicked");
-            setTimeout( function(){ $(targetid).removeClass("clicked"); }, 750 );
-            
-            // pass the call to main routine in php
-            $.post(returnURL, 
-                   {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
-                    attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
-                   function (presult, pstatus) {
-                        if (pstatus==="success" && presult && typeof presult==="object" ) {
-                            try {
-                                var keys = Object.keys(presult);
-                                if ( keys && keys.length) {
-                                    console.log( ajaxcall + " POST returned:", presult );
-                                    
-                                    // update the linked item
-                                    // note - the events of any linked item will replace the events of master tile
-                                    if ( command==="LINK" && presult["LINK"] ) {
-                                        var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
-                                        var realsubid = presult["LINK"]["realsubid"];
-                                        // alert(linkaid+ " lt= " + linktype + " lv= "+linkval);
-                                        if ( linkaid && realsubid ) {
-                                            linkaid = linkaid.substring(2);
-                                            var linkbid = presult["LINK"]["linked_swid"];
-                                            var linkvalue = presult["LINK"]["linked_val"];
-                                            if ( linkvalue["name"] ) { delete linkvalue["name"]; }
-                                            // console.log("aid= " + aid + " linkaid= "+linkaid+" realsubid= " + realsubid + " linkbid= " + linkbid +" linktype= " + linktype + " obj= " + strObject(linkvalue));
-                                            // update the host linked tile and the target linked tiles
-                                            updateTile(aid, linkvalue);
-                                            updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
-                                        }
+        // all the other command types are handled on the PHP server side
+        // this is enabled by the settings above for command, linkval, and linktype
+    } else {
+        linkval = "";
+        command = "";
+        linktype = thetype;
+    }
+
+    // turn momentary and piston items on or off temporarily
+    // but only for the subid items that expect it
+    // and skip if this is a custom action since it could be anything
+    // also, for momentary buttons we don't do any tile updating
+    // other than visually pushing the button by changing the class for 1.5 seconds
+    if ( command==="" && ( (thetype==="momentary" && subid==="momentary") || (thetype==="piston" && subid.startsWith("piston")) ) ) {
+        console.log(ajaxcall + ": thingname= " + thingname + " command= " + command + " bid= "+bid+" hub Id= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+        var tarclass = $(targetid).attr("class");
+        // define a class with method to reset momentary button
+        var classarray = [$(targetid), tarclass, thevalue];
+        classarray.myMethod = function() {
+            this[0].attr("class", this[1]);
+            this[0].html(this[2]);
+        };
+
+        $.post(returnURL, 
+            {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
+                attr: subid, subid: subid, hubid: hubnum},
+            function(presult, pstatus) {
+                if (pstatus==="success") {
+                    console.log( ajaxcall + " POST returned:", presult );
+                    // console.log( ajaxcall + " POST returned: "+ JSON.stringify(presult) );
+                    if (thetype==="piston") {
+                        $(targetid).addClass("firing");
+                        $(targetid).html("firing");
+                    } else if ( $(targetid).hasClass("on") ) {
+                        $(targetid).removeClass("on");
+                        $(targetid).addClass("off");
+                        $(targetid).html("off");
+                    } else if ( $(targetid).hasClass("off") )  {
+                        $(targetid).removeClass("off");
+                        $(targetid).addClass("on");
+                        $(targetid).html("on");
+                    }
+                    setTimeout(function(){classarray.myMethod();}, 1500);
+                    updateMode();
+                }
+            }, "json");
+
+    // for clicking on the video link simply reload the video which forces a replay
+    } else if (     (thetype==="video" && subid==="video")
+                 || (thetype==="frame" && subid==="frame")
+                 || (thetype==="image" && subid==="image")
+                 || (thetype==="blank" && subid==="blank")
+                 || (thetype==="custom" && subid==="custom") ) {
+        console.log("Rereshing " + thetype + ": " + thevalue);
+        $(targetid).html(thevalue);
+
+    } else {
+        console.log(ajaxcall + ": thingname= " + thingname + " command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
+
+        // create a visual cue that we clicked on this item
+        $(targetid).addClass("clicked");
+        setTimeout( function(){ $(targetid).removeClass("clicked"); }, 750 );
+
+        // pass the call to main routine in php
+        $.post(returnURL, 
+               {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
+                attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
+               function (presult, pstatus) {
+                    if (pstatus==="success" && presult && typeof presult==="object" ) {
+                        try {
+                            var keys = Object.keys(presult);
+                            if ( keys && keys.length) {
+                                console.log( ajaxcall + " POST returned:", presult );
+
+                                // update the linked item
+                                // note - the events of any linked item will replace the events of master tile
+                                if ( command==="LINK" && presult["LINK"] ) {
+                                    var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
+                                    var realsubid = presult["LINK"]["realsubid"];
+                                    if ( linkaid && realsubid ) {
+                                        linkaid = linkaid.substring(2);
+                                        var linkbid = presult["LINK"]["linked_swid"];
+                                        var linkvalue = presult["LINK"]["linked_val"];
+                                        if ( linkvalue["name"] ) { delete linkvalue["name"]; }
+                                        if ( linkvalue["password"] ) { delete linkvalue["password"]; }
+                                        updateTile(aid, linkvalue);
+                                        updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
                                     }
-                                    else if ( command !== "RULE" ) {
-                                        if ( presult["name"] ) { delete presult["name"]; }
-                                        updAll(subid,aid,bid,thetype,hubnum,presult);
-                                    }
-                                    
-                                } else {
-                                    console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                                 }
-                            } catch (e) { 
-                                console.log(e);
+                                // we remove name and password fields since they don't need updating for security reasons
+                                else if ( command !== "RULE" ) {
+                                    if ( presult["name"] ) { delete presult["name"]; }
+                                    if ( presult["password"] ) { delete presult["password"]; }
+                                    updAll(subid,aid,bid,thetype,hubnum,presult);
+                                }
+
+                            } else {
+                                console.log( ajaxcall + " POST returned nothing to update (" + presult+"}");
                             }
-                        } else {
-                            console.log("Unknown ajax result. ", pstatus, presult);
+                        } catch (e) { 
+                            console.log(e);
                         }
-                   }, "json"
-            );
-            
-        } 
-         
-        evt.stopPropagation();
-    });
-   
-};
+                    } else {
+                        console.log("Unknown ajax result. ", pstatus, presult);
+                    }
+               }, "json"
+        );
+
+    } 
+}

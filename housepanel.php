@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.073      Add password field
+             - fix bug in the action buttons where missing <div>
  2.072      Honor time format in js updates every second
              - merge in README clean up pull request
              - enable multiple things in a query request
@@ -320,6 +322,9 @@ function htmlHeader($skin="skin-housepanel") {
     $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>';
     $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
 
+    // md5 function
+    $tc.= '<script src="md5.min.js"></script>';
+    
     // include hack from touchpunch.furf.com to enable touch punch through for tablets
     $tc.= '<script src="jquery.ui.touch-punch.min.js"></script>';
     
@@ -644,15 +649,37 @@ function tsk($timezone, $skin, $kiosk, $uname, $port, $webSocketServerPort, $fas
     
 }
 
+function getLoginPage($returnURL, $uname) {
+    $tc = "";
+    $tc.= "<h2>" . APPNAME . "</h2>";
+    $tc.= "<br /><br />";
+    $tc.= "<form name=\"login\" action=\"$returnURL\"  method=\"POST\">";
+    $tc.= hidden("returnURL", $returnURL);
+    $tc.= hidden("pagename", "login");
+    $tc.= hidden("useajax", "dologin");
+    $tc.= hidden("id", "none");
+    $tc.= hidden("type", "none");
+    $tc.= "<div>";
+    $tc.= "<label for=\"uname\" class=\"startupinp\">Username: </label>";
+    $tc.= "<input id=\"uname\" name=\"uname\" width=\"20\" type=\"text\" value=\"$uname\"/>"; 
+    $tc.= "<br /><br />";
+    $tc.= "<label for=\"pword\" class=\"startupinp\">Password: </label>";
+    $tc.= "<input id=\"pword\" name=\"pword\" width=\"40\" type=\"password\" value=\"\"/>"; 
+    $tc.= "<br /><br />";
+    $tc.= "<input class=\"submitbutton\" value=\"Login\" name=\"submit\" type=\"submit\" />";
+    $tc.= "</div>";
+    $tc.= "</form>";
+    return $tc;
+}
+
 // screen that greets user and asks for authentication
 function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc = "";
-    
-    $tc .= "<h2>" . APPNAME . "</h2>";
+    $tc.= "<h2>" . APPNAME . "</h2>";
 
     // provide welcome page with instructions for what to do
     // this will show only if the user hasn't set up HP
-    // it will be bypassed if Hubitat is manually sst up
+    // or if a reauth is requested or when converting old passwords
     $tc.= "<div class=\"greeting\">";
 
     $tc.="<p>You are seeing this because you either requested a re-authentication " .
@@ -4108,7 +4135,8 @@ function is_ssl() {
         $options["config"]["webSocketServerPort"] = $webSocketServerPort;
         if ( $uname!=="" && $pword!=="" ) {
             $pwords = $options["config"]["pword"];
-            $pword = crypt($pword, CRYPTSALT);
+            // $pword = crypt($pword, CRYPTSALT);
+            $pword = password_hash($pword, PASSWORD_DEFAULT);
             $pwords[$uname] = $pword;
             $options["config"]["pword"] = $pwords;
         }
@@ -4190,7 +4218,8 @@ function is_ssl() {
         if ( $pword==="" ) {
             $pword = $pwords[$uname];
         } else {
-            $pword = crypt($pword, CRYPTSALT);
+            // $pword = crypt($pword, CRYPTSALT);
+            $pword = password_hash($pword, PASSWORD_DEFAULT);
             $pwords[$uname] = $pword;
         }
         
@@ -4947,7 +4976,6 @@ function is_ssl() {
             
             case "reauth":
                 unset($_SESSION["allthings"]);
-//                unset($_SESSION["hmoptions"]);
                 unset($_SESSION["HP_hubnum"]);
                 $hpcode = time();
                 $_SESSION["hpcode"] = $hpcode;
@@ -4974,7 +5002,7 @@ function is_ssl() {
             case "savefilters":
                 // the filter options is in value
                 // and the new skin directory is in the attr
-                $options = readOptions();
+                // $options = readOptions();
                 $options["useroptions"] = $swval;
                 $skin = $swattr;
                 
@@ -4997,7 +5025,7 @@ function is_ssl() {
             case "savetileedit":
                 // grab the new tile name and set all tiles with matching id
                 
-                $options = readOptions();
+                // $options = readOptions();
                 $newname = $swattr;
                 if ( $swtype === "page" ) {
                     $newname = str_replace(" ", "_", $newname);
@@ -5056,17 +5084,22 @@ function is_ssl() {
                 }
                 break;
                 
+            // changed password logic to be more secure by checking here
+            // and using the cookie to only store access okay state or not
             case "dologin":
                 if ( isset($_POST["pword"]) && isset($_POST["uname"]) ) {
                     $uname = $_POST["uname"];
                     $pword = $_POST["pword"];
-                    if ( $pword==="" ) {
-                        setcookie("uname",$uname, $expirz, "/");
-                        setcookie("pword","password", $expirz, "/");
+                    $pwords = $options["config"]["pword"];
+                    if (array_key_exists($uname, $pwords)) {
+                        $hash = $pwords[$uname];
+                        if ( ($hash==="" && $pword==="") || password_verify($pword, $hash) ) {
+                            setcookie("pword", $hash, $expiry, "/");
+                        } else {
+                            setcookie("pword", "", $expirz, "/");
+                        }
                     } else {
-                        $pword = crypt($pword, CRYPTSALT);
-                        setcookie("uname",$uname, $expiry, "/");
-                        setcookie("pword",$pword, $expiry, "/");
+                        setcookie("pword", "", $expirz, "/");
                     }
                     header("Location: $returnURL");
                     exit(0);
@@ -5238,59 +5271,74 @@ function is_ssl() {
         }
         
         $pwords = $configoptions["pword"];
+        
+        // get the username provided by user that was stored in a cookie
+        // otherwise we assume default user of admin
         if ( isset($_COOKIE["uname"]) ) {
             $uname = $_COOKIE["uname"];
         } else {
-            $uname = "unknown";
+            $uname = "admin";
         }
         
-        // check for old format
-        if ( is_array($pwords) ) {
-            if ( $uname && array_key_exists($uname, $pwords) ) {
-                $pword = $pwords[$uname];
-            } else {
-                $pword = "unknown";
-            }
+        // get the password provided by the user that was stored in options
+        // if guest is provided then default is blank password unless provided
+        if ( array_key_exists($uname, $pwords) ) {
+            $pword = $pwords[$uname];
         } else {
-            $pword = $pwords;
+            $pword = ($uname==="guest") ? "" : false;
         }
         
-        // check for password unless blank
-        if ( ($uname==="" || $uname==="admin") && $pword==="" ) {
+        // if a legacy style pword was set then let user in
+        // but send them to reauth page to reset password
+        // and delete the legacy cookie type and old options hash
+        if ( isset($_COOKIE["pword"]) ) {
+            setcookie("pword", "", $expirz, "/");
+            if ( array_key_exists($uname, $pwords) ) {
+                $pwords[$uname] = "";
+                $configoptions["pword"] = $pwords;
+                $rewriteoptions = true;
+            }
+            $login = "reauth";
+            
+        // handle guest logins
+        // this only works if the guest account wasn't protected
+        } else if ( $uname==="guest" && $pword==="" ) {
             $login = true;
-        } else {
-            if ( isset($_COOKIE["uname"]) && $uname===$_COOKIE["uname"] &&
-                 isset($_COOKIE["pword"]) && $pword===$_COOKIE["pword"] ) {
-                $login = true;
-            } else {
-                $login = false;
-            }
-        }
         
+        // this happens if user enters a name other than guest that isn't defined
+        } else if ($pword===false) {
+            $login = false;
+            
+        // new password approach detected
+        // this includes blank passwords signaling don't use one
+        // this is not recommended but it is supported
+        } else if (is_string ($pword) && isset($_COOKIE["pwcrypt"]) ) {
+            $hash = $_COOKIE["pwcrypt"];
+            $login = ($pword==="" && $hash==="") ? true : password_verify($pword, $hash);
+        
+        // security mechanism failed
+        } else {
+            $uname = "admin";
+            $login = false;
+        }
+
         if ( $rewriteoptions ) {
             $options["config"] = $configoptions;
             writeOptions($options);
         }
         
-        if ( !$login ) {
-            $tc = "<h2>" . APPNAME . "</h2>";
-            $tc.= "<br /><br />";
-            $tc.= "<form name=\"login\" action=\"$returnURL\"  method=\"POST\">";
-            $tc.= hidden("returnURL", $returnURL);
-            $tc.= hidden("pagename", "login");
-            $tc.= hidden("useajax", "dologin");
-            $tc.= hidden("id", "none");
-            $tc.= hidden("type", "none");
-            $tc.= "<div>";
-            $tc.= "<label for=\"uname\" class=\"startupinp\">Username: </label>";
-            $tc.= "<input id=\"uname\" name=\"uname\" width=\"20\" type=\"text\" value=\"$uname\"/>"; 
-            $tc.= "<br /><br />";
-            $tc.= "<label for=\"pword\" class=\"startupinp\">Password: </label>";
-            $tc.= "<input id=\"pword\" name=\"pword\" width=\"40\" type=\"password\" value=\"\"/>"; 
-            $tc.= "<br /><br />";
-            $tc.= "<input class=\"submitbutton\" value=\"Login\" name=\"submit\" type=\"submit\" />";
-            $tc.= "</div>";
-            $tc.= "</form>";
+        // handle legacy passwords that get sent to reauth page
+        if ( $login==="reauth" ) {
+            unset($_SESSION["allthings"]);
+            unset($_SESSION["HP_hubnum"]);
+            $hpcode = time();
+            $_SESSION["hpcode"] = $hpcode;
+            $tc= getAuthPage($returnURL, $hpcode);
+            
+        } else if ( $login===false ) {
+            $tc = getLoginPage($returnURL, $uname);
+            
+        // otherwise begin the logic of creating the full housepanel webpage
         } else {
             
             // get kiosk mode
