@@ -618,11 +618,13 @@ div.modalbuttons {
     margin-top: 5px;
 }
 
-button.dialogbtn, button.cm_button, button.disabled {
+button {
+    cursor: pointer;
+}
+button.dialogbtn, button.cm_button {
     background-color: #3a5795;
     display: inline;
     width: 100px; height: 36px; margin-left: 5px; margin-right: 5px;
-    cursor: pointer;
     color: #eeeeee;
     text-align: center;
     font-weight: normal;
@@ -635,11 +637,22 @@ button.dialogbtn, button.cm_button, button.disabled {
 button.dialogbtn:hover, button.cm_button:hover {
     filter: invert(1);
 }
-button.disabled {
+button.arrow {
+    border: 3px solid white;
+}
+button.arrow.disabled, button.arrow.disabled:hover {
+    display: none;
+}
+button.arrow:hover {
+    border: 3px solid black;
+    border-right: 3px solid gray;
+    border-bottom: 3px solid gray;
+}
+button.disabled, button.cm_button.disabled, button.arrow.disabled {
     background-color: #cccccc;
     cursor: default;
 }
-button.disabled:hover {
+button.disabled:hover, button.arrow.disabled:hover {
     filter: invert(0);
 }
 

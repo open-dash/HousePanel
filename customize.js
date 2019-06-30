@@ -13,6 +13,7 @@ cm_Globals.thingidx = cm_Globals.currentidx;
 cm_Globals.usertext = "";
 cm_Globals.reload = false;
 cm_Globals.thingindex = null;
+cm_Globals.defaultclick = "name";
 
 $(document).ready(function() {
     getAllthings();
@@ -55,8 +56,9 @@ function getOptions(modalwindow) {
                         var idx = cm_Globals.thingidx;
                         var allthings = cm_Globals.allthings;
                         var thing = allthings[idx];
-                        var subtitle = thing.name;
-                        $("#cm_subheader").html(subtitle);
+                        $("#cm_subheader").html(thing.name);
+                        initCustomActions();
+                        handleBuiltin(cm_Globals.defaultclick);
                     } catch (e) { }
                 }
             } else {
@@ -87,8 +89,8 @@ function getDefaultSubids() {
     var n = idx.indexOf("|");
     cm_Globals.id = idx.substring(n+1);
     // console.log("tile= " + thingindex + " idx= " + cm_Globals.thingidx + " id= " + cm_Globals.id);
-    
-    loadExistingFields(cm_Globals.thingidx);
+
+    loadExistingFields(idx, false, false);
     $("#cm_customtype option[value='TEXT']").prop('selected',true);
     
     var pc = loadTextPanel();
@@ -137,6 +139,9 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
         createModal("modalcustom", dh, "body", "Done", pos, 
             // function invoked upon leaving the dialog
             function(ui, content) {
+                // write out updated options
+                // TODO ...
+                
                 // reload window unless modal Tile Editor window is open
                 // but always skip if we didn't actually change anything
                 cm_Globals.thingindex = false;
@@ -158,18 +163,19 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
                         var idx = cm_Globals.thingidx;
                         var allthings = cm_Globals.allthings;
                         var thing = allthings[idx];
-                        var subtitle = thing.name;
-                        $("#cm_subheader").html(subtitle);
+                        $("#cm_subheader").html(thing.name);
+                        initCustomActions();
+                        handleBuiltin(cm_Globals.defaultclick);
                     } catch (e) {
                         console.log ("Error loading dialog box...");
                     }
                 }
                 
                 // show the preview
-                showPreview();
+                // showPreview();
     
                 // initialize the actions
-                initCustomActions();
+                // initCustomActions();
                 $("#modalcustom").draggable();
             }
         );
@@ -210,8 +216,8 @@ function customTypePanel() {
         dh+= "<table class='cm_builtin'><tbody><tr>";
         dh+= "<td><select size='6' class='cm_builtinfields' id='cm_builtinfields' name='cm_builtinfields'>"; 
         dh+= "</select></td>";
-        dh+= "<td><button id='cm_upfield'><img src='media/uparrow.jpg' width='30'></button><br>";
-        dh+= "<button id='cm_dnfield'><img src='media/dnarrow.jpg' width='30'></button></td>";
+        dh+= "<td><button class='arrow' id='cm_upfield'><img src='media/uparrow.jpg' width='30'></button><br>";
+        dh+= "<button class='arrow' id='cm_dnfield'><img src='media/dnarrow.jpg' width='30'></button></td>";
         dh+= "</tr></table>";
         
         dh+= "<br><br><strong>OR...</strong><br><br>";
@@ -420,7 +426,7 @@ function actionButtons() {
 }
 
 // returns an options list of available fields of a given tile
-function loadLinkItem(idx, allowuser) {
+function loadLinkItem(idx, allowuser, sortval, sortup) {
     var thing = cm_Globals.allthings[idx];
     var thevalue = thing.value;
     var subids = Object.keys(thevalue);
@@ -428,8 +434,9 @@ function loadLinkItem(idx, allowuser) {
     
     var numthings = 0;
     var results = "";
-    var firstitem = "";
-    
+    var firstitem = (sortval===false) ? "" : sortval;
+
+    // first load the native items
     $.each(subids, function(index, val) {
         var subid = val;
         // skip user configuration items
@@ -438,21 +445,31 @@ function loadLinkItem(idx, allowuser) {
             // check to see if this subid has a user ride-along
             // which tells us it is a customized item
             var companion = "user_" + subid;
-            if ( subids.includes(companion) ) { 
-                if ( allowuser ) {
-                    results+= "<option value='" + subid + "'>" + subid + "<span class='reddot'> *</span></option>";
-                    numthings++;
-                }
-            } else {
+            if ( !subids.includes(companion) ) { 
                 results+= "<option value='" + subid + "'>" + subid + "</option>";
                 numthings++;
-           }
+            }
             
-            if ( !firstitem && numthings === 1 ) {
+            if ( !firstitem  ) {
                 firstitem = subid;
             }
         }
     });
+    
+    // now load the custom fields
+    // first sort and make sure we get rid of dups
+    if ( allowuser ) {
+        var uid = "user_" + cm_Globals.id;
+        sortExistingFields(sortval, sortup);
+        $.each(cm_Globals.options[uid], function(index, val) {
+            var subid = val[2];
+            if ( !subid.startsWith("user_") && subids.includes(subid) && subids.includes("user_" + subid) ) {
+                results+= "<option value='" + subid + "'>" + subid + "<span class='reddot'> *</span></option>";
+                numthings++;
+            }
+        });
+    }
+    
     return {fields: results, num: numthings, firstitem: firstitem};
 }
  
@@ -485,7 +502,7 @@ function loadLinkItem(idx, allowuser) {
     $("#cm_linkbid").html(bid + " => Tile #" + linkid);
     
     // read the existing fields of the linked tile, excluded user items
-    var results = loadLinkItem(linkidx, false);
+    var results = loadLinkItem(linkidx, false, false, false);
     $("#cm_linkfields").html(results.fields);
     
     // highlight the selected item. if nothing preselected use first item
@@ -495,8 +512,8 @@ function loadLinkItem(idx, allowuser) {
     $("#cm_linkfields option[value='" + subid + "']").prop('selected',true);
 
     // initExistingFields();
-    $("#cm_builtinfields").prop("readonly",true).prop("disabled",true).addClass("readonly");
-    $("#cm_builtinfields option").off('click');
+    // $("#cm_builtinfields").prop("readonly",true).prop("disabled",true).addClass("readonly");
+    // $("#cm_builtinfields option").off('click');
 
     // put this in the user field on the left for editing
     $("#cm_userfield").attr("value",results.firstitem);
@@ -516,7 +533,7 @@ function loadLinkItem(idx, allowuser) {
         var options = cm_Globals.options;
         var linkid = options.index[cm_Globals.currentidx];
         $("#cm_linkbid").html(bid + " => Tile #" + linkid);
-        var results = loadLinkItem(linkidx, false);
+        var results = loadLinkItem(linkidx, false, false, false);
         $("#cm_linkfields").html(results.fields);
         initLinkSelect();
         $("#cm_linkfields option[value='" + results.firstitem + "']").prop('selected',true).click();
@@ -528,8 +545,7 @@ function loadLinkItem(idx, allowuser) {
     });
  
     initLinkSelect();
-    
-    showPreview();
+    // showPreview();
 }
 
 function initLinkSelect() {
@@ -550,11 +566,9 @@ function initLinkSelect() {
         // disable or enable the Del button based on user status
         var companion = "user_" + subid;
         if ( subids.includes(companion) ) {
-            $("#cm_delButton").addClass("cm_button");
-            $("#cm_delButton").removeClass("disabled");
+            $("#cm_delButton").removeClass("disabled").prop("disabled",false);
         } else {
-            $("#cm_delButton").addClass("disabled"); // prop("disabled", true).css("background-color","#cccccc").css("cursor","default");
-            $("#cm_delButton").removeClass("cm_button");
+            $("#cm_delButton").addClass("disabled").prop("disabled",true);
         }
         
         // change button label to Add or Replace based on existing or not
@@ -598,6 +612,7 @@ function initCustomActions() {
                 content = loadLinkPanel(thingindex);
                 $("#cm_dynoContent").html(content);
                 initLinkActions(null, null);
+                // showPreview();
             }
         } else if ( customType ==="URL" ) {
             content = loadUrlPanel();
@@ -616,6 +631,8 @@ function initCustomActions() {
             $("#cm_dynoContent").html(content);
             initExistingFields();
         }
+        
+        showPreview();
         
         // $("#cm_selectedtype").html(customType);
         
@@ -653,25 +670,79 @@ function initCustomActions() {
     });
 }
  
-function loadExistingFields(idx) {
+function loadExistingFields(idx, sortval, sortup) {
     // show the existing fields
-    var results = loadLinkItem(idx, true);
+    var results = loadLinkItem(idx, true, sortval, sortup);
     $("#cm_builtinfields").html(results.fields);
+    var subid = results.firstitem;
+    cm_Globals.defaultclick = subid;
+    
+    // set the default click
+    $("#cm_builtinfields option[value='"+subid+"']").prop('selected',true);
     
     // text input for user values
-    $("#cm_userfield").attr("value",results.firstitem);
-    $("#cm_userfield").prop("value",results.firstitem);
-    $("#cm_userfield").val(results.firstitem);
+    $("#cm_userfield").attr("value",subid);
+    $("#cm_userfield").val(subid);
     
-    // emulate a click
-    // $("#cm_builtinfields > option").first().prop('selected',true).click();
+    showPreview();
 }
 
 function sortExistingFields(item, up) {
-    $("#cm_builtinfields option").each(function() {
-       console.log($(this).attr("value")); 
+    
+    // go through all the subs, eliminate dups, change order
+    var uid = "user_" + cm_Globals.id;
+    var useroptions = cm_Globals.options[uid];
+    var newoptions = []; // useroptions.slice(0);
+
+    // first eliminate dups and ensure everyone has an index
+    var lastindex = 0;
+    $.each(useroptions, function(index, val) {
+        var existing = false;
+        $.each(newoptions, function(newi, newv) {
+            if ( newv[2] === val[2] ) {
+                existing = true;
+                return false;
+            }
+        });
+        
+        if ( !existing ) {
+            if ( val.length===3 ) {
+                lastindex++;
+                val.push(lastindex);
+            }
+            lastindex = val[3];
+            newoptions.push(val);
+        }
     });
-    console.log(item, up);
+
+    // now set order
+    if ( item ) {
+        var k;
+        var lenm1 = newoptions.length - 1;
+        $.each(newoptions, function(index, val) {
+            if ( item && val[2]===item ) {
+                if ( up && index>0 ) {
+                    k = newoptions[index-1][3];
+                    newoptions[index-1][3] = val[3];
+                    newoptions[index][3] = k;
+                } else if ( !up && index<lenm1 ) {
+                    k = newoptions[index+1][3];
+                    newoptions[index+1][3] = val[3];
+                    newoptions[index][3] = k;
+                }
+                return false;
+            }
+        });
+    }
+    
+    // sort the items into proper order
+    newoptions.sort( function(a,b) {
+       return ( a[3] - b[3] );
+    });
+    
+    console.log("Sort {" + item + ") Old options= ", useroptions);
+    console.log("Sort (" + item + ") New options= ", newoptions);
+    cm_Globals.options[uid] = newoptions.slice(0);
 }
 
 function initExistingFields() {
@@ -693,25 +764,46 @@ function initExistingFields() {
         
         // change button label to Add or Replace based on existing or not
         if ( subids.includes(subid) ) {
+            var companion = "user_" + subid;
+            if ( subids.includes(companion) ) {
+                $("#cm_delButton").removeClass("disabled").prop("disabled", false);
+            } else {
+                $("#cm_delButton").addClass("disabled").prop("disabled",true);
+            }
             $("#cm_addButton").text("Replace");
         } else {
             $("#cm_addButton").text("Add");
-            $("#cm_delButton").addClass("disabled");
-            $("#cm_delButton").removeClass("cm_button");
+            $("#cm_delButton").addClass("disabled").prop("disabled",true);
         }
     });
     
     $("#cm_upfield").off('click');
     $("#cm_upfield").on('click', function(event) {
+        if ( $(this).hasClass("disabled") ) {
+            event.stopPropagation;
+            return;
+        }
         var sortval = $("#cm_userfield").val();
-        sortExistingFields(sortval, true);
+        // var uid = "user_" + cm_Globals.id;
+        // sortExistingFields(sortval, true);
+        loadExistingFields(idx, sortval, true);
+        initExistingFields();
+        cm_Globals.reload = true;
         event.stopPropagation();
     });
     
     $("#cm_dnfield").off('click');
     $("#cm_dnfield").on('click', function(event) {
+        if ( $(this).hasClass("disabled") ) {
+            event.stopPropagation;
+            return;
+        }
         var sortval = $("#cm_userfield").val();
-        sortExistingFields(sortval, false);
+        // var uid = "user_" + cm_Globals.id;
+        // sortExistingFields(sortval, false);
+        loadExistingFields(idx, sortval, false);
+        initExistingFields();
+        cm_Globals.reload = true;
         event.stopPropagation();
     });
     
@@ -719,78 +811,96 @@ function initExistingFields() {
     $("#cm_builtinfields option").off('click');
     $("#cm_builtinfields option").on('click', function(event) {
         var subid = $(this).val();
-        var allthings = cm_Globals.allthings;
-        var thing = allthings[idx];
-        var value = thing.value;
-        var subids = Object.keys(value);
-        var companion = "user_" + subid;
-
-        // put the field clicked on in the input box
-        $("#cm_userfield").attr("value",subid);
-        $("#cm_userfield").prop("value",subid);
-        $("#cm_userfield").val(subid);
-        
-        // disable or enable the Del button based on user status
-        if ( subids.includes(companion) ) {
-            $("#cm_delButton").addClass("cm_button");
-            $("#cm_delButton").removeClass("disabled");
-            
-            // fill in existing user info
-            var helperval = value[companion];
-            var helpers = helperval.split("::");
-            // console.log(helperval, helpers);
-            if ( helpers.length ===3 ) {
-                var cmtype = helpers[1];
-                var cmtext = decodeURIComponent(helpers[2]);
-                if ( cmtype==="TEXT" ) {
-                    cmtext = cmtext.replace( /\+/g, ' ' );
-                }
-                $("#cm_customtype").prop("value", cmtype);
-                $("#cm_customtype option[value='" + cmtype + "']").prop('selected',true)
-                $("#cm_text").val(cmtext);
-                cm_Globals.usertext = cmtext;
-            } else if ( helpers.length===4 && helpers[2]==="LINK" ) {
-                var oldval = $("#cm_customtype").val();
-                // var linktype = helpers[1];
-                var linkid = helpers[3];
-                if ( oldval!== "LINK" ) {
-                    $("#cm_customtype").prop("value", "LINK");
-                    $("#cm_customtype option[value='LINK']").prop('selected',true);
-                    var content = loadLinkPanel(cm_Globals.thingindex);
-                    $("#cm_dynoContent").html(content);
-                }
-                initLinkActions(linkid, subid);
-            }
-            
-        } else {
-            $("#cm_delButton").addClass("disabled"); // prop("disabled", true).css("background-color","#cccccc").css("cursor","default");
-            $("#cm_delButton").removeClass("cm_button");
-            
-//            var cmtext = decodeURIComponent(value[subid]);
-//            cmtext = cmtext.replace( /\+/g, ' ' );
-//            $("#cm_text").val(cmtext);
-            $("#cm_text").val(value[subid]);
-        }
-        
-        // change button label to Add or Replace based on existing or not
-        if ( subids.includes(subid) ) {
-            $("#cm_addButton").text("Replace");
-        } else {
-            $("#cm_addButton").text("Add");
-        }
-        
+        handleBuiltin(subid);
         event.stopPropagation();
    });
     
-    // auto select the first item
-    // $("#cm_builtinfields > option").first().prop('selected',true).click();
-   
     $("#cm_text").on("change", function(event) {
         cm_Globals.usertext = $(this).val();
     });
 
     // show the preview
+    // showPreview();
+}
+
+function handleBuiltin(subid) {
+    var idx = cm_Globals.thingidx;
+    var allthings = cm_Globals.allthings;
+    var thing = allthings[idx];
+    var value = thing.value;
+    var subids = Object.keys(value);
+    var companion = "user_" + subid;
+    cm_Globals.defaultclick = subid;
+
+    // put the field clicked on in the input box
+    $("#cm_userfield").attr("value",subid);
+    $("#cm_userfield").val(subid);
+
+    var cmtext = value[subid];
+    var helpers = ["","TEXT",cmtext];
+    var cmtype = "TEXT";
+    if ( subids.includes(companion) ) {
+        var helperval = value[companion];
+        helpers = helperval.split("::");
+        if ( helpers.length===3) {
+            cmtype = helpers[1];
+            cmtext = decodeURIComponent(helpers[2]);
+            if ( cmtype==="TEXT" ) {
+                cmtext = cmtext.replace( /\+/g, ' ' );
+            }
+        } else {
+            cmtype = helpers[2];
+            cmtext = "";
+        }
+    }
+
+    // update dyno panel
+    if ( cmtype==="LINK" ) {
+        // var oldval = $("#cm_customtype").val();
+        var linkid = helpers[3];
+        $("#cm_customtype").prop("value", "LINK");
+        $("#cm_customtype option[value='LINK']").prop('selected',true);
+        var content = loadLinkPanel(cm_Globals.thingindex);
+        $("#cm_dynoContent").html(content);
+        initLinkActions(linkid, subid);
+    } else {
+        $("#cm_customtype").prop("value", cmtype);
+        $("#cm_customtype option[value='" + cmtype + "']").prop('selected',true)
+        $("#cm_text").val(cmtext);
+        cm_Globals.usertext = cmtext;
+        var content;
+        if (cmtype==="POST" || cmtype==="GET" || cmtype==="POST" || cmtype==="PUT") {
+            content = loadUrlPanel();
+            $("#cm_dynoContent").html(content);
+        } else if (cmtype==="RULE") {
+            content = loadRulePanel();
+            $("#cm_dynoContent").html(content);
+        } else {
+            content = loadTextPanel();
+            $("#cm_dynoContent").html(content);
+        }
+        initExistingFields();
+    }
     showPreview();
+
+    // disable or enable the Del button based on user status
+    if ( subids.includes(companion) ) {
+        $("#cm_delButton").removeClass("disabled").prop("disabled", false);
+        $("#cm_upfield").removeClass("disabled").prop("disabled",false);
+        $("#cm_dnfield").removeClass("disabled").prop("disabled",false);
+    } else {
+        $("#cm_delButton").addClass("disabled").prop("disabled", true);
+        $("#cm_upfield").addClass("disabled").prop("disabled",true);
+        $("#cm_dnfield").addClass("disabled").prop("disabled",true);
+        $("#cm_text").val(value[subid]);
+    }
+
+    // change button label to Add or Replace based on existing or not
+    if ( subids.includes(subid) ) {
+        $("#cm_addButton").text("Replace");
+    } else {
+        $("#cm_addButton").text("Add");
+    }
 }
 
 // function uses php to save the custom info to hmoptions.cfg
@@ -902,19 +1012,29 @@ function showPreview() {
     var bid = cm_Globals.id;
     var str_type = cm_Globals.type;
     var tileid = cm_Globals.thingindex;
+    var uid = "user_" + bid;
+    var swattr = "none";
+    if ( cm_Globals.options[uid] ) {
+        swattr = cm_Globals.options[uid];
+    }
+    // console.log("attr= ",swattr);
     
     $.post(cm_Globals.returnURL, 
-        {useajax: "wysiwyg2", id: bid, type: str_type, tile: tileid, value: "none", attr: "none"},
+        {useajax: "wysiwyg2", id: bid, type: str_type, tile: tileid, value: "none", attr: swattr},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
                 $("#cm_preview").html(presult);
+                // console.log("wysiwyg2: ",presult);
 
-                $("#cm_preview div.overlay.level >div.level").slider({
-                    orientation: "horizontal",
-                    min: 0,
-                    max: 100,
-                    step: 5
-                });
+                var slidertag = "#cm_preview div.overlay.level >div.level";
+                if ( $(slidertag) ) {
+                    $(slidertag).slider({
+                        orientation: "horizontal",
+                        min: 0,
+                        max: 100,
+                        step: 5
+                    });
+                }
             }
         }
     );

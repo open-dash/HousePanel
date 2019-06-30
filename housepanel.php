@@ -9,7 +9,9 @@
  * Revision History
  */
 $devhistory = "
- 2.074      js Time bugfixes
+ 2.075      js Time bugfixes
+             - finish implementing the sorting feature for user fields
+             - speedup by avoiding reading options on each tile make
  2.073      Major speedup in Tile Customizer (customize.js)
              - prep work for sorting feature - not yet implemented
              - minor bug fixes
@@ -1424,26 +1426,41 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
         $lines = false;
     }
 
-    if ( $lines ) {
+    $ignores = array(" ","'","*","<",">","!","{","}","-",".",",",":","+","&","%");
+    if ( $lines && is_array($lines) ) {
         
         // allow user to skip wrapping single entry in an array
+        // the GUI will never do this but a user might in a manual edit
         if ( !is_array($lines[0]) ) {
             $lines = array($lines);
         }
+        
+        // first remove existing ones so we can readd them in the proper order
+        foreach ($lines as $msgs) {
+            $subidraw = trim($msgs[2]);
+            $subid = str_replace($ignores, "", $subidraw);
+            $companion = "user_" . $subid;
+            unset($custom_val[$subid]);
+            unset($custom_val[$companion]);
+        }
+        
+        // sort the lines and add them back in the requested order
+        // replacements of default items will occur in default place
+        usort($lines, sortlinefunc);
         
         // loop through each item and add to tile
         foreach ($lines as $msgs) {
             
             // check to make sure we have an array of three long
             // this strict rule is followed to enforce discipline use
-            if ( is_array($msgs) && count($msgs)==3 ) {
+            if ( is_array($msgs) && count($msgs)>=3 ) {
             
                 $calltype = trim(strtoupper($msgs[0]));
                 $content = trim($msgs[1]);
                 $posturl = urlencode($content);
                 $subidraw = trim($msgs[2]);
-                $ignores = array(" ","'","*","<",">","!","{","}","-",".",",",":","+","&","%");
                 $subid = str_replace($ignores, "", $subidraw);
+                $companion = "user_" . $subid;
 
                 // process web calls made in custom tiles
                 // this adds a new field for the URL or LINK information
@@ -1452,7 +1469,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                 if ( $content && substr(strtolower($content),0,4)==="http" &&
                      ($calltype==="PUT" || $calltype==="GET" || $calltype==="POST")  )
                 {
-                    $custom_val["user_" . $subid] = "::" . $calltype . "::" . $posturl;
+                    $custom_val[$companion] = "::" . $calltype . "::" . $posturl;
                     $custom_val[$subid] = $calltype . ": " . $subid;
                
                 } else if ( $calltype==="LINK" ) {
@@ -1472,7 +1489,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                         // if an error exists show text of intended link
                         // first case is if link is valid and not an existing field
                         if ( array_key_exists($subid, $thevalue) ) {
-                            $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                            $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
                             $custom_val[$subid]= $thevalue[$subid];
                             
                         // final two cases are if link tile wasn't found
@@ -1488,24 +1505,24 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                                 }
                             }
                             if ( $realsubid ) {
-                                $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                                $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
                                 $custom_val[$subid]= $thevalue[$realsubid];
                             } else {
-                                $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                                $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
                                 $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
                             }
                         }
                     } else {
-                        $custom_val["user_" . $subid] = "::" . $thetype . "::" . $calltype . "::" . $content;
+                        $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
                         $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
                     }
 
                 } else if ( $calltype==="URL" ) {
-                    $custom_val["user_" . $subid] = "::" . $calltype . "::" . $posturl;
+                    $custom_val[$companion] = "::" . $calltype . "::" . $posturl;
                     $custom_val[$subid] = $content;
                
                 } else if ( $calltype==="RULE" ) {
-                    $custom_val["user_" . $subid] = "::" . $calltype . "::" . $content;
+                    $custom_val[$companion] = "::" . $calltype . "::" . $content;
                     $custom_val[$subid] = "RULE::$subid";
 
                 } else {
@@ -1514,20 +1531,22 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                     // which is more efficient and safe in case user provides
                     // a subid that the hub might recognize - this way it is
                     // guaranteed to just pass the text on the browser
-                    // if we enter the subid name with a minus sign in front as the text
-                    // then that element will be removed if it exists
                     $calltype = "TEXT";
-                    if ( ($content === "-" . $subid) && array_key_exists($subid, $custom_val)  ) {
-                        unset($custom_val[$subid]);
-                    } else {
-                        $custom_val["user_" . $subid] = "::" . $calltype . "::" . $content;
-                        $custom_val[$subid] = $content;
-                    }
+                    $custom_val[$companion] = "::" . $calltype . "::" . $content;
+                    $custom_val[$subid] = $content;
                 }
             }
         }
     }
     return $custom_val;
+}
+
+function sortlinefunc($a, $b) {
+    $compa = (is_array($a) && count($a) > 3) ? intval($a[3]) : 99;
+    $compb = (is_array($b) && count($b) > 3) ? intval($b[3]) : 99;
+
+    if ( $compa===$compb) { return 0; }
+    return ($compb > $compa) ? -1 : 1;
 }
 
 // function to search for triggers in the name to include as classes to style
@@ -1670,10 +1689,10 @@ function getWeatherIcon($num) {
 // user elements are included but with a simple hidden class
 // because we don't want users to ever show these - but they must be there
 // so that the js code can send info needed to do actions and invoke web calls
-function makeThing($idx, $i, $kindex, $thesensor, $panelname, $postop=0, $posleft=0, $zindex=1, $customname="", $wysiwyg="") {
+function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=0, $posleft=0, $zindex=1, $customname="", $wysiwyg="") {
 
     // grab options
-    $options = readOptions();
+    // $options = readOptions();
     $allthings = getAllThings();
     $specialtiles = getSpecials();
    
@@ -2013,7 +2032,8 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
 // each HousePanel tab is generated by this function call
 // each page is contained within its own form and tab division
 // notice the call of $cnt by reference to keep running count
-function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoptions, $kioskmode) {
+function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $options, $kioskmode) {
+    $indexoptions = $options["index"];
     $tc = "";
     $roomname = $roomtitle;
     $tc.= "<div id=\"$roomname" . "-tab\">";
@@ -2070,7 +2090,7 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $indexoption
                 $cnt++;
                 $thiscnt++;
                 // use case version of room to make drag drop work
-                $tc.= makeThing($thingid, $cnt, $kindex, $thesensor, $roomtitle, $postop, $posleft, $zindex, $customname);
+                $tc.= makeThing($thingid, $cnt, $kindex, $thesensor, $roomtitle, $options, $postop, $posleft, $zindex, $customname);
             }
         }
         
@@ -3590,7 +3610,7 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     }
     
     // make a new tile based on the dragged information
-    $thing = makeThing($idx, $cnt, $tilenum, $thesensor, $panel, $ypos, $xpos, $zindex, "");
+    $thing = makeThing($idx, $cnt, $tilenum, $thesensor, $panel, $options, $ypos, $xpos, $zindex, "");
     
     // add it to our system
     $options["things"][$panel][] = array($tilenum, $ypos, $xpos, $zindex, "");
@@ -4822,22 +4842,26 @@ function is_ssl() {
                 break;
 
             case "wysiwyg2":
+                // if we sorted the user fields in the customizer, save them
+                if ( is_array($swattr) ) {
+                    $uid = "user_" . $swid;
+                    $options[$uid] = $swattr;
+                    writeOptions($options);
+                }
             case "wysiwyg":
                 if ( $swtype==="page" && $useajax==="wysiwyg" ) {
                     // make the fake tile for the room for editing purposes
                     $faketile = array("panel" => "Panel", "tab" => "Tab Inactive", "tabon" => "Tab Selected" );
-                    $thesensor = array("id" => "r_".strval($swid), "name" => $swval, 
+                    $thing = array("id" => "r_".strval($swid), "name" => $swval, 
                         "hubnum" => -1, "hubtype" => "None", "type" => "page", "value" => $faketile);
-                    echo makeThing(0, $tileid, $tileid, $thesensor, $swval, 0, 0, 99, "", $useajax );
+                    echo makeThing(0, $tileid, $tileid, $thing, $swval, $options, 0, 0, 99, "", $useajax );
                     
                 } else {
                     $idx = $swtype . "|" . $swid;
                     $allthings = getAllThings();
-                    $thesensor = $allthings[$idx];
-                    if ( $swtype==="music" ) {
-                        $thesensor = getMusicArt($thesensor);
-                    }
-                    echo makeThing($idx, 0, $tileid, $thesensor, "Options", 0, 0, 99, "", $useajax);
+                    $thing = $allthings[$idx];
+                    $thing["name"] = getCustomName($thing["name"], $idx, $options);
+                    echo makeThing($idx, 0, $tileid, $thing, "Options", $options, 0, 0, 99, "", $useajax);
                 }
                 break;
         
@@ -5400,7 +5424,7 @@ function is_ssl() {
             foreach ($roomoptions as $room => $k) {
                 if ( array_key_exists($room, $thingoptions)) {
                     $things = $thingoptions[$room];
-                    $tc.= getNewPage($cnt, $allthings, $room, $k, $things, $indexoptions, $kioskmode);
+                    $tc.= getNewPage($cnt, $allthings, $room, $k, $things, $options, $kioskmode);
                 }
             }
             

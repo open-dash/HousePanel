@@ -875,7 +875,8 @@ div.other-thing.lg div.overlay {
     width: 80px; height: 30px;
     padding-top: 10px;
     border: 2px solid cyan;
-    background-color: rgba(0, 50, 50, 1)
+    background-color: rgba(0, 50, 50, 1);
+    cursor: pointer;
 }
 div.other-thing.pioneer div.overlay.healthStatus,
 div.other-thing.pioneer div.overlay.name, 
@@ -891,12 +892,24 @@ div.other.switch {
     font-size: 11pt;
     color: rgba(255, 255, 255, 1);
 }
+/* disable events for kuku */
+div.other-thing.pioneer div.overlay.event_1,
+div.other-thing.pioneer div.overlay.event_2,
+div.other-thing.pioneer div.overlay.event_3,
+div.other-thing.pioneer div.overlay.event_4,
+div.other-thing.lg div.overlay.event_1, 
+div.other-thing.lg div.overlay.event_2, 
+div.other-thing.lg div.overlay.event_3, 
+div.other-thing.lg div.overlay.event_4
+{
+    display: none;
+}
 
 /* these make KuKu harmony things show up correctly */
-div.other-thing div.overlay._on,
-div.other-thing div.overlay._off,
-div.other-thing div.overlay._on,
-div.other-thing div.overlay._on {
+div.other-thing.pioneer div.overlay._on,
+div.other-thing.pioneer div.overlay._off,
+div.other-thing.lg div.overlay._on,
+div.other-thing.lg div.overlay._off {
     display: inline-block;
     color: rgba(255,255,255,1);
     font-size: 12pt;
