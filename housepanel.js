@@ -249,19 +249,26 @@ function setupWebsocket()
     // received a message from housepanel-push
     // this contains a single device object
     wsSocket.onmessage = function (evt) {
-        
+        var reservedcap = ["name", "DeviceWatch-DeviceStatus", "DeviceWatch-Enroll", "checkInterval", "healthStatus"];
         try {
             var presult = JSON.parse(evt.data);
             var pvalue = presult.value;
 
-            // remove names because they don't reflect customization
-            if ( pvalue["name"] ) { delete pvalue["name"]; }
+            // grab name for console log
+            var pname = pvalue["name"] ? pvalue["name"] : "";
+
+            // remove reserved fields
+            $.each(reservedcap, function(index, val) {
+                if ( pvalue[val] ) {
+                    delete pvalue[val];
+                }
+            });
             
             var bid = presult.id;
             var thetype = presult.type;
             var client = presult.client;
             var clientcount = presult.clientcount;
-            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," client:",client," of:",clientcount," type= ",thetype," value= ",pvalue);
+            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," name:",pname," client:",client," of:",clientcount," type= ",thetype," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
@@ -1326,7 +1333,8 @@ function setupButtons() {
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
                 function (presult, pstatus) {
-                    if (pstatus==="success" && presult==="success") {
+                    if (pstatus==="success") {
+                        // alert("result= " + presult);
                         window.location.href = returnURL;
                     }
                 }
@@ -1735,11 +1743,15 @@ function setupCustomCount() {
         
         // add new rows
         if ( newcnt > currentcnt ) {
-           for ( var k= currentcnt; k < newcnt; k++ ) {
+            var baseline = $("table.roomoptions tr[type='clock']").last();
+            for ( var k= currentcnt; k < newcnt; k++ ) {
                 var newrow = createRow(maxid, k+1, stype);
                 customs[k] = $(newrow);
-                customs[k-1].after(customs[k]);
-                if ( !customs[k-1].hasClass("odd") ) {
+                if ( k > 0 ) {
+                    baseline = customs[k-1];
+                }
+                baseline.after(customs[k]);
+                if ( !baseline.hasClass("odd") ) {
                     customs[k].addClass("odd");
                 }
                 maxid++;
@@ -1785,7 +1797,7 @@ function strObject(o, level) {
 }
 
 function fixTrack(tval) {
-    if ( tval.trim() === "" ) {
+    if ( !tval || tval.trim() === "" ) {
         tval = "None"; 
     } 
     else if ( tval.length > 124) { 
@@ -1857,16 +1869,23 @@ function updateTile(aid, presult) {
                 isclock = true;
             // handle updating album art info
             } else if ( key === "trackDescription") {
-                oldvalue = oldvalue.trim();
-                value = value.trim();
-                if ( value==="None" || !value ) {
+                if ( !oldvalue ) { 
+                    oldvalue = "None" 
+                } else {
+                    oldvalue = oldvalue.trim();
+                }
+                if ( !value || value==="None" ) {
                     value = "None";
                     try {
                         $("#a-"+aid+"-currentArtist").html("");
                         $("#a-"+aid+"-currentAlbum").html("");
                         $("#a-"+aid+"-trackImage").html("");
                     } catch (err) {}
-                } else if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
+                } 
+                
+                if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
+                    value = value.trim();
+                    
                     console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
@@ -1883,8 +1902,8 @@ function updateTile(aid, presult) {
                 }
             // update album art for native track image returns
             } else if ( key === "trackImage" ) {
-                value = value.trim();
-                if ( value.startsWith("http") ) {
+                if ( value && value.trim().startsWith("http") ) {
+                    value = value.trim();
                     value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
                 }
                 // $("#a-"+aid+"-albumart").html(value);
@@ -2272,21 +2291,32 @@ function setupPage() {
                 htmlcontent += "<input class='ddlDialog' id='userpw' type='password' size='20' value='' />";
                 htmlcontent += "</div>";
             }
+            
             createModal("modalexec", htmlcontent, "body", true, pos, function(ui) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
-                    if ( pw!=="" ) {
-                        userpw = md5($("#userpw").val());
-                    }
-                    if ( userpw===pw ) {
-                        console.log("Protected or confirmation tile [" + thingname + "] access granted.");
+                    if ( pw==="" ) {
+                        console.log("Protected tile [" + thingname + "] access granted.");
                         processClick(that, thingname);
-                        evt.stopPropagation();
-                        return; 
+                    } else {
+                        userpw = $("#userpw").val();
+                        $.post(returnURL, 
+                            {useajax: "pwhash", id: "none", type: "verify", value: userpw, attr: pw},
+                            function (presult, pstatus) {
+                                if ( pstatus==="success" && presult==="success" ) {
+                                    console.log("Protected tile [" + thingname + "] access granted.");
+                                    processClick(that, thingname);
+                                } else {
+                                    console.log("Protected tile [" + thingname + "] access denied.");
+                                }
+                            }
+                        );
+
                     }
+                } else {
+                    console.log("Protected tile [" + thingname + "] access cancelled.");
                 }
-                console.log("Protected or confirmation tile [" + thingname + "] access denied.");
-                return;
+                evt.stopPropagation();
             });
         } else {
             processClick(that, thingname);

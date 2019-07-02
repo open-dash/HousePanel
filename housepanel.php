@@ -9,8 +9,11 @@
  * Revision History
  */
 $devhistory = "
- 2.076      Add password field
-             - fix bug in the action buttons where missing <div>
+ 2.076      Various password updates and fixes
+             - add password support for tiles using the custom field feature
+             - change main password from simple hash to strong algorithm
+             - fix bug in the action buttons
+             - remove reserved fields from hub push results
  2.075      js Time bugfixes
              - finish implementing the sorting feature for user fields
              - speedup by avoiding reading options on each tile make
@@ -283,7 +286,7 @@ ini_set('max_input_vars', 20);
 
 // grab the version number from the latest history entry
 $version = trim(substr($devhistory,1,10));
-define('HPVERSION', 'Version ' . $version);
+define('HPVERSION', 'Ver. ' . $version);
 define('APPNAME', 'HousePanel ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
@@ -1325,7 +1328,7 @@ function getAllThings($reset = false) {
         $insession = true;
     } else {
     
-        $options = readOptions(true);
+        $options = readOptions();
         $configoptions = $options["config"];
         $tz = $configoptions["timezone"];
         date_default_timezone_set($tz);
@@ -1541,7 +1544,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                         }
                     } else {
                         $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
-                        $custom_val[$subid] = "Invalid link to tile #" . $content . " with subid=$subid";
+                        $custom_val[$subid] = "Invalid link to #" . $content . " with subid=$subid idx=$idx at-count: " . count($allthings);
                     }
 
                 } else if ( $calltype==="URL" ) {
@@ -3068,6 +3071,7 @@ function refactorOptions($allthings) {
 // new routine that renumbers all the things in your options file from 1
 // NOTE: this also affects the custom tile settings
 //       refactor now also modifies customtiles.css by reading and writing it
+//       the user custom setup file is also reset to the main one
 
     // load in custom css strings
     $customcss = readCustomCss();
@@ -4120,7 +4124,7 @@ function is_ssl() {
     
     if ( isset($_GET["useajax"]) ) { $useajax = $_GET["useajax"]; }
     else if ( isset($_POST["useajax"]) ) { $useajax = $_POST["useajax"]; }
-    
+        
     // fix up old use of dohubitat since all calls are now doaction
     if ( $useajax==="dohubitat" ) {
         $useajax = "doaction";
@@ -4132,6 +4136,8 @@ function is_ssl() {
         unset($_SESSION["hpcode"]);
         
         // get the user attributes from login page
+        $expiry = time()+3650*24*3600;
+        $expirz = time()-3650*24*3600;
         $attr = $_POST["attr"];
         $timezone = $attr["timezone"];
         $skindir = $attr["skindir"];
@@ -4140,9 +4146,8 @@ function is_ssl() {
         $fast_timer = $attr["fast_timer"];
         $slow_timer = $attr["slow_timer"];
         $uname = trim($attr["uname"]);
-        if ( $uname!=="" ) {
-            setcookie("uname",$uname, $expiry, "/");
-        }
+        if ( $uname==="" ) {$uname = "admin"; }
+        setcookie("uname", $uname, $expiry, "/");
         $pword = trim($attr["pword"]);
         
         $allthings = getAllThings(true);
@@ -4157,16 +4162,32 @@ function is_ssl() {
         $options["config"]["fast_timer"] = $fast_timer;
         $options["config"]["slow_timer"] = $slow_timer;
         $options["config"]["webSocketServerPort"] = $webSocketServerPort;
-        if ( $uname!=="" && $pword!=="" ) {
-            $pwords = $options["config"]["pword"];
+        $pwords = $options["config"]["pword"];
+        
+        // if password given, create new hash and logout forcing new login
+        if ( $pword!=="" ) {
             // $pword = crypt($pword, CRYPTSALT);
-            $pword = password_hash($pword, PASSWORD_DEFAULT);
-            $pwords[$uname] = $pword;
-            $options["config"]["pword"] = $pwords;
+            $hash = password_hash($pword, PASSWORD_DEFAULT);
+            $pwords[$uname] = $hash;
+            setcookie("pwcrypt", "", $expirz, "/");
+            
+        // otherwise keep old password unless user doesn't exist
+        // blank passwords for new users are created here although not suggested
+        } else {
+            if ( !array_key_exists($uname, $pwords) ) {
+                // blank pw created for a new user - logout
+                $hash = "";
+                setcookie("pwcrypt", "", $expirz, "/");
+                $pwords[$uname] = $hash;
+            } else {
+                // stay logged in if we were
+                $hash = $pwords[$uname];
+            }
         }
+        $options["config"]["pword"] = $pwords;
         
         writeOptions($options);
-        echo "success";
+        echo "success - uname = $uname hash = $hash";
         exit(0);
     }
 
@@ -4186,23 +4207,28 @@ function is_ssl() {
         $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_SPECIAL_CHARS);
         $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_SPECIAL_CHARS);
         $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
-        // $kiosk = false;
-        // if ( isset( $_POST["use_kiosk"]) ) { $kiosk = true; }
+        $uname = filter_input(INPUT_POST, "uname", FILTER_SANITIZE_SPECIAL_CHARS);
         if ( isset( $_POST["use_kiosk"]) ) { 
             $kiosk = $_POST["use_kiosk"];
         } else {
             $kiosk = false;
         }
         
-        // set username and get password
-        if ( isset( $_POST["uname"]) ) {
-            $uname = trim($_POST["uname"]);
-            if ( $uname==="" ) { $uname= "admin"; }
+        // if blank user name given use last authenticated name if present
+        // and if not use default user name of admin
+        if ( $uname==="" ) {
+            if ( isset($_COOKIE["uname"]) ) {
+                $uname = $_COOKIE["uname"];
+            } else {
+                $uname = "admin";
+            }
         } else {
-            $uname = "admin";
+            setcookie("uname", $uname, $expiry, "/");
         }
-        setcookie("uname",$uname, $expiry, "/");
-        
+
+        // get user requested new password for this user
+        // if blank given then existing password will remain
+        // TODO - add js logic in auth page to force good passwords
         if ( isset( $_POST["pword"]) ) {
             $pword = trim($_POST["pword"]);
         } else {
@@ -4224,27 +4250,22 @@ function is_ssl() {
         // read the prior options
         $options = readOptions();
         $configoptions = $options["config"];
+        
+        // get or create the password array holding the hash
+        // handle old style pword setting that wasn't an array
         if ( array_key_exists("pword", $configoptions) ) {
             $pwords = $configoptions["pword"];
             if ( !is_array($pwords) ) {
                 $pwords = array($uname => $pwords);
-                
-            // this is here only for case where blank password is used
-            } else if ( $pword==="" && !array_key_exists($uname, $pwords) ) {
-                $pwords[$uname] = "";
             }
         } else {
-            $pwords = array($uname => $pword);
+            $pwords = array($uname => "");
         }
         
-        // either keep the old password or replace if user gave new one
-        // note that if pword is blank and no password was set then blank password is set above
-        if ( $pword==="" ) {
-            $pword = $pwords[$uname];
-        } else {
-            // $pword = crypt($pword, CRYPTSALT);
-            $pword = password_hash($pword, PASSWORD_DEFAULT);
-            $pwords[$uname] = $pword;
+        // make a hash if user gave a new password that is non blank
+        if ( $pword!=="" ) {
+            $hash = password_hash($pword, PASSWORD_DEFAULT);
+            $pwords[$uname] = $hash;
         }
         
         if (array_key_exists("hubs", $configoptions)) {
@@ -4351,6 +4372,7 @@ function is_ssl() {
         $authpage= getAuthPage($returnURL, $hpcode);
                 
         echo htmlHeader($skin);
+        echo "Two <br><hr>";
         echo $authpage;
         echo htmlFooter();
         exit(0);
@@ -4360,7 +4382,6 @@ function is_ssl() {
     $options = readOptions();
 
     // check for API request or valid config file
-    // disable the callback from Hubitat to setup hub since this isn't how to do it
     if ( !$options || !array_key_exists("config", $options) ) {
         // if making an API call return error unless configuring Hubitat
         if ( $useajax ) {
@@ -4489,6 +4510,7 @@ function is_ssl() {
                 unset($_SESSION["HP_hubnum"]);
                 $authpage= getAuthPage($returnURL, $hpcode, $hubId, $newthings);
                 echo htmlHeader($skin);
+                echo "One <br><hr>";
                 echo $authpage;
                 echo htmlFooter();
                 exit(0);
@@ -4617,11 +4639,20 @@ function is_ssl() {
         $hubnum = $_GET["hubId"];
         $hub = $hubs[findHub($hubnum, $hubs)];
     }
+    else if ( isset($_GET["hubid"]) ) {
+        $hubnum = $_GET["hubid"];
+        $hub = $hubs[findHub($hubnum, $hubs)];
+    }
     else if ( isset($_POST["hubId"]) ) {
         $hubnum = $_POST["hubId"];
         $hub = $hubs[findHub($hubnum, $hubs)];
     }
+    else if ( isset($_POST["hubid"]) ) {
+        $hubnum = $_POST["hubid"];
+        $hub = $hubs[findHub($hubnum, $hubs)];
+    }
     
+    // if user token provided then search for the associated hub
     if ( $hubnum===false ) {
         foreach ( $hubs as $hub ) {
             if ( $hub["hubAccess"] === $access_token &&
@@ -4630,7 +4661,16 @@ function is_ssl() {
                 break;
             }
         }
-        $hub = $hubs[findHub($hubnum, $hubs)];
+        if ($hubnum===false) {
+            if ( count($hubs) ) { 
+                $hub = $hubs[0];
+                $hubnum = $hub["hubId"];
+            } else {
+                $hub = false;
+            }
+        } else {
+            $hub = $hubs[findHub($hubnum, $hubs)];
+        }
     }
     
 /*
@@ -4681,8 +4721,8 @@ function is_ssl() {
     else if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
     if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
     else if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
-    if ( isset($_GET["hubid"]) ) { $hubnum = $_GET["hubid"]; $hubId = $hubnum; }
-    else if ( isset($_POST["hubid"]) ) { $hubnum = $_POST["hubid"]; $hubId = $hubnum; }
+//    if ( isset($_GET["hubid"]) ) { $hubnum = $_GET["hubid"]; $hubId = $hubnum; }
+//    else if ( isset($_POST["hubid"]) ) { $hubnum = $_POST["hubid"]; $hubId = $hubnum; }
     if ( isset($_GET["subid"]) ) { $subid = $_GET["subid"]; }
     else if ( isset($_POST["subid"]) ) { $subid = $_POST["subid"]; }
     if ( isset($_GET["tile"]) ) { $tileid = $_GET["tile"]; }
@@ -5114,28 +5154,63 @@ function is_ssl() {
                 
             // changed password logic to be more secure by checking here
             // and using the cookie to only store access okay state or not
+            // this is signalled by setting cookie equal to logged in username
+            // we never store the hash password anywhere except in hmoptions
             case "dologin":
+    
                 if ( isset($_POST["pword"]) && isset($_POST["uname"]) ) {
                     $uname = $_POST["uname"];
                     $pword = $_POST["pword"];
-                    $pwords = $options["config"]["pword"];
+                    $options = readOptions();
+                    $configoptions = $options["config"];
+                    $pwords = $configoptions["pword"];
+                    
+                    // user is in our system so keep asking for pw until good
                     if (array_key_exists($uname, $pwords)) {
                         $hash = $pwords[$uname];
+                        setcookie("uname", $uname, $expiry, "/");
                         if ( ($hash==="" && $pword==="") || password_verify($pword, $hash) ) {
-                            setcookie("pword", $hash, $expiry, "/");
+                            setcookie("pwcrypt", $uname, $expiry, "/");
                         } else {
-                            setcookie("pword", "", $expirz, "/");
+                            setcookie("pwcrypt", "", $expirz, "/");
                         }
+                        
+                    // user given not in our system so reauth page
                     } else {
-                        setcookie("pword", "", $expirz, "/");
+                        setcookie("pwcrypt", "", $expirz, "/");
+                        $_SESSION["hpcode"] = "redoauth";
                     }
                     header("Location: $returnURL");
                     exit(0);
                 } else {
                     echo "error: Illegal $useajax API call. $useajax is only an internal command.";
+                    // exit(0);
                 }
-                break;
                 
+//        echo "<br>useajax 7 = $useajax";
+//        echo "<br><hr>";
+//        print_r($pwords);
+//        exit(0);
+    
+                break;
+            
+            // api call to use the builtin PHP strong hash function
+            // we either create the hash or check an existing hash
+            case "pwhash":
+                if ( $swtype==="hash" ) {
+                    $presult = ($swval==="") ? "" : password_hash($swval, PASSWORD_DEFAULT);
+                } else if ( $swtype==="verify" ) {
+                    if ( password_verify($swval, $swattr) ) {
+                        $presult = "success";
+                    } else {
+                        $presult = "error";
+                    }
+                } else {
+                    $presult = "error";
+                }
+                echo $presult;
+                break;
+            
             case "cancelauth":
                 unset($_SESSION["hpcode"]);
                 echo "success";
@@ -5153,8 +5228,15 @@ function is_ssl() {
                 if ( !array_key_exists($userid, $options) ) {
                     $options[$userid] = array();
                 }
-    
-                $newitem = array($swval, strval($swattr), strval($subid));
+
+                // handle encryption
+                $swattr = strval($swattr);
+                $subid = strval($subid);
+                if ( $subid==="password" && $swattr ) {
+                    $swattr = password_hash($swattr, PASSWORD_DEFAULT);                    
+                }
+                
+                $newitem = array($swval, $swattr, $subid);
                 $newoptitem = array();
                 $doneit = false;
                 foreach( $options[$userid] as $val ) {
@@ -5337,56 +5419,69 @@ function is_ssl() {
             $configoptions["skin"] = $skin;
             $rewriteoptions = true;
         }
-        
+
+        // get the password config array
         $pwords = $configoptions["pword"];
-        
-        // get the username provided by user that was stored in a cookie
-        // otherwise we assume default user of admin
-        if ( isset($_COOKIE["uname"]) ) {
-            $uname = $_COOKIE["uname"];
-        } else {
-            $uname = "admin";
-        }
-        
-        // get the password provided by the user that was stored in options
-        // if guest is provided then default is blank password unless provided
-        if ( array_key_exists($uname, $pwords) ) {
-            $pword = $pwords[$uname];
-        } else {
-            $pword = ($uname==="guest") ? "" : false;
-        }
         
         // if a legacy style pword was set then let user in
         // but send them to reauth page to reset password
         // and delete the legacy cookie type and old options hash
         if ( isset($_COOKIE["pword"]) ) {
             setcookie("pword", "", $expirz, "/");
-            if ( array_key_exists($uname, $pwords) ) {
-                $pwords[$uname] = "";
-                $configoptions["pword"] = $pwords;
-                $rewriteoptions = true;
-            }
-            $login = "reauth";
             
-        // handle guest logins
-        // this only works if the guest account wasn't protected
-        } else if ( $uname==="guest" && $pword==="" ) {
-            $login = true;
-        
-        // this happens if user enters a name other than guest that isn't defined
-        } else if ($pword===false) {
-            $login = false;
+            // preserve prior username if there
+            if ( isset($_COOKIE["uname"]) ) {
+                $uname = $_COOKIE["uname"];
+            } else {
+                $uname = "admin";
+            }
+            
+            // remove all the old md5 passwords
+            // but keep new ones for the case where they were set on a different device
+            // all new passwords use a 60 character strong cipher - use 50 just in case
+            $rewritepw = false;
+            foreach ( $pwords as $un => $pw) {
+                if ( $pw!=="" && strlen($pw) < 50 ) {
+                    $pwords[$un] = "";
+                    $rewritepw = true;
+                }
+            }
+            
+            // if for some reason saved user doesn't have a pw, make a blank one
+            if ( !array_key_exists($uname, $pwords) ) {
+                $pwords[$uname] = "";
+            }
+            $configoptions["pword"] = $pwords;
+            
+            // force reauth if old passwords were reset
+            // or force login if new passwords are there but this is first time for this client
+            if ($rewritepw ) {
+                $login = "reauth";
+                $rewriteoptions = true;
+            } else {
+                $login = ( $pwords[$uname]==="" ) ? true : false;
+            }
             
         // new password approach detected
         // this includes blank passwords signaling don't use one
         // this is not recommended but it is supported
-        } else if (is_string ($pword) && isset($_COOKIE["pwcrypt"]) ) {
-            $hash = $_COOKIE["pwcrypt"];
-            $login = ($pword==="" && $hash==="") ? true : password_verify($pword, $hash);
+        } else if ( isset($_COOKIE["uname"]) && isset($_COOKIE["pwcrypt"]) ) {
+            $pwname = $_COOKIE["pwcrypt"];
+            $uname = $_COOKIE["uname"];
+            // setcookie("uname", $uname, $expiry, "/");
+            if ( $uname===$pwname && array_key_exists($uname, $pwords) ) {
+                $login = true;
+            } else {
+                $login = false;
+            }
         
         // security mechanism failed
         } else {
-            $uname = "admin";
+            if ( isset($_COOKIE["uname"]) ) {
+                $uname = $_COOKIE["uname"];
+            } else {
+                $uname = "admin";
+            }
             $login = false;
         }
 
@@ -5463,7 +5558,6 @@ function is_ssl() {
                     $tc.= "<li roomnum=\"$k\" class=\"tab-$room\"><a href=\"#" . $room . "-tab\">$room</a></li>";
                 }
             }
-
             $tc.= '</ul>';
             $cnt = 0;
 
@@ -5476,21 +5570,19 @@ function is_ssl() {
                 }
             }
             
-            // include doc button
+            // include doc button and username that is logged in
+            $uname = $_COOKIE["uname"];
             $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
-            $tc.= '<div class="showversion">' . HPVERSION  .'</div>';
+            $tc.= '<div class="showversion">' . $uname . " - " . HPVERSION  .'</div>';
 
             // end of the tabs
             $tc.= "</div>";
 
-            // add catalog on right
-            // $tc.= getCatalog($allthings);
-            
             // end drag region enclosing catalog and main things
             $tc.= "</div>";
 
-            // but only do this if we are not in kiosk mode
-            $tc.= "<form>";
+            // include form with useful data for js operation
+            $tc.= "<form id='kioskform'>";
             $tc.= hidden("returnURL", $returnURL);
             $tc.= hidden("pagename", "main");
 
@@ -5511,6 +5603,7 @@ function is_ssl() {
             // save all the hubs data for use in js (could read options instead)
             $tc.= hidden("allHubs", json_encode($hubs));
             
+            // show user buttons if we are not in kiosk mode
             if ( !$kioskmode ) {
                 $tc.= "<div id=\"controlpanel\">";
                 $tc.='<div id="showoptions" class="formbutton">Options</div>';
@@ -5528,9 +5621,9 @@ function is_ssl() {
                   <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\" value=\"snap\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
-                $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
-            } else {
-                $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
+                // $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+            // } else {
+                // $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
             }
             $tc.= "</form>";
         }

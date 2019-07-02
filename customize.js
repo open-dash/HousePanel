@@ -938,36 +938,6 @@ function applyCustomField(action) {
         alert("Invalid entries:\n" + errstr);
     } else {
         
-        // signal relaod upon close
-        cm_Globals.reload = true;
-        
-        // first update the options array
-        var cid = "user_" + id;
-        var userfields = options[cid];
-        var newitem = [customtype, content, subid];
-        var newfields = [];
-        var isdone = false;
-        $.each(userfields, function(index, val) {
-            if ( val[2]===subid ) {
-                if ( !isdone && action==="addcustom" ) {
-                    newfields.push(newitem);
-                    isdone = true;
-                }
-            } else {
-                newfields.push(val);
-            }
-        });
-        if ( !isdone && action==="addcustom" ) {
-            newfields.push(newitem);
-        }
-        options[cid] = newfields;
-        cm_Globals.options = options;
-        
-        // encrypt any password provided custom field
-        if ( subid==="password" && content.length > 0 ) {
-            content = md5(content);
-        }
-    
         // show processing window
         var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
         createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
@@ -979,10 +949,37 @@ function applyCustomField(action) {
             function (presult, pstatus) {
                 if (pstatus==="success") {
                     console.log (action + " performed successfully. presult: ", presult);
+                    cm_Globals.reload = true;
+                    
+                    // update content since pw could have changed it
+                    content = presult[subid];
+                    
+                    // update options
+                    var cid = "user_" + id;
+                    var userfields = options[cid];
+                    var n = userfields.length + 1;
+                    var newitem = [customtype, content, subid, n];
+                    var newfields = [];
+                    var isdone = false;
+                    $.each(userfields, function(index, val) {
+                        if ( val[2]===subid ) {
+                            if ( !isdone && action==="addcustom" ) {
+                                newfields.push(newitem);
+                                isdone = true;
+                            }
+                        } else {
+                            newfields.push(val);
+                        }
+                    });
+                    if ( !isdone && action==="addcustom" ) {
+                        newfields.push(newitem);
+                    }
+                    options[cid] = newfields;
+                    cm_Globals.options = options;
 
                     // we returned the updated thing
                     cm_Globals.allthings[idx].value = presult;
-                    console.log("options",options);
+                    // console.log("options",options);
                     getDefaultSubids();
 //                    var thing = cm_Globals.allthings[idx];
 //                    var subtitle = thing.name;
