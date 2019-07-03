@@ -84,9 +84,11 @@ $(document).ready(function() {
         }
     }
 
-    // hide the skin and 
+    // hide the skin and load all things and options
+    // this function is actually defined in customize.js
     if ( pagename==="main" ) {
         $("div.skinoption").hide();
+        getAllthings();
     }
 
     // setup page clicks
@@ -95,7 +97,8 @@ $(document).ready(function() {
     }
     
     // disable return key
-    $("body").keypress(function(e) {
+    $("body").off("keypress");
+    $("body").on("keypress", function(e) {
         if ( e.keyCode===13  ){
             return false;
         }
@@ -1850,7 +1853,7 @@ function updateTile(aid, presult) {
                 if ( icondigit < 10 ) {
                     iconstr = "0" + iconstr;
                 }
-                var iconimg = "media/weather/" + iconstr + ".png"
+                var iconimg = "media/weather/" + iconstr + ".png";
                 value = "<img src=\"" + iconimg + "\" alt=\"" + iconstr + "\" width=\"80\" height=\"80\">";
             } else if ( (key === "level" || key === "colorTemperature") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
@@ -1869,12 +1872,14 @@ function updateTile(aid, presult) {
                 isclock = true;
             // handle updating album art info
             } else if ( key === "trackDescription") {
+                var forceit = false;
                 if ( !oldvalue ) { 
-                    oldvalue = "None" 
+                    oldvalue = "None" ;
+                    forceit = true;
                 } else {
                     oldvalue = oldvalue.trim();
                 }
-                if ( !value || value==="None" ) {
+                if ( !value || value==="None" || (value && value.trim()==="") ) {
                     value = "None";
                     try {
                         $("#a-"+aid+"-currentArtist").html("");
@@ -1883,7 +1888,7 @@ function updateTile(aid, presult) {
                     } catch (err) {}
                 } 
                 
-                if ( value && ( value!==oldvalue || oldvalue==="None" ) ) {
+                if ( forceit || (value!==oldvalue) ) {
                     value = value.trim();
                     
                     console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
@@ -2292,7 +2297,8 @@ function setupPage() {
                 htmlcontent += "</div>";
             }
             
-            createModal("modalexec", htmlcontent, "body", true, pos, function(ui) {
+            createModal("modalexec", htmlcontent, "body", true, pos, 
+            function(ui) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
                     if ( pw==="" ) {
@@ -2317,6 +2323,21 @@ function setupPage() {
                     console.log("Protected tile [" + thingname + "] access cancelled.");
                 }
                 evt.stopPropagation();
+            },
+            // after box loads set focus to pw field
+            function(hook, content) {
+                $("#userpw").focus();
+                
+                // set up return key to process and escape to cancel
+                $("#userpw").off("keydown");
+                $("#userpw").on("keydown",function(e) {
+                    if ( e.which===13  ){
+                        $("#modalokay").click();
+                    }
+                    if ( e.which===27  ){
+                        $("#modalcancel").click();
+                    }
+                });
             });
         } else {
             processClick(that, thingname);

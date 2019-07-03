@@ -12,8 +12,9 @@ $devhistory = "
  2.076      Various password updates and fixes
              - add password support for tiles using the custom field feature
              - change main password from simple hash to strong algorithm
-             - fix bug in the action buttons
+             - fix bug in the action buttons and links in clock tiles
              - remove reserved fields from hub push results
+             - enabled return and cancel keys in popup dialog boxes
  2.075      js Time bugfixes
              - finish implementing the sorting feature for user fields
              - speedup by avoiding reading options on each tile make
@@ -1240,7 +1241,7 @@ function getCustomName($defname, $idx, $options) {
     return $customname;
 }
 
-function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
+function getClock($clockname, $clockid, $options, $allthings, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
     $clockname = getCustomName($clockname, "clock" . "|" . $clockid, $options);
     $weekday = date("l");
     $dateofmonth = date($fmtdate);
@@ -1248,7 +1249,7 @@ function getClock($clockname, $clockid, $options, $clockskin="", $fmtdate="M d, 
     $timezone = date("T");
     $dclock = array("name" => $clockname, "skin" => $clockskin, "weekday" => $weekday, "date" => $dateofmonth, "time" => $timeofday, "tzone" => $timezone,
                     "fmt_date"=>$fmtdate, "fmt_time"=> $fmttime);
-    $dclock = getCustomTile($dclock, "clock", $clockid, $options);
+    $dclock = getCustomTile($dclock, "clock", $clockid, $options, $allthings);
     
     // adjust format of date and time based on custom time config
     $dateofmonth = date($dclock["fmt_date"]);
@@ -1266,13 +1267,13 @@ function addSpecials(&$allthings, $options) {
     // add digital clock tile
     // never refresh since clocks have their own refresh timer built into the javascript code
     $clockid = "clockdigital";
-    $dclock = getClock("Digital Clock", $clockid, $options, "", "M d, Y", "h:i:s A");
+    $dclock = getClock("Digital Clock", $clockid, $options, $allthings, "", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
         "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
 
     // add analog clock tile - no longer use dclock format settings by default
     $clockid = "clockanalog";
-    $aclock = getClock("Analog Clock", $clockid, $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
+    $aclock = getClock("Analog Clock", $clockid, $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
         "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
 
@@ -2302,10 +2303,10 @@ function doAction($hubnum, $path, $swid, $swtype,
 
     // handle clocks
     if ( $swid==="clockdigital") {
-        $dclock = getClock("Digital Clock", "clockdigital", $options, "", "M d, Y", "h:i:s A");
+        $dclock = getClock("Digital Clock", "clockdigital", $options, $allthings, "", "M d, Y", "h:i:s A");
         $response = $dclock;
     } else if ( $swid==="clockanalog" ) {
-        $aclock = getClock("Analog Clock", "clockanalog", $options, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
+        $aclock = getClock("Analog Clock", "clockanalog", $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
         $response = $aclock;
         
     // this logic is complex so let me explain. First we get the value if available

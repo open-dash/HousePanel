@@ -894,6 +894,7 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
         createModal("modalid", dialog_html, "body", true, pos, 
             // function invoked upon leaving the dialog
             function(ui, content) {
+                $("body").off("keydown");
                 var clk = $(ui).attr("name");
                 // alert("clk = "+clk);
                 if ( clk==="okay" ) {
@@ -906,6 +907,14 @@ function editTile(str_type, thingindex, aid, bid, thingclass, hubnum, htmlconten
             },
             // function invoked upon starting the dialog
             function(hook, content) {
+                $("body").on("keydown",function(e) {
+                    if ( e.which===13  ){
+                        $("#modalokay").click();
+                    }
+                    if ( e.which===27  ){
+                        $("#modalcancel").click();
+                    }
+                });
                 $("#modalid").draggable();
             }
         );

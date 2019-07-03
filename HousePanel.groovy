@@ -1,5 +1,5 @@
 /**
- *  HousePanel (SmartThings Version)
+ *  HousePanel
  *
  *  Copyright 2016 to 2019 Kenneth Washington
  *
@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
  * 05/27/2019 - remove blanks and images from groovy
  * 05/14/2019 - add native music artist, album, art fields when present
  * 05/11/2019 - clean up and tweak music; longer delays in subscribes

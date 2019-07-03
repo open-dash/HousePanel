@@ -15,9 +15,10 @@ cm_Globals.reload = false;
 cm_Globals.thingindex = null;
 cm_Globals.defaultclick = "name";
 
-$(document).ready(function() {
-    getAllthings();
-});
+// this is now done in the main js routine
+//$(document).ready(function() {
+//    getAllthings();
+//});
     
 function getAllthings(modalwindow) {
         $.post(cm_Globals.returnURL, 
@@ -26,13 +27,15 @@ function getAllthings(modalwindow) {
                 if (pstatus==="success" && typeof presult === "object" ) {
                     var keys = Object.keys(presult);
                     cm_Globals.allthings = presult;
-                    console.log("customize: getAllthings call returned: " + keys.length + " things");
+                    console.log("getAllthings returned: " + keys.length + " things");
                     getOptions(modalwindow);
                 } else {
-                    console.log("Error: failure reading things from HP");
+                    console.log("Error: failure obtaining things from HousePanel");
+                    cm_Globals.allthings = null;
                     if ( modalwindow ) {
                         closeModal(modalwindow);
                     }
+                    closeModal("modalcustom");
                 }
             }, "json"
         );
@@ -42,12 +45,10 @@ function getOptions(modalwindow) {
     $.post(cm_Globals.returnURL, 
         {useajax: "getoptions", id: "none", type: "none"},
         function (presult, pstatus) {
-            if (pstatus==="success" && typeof presult === "object" && presult.index && presult.rooms ) {
+            if (pstatus==="success" && typeof presult === "object" && presult.index ) {
                 cm_Globals.options = presult;
                 var indexkeys = Object.keys(presult.index);
-                var roomkeys = Object.keys(presult.rooms);
-                console.log("customize: getOptions returned: " + 
-                            indexkeys.length + " things" + " and " + roomkeys.length + " rooms.");
+                console.log("getOptions returned: " + indexkeys.length + " things");
 
                 // setup dialog box if it is open
                 if ( cm_Globals.thingindex ) {
@@ -62,10 +63,14 @@ function getOptions(modalwindow) {
                     } catch (e) { }
                 }
             } else {
-                console.log("HousePanel Error: failure reading your hmoptions.cfg file");
+                cm_Globals.options = null;
+                console.log("Error: failure reading your hmoptions.cfg file");
             }
             if ( modalwindow ) {
                 closeModal(modalwindow);
+                if ( !cm_Globals.options ) {
+                    closeModal("modalcustom");
+                }
             }
         }, "json"
     );
@@ -88,7 +93,6 @@ function getDefaultSubids() {
     cm_Globals.thingidx = idx;
     var n = idx.indexOf("|");
     cm_Globals.id = idx.substring(n+1);
-    // console.log("tile= " + thingindex + " idx= " + cm_Globals.thingidx + " id= " + cm_Globals.id);
 
     loadExistingFields(idx, false, false);
     $("#cm_customtype option[value='TEXT']").prop('selected',true);
@@ -139,9 +143,13 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
         createModal("modalcustom", dh, "body", "Done", pos, 
             // function invoked upon leaving the dialog
             function(ui, content) {
-                // write out updated options
-                // TODO ...
-                
+                $("body").off("keydown");
+                $("body").off("keypress");
+                $("body").on("keypress", function(e) {
+                    if ( e.keyCode===13  ){
+                        return false;
+                    }
+                });
                 // reload window unless modal Tile Editor window is open
                 // but always skip if we didn't actually change anything
                 cm_Globals.thingindex = false;
@@ -151,6 +159,15 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
             },
             // function invoked upon starting the dialog
             function(hook, content) {
+                
+                $("body").on("keydown",function(e) {
+                    if ( e.which===13  ){
+                        $("#modalokay").click();
+                    }
+                    if ( e.which===27  ){
+                        $("#modalcancel").click();
+                    }
+                });
 
                 // grab the global list of all things and options
                 if ( !cm_Globals.allthings || !cm_Globals.options ) {
@@ -168,6 +185,7 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
                         handleBuiltin(cm_Globals.defaultclick);
                     } catch (e) {
                         console.log ("Error loading dialog box...");
+                        closeModal("modalcustom");
                     }
                 }
                 
@@ -430,7 +448,6 @@ function loadLinkItem(idx, allowuser, sortval, sortup) {
     var thing = cm_Globals.allthings[idx];
     var thevalue = thing.value;
     var subids = Object.keys(thevalue);
-    // console.log("value= ", thevalue, " subids= ", subids);
     
     var numthings = 0;
     var results = "";
@@ -484,7 +501,6 @@ function loadLinkItem(idx, allowuser, sortval, sortup) {
         for ( var idx in options.index ) {
             if ( options.index[idx].toString() === linkid ) {
                 cm_Globals.currentidx = idx;
-                // console.log("Found linked idx: ", idx, " = ", linkid);
                 break;
             }
         }
@@ -694,7 +710,7 @@ function sortExistingFields(item, up) {
     var useroptions = cm_Globals.options[uid];
     var newoptions = []; // useroptions.slice(0);
 
-    // first eliminate dups and ensure everyone has an index
+    // first eliminate dups and list everything in order
     var lastindex = 0;
     $.each(useroptions, function(index, val) {
         var existing = false;
@@ -706,11 +722,8 @@ function sortExistingFields(item, up) {
         });
         
         if ( !existing ) {
-            if ( val.length===3 ) {
-                lastindex++;
-                val.push(lastindex);
-            }
-            lastindex = val[3];
+            lastindex++;
+            val[3] = lastindex;
             newoptions.push(val);
         }
     });
@@ -737,11 +750,13 @@ function sortExistingFields(item, up) {
     
     // sort the items into proper order
     newoptions.sort( function(a,b) {
-       return ( a[3] - b[3] );
+        var ia = parseInt(a[3],10);
+        var ib = parseInt(b[3],10);
+        return ( ia - ib );
     });
     
-    console.log("Sort {" + item + ") Old options= ", useroptions);
-    console.log("Sort (" + item + ") New options= ", newoptions);
+//    console.log("Sort {" + item + ") Old options= ", useroptions);
+//    console.log("Sort (" + item + ") New options= ", newoptions);
     cm_Globals.options[uid] = newoptions.slice(0);
 }
 
@@ -755,8 +770,6 @@ function initExistingFields() {
     $("#cm_userfield").off('input');
     $("#cm_userfield").on('input', function(event) {
         var subid = $("#cm_userfield").val();
-        // console.log("subid = " + subid);
-        
         var allthings = cm_Globals.allthings;
         var thing = allthings[idx];
         var value = thing.value;
@@ -893,6 +906,7 @@ function handleBuiltin(subid) {
         $("#cm_upfield").addClass("disabled").prop("disabled",true);
         $("#cm_dnfield").addClass("disabled").prop("disabled",true);
         $("#cm_text").val(value[subid]);
+        cm_Globals.usertext = value[subid];
     }
 
     // change button label to Add or Replace based on existing or not
@@ -939,11 +953,10 @@ function applyCustomField(action) {
     } else {
         
         // show processing window
-        var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
-        createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
+        // var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
+        // createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
         
         // make the call
-        // console.log(action + ": id= " + id + " type= " +customtype + " content= " + content + " tile= " + tileid + " subid= " + subid);
         $.post(cm_Globals.returnURL, 
             {useajax: action, id: id, type: cm_Globals.type, value: customtype, attr: content, tile: tileid, subid: subid},
             function (presult, pstatus) {
@@ -953,6 +966,10 @@ function applyCustomField(action) {
                     
                     // update content since pw could have changed it
                     content = presult[subid];
+                    if ( subid==="password" ) {
+                        $("#cm_text").val(content);
+                        cm_Globals.usertext = content;
+                    }
                     
                     // update options
                     var cid = "user_" + id;
@@ -977,19 +994,21 @@ function applyCustomField(action) {
                     options[cid] = newfields;
                     cm_Globals.options = options;
 
-                    // we returned the updated thing
+                    // we returned the updated thing so skip getting all again
+                    // this and the options update above give us huge speedups
                     cm_Globals.allthings[idx].value = presult;
-                    // console.log("options",options);
-                    getDefaultSubids();
-//                    var thing = cm_Globals.allthings[idx];
-//                    var subtitle = thing.name;
-//                    $("#cm_subheader").html(subtitle);
-                    closeModal("waitbox");
-                    // getAllthings("waitbox");
+
+                    // update the visual boxes on screen
+                    if ( action==="addcustom" ) {
+                        loadExistingFields(idx, subid, false);
+                        handleBuiltin(subid);
+                    } else {
+                        getDefaultSubids();
+                    }
+                    // closeModal("waitbox");
                 } else {
-                    // alert("Error attempting to perform " + action + ": " + presult);
                     console.log("Error attempting to perform " + action + ". presult: ", presult);
-                    closeModal("waitbox");
+                    // closeModal("waitbox");
                 }
             }, "json"
         );
@@ -1006,14 +1025,12 @@ function showPreview() {
     if ( cm_Globals.options[uid] ) {
         swattr = cm_Globals.options[uid];
     }
-    // console.log("attr= ",swattr);
     
     $.post(cm_Globals.returnURL, 
         {useajax: "wysiwyg2", id: bid, type: str_type, tile: tileid, value: "none", attr: swattr},
         function (presult, pstatus) {
             if (pstatus==="success" ) {
                 $("#cm_preview").html(presult);
-                // console.log("wysiwyg2: ",presult);
 
                 var slidertag = "#cm_preview div.overlay.level >div.level";
                 if ( $(slidertag) ) {
