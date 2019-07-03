@@ -1,6 +1,6 @@
 {
   "name": "housepanel-push",
-  "version": "1.4.3",
+  "version": "1.4.5",
   "description": "Module to push thing state to HousePanel web screen",
   "main": "housepanel-push.js",
   "dependencies": {

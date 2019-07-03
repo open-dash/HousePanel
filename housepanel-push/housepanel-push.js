@@ -164,11 +164,15 @@ function updateElements() {
 // a callback function to give status info if they point a browser here
 if ( app ) {
     app.get("/", function (req, res) {
-        var str = "This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
+        
+        var str = "<p>This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
                   "To use this you must install housepanel-push as a service on some server. <br>" +
-                  "Currently connected to " + clients.length + " clients. <br><br> ";
+                  "Currently connected to " + clients.length + " clients.</p>";
+        str = str + "<br><hr><br>";
+          
         for (var i=0; i < clients.length; i++) {
-            str = str + "Client #" + i + " IP= " + clients[i].socket.remoteAddress.substring(7) + " <br>";
+            str = str + "Client #" + i + " host= " + clients[i].socket.remoteAddress.substring(7) + " <br>";
+            // str = str + "Client #" + i + " host= " + clients[i].origin + " <br>";
         }
         res.send(str);
         console.log((new Date()) + "GET request. Currently connected to " + clients.length + " clients. " );
@@ -202,7 +206,8 @@ if ( app ) {
                     // console.log(entry['value']);
                     entry['value'][req.body['change_attribute']] = req.body['change_value'];
                     if ( entry['value']['trackData'] ) { delete entry['value']['trackData']; }
-                    console.log((new Date()) + 'updating tile #',entry['id'],' from trigger:',req.body['change_attribute'],' value= ',entry['value']);
+                    console.log((new Date()) + 'updating tile #',entry['id'],' from trigger:',
+                                req.body['change_attribute'],' to ', clients.length,' hosts. value= ', JSON.stringify(entry['value']) );
 
                     // send the updated element to all clients
                     // this is processed by the webSockets client in housepanel.js
@@ -233,10 +238,24 @@ if ( wsServer ) {
         // client is connecting from your website
         // (http://en.wikipedia.org/wiki/Same_origin_policy)
         var connection = request.accept(null, request.origin); 
-        // we need to know client index to remove them on 'close' event
-        var index = clients.push(connection) - 1;
+        
+        // shut down any existing connections to same remote host
+        var host = connection.socket.remoteAddress;
+        var i = 0;
+        while ( i < clients.length ) {
+            var oldhost = clients[i].socket.remoteAddress;
+            if ( oldhost===host ) {
+                clients.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
 
-        console.log((new Date()) + ' Connection accepted.');
+        // report ndex of the connection
+        // we no longer rely on this to close prior connections
+        // instead we just shut down any that match
+        var index = clients.push(connection) - 1;
+        console.log((new Date()) + ' Connection accepted. Client #' + index + " host=" + host);
 
         // user sent some message
         // any message signals need to refresh the elements
@@ -245,12 +264,22 @@ if ( wsServer ) {
             updateElements();
         });
 
-        // user disconnected
-        connection.on('close', function(connection) {
-            console.log((new Date()) + " Peer disconnected. ",connection);
+        // user disconnected - remove all clients that match this socket
+        connection.on('close', function(reason, description) {
+            var host = connection.socket.remoteAddress;
+            console.log((new Date()) + " Peer: ", host, " disconnected. for: ", reason, " desc: ", description);
 
-            // remove user from the list of connected clients
-            clients.splice(index, 1);
+            // remove clients that match this host
+            // clients.splice(indexsave, 1);
+            var i = 0;
+            while ( i < clients.length ) {
+                var oldhost = clients[i].socket.remoteAddress;
+                if ( oldhost===host ) {
+                    clients.splice(i, 1);
+                } else {
+                    i++;
+                }
+            }
         });
 
     });

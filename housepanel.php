@@ -9,6 +9,9 @@
  * Revision History
  */
 $devhistory = "
+ 2.078      Bugfixes to 2.076 and 2.077 - skin missing from tileeditor
+             - fix long standing bug of duplicate Node.js clients
+             - properly close sockets upon disconnect and remove dups
  2.077      Remove http requirement for URL entries to enable intent links
  2.076      Various password updates and fixes
              - add password support for tiles using the custom field feature
@@ -5623,9 +5626,9 @@ function is_ssl() {
                   <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\" value=\"snap\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
-                // $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
-            // } else {
-                // $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
+                $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+            } else {
+                $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
             }
             $tc.= "</form>";
         }
