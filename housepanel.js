@@ -2393,8 +2393,10 @@ function processClick(that, thingname) {
     // and grab the proper hub number
     var usertile = $(that).siblings(".user_hidden");
     var userval = "";
+    
     if ( usertile && $(usertile).attr("command") ) {
         command = $(usertile).attr("command");    // command type
+        // alert("Command = " + command);
         if ( ismusic ) {
             userval = thevalue;
         } else  {
@@ -2404,7 +2406,10 @@ function processClick(that, thingname) {
         linktype = $(usertile).attr("linktype");  // type of tile linked to
 
         // handle redirects to a user provided web page
-        if ( command==="URL" && userval.startsWith("http") ) {
+        // remove the http requirement to support Android stuff
+        // this places extra burden on users to avoid doing stupid stuff
+        // if ( command==="URL" && userval.startsWith("http") ) {
+        if ( command==="URL" ) {
             window.open(userval,'_blank');
             return;
 

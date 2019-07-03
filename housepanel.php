@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.077      Remove http requirement for URL entries to enable intent links
  2.076      Various password updates and fixes
              - add password support for tiles using the custom field feature
              - change main password from simple hash to strong algorithm

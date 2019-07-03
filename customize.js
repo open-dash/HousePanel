@@ -935,11 +935,12 @@ function applyCustomField(action) {
     }
     
     // check for valid entries
+    // skip URL check to enable Android stuff
     var errors = [];
-    if ( subid.length < 2 ) {
+    if ( subid.length < 2 && subid!=="password" ) {
         errors.push("Your selected user field name [" + subid + "] is too short. Must be at least 2 characters");
     }
-    if ( (customtype==="POST" || customtype==="GET" || customtype==="PUT" || customtype==="URL") && 
+    if ( (customtype==="POST" || customtype==="GET" || customtype==="PUT") && 
          ( !content.startsWith("http://") && !content.startsWith("https://") ) ) {
         errors.push("User content for web type entries must begin with http or https"); 
     }
