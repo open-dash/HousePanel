@@ -20,9 +20,10 @@ cm_Globals.defaultclick = "name";
 //    getAllthings();
 //});
     
-function getAllthings(modalwindow) {
+function getAllthings(modalwindow, reload) {
+        var swattr = reload ? "reload" : "none";
         $.post(cm_Globals.returnURL, 
-            {useajax: "getthings", id: "none", type: "none"},
+            {useajax: "getthings", id: "none", type: "none", attr: swattr},
             function (presult, pstatus) {
                 if (pstatus==="success" && typeof presult === "object" ) {
                     var keys = Object.keys(presult);
@@ -35,7 +36,7 @@ function getAllthings(modalwindow) {
                     if ( modalwindow ) {
                         closeModal(modalwindow);
                     }
-                    closeModal("modalcustom");
+                    // closeModal("modalcustom");
                 }
             }, "json"
         );
@@ -966,8 +967,8 @@ function applyCustomField(action) {
                     cm_Globals.reload = true;
                     
                     // update content since pw could have changed it
-                    content = presult[subid];
-                    if ( subid==="password" ) {
+                    if ( subid==="password" && customtype!=="LINK" ) {
+                        content = presult[subid];
                         $("#cm_text").val(content);
                         cm_Globals.usertext = content;
                     }

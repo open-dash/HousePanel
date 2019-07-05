@@ -9,6 +9,12 @@
  * Revision History
  */
 $devhistory = "
+ 2.080      Remove blank customtile.css files to avoid overwriting user version
+             - LINK customizer bugfix
+             - minor bug fix of weather tile name
+             - custom field image default CSS fix, misc code cleanup
+             - show status when click on tiles that typically have no actions
+             - speed up initial load after refresh page
  2.078      Bugfixes to 2.076 and 2.077 - skin missing from tileeditor
              - fix long standing bug of duplicate Node.js clients
              - properly close sockets upon disconnect and remove dups
@@ -1767,20 +1773,22 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     }
 
     // set the custom name
-    // limit to 132 visual columns but show all for special tiles and custom names
-    // now we use custom name in both places
-    $thingvalue["name"] = $thingname;
     if ( $customname ) { 
-        $thingpr = $customname; 
         $thingvalue["name"] = $customname;
-    } else if ( strlen($thingname) > 132 && !array_key_exists($thingtype, $specialtiles) ) {
-        $thingpr = substr($thingname,0,132) . " ...";
-    } else {
-        $thingpr = $thingname;
     }
 
     // update fields with custom settings
     $thingvalue = getCustomTile($thingvalue, $thingtype, $bid, $options, $allthings);
+
+    // set the custom name
+    // limit to 132 visual columns but show all for special tiles and custom names
+    // now we use custom name in both places
+    $thingname = $thingvalue["name"];
+    if ( strlen($thingname) > 132 && !array_key_exists($thingtype, $specialtiles) ) {
+        $thingpr = substr($thingname,0,132) . " ...";
+    } else {
+        $thingpr = $thingname;
+    }
     
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
@@ -1798,9 +1806,9 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     // and it also handles the inclusion of the icons for status
     if ($thingtype==="weather") {
         if ( $customname ) {
-            $weathername = $customname;
+            $weathername = $thingpr;
         } else {
-            $weathername = $thingname . "<br />" . $thingvalue["city"];
+            $weathername = $thingpr . "<br>" . $thingvalue["city"];
         }
         $tc.= "<div aid=\"$i\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         // $tc.= "<span class=\"original n_$kindex\">" . $weathername . "</span>";
@@ -2902,7 +2910,7 @@ function readOptions($reset = false) {
         if ( !array_key_exists("specialtiles", $options["config"]) ) {
             $specialtiles = getSpecials();
             $specialcounts = array();
-            foreach ($specialtiles as $stype) {
+            foreach ($specialtiles as $stype => $sid) {
                 $specialcounts[$stype] = 4;
             }
             $options["config"]["specialtiles"] = $specialcounts;
@@ -5035,7 +5043,8 @@ function is_ssl() {
             // not intended for end user use, but can be for power users
             // the customization js file uses this to perform LINK connections
             case "getthings":
-                $allthings = getAllThings(true);
+                $isreload = ($swattr==="reload");
+                $allthings = getAllThings($isreload);
                 echo json_encode($allthings);
                 exit;
                 break;

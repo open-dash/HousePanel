@@ -1471,8 +1471,8 @@ div.video-thing div.thingname,
 div.blank-thing div.thingname,
 div.image-thing div.thingname,
 div.custom-thing div.thingname,
-div.custom-thing dive.overlay.custom,
 div.frame-thing div.thingname,
+div.overlay.custom,
 div.video.width, div.video.height,
 div.blank.width, div.blank.height,
 div.image.width, div.image.height,
@@ -1491,7 +1491,7 @@ div.thing.blank-thing, div.thing.custom-thing {
     border: none;
 }
 div.thing.frame-thing, div.thing.video-thing, div.thing.image-thing,
-div.thing.blank-thing, div.thing.custom-thing {
+div.thing.custom-thing {
     border-top: 2px solid #cccccc; 
     border-right: 2px solid #666666;
     border-bottom: 2px solid #666666;

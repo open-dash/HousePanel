@@ -18,6 +18,7 @@
  * 
  * Revision history:
  * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
+ *              work on fixing color reporting for bulbs - still not quite right
  * 05/27/2019 - remove blanks and images from groovy
  * 05/14/2019 - add native music artist, album, art fields when present
  * 05/11/2019 - clean up and tweak music; longer delays in subscribes
@@ -622,7 +623,7 @@ def getThing(things, swid, item=null) {
                 def reserved = ["setLevel","setHue","on","off","open","close",\
                                 "setSaturation","setColorTemperature","setColor","setAdjustedColor",\
                                 "indicatorWhenOn","indicatorWhenOff","indicatorNever",\
-                                "enrollResponse","poll","ping","configure","refresh"]
+                                "enrollResponse","stopLevelChange","poll","ping","configure","refresh"]
                 def comname = comm.getName()
                 def args = comm.getArguments()
                 def arglen = 0
@@ -638,6 +639,19 @@ def getThing(things, swid, item=null) {
         }
         resp = addHistory(resp, item)
     }
+    
+    // fix color
+    if ( resp["hue"] && resp["saturation"] && resp["level"]) {
+        def h = resp["hue"].toInteger()
+        def s = resp["saturation"].toInteger()
+        def v = resp["level"].toInteger()
+        def newcolor = hsv2rgb(h, s, v)
+        resp["hue"] = h
+        resp["saturation"] = s
+        resp["level"] = v
+        resp["color"] ? resp["color"] = newcolor : resp.put("color", newcolor)
+    }
+    
     return resp
 }
 
@@ -1717,9 +1731,13 @@ def hsv2rgb(h, s, v) {
     g = Math.floor(g*255).toInteger()
     b = Math.floor(b*255).toInteger()
 
-  def rhex = Integer.toHexString(r);
-  def ghex = Integer.toHexString(g);
-  def bhex = Integer.toHexString(b);
+  def rhex = Integer.toHexString(r)
+  def ghex = Integer.toHexString(g)
+  def bhex = Integer.toHexString(b)
+  
+    rhex = rhex == "0" ? "00" : rhex
+    ghex = ghex == "0" ? "00" : ghex
+    bhex = bhex == "0" ? "00" : bhex
   return "#"+rhex+ghex+bhex
 }
 
@@ -2068,6 +2086,8 @@ def registerLights() {
 
 def registerBulbs() {
     registerCapabilities(mybulbs,"switch")
+    registerCapabilities(mybulbs,"hue")
+    registerCapabilities(mybulbs,"saturation")
     registerCapabilities(mybulbs,"level")
     registerCapabilities(mybulbs,"color")
 }
@@ -2136,6 +2156,22 @@ def changeHandler(evt) {
     logger("Sending ${src} Event ( ${deviceName}, ${deviceid}, ${attr}, ${value} ) to Websocket at (${state.directIP}:${state.directPort})", "info")
     if (state.directIP && state.directPort && deviceName && deviceid && attr && value) {
 
+        // fix bulbs
+        if ( (mybulbs?.find {it.id == deviceid}) && (attr=="hue" || attr=="saturation" || attr=="level" || attr=="color") ) {
+            def h = value["hue"]?.toInteger()
+            def s = value["saturation"]?.toInteger()
+            def v = value["level"]?.toInteger()
+            if ( h && s && v ) {
+                def newcolor = hsv2rgb(h, s, v)
+                value["hue"] = h
+                value["saturation"] = s
+                value["level"] = v
+                value["color"] = newcolor
+            }
+            
+        }
+        
+        
         // set a hub action - include the access token so we know which hub this is
         def params = [
             method: "POST",

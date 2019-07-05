@@ -281,6 +281,11 @@ function setupWebsocket()
         var linktile = null;
         if ( bid!==null && thetype && pvalue && typeof pvalue==="object" ) {
         
+            // remove color for now until we get it fixed
+            if ( pvalue["color"] ) {
+                delete( pvalue["color"] );
+            }
+        
             // update all the tiles that match this type and id
             // notice we limit this to items on the actual panel
             $('div.panel div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
@@ -440,12 +445,13 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     var modalhook;
     
     var postype;
-    if ( modaltag && typeof modaltag === "object" && modaltag.hasOwnProperty("attr") ) {
-//        alert("object");
+    if ( modaltag && typeof modaltag === "object" ) {
+        // alert("object");
+        console.log("modaltag object: ", modaltag);
         modalhook = modaltag;
         postype = "relative";
     } else if ( modaltag && (typeof modaltag === "string") && typeof ($(modaltag)) === "object"  ) {
-//        alert("string: "+modaltag);
+        console.log("modaltag string: ", modaltag);
         modalhook = $(modaltag);
         if ( modaltag==="body" || modaltag==="document" || modaltag==="window" ) {
             postype = "absolute";
@@ -454,6 +460,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
         }
     } else {
 //        alert("default body");
+        console.log("modaltag body: ", modaltag);
         modalhook = $("body");
         postype = "absolute";
     }
@@ -523,6 +530,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
                     responsefunction(evt.target, modaldata);
                 }
                 closeModal(modalid);
+                $("body").off("click");
             }
         });
         
@@ -543,7 +551,7 @@ function setupColors() {
         var that = $(this);
         $(this).minicolors({
             position: "bottom left",
-            defaultValue: $(this).html(),
+            defaultValue: that.html(),
             theme: 'default',
             change: function(hex) {
                 try {
@@ -572,7 +580,9 @@ function setupColors() {
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubid: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
-                                updAll("color",aid,bidupd,thetype,hubnum,presult);
+                                console.log(ajaxcall + ": value= ", presult);
+                                updateTile(aid, presult);
+                                // updAll("color",aid,bidupd,thetype,hubnum,presult);
                             }
                        }, "json"
                 );
@@ -2484,6 +2494,26 @@ function processClick(that, thingname) {
                  || (thetype==="custom" && subid==="custom") ) {
         console.log("Rereshing " + thetype + ": " + thevalue);
         $(targetid).html(thevalue);
+        
+        // show popup window
+        if ( cm_Globals.allthings ) {
+            var idx = thetype + "|" + bid;
+            var thing= cm_Globals.allthings[idx];
+            var value = thing.value;
+            var showstr = "";
+            $.each(value, function(s, v) {
+                if ( s!=="password" && !s.startsWith("user_") ) {
+                    var txt = v.toString();
+                    txt = txt.replace(/<.*?>/g,'');
+                    showstr = showstr + s + ": " + txt + "<br>";
+                }
+            });
+            var pos = {top: $(tile).position().top + 50, left: $(tile).position().left};
+            createModal("modalpopup", showstr, "body", false, pos, function(ui) {
+                console.log("Finished inspecting status of a " + thetype);
+                // console.log("pos: ", pos, " that: ", that);
+            });
+        }
 
     } else {
         console.log(ajaxcall + ": thingname= " + thingname + " command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
@@ -2498,6 +2528,23 @@ function processClick(that, thingname) {
                 attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                function (presult, pstatus) {
                     if (pstatus==="success" && presult && typeof presult==="object" ) {
+                        // show status window for types that don't have actions
+                        // TODO - add an option to disable this
+                        if ( ajaxcall==="doaction" && 
+                             (thetype==="contact" || thetype==="motion" ) && 
+                             command!=="RULE" ) {
+                            var showstr = "";
+                            $.each(presult, function(s, v) {
+                                if ( s!=="password" && !s.startsWith("user_") ) {
+                                    showstr = showstr + s + ": " + v.toString() + "<br>";
+                                }
+                            });
+                            var pos = {top: $(tile).position().top + 50, left: $(tile).position().left};
+                            createModal("modalpopup", showstr, "body", false, pos, function(ui) {
+                                console.log("Finished inspecting status of a " + thetype);
+                                // console.log("pos: ", pos, " that: ", that);
+                            });
+                        }
                         try {
                             var keys = Object.keys(presult);
                             if ( keys && keys.length) {
