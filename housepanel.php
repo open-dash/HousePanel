@@ -9,6 +9,11 @@
  * Revision History
  */
 $devhistory = "
+ 2.081      Security lock down - no longer accept blanks to make new bogus user
+             - reauth request via api if not logged in will return to login page
+             - default user name not set to admin rather set to blank now
+             - reauth page still available if options file is missing
+             - reset code will also launch to auth page all the time if enabled
  2.080      Remove blank customtile.css files to avoid overwriting user version
              - LINK customizer bugfix
              - minor bug fix of weather tile name
@@ -316,6 +321,10 @@ define('DEBUG7', false); // debug misc
 define('DEBUG8', false); // debug custom development
 
 define("DONATE", true);  // turn on or off the donate button
+
+// turns on ?code=reset to invoke api - this is not secure but it will
+// allow you to go to the reauth page without manually deleting cookies
+define('ENABLERESET', false);
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -4191,7 +4200,9 @@ function is_ssl() {
                 // blank pw created for a new user - logout
                 $hash = "";
                 setcookie("pwcrypt", "", $expirz, "/");
-                $pwords[$uname] = $hash;
+                echo "error - no password given and user $uname does not exist.";
+                exit(0);
+                // $pwords[$uname] = $hash;
             } else {
                 // stay logged in if we were
                 $hash = $pwords[$uname];
@@ -4385,9 +4396,14 @@ function is_ssl() {
         $authpage= getAuthPage($returnURL, $hpcode);
                 
         echo htmlHeader($skin);
-        echo "Two <br><hr>";
         echo $authpage;
         echo htmlFooter();
+        exit(0);
+    } else if ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="dologin" ) {
+        echo htmlHeader($skin);
+        echo getLoginPage($returnURL, "");
+        echo htmlFooter();
+        unset($_SESSION["hpcode"]);
         exit(0);
     }
     
@@ -4438,9 +4454,13 @@ function is_ssl() {
         unset($_SESSION["allthings"]);
 
         // check for manual reset flag for debugging purposes
-        if ($code==="reset" || $code==="reauth" || $code==="redoauth") {
-            unset($_SESSION["allthings"]);
-            $_SESSION["hpcode"] = "redoauth";
+        if ( $code==="reset") {
+            setcookie("pwcrypt", "", $expirz, "/");
+            if ( defined("ENABLERESET") && ENABLERESET===true ) {
+                $_SESSION["hpcode"] = "redoauth";
+            } else {
+                $_SESSION["hpcode"] = "dologin";
+            }
             header("Location: $returnURL");
             exit(0);
         }
@@ -4601,7 +4621,7 @@ function is_ssl() {
     $hub = $hubs[findHub($hubnum, $hubs)];
     
     if ( !$useajax && !$valid ) {
-        $_SESSION["hpcode"] = "redoauth";
+        $_SESSION["hpcode"] = "dologin";
         header("Location: $returnURL");
         exit(0);
     }
@@ -5056,12 +5076,34 @@ function is_ssl() {
                 exit;
                 break;
             
+            // lock down the reauth api to prevent any user from resetting pw
             case "reauth":
-                unset($_SESSION["allthings"]);
-                unset($_SESSION["HP_hubnum"]);
-                $hpcode = time();
-                $_SESSION["hpcode"] = $hpcode;
-                $tc= getAuthPage($returnURL, $hpcode);
+                if ( isset($_COOKIE["uname"]) && isset($_COOKIE["pwcrypt"]) ) {
+                    $pwname = $_COOKIE["pwcrypt"];
+                    $uname = $_COOKIE["uname"];
+                    $options = readOptions();
+                    $configoptions = $options["config"];
+                    $pwords = $configoptions["pword"];
+                    // setcookie("uname", $uname, $expiry, "/");
+                    if ( $uname===$pwname && array_key_exists($uname, $pwords) ) {
+                        $login = true;
+                    } else {
+                        $login = false;
+                    }
+                } else {
+                    $uname = "";
+                    $login = false;
+                }
+                
+                if ( $login ) {
+                    unset($_SESSION["allthings"]);
+                    unset($_SESSION["HP_hubnum"]);
+                    $hpcode = time();
+                    $_SESSION["hpcode"] = $hpcode;
+                    $tc= getAuthPage($returnURL, $hpcode);
+                } else {
+                    $tc = getLoginPage($returnURL, $uname);
+                }
                 echo htmlHeader($skin);
                 echo $tc;
                 echo htmlFooter();
@@ -5192,7 +5234,7 @@ function is_ssl() {
                     // user given not in our system so reauth page
                     } else {
                         setcookie("pwcrypt", "", $expirz, "/");
-                        $_SESSION["hpcode"] = "redoauth";
+                        $_SESSION["hpcode"] = "dologin";
                     }
                     header("Location: $returnURL");
                     exit(0);
@@ -5494,12 +5536,12 @@ function is_ssl() {
             if ( isset($_COOKIE["uname"]) ) {
                 $uname = $_COOKIE["uname"];
             } else {
-                $uname = "admin";
+                $uname = "";
             }
             $login = false;
         }
 
-        if ( $rewriteoptions ) {
+        if ( $login!==false && $rewriteoptions ) {
             $options["config"] = $configoptions;
             writeOptions($options);
         }
