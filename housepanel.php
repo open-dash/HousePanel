@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.082      Fixed snarky bug in auth that reset hubpush ports and other things
+             - did more cleanup and robusting of auth flow
  2.081      Security lock down - no longer accept blanks to make new bogus user
              - reauth request via api if not logged in will return to login page
              - default user name not set to admin rather set to blank now
@@ -752,11 +754,17 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // check for some type of config setup
     if ( array_key_exists("config", $options) ) {
         $configoptions = $options["config"];
-        $timezone = $configoptions["timezone"];
+        if ( array_key_exists("timezone", $configoptions) ) {
+            $timezone = $configoptions["timezone"];
+        } else {
+            $timezone = "America/Detroit";
+            $rewrite = true;
+        }
         
         // fix any legacy settings to put skin in the config section
         if ( array_key_exists("skin", $options) ) {
             $skin = $options["skin"];
+            $configoptions["skin"] = $skin;
             $rewrite = true;
             unset($options["skin"]);
         } else if ( array_key_exists("skin", $configoptions) ) {
@@ -802,7 +810,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             $rewrite = true;
         }
         
-        if ( $kiosk===true || $kiosk === "true" || $kiosk==="yes" || $kiosk==="1" ) {
+        if ( $kiosk===true || $kiosk === "true" || $kiosk==="yes" || $kiosk==="on" || $kiosk==="1" ) {
             $kiosk = true;
         } else {
             $kiosk = false;
@@ -820,7 +828,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                 if ( isset($_COOKIE["uname"]) ) {
                     $uname = $_COOKIE["uname"];
                 } else {
-                    $uname = "admin";
+                    $uname = "";
                 }
 
                 // if user doesn't exist, add user with blank password
@@ -833,20 +841,17 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                 }
 
             // if only one password then convert to multiple format
+            // but no longer give default admin user access
             } else {
-                $uname = "admin";
-                $pword = $pwords;
+                $uname = "";
                 $pwords = array();
-                $pwords[$uname] = $pword;
                 $rewrite = true;
             }
             
         // this branch handles really old files without any pasword section
         } else {
-            $uname = "admin";
-            $pword = "";
+            $uname = "";
             $pwords = array();
-            $pwords[$uname] = $pword;
             $rewrite = true;
         }
         
@@ -942,23 +947,24 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             }
         }
     } else {
-
+        // hyper old format without even a config section
         // set default to not have any hub
         // HousePanel now works without any hub for custom tiles only
-        // This is useful for triggering Stringify flows with custom tiles
         $rewrite = true;
         $timezone = date_default_timezone_get();
         $skin = "skin-housepanel";
         $kiosk = false;
-        
-        // hyper old format without even a config section
-        $uname = "admin";
-        $pword = "";
+        $port = "19234";
+        $webSocketServerPort = "1337";
+        $fast_timer = 10000;
+        $slow_timer = 3600000;
+        $uname = "";
         $pwords = array();
-        $pwords[$uname] = $pword;
         $hubs = array();
     }
     
+    // get version and time info
+    // force rewrite of options if a new version
     if ( array_key_exists("time", $options) ) {
         $time = $options["time"];
         $info = explode(" @ ", $time);
@@ -1098,22 +1104,10 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     }
         
     // add a new blank hub at the end for adding new ones
-        
-    // make an empty new hub for adding new ones
-    $j = count($hubs);
-    foreach ($hubs as $hub) {
-        if ( is_numeric($hub["hubId"]) && intval($hub["hubId"]) < 10000 ) {
-            $n = intval($hub["hubId"]) + 1;
-        } else {
-            $n = $j + 1;
-        }
-        if ( $n > $j ) { $j = $n; }
-    }
-    $newnum = strval($j);
-    
+    // note: the type must be "New" because js uses this to do stuff
     $newhub = array("hubType"=>"New", "hubHost"=>"https://graph.api.smartthings.com", 
                     "clientId"=>"", "clientSecret"=>"",
-                    "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>$newnum,
+                    "userAccess"=>"", "userEndpt"=>"", "hubName"=>"", "hubId"=>"",
                     "hubTimer"=>60000, "hubAccess"=>"", "hubEndpt"=>"");
     $hubs[] = $newhub;
     
@@ -1174,7 +1168,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= hidden("doauthorize", $hpcode);
         // $tc.= hidden("hubnum", $i);
 
-        $tc.= "<div><label class=\"startupinp\">Hub Type: </label>";
+        // we use this div below to grab the hub type dynamically chosen
+        $tc.= "<div id=\"hubdiv_$hubId\"><label class=\"startupinp\">Hub Type: </label>";
         $tc.= "<select name=\"hubType\" class=\"startupinp\">";
         $st_select = $he_select = $w_select = $v_select = $o_select = "";
         if ( $hubType==="SmartThings" ) { $st_select = "selected"; }
@@ -1453,17 +1448,18 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                     $kindex = $kindexarr[0];
 
                     // if our tile matches and there is a custom name, use it
-                    if ( intval($kindex)===intval($tileid) ) {
+                    if ( intval($kindex)===intval($tileid) && $kindexarr[4]!=="" ) {
                         $customname = $kindexarr[4];
-                        if ( $customname!=="" ) { break; }
+                        break;
+                        // if ( $customname!=="" ) { break; }
                     }
                 }
             }
         }
-        if ( $customname!=="" ) { break; }
+        // if ( $customname!=="" ) { break; }
     }
     
-    if ( $customname ) {
+    if ( $customname!=="" ) {
         $custom_val["name"] = $customname;
     }
     
@@ -4168,7 +4164,6 @@ function is_ssl() {
         $fast_timer = $attr["fast_timer"];
         $slow_timer = $attr["slow_timer"];
         $uname = trim($attr["uname"]);
-        if ( $uname==="" ) {$uname = "admin"; }
         setcookie("uname", $uname, $expiry, "/");
         $pword = trim($attr["pword"]);
         
@@ -4225,26 +4220,22 @@ function is_ssl() {
         $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubnum = $hubId;
         
-        $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
         $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
+        $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
+        $kiosk = false;
         $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_SPECIAL_CHARS);
+        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
         $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_SPECIAL_CHARS);
         $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_SPECIAL_CHARS);
-        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
-        $uname = filter_input(INPUT_POST, "uname", FILTER_SANITIZE_SPECIAL_CHARS);
-        if ( isset( $_POST["use_kiosk"]) ) { 
-            $kiosk = $_POST["use_kiosk"];
-        } else {
-            $kiosk = false;
-        }
         
         // if blank user name given use last authenticated name if present
-        // and if not use default user name of admin
+        // and if not use default user name of "user" - changed from admin previously
+        $uname = filter_input(INPUT_POST, "uname", FILTER_SANITIZE_SPECIAL_CHARS);
         if ( $uname==="" ) {
             if ( isset($_COOKIE["uname"]) ) {
                 $uname = $_COOKIE["uname"];
             } else {
-                $uname = "admin";
+                $uname = "user";
             }
         } else {
             setcookie("uname", $uname, $expiry, "/");
@@ -4252,7 +4243,6 @@ function is_ssl() {
 
         // get user requested new password for this user
         // if blank given then existing password will remain
-        // TODO - add js logic in auth page to force good passwords
         if ( isset( $_POST["pword"]) ) {
             $pword = trim($_POST["pword"]);
         } else {
@@ -4508,6 +4498,7 @@ function is_ssl() {
                 $newthings = getDevices(array(), $options, $hubId, $hubType, $token, $endpt, $clientId, $clientSecret);
                 if ( count($newthings) ) {
                     $options = getOptions($options, $newthings);
+                    $configoptions = $options["config"];
                 }
                 
                 $hub["hubName"] = $hubName;
@@ -4543,7 +4534,6 @@ function is_ssl() {
                 unset($_SESSION["HP_hubnum"]);
                 $authpage= getAuthPage($returnURL, $hpcode, $hubId, $newthings);
                 echo htmlHeader($skin);
-                echo "One <br><hr>";
                 echo $authpage;
                 echo htmlFooter();
                 exit(0);
@@ -5489,7 +5479,7 @@ function is_ssl() {
             if ( isset($_COOKIE["uname"]) ) {
                 $uname = $_COOKIE["uname"];
             } else {
-                $uname = "admin";
+                $uname = "user";
             }
             
             // remove all the old md5 passwords

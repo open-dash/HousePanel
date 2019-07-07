@@ -1172,6 +1172,57 @@ function updateFilters() {
     );
 }
 
+function checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) {
+
+    var errs = {};
+    var isgood = true;
+    var intre = /^\d{1,}$/;         // only digits allowed and must be more than 999
+    var unamere = /^\D\S{5,}$/;      // start with a letter and be six long at least
+    var pwordre = /^\S{6,}$/;        // start with anything but no white space and at least 6 digits 
+
+    if ( port ) {
+        var i = parseInt(port, 10);
+        if ( !intre.test(port) || i < 1024 || i > 65535 ) {
+            errs.port = " " + port + ", Must be an integer between 1024 and 65535";
+            isgood = false;
+        }
+    }
+    if ( webSocketServerPort ) {
+        var j = parseInt(webSocketServerPort, 10);
+        if ( !intre.test(webSocketServerPort)  || j < 1024 || j > 65535 ) {
+            errs.webSocketServerPort = " " + webSocketServerPort + ", Must be an integer between 1024 and 65535";
+            isgood = false;
+        }
+    }
+
+    if ( !intre.test(fast_timer) ) {
+        errs.fast_timer = " " + fast_timer + ", must be an integer";
+        isgood = false;
+    }
+    if ( !intre.test(slow_timer) ) {
+        errs.slow_timer = " " + slow_timer + ", must be an integer";
+        isgood = false;
+    }
+    if ( !unamere.test(uname) ) {
+        errs.uname = " " + uname + ", must begin with a letter and be at least 6 characters long";
+        isgood = false;
+    }
+    if ( pword!=="" && !pwordre.test(pword) ) {
+        errs.pword = ", must be blank or at least 6 characters long";
+        isgood = false;
+    }
+
+    // show all errors
+    if ( !isgood ) {
+        var str = "";
+        $.each(errs, function(key, val) {
+            str = str + "Invalid " + key + val + "\n"; 
+        });
+        alert(str);
+    }
+    return isgood;
+}
+
 function setupButtons() {
 
     if ( pagename==="main" && !disablebtn ) {
@@ -1221,7 +1272,12 @@ function setupButtons() {
         $("#pickhub").on('change',function(evt) {
             var hubId = $(this).val();
             var target = "#authhub_" + hubId;
+            
+            // this is only the starting type and all we care about is New
+            // if we needed the actual type we would have used commented code
             var hubType = $(target).attr("hubtype");
+            // var realhubType = $("#hubdiv_" + hubId).children("select").val();
+            // alert("realhubType= " + realhubType);
             if ( hubType==="New" ) {
                 $("input.hubdel").addClass("hidden");
                 $("#newthingcount").html("Fill out the fields below to add a New hub");
@@ -1249,55 +1305,64 @@ function setupButtons() {
         // handle auth submissions
         // add on one time info from user
         $("input.hubauth").click(function(evt) {
-            var hubnum = $(this).attr("hub");
-            var hubId = $(this).attr("hubid");
-            var myform = document.getElementById("hubform_"+hubId);
-            var formData = new FormData(myform);
+            var err;
+            try {
+                var hubnum = $(this).attr("hub");
+                var hubId = $(this).attr("hubid");
+                var myform = document.getElementById("hubform_"+hubId);
+                var formData = new FormData(myform);
+            } catch(err) {
+                evt.stopPropagation(); 
+                alert("Something went wrong when trying to submit your auth...\n" + err.message);
+                return;
+            }
             
             var tz = $("#newtimezone").val();
             var skindir = $("#newskindir").val();
+            var port = $("#newport").val();
+            var webSocketServerPort = $("#newsocketport").val();
+            var fast_timer = $("#newfast_timer").val();
+            var slow_timer = $("#newslow_timer").val();
             var uname = $("#uname").val();
             var pword = $("#pword").val();
-            var kiosk = "false";
+
             // **********************************************
-            // TODO - add input checking
+            // perform input checking
             // **********************************************
+            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
+                evt.stopPropagation(); 
+                return;
+            }
             
             // tell user we are authorizing hub...
             $("#newthingcount").html("Authorizing...").fadeTo(500, 0.3 ).fadeTo(500, 1).fadeTo(500, 0.3 ).fadeTo(500, 1);
-            
-            formData.append("timezone", tz);
-            formData.append("skindir", skindir);
-            formData.append("uname", uname);
-            formData.append("pword", pword);
-            formData.append("use_kiosk", kiosk);
             var hubHost = formData.get("hubHost");
             var clientId = formData.get("clientId");
 
             // grab all the values the user specified
             // this is done manually below
-            // the commented code works but it confuses my editor
             var values = {};
-//            for (var key of formData.keys()) {
-//                values[key] = formData.get(key);
-//            }
-            values.clientId = formData.get("clientId");
-            values.clientSecret = formData.get("clientSecret");
             values.doauthorize = formData.get("doauthorize");
-            values.hubHost = formData.get("hubHost");
-            values.hubId = formData.get("hubId");
-            values.hubName = formData.get("hubName");
-            values.hubTimer = formData.get("hubTimer");
             values.hubType = formData.get("hubType");
-            values.pword = formData.get("pword");
-            values.skindir = formData.get("skindir");
-            values.timezone = formData.get("timezone");
-            values.uname = formData.get("uname");
-            values.use_kiosk = formData.get("use_kiosk");
+            values.hubHost = hubHost;
+            values.clientId = clientId;
+            values.clientSecret = formData.get("clientSecret");
             values.userAccess = formData.get("userAccess");
             values.userEndpt = formData.get("userEndpt");
-            console.log( values );
-            // alert("about to auth...");
+            values.hubName = formData.get("hubName");
+            values.hubId = formData.get("hubId");
+            values.hubTimer = formData.get("hubTimer");
+            values.timezone = tz;
+            values.skindir = skindir;
+            values.use_kiosk = false;
+            values.port = port;
+            values.webSocketServerPort = webSocketServerPort;
+            values.fast_timer = fast_timer;
+            values.slow_timer = slow_timer;
+            values.uname = uname;
+            values.pword = pword;
+//            console.log( values );
+//            alert("about to auth...");
             
             $.post(returnURL, values, function(presult, pstatus) {
                 console.log( presult );
@@ -1326,22 +1391,26 @@ function setupButtons() {
         $("#cancelauth").click(function(evt) {
             var tz = $("#newtimezone").val();
             var skindir = $("#newskindir").val();
-            var uname = $("#uname").val();
-            var pword = $("#pword").val();
-            var kiosk = $("#use_kiosk").val();
             var port = $("#newport").val();
             var webSocketServerPort = $("#newsocketport").val();
             var fast_timer = $("#newfast_timer").val();
             var slow_timer = $("#newslow_timer").val();
+            var uname = $("#uname").val();
+            var pword = $("#pword").val();
 
             // **********************************************
-            // TODO - add input checking
+            // perform input checking
             // **********************************************
+            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
+                evt.stopPropagation(); 
+                return;
+            }
+            
             var ntc = "Processing hub information to create your dashboard...";
-            $("#newthingcount").html(ntc).fadeTo(700, 0.3 ).fadeTo(700, 1).fadeTo(700, 0.3 ).fadeTo(700, 1);;
-
+            $("#newthingcount").html(ntc).fadeTo(700, 0.3 ).fadeTo(700, 1);
+            
             var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
-                            pword: pword, kiosk: kiosk, port: port, webSocketServerPort: webSocketServerPort,
+                            pword: pword, kiosk: false, port: port, webSocketServerPort: webSocketServerPort,
                             fast_timer: fast_timer, slow_timer: slow_timer};
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
