@@ -6,76 +6,13 @@
  */
 
 // globals used by this module
-var cm_Globals = {};
 cm_Globals.currentidx = "clock|clockdigital";
-cm_Globals.id = "clockdigital";
-cm_Globals.thingidx = cm_Globals.currentidx;
+cm_Globals.id = null;
 cm_Globals.usertext = "";
 cm_Globals.reload = false;
 cm_Globals.thingindex = null;
+cm_Globals.thingidx = null;
 cm_Globals.defaultclick = "name";
-
-// this is now done in the main js routine
-//$(document).ready(function() {
-//    getAllthings();
-//});
-    
-function getAllthings(modalwindow, reload) {
-        var swattr = reload ? "reload" : "none";
-        $.post(cm_Globals.returnURL, 
-            {useajax: "getthings", id: "none", type: "none", attr: swattr},
-            function (presult, pstatus) {
-                if (pstatus==="success" && typeof presult === "object" ) {
-                    var keys = Object.keys(presult);
-                    cm_Globals.allthings = presult;
-                    console.log("getAllthings returned: " + keys.length + " things");
-                    getOptions(modalwindow);
-                } else {
-                    console.log("Error: failure obtaining things from HousePanel");
-                    cm_Globals.allthings = null;
-                    if ( modalwindow ) {
-                        closeModal(modalwindow);
-                    }
-                    // closeModal("modalcustom");
-                }
-            }, "json"
-        );
-}
-
-function getOptions(modalwindow) {
-    $.post(cm_Globals.returnURL, 
-        {useajax: "getoptions", id: "none", type: "none"},
-        function (presult, pstatus) {
-            if (pstatus==="success" && typeof presult === "object" && presult.index ) {
-                cm_Globals.options = presult;
-                var indexkeys = Object.keys(presult.index);
-                console.log("getOptions returned: " + indexkeys.length + " things");
-
-                // setup dialog box if it is open
-                if ( cm_Globals.thingindex ) {
-                    try {
-                        getDefaultSubids();
-                        var idx = cm_Globals.thingidx;
-                        var allthings = cm_Globals.allthings;
-                        var thing = allthings[idx];
-                        $("#cm_subheader").html(thing.name);
-                        initCustomActions();
-                        handleBuiltin(cm_Globals.defaultclick);
-                    } catch (e) { }
-                }
-            } else {
-                cm_Globals.options = null;
-                console.log("Error: failure reading your hmoptions.cfg file");
-            }
-            if ( modalwindow ) {
-                closeModal(modalwindow);
-                if ( !cm_Globals.options ) {
-                    closeModal("modalcustom");
-                }
-            }
-        }, "json"
-    );
-}
 
 function getDefaultSubids() {
     var thingindex = cm_Globals.thingindex;
@@ -88,10 +25,11 @@ function getDefaultSubids() {
     $.each(indexoptions, function(index, val) {
         if ( val.toString() === thingindex ) {
             idx = index;
+            cm_Globals.thingidx = idx;
+            return false;
         }
     });
 
-    cm_Globals.thingidx = idx;
     var n = idx.indexOf("|");
     cm_Globals.id = idx.substring(n+1);
 
@@ -113,6 +51,7 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
     cm_Globals.type = str_type;
     cm_Globals.hubnum = hubnum;
     cm_Globals.reload = false;
+    cm_Globals.thingidx = str_type + "|" + bid;
     
     // start of dialog
     var dh = "<div id='customizeDialog' class='tileDialog'>";
@@ -153,7 +92,8 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
                 });
                 // reload window unless modal Tile Editor window is open
                 // but always skip if we didn't actually change anything
-                cm_Globals.thingindex = false;
+                cm_Globals.thingindex = null;
+                cm_Globals.thingidx = null;
                 if ( (et_Globals.reload || cm_Globals.reload) && ( modalWindows["modalid"] === 0 || typeof modalWindows["modalid"] === "undefined" ) ) {
                     location.reload(true);
                 }
@@ -174,7 +114,7 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
                 if ( !cm_Globals.allthings || !cm_Globals.options ) {
                     var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
                     createModal("waitbox", "Loading data. Please wait...", "div.modalbuttons", false, pos);
-                    getAllthings("waitbox");
+                    getAllthings("waitbox", true);
                 } else {
                     try {
                         getDefaultSubids();

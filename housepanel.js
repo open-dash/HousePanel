@@ -1,4 +1,13 @@
 // jquery functions to do Ajax on housepanel.php
+
+// globals array used everywhere now
+var cm_Globals = {};
+cm_Globals.thingindex = null;
+cm_Globals.thingidx = null;
+cm_Globals.allthings = null;
+cm_Globals.options = null;
+cm_Globals.returnURL = "housepanel.php";
+
 var modalStatus = 0;
 var modalWindows = [];
 var priorOpmode = "Operate";
@@ -51,6 +60,64 @@ function getCookie(cname) {
     return "";
 }
 
+function getAllthings(modalwindow, reload) {
+        var swattr = reload ? "reload" : "none";
+        // alert("swattr= " + swattr + " returnURL= " + cm_Globals.returnURL);
+        $.post(cm_Globals.returnURL, 
+            {useajax: "getthings", id: "none", type: "none", attr: swattr},
+            function (presult, pstatus) {
+                if (pstatus==="success" && typeof presult === "object" ) {
+                    var keys = Object.keys(presult);
+                    cm_Globals.allthings = presult;
+                    console.log("getAllthings returned: " + keys.length + " things");
+                    
+                    if ( ! cm_Globals.options ) {
+                        getOptions();
+                    }
+                    
+                    // setup customize dialog box if it is open
+                    if ( cm_Globals.thingindex && cm_Globals.thingidx ) {
+                        try {
+                            getDefaultSubids();
+                            var idx = cm_Globals.thingidx;
+                            var allthings = cm_Globals.allthings;
+                            var thing = allthings[idx];
+                            $("#cm_subheader").html(thing.name);
+                            initCustomActions();
+                            handleBuiltin(cm_Globals.defaultclick);
+                        } catch (e) { }
+                    }
+                } else {
+                    console.log("Error: failure obtaining things from HousePanel", presult);
+                    cm_Globals.allthings = null;
+                    if ( modalwindow ) {
+                        closeModal(modalwindow);
+                    }
+                    closeModal("modalcustom");
+                }
+            }, "json"
+        );
+}
+
+// obtain options using an ajax api call
+// could probably read Options file instead
+// but doing it this way ensure we get what main app sees
+function getOptions() {
+    $.post(cm_Globals.returnURL, 
+        {useajax: "getoptions", id: "none", type: "none"},
+        function (presult, pstatus) {
+            if (pstatus==="success" && typeof presult === "object" && presult.index ) {
+                cm_Globals.options = presult;
+                var indexkeys = Object.keys(presult.index);
+                console.log("getOptions returned: " + indexkeys.length + " things");
+            } else {
+                cm_Globals.options = null;
+                console.log("Error: failure reading your hmoptions.cfg file");
+            }
+        }, "json"
+    );
+}
+
 $(document).ready(function() {
     // set the global return URL value
     try {
@@ -58,6 +125,17 @@ $(document).ready(function() {
     } catch(e) {
         returnURL = "housepanel.php";
     }
+    cm_Globals.returnURL = returnURL;
+
+    // first try to load fast, if failed do slow
+    // this is caused by json_encode hanging in main routine
+    getOptions();
+    getAllthings(false, false);
+    setTimeout(function() {
+        if ( !cm_Globals.allthings ) {
+            getAllthings(false, true);
+        }
+    }, 3000);
     
     try {
         pagename = $("input[name='pagename']").val();
@@ -88,7 +166,6 @@ $(document).ready(function() {
     // this function is actually defined in customize.js
     if ( pagename==="main" ) {
         $("div.skinoption").hide();
-        getAllthings();
     }
 
     // setup page clicks
@@ -447,11 +524,11 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     var postype;
     if ( modaltag && typeof modaltag === "object" ) {
         // alert("object");
-        console.log("modaltag object: ", modaltag);
+        // console.log("modaltag object: ", modaltag);
         modalhook = modaltag;
         postype = "relative";
     } else if ( modaltag && (typeof modaltag === "string") && typeof ($(modaltag)) === "object"  ) {
-        console.log("modaltag string: ", modaltag);
+        // console.log("modaltag string: ", modaltag);
         modalhook = $(modaltag);
         if ( modaltag==="body" || modaltag==="document" || modaltag==="window" ) {
             postype = "absolute";
@@ -460,7 +537,7 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
         }
     } else {
 //        alert("default body");
-        console.log("modaltag body: ", modaltag);
+        // console.log("modaltag body: ", modaltag);
         modalhook = $("body");
         postype = "absolute";
     }
@@ -520,9 +597,11 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
             closeModal(modalid);
         });
     } else {
+        // body clicks turn of modals unless clicking on box itself
+        // or if this is a popup window any click will close it
         $("body").off("click");
         $("body").on("click",function(evt) {
-            if ( evt.target.id === modalid || modalid==="waitbox") {
+            if ( (evt.target.id === modalid && modalid!=="modalpopup") || modalid==="waitbox") {
                 evt.stopPropagation();
                 return;
             } else {
@@ -2564,8 +2643,8 @@ function processClick(that, thingname) {
         console.log("Rereshing " + thetype + ": " + thevalue);
         $(targetid).html(thevalue);
         
-        // show popup window
-        if ( cm_Globals.allthings ) {
+        // show popup window for blanks and customs
+        if ( cm_Globals.allthings && (thetype==="blank" || thetype==="custom") ) {
             var idx = thetype + "|" + bid;
             var thing= cm_Globals.allthings[idx];
             var value = thing.value;
@@ -2599,12 +2678,14 @@ function processClick(that, thingname) {
                     if (pstatus==="success" && presult && typeof presult==="object" ) {
                         // show status window for types that don't have actions
                         // TODO - add an option to disable this
-                        if ( ajaxcall==="doaction" && 
-                             (thetype==="contact" || thetype==="motion" ) && 
-                             command!=="RULE" ) {
+                        if ( ajaxcall==="doaction" && cm_Globals.allthings && command==="" &&
+                             (thetype==="contact" || thetype==="motion" || 
+                              thetype==="presence" || thetype==="clock" ||
+                              thetype==="weather" || thetype==="temperature") 
+                            ) {
                             var showstr = "";
                             $.each(presult, function(s, v) {
-                                if ( s!=="password" && !s.startsWith("user_") ) {
+                                if ( s && v && s!=="password" && !s.startsWith("user_") ) {
                                     showstr = showstr + s + ": " + v.toString() + "<br>";
                                 }
                             });

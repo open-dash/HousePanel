@@ -366,13 +366,24 @@ function htmlHeader($skin="skin-housepanel") {
     // analog clock support
     $tc.= '<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->';
     $tc.= '<script type="text/javascript" src="coolclock.js"></script>';
+    
+    // load main script file
+    $jshash = md5_file("housepanel.js");
+    $tc.= '<script type="text/javascript" src="housepanel.js?v=' . $jshash . '"></script>';  
+    
+    // if this theme has a helper js then load it
+    if ( file_exists( $skin . "/housepanel-theme.js") ) {
+        $helperhash = md5_file($skin . "/housepanel-theme.js");
+        $tc.= "<script type=\"text/javascript\" src=\"$skin/housepanel-theme.js?v=" . $helperhash . "\"></script>";
+    }
 	
-    //load fixed css file with cutomization helpers
+    // load tile editor fixed css file with cutomization helpers
     $tejshash = md5_file("tileeditor.js");
     $tecsshash = md5_file("tileeditor.css");
     $tc.= "<script type=\"text/javascript\" src=\"tileeditor.js?v=" . $tejshash . "\"></script>";
     $tc.= "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css?v=" . $tecsshash . "\">";	
-    
+
+    // load tile customizer
     $cm_hash = md5_file("customize.js");
     $tc.= "<script type=\"text/javascript\" src=\"customize.js?v=" . $cm_hash . "\"></script>";
     
@@ -390,16 +401,6 @@ function htmlHeader($skin="skin-housepanel") {
         $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css?v=". $customhash ."\">";
     }
     
-    // load main script file
-    $jshash = md5_file("housepanel.js");
-    $tc.= '<script type="text/javascript" src="housepanel.js?v=' . $jshash . '"></script>';  
-    
-    // if this theme has a helper js then load it
-    if ( file_exists( $skin . "/housepanel-theme.js") ) {
-        $helperhash = md5_file($skin . "/housepanel-theme.js");
-        $tc.= "<script type=\"text/javascript\" src=\"$skin/housepanel-theme.js?v=" . $helperhash . "\"></script>";
-    }
-
     // begin creating the main page
     $tc.= '</head><body>';
     $tc.= '<div class="maintable">';
@@ -1339,7 +1340,7 @@ function addSpecials(&$allthings, $options) {
 function getAllThings($reset = false) {
 
     if ( !$reset && isset($_SESSION["allthings"]) ) {
-        $allthings = $_SESSION["allthings"];
+        $allthings = unserialize($_SESSION["allthings"]);
         $insession = true;
     } else {
     
@@ -1407,7 +1408,7 @@ function getAllThings($reset = false) {
         }
         
         // save the things
-        $_SESSION["allthings"] = $allthings;
+        $_SESSION["allthings"] = serialize($allthings);
     }
     
     if ( DEBUG7 ) {
@@ -1671,23 +1672,26 @@ function returnFile($fname, $width, $height, $ctype) {
             case "jpg":
             case "png":
             case "gif":
-                $vnhash = md5_file($vn);
-                $v = "<img width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\">";
+                // $vnhash = md5_file($vn);
+                // $v = "<img width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\">";
+                $v = "<img width=\"$width\" height=\"$height\" src=\"$vn" ."\">";
                 break;
             
             case "mp4":
             case "ogg":
-                $vnhash = md5_file($vn);
+                // $vnhash = md5_file($vn);
                 $v= "<video width=\"$width\" height=\"$height\" autoplay>";
-                $v.= "<source src=\"$vn" . "?v=$vnhash" ."\" type=\"video/$ve\">";
+                // $v.= "<source src=\"$vn" . "?v=$vnhash" ."\" type=\"video/$ve\">";
+                $v.= "<source src=\"$vn" ."\" type=\"video/$ve\">";
                 $v.= "Video Not Supported</video>";
                 break;
                 
             case "html":
             case "htm":
             case "php":
-                $vnhash = md5_file($vn);
-                $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\" frameborder=\"0\"></iframe>";
+                // $vnhash = md5_file($vn);
+                // $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn" . "?v=$vnhash" ."\" frameborder=\"0\"></iframe>";
+                $v = "<iframe width=\"$width\" height=\"$height\" src=\"$vn" ."\" frameborder=\"0\"></iframe>";
                 break;
                 
             default:
@@ -2313,7 +2317,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // not having a session typically means HP is in API mode
     // in API mode link and web api calls are not supported
     if ( isset($_SESSION["allthings"]) ) {
-        $allthings = $_SESSION["allthings"];
+        $allthings = unserialize($_SESSION["allthings"]);
     } else {
         $allthings = false;
     }
@@ -2744,7 +2748,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                     $response = $newval;
                 }
             }
-            $_SESSION["allthings"] = $allthings;
+            $_SESSION["allthings"] = serialize($allthings);
         }
     }
     
@@ -5044,7 +5048,7 @@ function is_ssl() {
             // this is needed for the customization js file but...
             // end users can also use this to read the options file
             case "getoptions":
-                // $options = readOptions();
+                $options = readOptions();
                 echo json_encode($options);
                 exit;
                 break;
@@ -5053,8 +5057,11 @@ function is_ssl() {
             // not intended for end user use, but can be for power users
             // the customization js file uses this to perform LINK connections
             case "getthings":
-                $isreload = ($swattr==="reload");
-                $allthings = getAllThings($isreload);
+                if ( $swattr==="reload" ) {
+                    $allthings = getAllThings(true);
+                } else {
+                    $allthings = getAllThings(false);
+                }
                 echo json_encode($allthings);
                 exit;
                 break;
@@ -5190,7 +5197,6 @@ function is_ssl() {
             case "saveoptions":
                 if ( isset($_POST["options"]) ) {
                     processOptions($_POST);
-                    $options = readOptions();
                     header("Location: $returnURL");
                     exit(0);
                 } else {
@@ -5310,7 +5316,7 @@ function is_ssl() {
                 // save it in the main array and update our session
                 // this is way faster than re-reading everything
                 $allthings[$idx]["value"] = $thingval;
-                $_SESSION["allthings"] = $allthings;
+                $_SESSION["allthings"] = serialize($allthings);
                 
                 // $allthings = getAllThings(true);
                 echo json_encode($thingval);
@@ -5359,7 +5365,7 @@ function is_ssl() {
                 
                 // update the main array
                 $allthings[$idx]["value"] = $thingval;
-                $_SESSION["allthings"] = $allthings;
+                $_SESSION["allthings"] = serialize($allthings);
                 echo json_encode($thingval);
                 break;
                 
