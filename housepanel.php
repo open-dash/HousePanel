@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.083      Properly load things and options for use in GUI and other bug fixes
  2.082      Fixed snarky bug in auth that reset hubpush ports and other things
              - did more cleanup and robusting of auth flow
  2.081      Security lock down - no longer accept blanks to make new bogus user
@@ -304,8 +305,8 @@ ini_set('max_input_vars', 20);
 
 // grab the version number from the latest history entry
 $version = trim(substr($devhistory,1,10));
-define('HPVERSION', 'Ver. ' . $version);
-define('APPNAME', 'HousePanel ' . HPVERSION);
+define('HPVERSION', $version);
+define('APPNAME', 'HousePanel Ver. ' . HPVERSION);
 define('CRYPTSALT','HousePanel%by@Ken#Washington');
 define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
 // Ann Arbor = 329380
@@ -3414,7 +3415,7 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $hubs = $configoptions["hubs"];
     
     $tc = "";
-    $tc.= "<h3>HousePanel " . HPVERSION . " Options</h3>";
+    $tc.= "<h3>" . APPNAME . " Options</h3>";
     $tc.= "<div class=\"formbutton formauto\"><a href=\"$retpage\">Cancel and Return to HousePanel</a></div>";
     
     $tc.= "<div id=\"optionstable\" class=\"optionstable\">";
@@ -3948,7 +3949,7 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
     $specialtiles = getSpecials();
     
     $tc = "";
-    $tc.= "<h3>HousePanel " . HPVERSION . " Information Display</h3>";
+    $tc.= "<h3>" . APPNAME . " Information Display</h3>";
     // $tc.= "<button class=\"infobutton\">Return to HousePanel</button><br>";
 
     if ( defined("DONATE") && DONATE===true ) {
@@ -4414,7 +4415,6 @@ function is_ssl() {
             unset($_SESSION["allthings"]);
             $_SESSION["hpcode"] = "redoauth";
             header("Location: $returnURL");
-            exit(0);
         }
         exit(0);
     }
@@ -4429,10 +4429,8 @@ function is_ssl() {
     $timezone = $configoptions["timezone"];
     $skin = $configoptions["skin"];
     $kiosk = $configoptions["kiosk"];
+    $port = $configoptions["port"];
     $webSocketServerPort = $configoptions["webSocketServerPort"];
-//    if ( !$webSocketServerPort ) {
-//        $webSocketServerPort = "1337";
-//    }
     $fast_timer = $configoptions["fast_timer"];
     $slow_timer = $configoptions["slow_timer"];
 
@@ -5440,6 +5438,24 @@ function is_ssl() {
 
         $options = readOptions();
         $rewriteoptions = false;
+
+        // check for an upgrade
+        if ( array_key_exists("time", $options) ) {
+            $time = $options["time"];
+            $info = explode(" @ ", $time);
+            $version = $info[0];
+            $upgraded = ($version !== HPVERSION );
+        } else {
+            $upgraded = true;
+            $options["time"] = HPVERSION . " @ " . strval(time());
+        }
+        
+        // if options file is upgraded force reload of all things array
+        if ( $upgraded ) {
+            $rewriteoptions = true;
+            unset($_SESSION["allthings"]);
+        }
+        
         $configoptions = $options["config"];
         $hubs = $configoptions["hubs"];
         $hubcount = count($hubs);
@@ -5625,7 +5641,7 @@ function is_ssl() {
             // include doc button and username that is logged in
             $uname = $_COOKIE["uname"];
             $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
-            $tc.= '<div class="showversion">' . $uname . " - " . HPVERSION  .'</div>';
+            $tc.= '<div class="showversion">' . $uname . " - Ver. " . HPVERSION  .'</div>';
 
             // end of the tabs
             $tc.= "</div>";

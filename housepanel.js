@@ -126,28 +126,21 @@ $(document).ready(function() {
         returnURL = "housepanel.php";
     }
     cm_Globals.returnURL = returnURL;
-
-    // first try to load fast, if failed do slow
-    // this is caused by json_encode hanging in main routine
-    getOptions();
-    getAllthings(false, false);
-    setTimeout(function() {
-        if ( !cm_Globals.allthings ) {
-            getAllthings(false, true);
-        }
-    }, 3000);
     
     try {
         pagename = $("input[name='pagename']").val();
     } catch(e) {
         pagename = "main";
     }
+
+    // show tabs and hide skin
+    if ( pagename==="main") {
+        $("#tabs").tabs();
+        $("div.skinoption").hide();
+    }
     
-    $( "#tabs" ).tabs();
-    
-    // get default tab from cookie
+    // get default tab from cookie and go to that tab
     var defaultTab = getCookie( 'defaultTab' );
-    
     if ( pagename==="main" && defaultTab ) {
         try {
             $("#"+defaultTab).click();
@@ -161,12 +154,16 @@ $(document).ready(function() {
             }
         }
     }
-
-    // hide the skin and load all things and options
-    // this function is actually defined in customize.js
-    if ( pagename==="main" ) {
-        $("div.skinoption").hide();
-    }
+    
+    // first try to load fast, if failed do slow
+    // this is caused by json_encode hanging in main routine
+    getOptions();
+    getAllthings(false, false);
+    setTimeout(function() {
+        if ( !cm_Globals.allthings ) {
+            getAllthings(false, true);
+        }
+    }, 3000);
 
     // setup page clicks
     if ( pagename==="main" && !disablepub ) {
