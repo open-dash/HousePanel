@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.084      Bugfix auth code to handle PHP installs without builtin functions
+             - change minimum username length to 3 and look for admin name
  2.083      Properly load things and options for use in GUI and other bug fixes
  2.082      Fixed snarky bug in auth that reset hubpush ports and other things
              - did more cleanup and robusting of auth flow
@@ -307,7 +309,7 @@ ini_set('max_input_vars', 20);
 $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
 define('APPNAME', 'HousePanel Ver. ' . HPVERSION);
-define('CRYPTSALT','HousePanel%by@Ken#Washington');
+define('CRYPTSALT','HP$by%KW');
 define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
 // Ann Arbor = 329380
 // developer debug options
@@ -327,7 +329,7 @@ define("DONATE", true);  // turn on or off the donate button
 
 // turns on ?code=reset to invoke api - this is not secure but it will
 // allow you to go to the reauth page without manually deleting cookies
-define('ENABLERESET', false);
+define('ENABLERESET', true);
 
 // set error reporting to just show fatal errors
 error_reporting(E_ERROR);
@@ -2103,7 +2105,6 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $options, $k
         $tc.= "<div id=\"panel-$roomname\" title=\"" . $roomtitle . "\" class=\"panel panel-$kroom panel-$roomname\">";
         // $tc.= hidden("panelname",$keyword);
 
-        $thiscnt = 0;
         // the things list can be integers or arrays depending on drag/drop
         foreach ($things as $kindexarr) {
             
@@ -2136,12 +2137,11 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $options, $k
             if ($thingid && array_key_exists($thingid, $allthings)) {
                 $thesensor = $allthings[$thingid];
                 if ( DEBUG || DEBUG3 ) {
-                    $roomdebug[] = array($thingid,$thesensor);
+                    $roomdebug[] = $thesensor;
                 }
 
                 // keep running count of things to use in javascript logic
                 $cnt++;
-                $thiscnt++;
                 // use case version of room to make drag drop work
                 $tc.= makeThing($thingid, $cnt, $kindex, $thesensor, $roomtitle, $options, $postop, $posleft, $zindex, $customname);
             }
@@ -2155,10 +2155,6 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $options, $k
 
         // end the form and this panel
         $tc.= "</div></form>";
-                
-        // create block where history results will be shown
-        // $tc.= "<div class=\"sensordata\" id=\"data-$roomname" . "\"></div>";
-        // $tc.= hidden("end",$keyword);
     
     } else {
         $tc.= "<div class=\"error\">Unknown problem encountered while retrieving things for room: $roomtitle.</div>";
@@ -4083,6 +4079,34 @@ function changePageName($oldname, $pagename, &$options) {
     return $retcode;
 }
 
+function pw_hash($pword) {
+    if ( ! $pword || !is_string($pword) ) {
+        $hash = "";
+    } else if ( function_exists("password_hash") && function_exists("password_verify") ) {
+        $hash = password_hash($pword, PASSWORD_DEFAULT);
+    } else if ( function_exists("crypt") ) {
+        $hash = crypt($pword, CRYPTSALT);
+    } else {
+        $hash = md5($pword);
+    }
+    return $hash;
+}
+
+function pw_verify($pword, $hash) {
+    if ( ! $pword  || !is_string($pword) ) {
+        $ver = ($hash === "");
+    } else if ( function_exists("password_hash") && function_exists("password_verify") ) {
+        $ver = password_verify($pword, $hash);
+    } else if ( function_exists("crypt") ) {
+        $test = crypt($pword, CRYPTSALT);
+        $ver = ($test === $hash);
+    } else {
+        $test = md5($pword);
+        $ver = ($test === $hash);
+    }
+    return $ver;
+}
+
 function is_ssl() {
     if ( isset($_SERVER['HTTPS']) ) {
         if ( 'on' == strtolower($_SERVER['HTTPS']) || ( '1' == $_SERVER['HTTPS'] ) ) {
@@ -4188,8 +4212,7 @@ function is_ssl() {
         
         // if password given, create new hash and logout forcing new login
         if ( $pword!=="" ) {
-            // $pword = crypt($pword, CRYPTSALT);
-            $hash = password_hash($pword, PASSWORD_DEFAULT);
+            $hash = pw_hash($pword);
             $pwords[$uname] = $hash;
             setcookie("pwcrypt", "", $expirz, "/");
             
@@ -4281,9 +4304,9 @@ function is_ssl() {
             $pwords = array($uname => "");
         }
         
-        // make a hash if user gave a new password that is non blank
+        // replace hash for this user if a new password given that is non blank
         if ( $pword!=="" ) {
-            $hash = password_hash($pword, PASSWORD_DEFAULT);
+            $hash = pw_hash($pword);
             $pwords[$uname] = $hash;
         }
         
@@ -5219,7 +5242,7 @@ function is_ssl() {
                     if (array_key_exists($uname, $pwords)) {
                         $hash = $pwords[$uname];
                         setcookie("uname", $uname, $expiry, "/");
-                        if ( ($hash==="" && $pword==="") || password_verify($pword, $hash) ) {
+                        if ( ($hash==="" && $pword==="") || pw_verify($pword, $hash) ) {
                             setcookie("pwcrypt", $uname, $expiry, "/");
                         } else {
                             setcookie("pwcrypt", "", $expirz, "/");
@@ -5248,9 +5271,9 @@ function is_ssl() {
             // we either create the hash or check an existing hash
             case "pwhash":
                 if ( $swtype==="hash" ) {
-                    $presult = ($swval==="") ? "" : password_hash($swval, PASSWORD_DEFAULT);
+                    $presult = pw_hash($swval);
                 } else if ( $swtype==="verify" ) {
-                    if ( password_verify($swval, $swattr) ) {
+                    if ( pw_verify($swval, $swattr) ) {
                         $presult = "success";
                     } else {
                         $presult = "error";
@@ -5283,7 +5306,7 @@ function is_ssl() {
                 $swattr = strval($swattr);
                 $subid = strval($subid);
                 if ( $subid==="password" && $swattr ) {
-                    $swattr = password_hash($swattr, PASSWORD_DEFAULT);                    
+                    $swattr = pw_hash($swattr);                    
                 }
                 
                 $newitem = array($swval, $swattr, $subid);
