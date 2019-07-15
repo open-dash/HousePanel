@@ -9,8 +9,10 @@
  * Revision History
  */
 $devhistory = "
+ 2.085      Clean up handling of custom names
  2.084      Bugfix auth code to handle PHP installs without builtin functions
              - change minimum username length to 3 and look for admin name
+             - drag drop name fix
  2.083      Properly load things and options for use in GUI and other bug fixes
  2.082      Fixed snarky bug in auth that reset hubpush ports and other things
              - did more cleanup and robusting of auth flow
@@ -1235,28 +1237,26 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 }
 
 function getCustomName($defname, $idx, $options) {
-    $customname= $defname;
     $rooms = $options["rooms"];
     $thingoptions = $options["things"];
-    $tileid = $options["index"][$idx];
+    $tileid = intval($options["index"][$idx]);
     foreach ($rooms as $room => $ridx) {
         if ( array_key_exists($room, $thingoptions) ) {
            $things = $thingoptions[$room];
            foreach ($things as $kindexarr) {
               // only do this if we have custom names defined in rooms
               if ( is_array($kindexarr) && count($kindexarr) > 3 ) {
-                 $kindex = $kindexarr[0];
+                 $kindex = intval($kindexarr[0]);
+                 $customname = strval($kindexarr[4]);
                  // if our tile matches and there is a custom name, use it
-                 if ( intval($kindex)===intval($tileid) ) {
-                    $customname = $kindexarr[4];
-                    if ( $customname!=="" ) { break; }
+                 if ( $kindex===$tileid && $customname!=="" ) {
+                    return $customname;
                  }
               }
            }
         }
-        if ( $customname!=="" ) { break; }
     }
-    return $customname;
+    return $defname;
 }
 
 function getClock($clockname, $clockid, $options, $allthings, $clockskin="", $fmtdate="M d, Y", $fmttime="h:i:s A") {
@@ -1796,7 +1796,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     // limit to 132 visual columns but show all for special tiles and custom names
     // now we use custom name in both places
     $thingname = $thingvalue["name"];
-    if ( strlen($thingname) > 132 && !array_key_exists($thingtype, $specialtiles) ) {
+    if ( !$customname && strlen($thingname) > 132 && !array_key_exists($thingtype, $specialtiles) ) {
         $thingpr = substr($thingname,0,132) . " ...";
     } else {
         $thingpr = $thingname;
@@ -1818,7 +1818,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     // and it also handles the inclusion of the icons for status
     if ($thingtype==="weather") {
         if ( $customname ) {
-            $weathername = $thingpr;
+            $weathername = $customname;
         } else {
             $weathername = $thingpr . "<br>" . $thingvalue["city"];
         }
@@ -2329,6 +2329,7 @@ function doAction($hubnum, $path, $swid, $swtype,
         
     // this logic is complex so let me explain. First we get the value if available
     // then we get any provided custom name from tile editor
+    // then we process all tile customizer settings which can also change the name
     // next we check customizer to see if name and width and height changed
     // finally, we send name, width, height to returnFile routine to get the html tag
     } else if (array_key_exists($swtype, $specialtiles) ) {
@@ -2459,6 +2460,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $thingvalue = getMusicArt($thingvalue);
                     }
                     $thing["value"]= $thingvalue;
+                    $thing["name"] = $thing["value"]["name"];
                     $response[$tileid] = $thing;
                 }
             }
@@ -2879,11 +2881,11 @@ function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
     $moved = false;
     foreach ($options["things"][$panel] as $i => $arr) {
         if ( is_array($arr) ) {
-            $idx = $arr[0];
+            $idx = intval($arr[0]);
         } else {
-            $idx = $arr;
+            $idx = intval($arr);
         }
-        if ( $tile == $idx) {
+        if ( $tile === $idx) {
             $moved = $i;
             $updated = true;
             break;
@@ -3637,6 +3639,7 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
     $options = readOptions();
     $tilenum = intval($options["index"][$idx], 10);
     $thesensor = $allthings[$idx];
+    $tilename = $thesensor["name"];
     
     // make sure tile number is big
     if ( ! is_numeric($cnt) ) {
@@ -3659,12 +3662,12 @@ function addThing($bid, $thingtype, $panel, $cnt, $allthings) {
         $ypos = 0;
     }
     
+    // add it to our system
+    $options["things"][$panel][] = array($tilenum, $ypos, $xpos, $zindex, $tilename);
+    writeOptions($options);
+    
     // make a new tile based on the dragged information
     $thing = makeThing($idx, $cnt, $tilenum, $thesensor, $panel, $options, $ypos, $xpos, $zindex, "");
-    
-    // add it to our system
-    $options["things"][$panel][] = array($tilenum, $ypos, $xpos, $zindex, "");
-    writeOptions($options);
     
     return $thing;
 }
@@ -4977,7 +4980,8 @@ function is_ssl() {
                     $idx = $swtype . "|" . $swid;
                     $allthings = getAllThings();
                     $thing = $allthings[$idx];
-                    $thing["name"] = getCustomName($thing["name"], $idx, $options);
+                    // $thing["name"] = getCustomName($thing["name"], $idx, $options);
+                    // $customname = getCustomName($thing["name"], $idx, $options);
                     echo makeThing($idx, 0, $tileid, $thing, "Options", $options, 0, 0, 99, "", $useajax);
                 }
                 break;
