@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.086      Update install script to support user skins and updates easily
+             - remove hubtype from main array to save load time as it wasn't used
  2.085      Clean up handling of custom names
  2.084      Bugfix auth code to handle PHP installs without builtin functions
              - change minimum username length to 3 and look for admin name
@@ -557,7 +559,7 @@ function getDevices($allthings, $options, $hubnum, $hubType, $hubAccess, $hubEnd
                 $idx = $thetype . "|" . $id;
                 $allthings[$idx] = array("id" => $id, "name" => $thename, 
                         "hubnum" => $hubnum,
-                        "hubtype" => $hubType, "type" => $thetype, 
+                        "type" => $thetype, 
                         "refresh"=>$reftype, "value" => $thevalue );
             }
         }
@@ -1287,13 +1289,13 @@ function addSpecials(&$allthings, $options) {
     $clockid = "clockdigital";
     $dclock = getClock("Digital Clock", $clockid, $options, $allthings, "", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
-        "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $dclock);
+        "hubnum" => $hubnum, "type" => "clock", "refresh"=>"never", "value" => $dclock);
 
     // add analog clock tile - no longer use dclock format settings by default
     $clockid = "clockanalog";
     $aclock = getClock("Analog Clock", $clockid, $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
     $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
-        "hubnum" => $hubnum, "hubtype" => $hubType, "type" => "clock", "refresh"=>"never", "value" => $aclock);
+        "hubnum" => $hubnum, "type" => "clock", "refresh"=>"never", "value" => $aclock);
 
     // add special tiles based on type and user provided count
     // this replaces the old code that handled only video and frame tiles
@@ -1320,7 +1322,7 @@ function addSpecials(&$allthings, $options) {
             $fval = returnFile($fn, $fw, $fh, $stype);
             $ftile = array("name"=>$fn, $stype=>$fval, "width"=> $fw, "height"=>$fh);
             $allthings["$stype|$fid"] = array("id" => $fid, "name" => $ftile["name"], "hubnum" => $hubnum, 
-                "hubtype" => $hubType, "type" => $stype, "refresh"=>$speed, "value" => $ftile);
+                "type" => $stype, "refresh"=>$speed, "value" => $ftile);
         }
     }
     
@@ -1333,7 +1335,7 @@ function addSpecials(&$allthings, $options) {
                  "showdoc"=>"Documentation",
                  "blackout"=>"Blackout","operate"=>"Operate","reorder"=>"Reorder","edit"=>"Edit");
     $allthings["control|control_1"] = array("id" => "control_1", "name" => $controlval["name"], "hubnum" => $hubnum, 
-                "hubtype" => $hubType, "type" => "control", "refresh"=>"never", "value" => $controlval);
+                "type" => "control", "refresh"=>"never", "value" => $controlval);
 }
 
 // rewrite this to use our new groovy code to get all things
@@ -1757,11 +1759,6 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     } else {
         $hubnum = -1;
     }
-    if ( array_key_exists("hubtype", $thesensor) ) {
-        $hubt = $thesensor["hubtype"];
-    } else {
-        $hubt = "SmartThings";
-    }
     if ( array_key_exists("refresh", $thesensor) ) {
         $refresh = $thesensor["refresh"];
     } else {
@@ -1805,7 +1802,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
     // wrap thing in generic thing class and specific type for css handling
     // IMPORTANT - changed tile to the saved index in the master list
     //             so one must now use the id to get the value of "i" to find elements
-    $tc=  "<div id=\"$idtag\" hub=\"$hubnum\" hubtype=\"$hubt\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
+    $tc=  "<div id=\"$idtag\" hub=\"$hubnum\" tile=\"$kindex\" bid=\"$bid\" type=\"$thingtype\" ";
     $tc.= "panel=\"$panelname\" class=\"thing $thingtype" . "-thing" . $subtype . " p_$kindex\" "; 
     $tc.= "refresh=\"$refresh\" ";
     if ( ($postop!==0 && $posleft!==0) || $zindex>1 ) {
@@ -3501,7 +3498,6 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
         $hubnum = $thesensor["hubnum"];
         $hub = $hubs[findHub($hubnum, $hubs)];
         if ( $hubnum === -1 ) {
-            // $hubType = $thesensor["hubtype"];
             $hubType = "None";
             $hubStr = "None";
         } else {
@@ -4973,7 +4969,7 @@ function is_ssl() {
                     // make the fake tile for the room for editing purposes
                     $faketile = array("panel" => "Panel", "tab" => "Tab Inactive", "tabon" => "Tab Selected" );
                     $thing = array("id" => "r_".strval($swid), "name" => $swval, 
-                        "hubnum" => -1, "hubtype" => "None", "type" => "page", "value" => $faketile);
+                        "hubnum" => -1, "type" => "page", "value" => $faketile);
                     echo makeThing(0, $tileid, $tileid, $thing, $swval, $options, 0, 0, 99, "", $useajax );
                     
                 } else {

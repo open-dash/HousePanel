@@ -28,6 +28,7 @@ Green='\033[0;32m'        # Green
 Yellow='\033[0;33m'       # Yellow
 Purple='\033[0;35m'       # Purple
 Cyan='\033[0;36m'         # Cyan
+clear
 
 # get the IP number
 ip=$(hostname -I | cut -f1 --delimiter=' ')
@@ -43,11 +44,21 @@ hpdir="housepanel"
 read -p " Directory name for HousePanel (default= $hpdir): " nhpdir
 [ -n "$nhpdir" ] && hpdir=$nhpdir
 
-apache="y"
-napache="y"
-echo -e "$Cyan Do rPI update, Apache and PHP  setup, or skip if you are sure that your setup is correct. $Color_Off"
-read -p " Perform rPI, Apache and PHP install? Enter y for yes or n for no (default= $apache): " napache
-[ -n "$napache" ] && apache=$napache
+isupdate="n"
+nisupdate = "n"
+echo -e "$Cyan Is this an update to a prior installation? "
+read -p " Enter y for yes or n for no (default= $isupdate): " nisupdate
+[ -n "$nisupdate" ] && isupdate=$nisupdate
+
+
+apache="n"
+napache="n"
+if [ "$isupdate" = "n" ];
+then
+    echo -e "$Cyan Do rPI update, Apache and PHP  setup, or skip if you are sure that your setup is correct. $Color_Off"
+    read -p " Perform rPI, Apache and PHP install? Enter y for yes or n for no (default= $apache): " napache
+    [ -n "$napache" ] && apache=$napache
+fi
 
 if [ "$apache" = "y" ];
 then
@@ -59,102 +70,167 @@ fi
 
 gpio="n"
 ngpio="n"
-echo -e "$Cyan Install GPIO extensions if you want to use your rPI to control devices wired physically into it. $Color_Off"
-read -p " Install rPI extensions for GPIO - enter y for yes, or n for no. (default= $gpio): " ngpio
-[ -n "$ngpio" ] && gpio=$ngpio
+if [ "$isupdate" = "n" ];
+then
+    echo -e "$Cyan Install GPIO extensions if you want to use your rPI to control devices wired physically into it. $Color_Off"
+    read -p " Install rPI extensions for GPIO - enter y for yes, or n for no. (default= $gpio): " ngpio
+    [ -n "$ngpio" ] && gpio=$ngpio
+fi
 
-hppush="y"
+hppush="n"
 nhppush="n"
-echo -e "$Cyan Install the housepanel-push Node.js middleman to enable direct updates? $Color_Off"
+echo -e "$Cyan Install or Update the housepanel-push Node.js middleman to enable direct updates? $Color_Off"
 read -p " Enter y for yes or n for no. (default= $hppush): " nhppush
 [ -n "$nhppush" ] && hppush=$nhppush
 
-# branch="master"
-zipfile="master.zip"
+userskin="n"
+nuserskin="n"
+echo -e "$Cyan Do you have a custom skin director? $Color_Off"
+read -p " If so, enter name here or accept default of no: " nuserskin
+[ -n "$nhppush" ] && userskin=$nuserskin
 
 # this block updates the rPI and installs Apache and PHP
 # it can be skipped if you know your rPI is up to date
-if [ "$apache" = "y" ];
+if [ "$isupdate" = "n" ];
 then
+    zipfile="master.zip"
+    infostr="HousePanel has been downloaded and installed"
 
-    # Update packages and Upgrade system
-    echo -e "$Cyan \nUpdating System. This may take awhile so please be patient... $Color_Off"
-    sudo apt-get update -y
-    # sudo apt-get upgrade -y
-    echo -e "$Green \nSystem was updated $Color_Off"
-
-    ## Install Apache and PHP
-    if [ "$phpver" = "5" ];
+    if [ "$apache" = "y" ];
     then
-        echo -e "$Cyan \nInstalling Apache and PHP 5 ... $Color_Off"
-        sudo apt-get install apache2 libapache2-mod-php5 php5 curl php5-curl php5-gd --fix-missing -y
-    else
-        echo -e "$Cyan \nInstalling Apache and PHP ... $Color_Off"
-        sudo apt-get install apache2 libapache2-mod-php php php-mbstring curl php-curl php-gd --fix-missing -y
+
+        # Update packages and Upgrade system
+        echo -e "$Cyan \nUpdating System. This may take awhile so please be patient... $Color_Off"
+        sudo apt-get update -y
+        # sudo apt-get upgrade -y
+        echo -e "$Green \nSystem was updated $Color_Off"
+
+        ## Install Apache and PHP
+        if [ "$phpver" = "5" ];
+        then
+            echo -e "$Cyan \nInstalling Apache and PHP 5 ... $Color_Off"
+            sudo apt-get install apache2 libapache2-mod-php5 php5 curl php5-curl php5-gd --fix-missing -y
+        else
+            echo -e "$Cyan \nInstalling Apache and PHP ... $Color_Off"
+            sudo apt-get install apache2 libapache2-mod-php php php-mbstring curl php-curl php-gd --fix-missing -y
+        fi
+
     fi
 
-fi
+    if [ "$gpio" = "y" ];
+    then
+        echo -e "$Cyan \nInstalling optional rpi settings for use as a thing ... $Color_Off"
+        sudo apt-get install wiringpi raspi-gpio rpi-update -y
+        echo -e "$Green \nApache, PHP, and Optional settings installed $Color_Off"
+    fi
 
-if [ "$gpio" = "y" ];
-then
-    echo -e "$Cyan \nInstalling optional rpi settings for use as a thing ... $Color_Off"
-    sudo apt-get install wiringpi raspi-gpio rpi-update -y
-    echo -e "$Green \nApache, PHP, and Optional settings installed $Color_Off"
-fi
+    # Getting raw files from HousePanel
+    echo -e "$Cyan \nDownloading and unzipping HousePanel to /var/www/html/$hpdir ... $Color_Off"
+    if [ -e $zipfile ];
+    then
+        sudo rm -f $zipfile
+    fi
 
-# Getting raw files from HousePanel
-echo -e "$Cyan \nDownloading and unzipping HousePanel to /var/www/html/$hpdir ... $Color_Off"
-if [ -e $zipfile ];
-then
+    # remove any old version of zipped download dir
+    if [ -d HousePanel-master ];
+    then
+        sudo rmdir -f HousePanel-master
+    fi
+
+    # download the files as a zip file
+    sudo wget -r -nd https://github.com/kewashi/HousePanel/archive/$zipfile
+    sudo unzip $zipfile
+
+    # copy over any existing custom files if they exist
+    if [ -f /var/www/html/$hpdir/hmoptions.cfg ];
+    then
+        sudo cp /var/www/html/$hpdir/hm*.cfg HousePanel-master
+    fi
+    if [ -f /var/www/html/$hpdir/customtiles.css ];
+    then
+        sudo cp /var/www/html/$hpdir/customtiles.css HousePanel-master
+    fi
+    if [ -f /var/www/html/$hpdir/skin-housepanel/customtiles.css ];
+    then
+        sudo cp /var/www/html/$hpdir/skin-housepanel/customtiles.css HousePanel-master/skin-housepanel
+    fi
+    if [ -f /var/www/html/$hpdir/skin-modern/customtiles.css ];
+    then
+        sudo cp /var/www/html/$hpdir/skin-modern/customtiles.css HousePanel-master/skin-modern
+    fi
+    if [ -f /var/www/html/$hpdir/skin-plain/customtiles.css ];
+    then
+        sudo cp /var/www/html/$hpdir/skin-plain/customtiles.css HousePanel-master/skin-plain
+    fi
+
+    if [ "$userskin" != "n"  ];
+    then
+        sudo cp -R /var/www/html/$hpdir/$userskin HousePanel-master
+    fi
+
+    # remove if the target directory exists
+    if [ -d /var/www/html/$hpdir ];
+    then
+        sudo rmdir -f /var/www/html/$hpdir
+    fi
+
+    # rename the downloaded unzipped folder structure to our target directory name
+    sudo mv HousePanel-master /var/www/html/$hpdir
     sudo rm -f $zipfile
 fi
 
-# remove any old version of zipped download dir
-if [ -d HousePanel-master ];
+if [ "$isupdate" = "y" ];
 then
-    sudo rmdir -f HousePanel-master
-fi
+    infostr="HousePanel has been updated"
 
-# download the files as a zip file
-sudo wget -r -nd https://github.com/kewashi/HousePanel/archive/$zipfile
-sudo unzip $zipfile
+    cd /var/www/html/$hpdir
+    # update individual files
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.php"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.js"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/hpapi.py"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/customize.js"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.js"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.css"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame1.html"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame2.html"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame3.html"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame4.html"
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.css"
 
-# copy over any existing custom files if they exist
-if [ -f /var/www/html/$hpdir/hmoptions.cfg ];
-then
-    sudo cp /var/www/html/$hpdir/hm*.cfg HousePanel-master
-fi
-if [ -f /var/www/html/$hpdir/customtiles.css ];
-then
-    sudo cp /var/www/html/$hpdir/customtiles.css HousePanel-master
-fi
-if [ -f /var/www/html/$hpdir/skin-housepanel/customtiles.css ];
-then
-    sudo cp /var/www/html/$hpdir/skin-housepanel/customtiles.css HousePanel-master/skin-housepanel
-fi
+    cd docs
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/docs/index.html"
 
-# remove if the target directory exists
-if [ -d /var/www/html/$hpdir ];
-then
-    sudo rmdir -f /var/www/html/$hpdir
-fi
+    cd ../skin-housepanel
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-housepanel/housepanel.css"
 
-# rename the downloaded unzipped folder structure to our target directory name
-sudo mv HousePanel-master /var/www/html/$hpdir
-sudo rm -f $zipfile
+    cd ../skin-modern
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-modern/housepanel.css"
+
+    cd ../skin-plain
+    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-plain/housepanel.css"
+
+    if [ "$hppush" = "y"  ];
+    then
+        cd ../housepanel-push
+        wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/housepanel-push.js"
+        wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/package.json"
+    fi
+
+    cd /var/www/html/$hpdir
+fi
 
 echo -e "$Cyan \nSetting permissions for /var/www/html/$hpdir $Color_Off"
 sudo chown -R www-data:www-data /var/www/html/$hpdir
 sudo chmod -R 777 /var/www/html/$hpdir
 sudo chown -R pi:pi /var/www/html/$hpdir/housepanel-push
 sudo chmod -R 775 /var/www/html/$hpdir/housepanel-push
-echo -e "$Green \nHousePanel has been downloaded and installed in /var/www/html/$hpdir $Color_Off"
 
 # Create a default index file to show php info
 # echo "<?php phpinfo ();?>" > /var/www/html/$hpdir/index.php
 
 # Restart Apache
 echo -e "$Cyan \nRestarting Apache $Color_Off"
+sudo systemctl daemon-reload
 sudo service apache2 restart
 
 # create the contents of housepanel-push.service dynamically
@@ -192,5 +268,5 @@ then
 fi
 
 cd ~
-echo -e "$Green \nHousePanel has been installed in /var/www/html/$hpdir $Color_Off"
+echo -e "$Green \n $infostr in /var/www/html/$hpdir $Color_Off"
 echo -e "$Green \nTo use open a browser and load  http://$ip/$hpdir/housepanel.php $Color_Off"
