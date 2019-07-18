@@ -1725,3 +1725,8 @@ div.mode._Home, div.mode._Away, div.mode._Night, div.mode._Movies {
 div.clicked {
     filter: invert(1);
 }
+
+div.bold {
+    font-size: 14pt;
+    font-weight: bold;
+}

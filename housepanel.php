@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.087      Minor formatting cleanup in show info routine
  2.086      Update install script to support user skins and updates easily
              - remove hubtype from main array to save load time as it wasn't used
  2.085      Clean up handling of custom names
@@ -312,7 +313,7 @@ ini_set('max_input_vars', 20);
 // grab the version number from the latest history entry
 $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
-define('APPNAME', 'HousePanel Ver. ' . HPVERSION);
+define('APPNAME', 'HousePanel V' . HPVERSION);
 define('CRYPTSALT','HP$by%KW');
 define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
 // Ann Arbor = 329380
@@ -3937,7 +3938,7 @@ function processOptions($optarray) {
     getAllThings(true);
 }
 
-function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
+function getInfoPage($returnURL, $skin, $allthings, $devhistory) {
     $options = readOptions();
     $configoptions = $options["config"];
     $hubs = $configoptions["hubs"];
@@ -3961,11 +3962,10 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
     $tc.= hidden("pagename", "info");
     $tc.= "</form>";
     $tc.= "<div class=\"infopage\">";
-    $tc.= "<div>Sitename = $sitename </div>";
-    $tc.= "<div>Skin directory = $skin </div>";
-    $tc.= "<div>Site url = $returnURL </div>";
-    $tc.= "<div>" . count($hubs) . " Hubs active</div>";
-    $tc.= "<hr /><br />";
+    $tc.= "<div class='bold'>Site url = $returnURL </div>";
+    $tc.= "<div class='bold'>Skin folder = $skin </div>";
+    $tc.= "<div class='bold'>" . count($hubs) . " Hubs active</div>";
+    $tc.= "<hr />";
     
     foreach ($hubs as $num => $hub) {
         $hubType = $hub["hubType"];
@@ -3976,8 +3976,10 @@ function getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory) {
         $clientSecret = $hub["clientSecret"];
         $access_token = $hub["hubAccess"];
         $endpt = $hub["hubEndpt"];
-        $tc.= "<div>Hub Name = $hubName</div>";
-        $tc.= "<div>Hub #$num Hub ID = $hubId Type = $hubType</div>";
+        $tc.= "<div class='bold'>Hub #$num</div>";
+        $tc.= "<div class='bold'>Hub Name = $hubName</div>";
+        $tc.= "<div>Type = $hubType</div>";
+        $tc.= "<div>Hub ID = $hubId</div>";
         $tc.= "<div>Hub Host URL = $hubHost </div>";
         $tc.= "<div>Client ID = $clientId </div>";
         $tc.= "<div>Client Secret = $clientSecret </div>";
@@ -5130,7 +5132,7 @@ function is_ssl() {
             // an Ajax option to display all the ID value for use in Python and EventGhost
             case "showid":
                 $allthings = getAllThings();
-                $tc = getInfoPage($returnURL, $sitename, $skin, $allthings, $devhistory);
+                $tc = getInfoPage($returnURL, $skin, $allthings, $devhistory);
                 echo htmlHeader();
                 echo $tc;
                 echo htmlFooter();
@@ -5664,7 +5666,7 @@ function is_ssl() {
             // include doc button and username that is logged in
             $uname = $_COOKIE["uname"];
             $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
-            $tc.= '<div class="showversion">' . $uname . " - Ver. " . HPVERSION  .'</div>';
+            $tc.= '<div class="showversion">' . $uname . " - V" . HPVERSION  .'</div>';
 
             // end of the tabs
             $tc.= "</div>";
