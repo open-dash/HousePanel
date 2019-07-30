@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 07/29/2019 - change Hubitat HubId to the actual Hub UID instead of App Id
  * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
  *              work on fixing color reporting for bulbs - still not quite right
  * 05/27/2019 - remove blanks and images from groovy
@@ -238,14 +239,14 @@ def configureHub() {
     
     def firmware = hub?.firmwareVersionString ?: "unknown"
 
-    // detect ST based on ID
     if ( !isHubitat() ) {
         state.hubid = hub.id
         hubip = hub.localIP
         logger("You must go through the OAUTH flow to obtain a proper SmartThings AccessToken", "info")
         logger("You must go through the OAUTH flow to obtain a proper SmartThings EndPoint", "info")
     } else {
-        state.hubid = app.id
+        // state.hubid = app.id
+        state.hubid = hubUID
         if ( cloudcalls ) {
             hubip = "https://oauth.cloud.hubitat.com";
             endpt = "${hubip}/${hubUID}/apps/${app.id}/"

@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.090      Add curl call to gather usage statistics on central server
  2.087      Minor formatting cleanup in show info routine
  2.086      Update install script to support user skins and updates easily
              - remove hubtype from main array to save load time as it wasn't used
@@ -797,7 +798,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         if (array_key_exists("fast_timer", $configoptions)) {
             $fast_timer = $configoptions["fast_timer"];
         } else {
-            $fast_timer = 10000;
+            $fast_timer = 30000;
             $rewrite = true;
         }
         if (array_key_exists("slow_timer", $configoptions)) {
@@ -881,13 +882,15 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                      array_key_exists("user_endpt", $configoptions) ) {
                     $userAccess = $configoptions["user_access"];
                     $userEndpt = $configoptions["user_endpt"];
-                    $hubAccess = $configoptions["user_access"];
-                    $hubEndpt = $configoptions["user_endpt"];
+                    $hubAccess = $userAccess;
+                    $hubEndpt = $userEndpt;
+                    $hubId = "unknown-st";
                 } else {
                     $userAccess = "";
                     $userEndpt = "";
                     $hubAccess = "";
                     $hubEndpt = "";
+                    $hubId = "unknown-st";
                 }
                 if ( array_key_exists("user_sitename", $configoptions) ) {
                     $hubName = $configoptions["user_sitename"];
@@ -899,32 +902,36 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                     "clientId"=>$configoptions["client_id"], 
                     "clientSecret"=>$configoptions["client_secret"],
                     "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
-                    "hubName"=>$hubName, "hubId"=>1,
+                    "hubName"=>$hubName, 
+                    "hubId"=>$hubId,
                     "hubTimer"=>60000,
-                    "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+                    "hubAccess"=>$hubAccess, 
+                    "hubEndpt"=>$hubEndpt);
                 $hubs[] = $sthub;
             }
             
             // check for a hubitat hub
+            // note that the legacy hubId was actually the appId
+            // so we no longer have any clue what the hubId is being set to
             if ( array_key_exists("use_he", $configoptions) && $configoptions["use_he"] ) {
                 if ( array_key_exists("hubitat_access", $configoptions) &&
                      array_key_exists("hubitat_id", $configoptions) ) {
                     $userAccess = $configoptions["hubitat_access"];
                     $hubAccess = $configoptions["hubitat_access"];
-                    $hubId = $configoptions["hubitat_id"];
+                    $appId = $configoptions["hubitat_id"];
+                    $hubId = "unknown-he";
                 } else {
                     $userAccess = "";
                     $hubAccess = "";
-                    $hubId = "100";
+                    $appId = "";
+                    $hubId = "unknown-he";
                 }
                 if ( array_key_exists("hubitat_endpt", $configoptions) ) {
                     $userEndpt = $configoptions["hubitat_endpt"];
-                    $hubEndpt = $configoptions["hubitat_endpt"];
                 } else {
-                    $defendpt = $configoptions["hubitat_host"] . "/apps/api/" . $hubId;
-                    $userEndpt = $defendpt;
-                    $hubEndpt = $defendpt;
+                    $userendpt = $configoptions["hubitat_host"] . "/apps/api/" . $appId;
                 }
+                $hubEndpt = $userendpt;
                 if ( array_key_exists("user_sitename", $configoptions) ) {
                     $hubName = $configoptions["user_sitename"];
                 } else {
@@ -934,26 +941,20 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                     "hubHost"=>$configoptions["hubitat_host"], 
                     "clientId"=>"", 
                     "clientSecret"=>"",
-                    "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
-                    "hubName"=>$hubName, "hubId"=>$hubId,
-                    "hubTimer"=>10000,
-                    "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
+                    "userAccess"=>$userAccess, 
+                    "userEndpt"=>$userEndpt, 
+                    "hubName"=>$hubName, 
+                    "hubId"=>$hubId,
+                    "hubTimer"=>60000,
+                    "hubAccess"=>$hubAccess, 
+                    "hubEndpt"=>$hubEndpt);
                 $hubs[] = $hehub;
             }
         
         // otherwise it must be a new multihub setup
+        // removed the old endpt setup since it no longer applies
         } else {
             $hubs = $configoptions["hubs"];
-        
-            // set defaults for Hubitat endpoints
-            // this shouldn't be needed with our new OAUTH flow
-            // but I kept it here just in case
-            foreach ($hubs as $hub) {
-                if ( $hub["hubType"]==="Hubitat" && $hub["hubEndpt"]==="" ) {
-                    $hub["hubEndpt"] = $hub["hubHost"] . "/apps/api/" . $hub["hubId"];
-                    $rewrite = true;
-                }
-            }
         }
     } else {
         // hyper old format without even a config section
@@ -965,7 +966,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $kiosk = false;
         $port = "19234";
         $webSocketServerPort = "1337";
-        $fast_timer = 10000;
+        $fast_timer = 60000;
         $slow_timer = 3600000;
         $uname = "";
         $pwords = array();
@@ -989,110 +990,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $version = "Pre Version 1.7";
     }
 
-    // try to gather defaults from the clientinfo file
-    // this is only here for backward compatibility purposes
-    // there is no need for this file any more
-    // if it is here then two hubs will be created by default
-    // the first one will be smartthings the second hubitat
-    // the first one will be disabled if a hubitat only install is requested
-    if ( $legacy && file_exists("clientinfo.php")) {
-        include "clientinfo.php";
-                
-        if ( defined("CLIENT_ID") && CLIENT_ID ) { 
-            $clientId = CLIENT_ID; 
-        } else {
-            $clientId = "";
-        }
-        if ( defined("CLIENT_SECRET") && CLIENT_SECRET ) { 
-            $clientSecret = CLIENT_SECRET; 
-        } else {
-            $clientSecret = "";
-        }
-        $hubType = "SmartThings";
-        $hubId = "1";
-        if ( defined("ST_WEB") && ST_WEB ) { 
-            $hubHost = ST_WEB; 
-            if ( ST_WEB==="hubitat" ||  ST_WEB==="hubitatonly" ) {
-                $hubType = "Disabled";
-            }
-        } else {
-            $hubHost = "https://graph.api.smartthings.com";
-        }
-        if ( defined("TIMEZONE") && TIMEZONE ) { $timezone = TIMEZONE; }
-        if ( defined("USER_ACCESS_TOKEN") && USER_ACCESS_TOKEN ) { 
-            $userAccess = USER_ACCESS_TOKEN; 
-            $hubAccess = USER_ACCESS_TOKEN;
-        } else {
-            $userAccess = ""; 
-            $hubAccess = "";
-        }
-        if ( defined("USER_ENDPT") && USER_ENDPT) { 
-            $userEndpt = USER_ENDPT; 
-            $hubEndpt = USER_ENDPT; 
-        } else {
-            $userEndpt = ""; 
-            $hubEndpt = ""; 
-        }
-        if ( defined("USER_SITENAME") && USER_SITENAME ) { 
-            $hubName = USER_SITENAME; 
-        } else {
-            $hubName = "SmartThings Home";
-        }
-        $sthub = array("hubType"=>$hubType, 
-            "hubHost"=>$hubHost, 
-            "clientId"=>$clientId, 
-            "clientSecret"=>$clientSecret,
-            "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
-            "hubName"=>$hubName, "hubId"=>$hubId,
-            "hubTimer"=>60000,
-            "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
-            
-        if ( count($hubs)>=1 && $hubs[0]["hubType"]==="SmartThings") {
-            $hubs[0] = $sthub;
-        } else {
-            $hubs[] = $sthub;
-        }
-        
-        if ( defined("HUBITAT_HOST") && HUBITAT_HOST ) { 
-            $hubHost = HUBITAT_HOST; 
-            $hubType = "Hubitat";
-            if ( defined("HUBITAT_ID") && HUBITAT_ID ) {
-                $hubId = HUBITAT_ID;
-            } else {
-                $hubId = "100";
-            }
-            if ( defined("HUBITAT_ACCESS_TOKEN") && HUBITAT_ACCESS_TOKEN ) {
-                $userAccess = HUBITAT_ACCESS_TOKEN; 
-                $hubAccess = HUBITAT_ACCESS_TOKEN;
-            } else {
-                $userAccess = ""; 
-                $hubAccess = "";
-            }
-            if ( $hubHost && $hubId ) {
-                $userEndpt = $hubHost . "/apps/api/" . $hubId;
-                $hubEndpt = $userEndpt;
-            } else {
-                $userEndpt = "";
-                $hubEndpt = "";
-            }
-            $hehub = array("hubType"=>$hubType, 
-                "hubHost"=>$hubHost, 
-                "clientId"=>$clientId, 
-                "clientSecret"=>$clientSecret,
-                "userAccess"=>$userAccess, "userEndpt"=>$userEndpt, 
-                "hubName"=>$hubName, "hubId"=>$hubId,
-                "hubTimer"=>10000,
-                "hubAccess"=>$hubAccess, "hubEndpt"=>$hubEndpt);
-            
-            if ( count($hubs)>=2 && $hubs[1]["hubType"]==="Hubitat") {
-                $hubs[1] = $hehub;
-            } else {
-                $hubs[] = $hehub;
-            }
-        }
-        $rewrite = true;
-    }
-    
+    // removed clientinfo support - too old to make sense any more
     // update the options with updated set
     if ( $rewrite ) {
         $configoptions = array(
@@ -1163,7 +1061,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     $tc.="<div id=\"authhubwrapper\">";
     $i = 0;
     foreach ($hubs as $hub) {
-
+        
+        putStats($hub);
         $hubType = $hub["hubType"];
         $hubId = strval($hub["hubId"]);
         if ( $hubId === $defhub) {
@@ -1214,8 +1113,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
         $tc.= "<div><label class=\"startupinp\">Hub Name: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubName\" width=\"80\" type=\"text\" value=\"" . $hub["hubName"] . "\"/></div>"; 
 
-        $tc.= "<div><label class=\"startupinp required\">Hub ID: </label>";
-        $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hubId . "\"/></div>"; 
+        // $tc.= "<div><label class=\"startupinp required\">Hub ID: </label>";
+        // $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hubId . "\"/></div>"; 
+        hidden("hubId", $hubId);
 
         $tc.= "<div><label class=\"startupinp required\">Refresh Timer: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubTimer\" width=\"10\" type=\"text\" value=\"" . $hub["hubTimer"] . "\"/></div>"; 
@@ -3938,6 +3838,23 @@ function processOptions($optarray) {
     getAllThings(true);
 }
 
+function putStats($hub) {
+    if ( $hub["hubType"] === "new" || !$hub["clientId"] ) {
+        return;
+    }
+    // make call to housepanel.net to capture usage stats
+    $host = "http://www.housepanel.net/userstats.php";
+    $headertype = "Content-Type: application/x-www-form-urlencoded";
+    $time = strval(time());
+    $hubinfo = md5($hub["hubId"]);
+    $signature = md5($time . HPVERSION);
+    $nvpreq = "hub=" . urlencode($hubinfo) . 
+              "&time=" . urlencode($time) . 
+              "&version=" . urlencode(HPVERSION) . 
+              "&signature=" . urlencode($signature);
+    curl_call($host, $headertype, $nvpreq, "POST");
+}
+
 function getInfoPage($returnURL, $skin, $allthings, $devhistory) {
     $options = readOptions();
     $configoptions = $options["config"];
@@ -3968,6 +3885,7 @@ function getInfoPage($returnURL, $skin, $allthings, $devhistory) {
     $tc.= "<hr />";
     
     foreach ($hubs as $num => $hub) {
+        putStats($hub);
         $hubType = $hub["hubType"];
         $hubName = $hub["hubName"];
         $hubHost = $hub["hubHost"];
@@ -4538,7 +4456,7 @@ function is_ssl() {
                     echo "<br />Auth flow success";
                     echo "<br />serverName = $serverName";
                     echo "<br />returnURL = $returnURL";
-                    echo "<br />hubnum (hubId) = $hubId";
+                    echo "<br />hubId = $hubId";
                     echo "<br />hubType = $hubType";
                     echo "<br />hubHost = $hubHost";
                     echo "<br />clientId = $clientId";
@@ -4572,7 +4490,7 @@ function is_ssl() {
                 echo "<br />Auth flow failure";
                 echo "<br />serverName = $serverName";
                 echo "<br />returnURL = $returnURL";
-                echo "<br />hubnum (hubId) = $hubnum";
+                echo "<br />hubId = $hubId";
                 echo "<br />hubType = $hubType";
                 echo "<br />hubHost = $hubHost";
                 echo "<br />clientId = $clientId";
@@ -4770,8 +4688,6 @@ function is_ssl() {
     else if ( isset($_POST["value"]) ) { $swval = $_POST["value"]; }
     if ( isset($_GET["attr"]) ) { $swattr = $_GET["attr"]; }
     else if ( isset($_POST["attr"]) ) { $swattr = $_POST["attr"]; }
-//    if ( isset($_GET["hubid"]) ) { $hubnum = $_GET["hubid"]; $hubId = $hubnum; }
-//    else if ( isset($_POST["hubid"]) ) { $hubnum = $_POST["hubid"]; $hubId = $hubnum; }
     if ( isset($_GET["subid"]) ) { $subid = $_GET["subid"]; }
     else if ( isset($_POST["subid"]) ) { $subid = $_POST["subid"]; }
     if ( isset($_GET["tile"]) ) { $tileid = $_GET["tile"]; }
