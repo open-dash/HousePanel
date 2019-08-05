@@ -9,6 +9,10 @@
  * Revision History
  */
 $devhistory = "
+ 2.092      Major update to documentation on housepanel.net
+              - tweak info window when inspected near right edge
+              - enable album art upon first change in song
+ 2.091      Fix LINK for custom tile actions; bugfix album art for grouped speakers
  2.090      Add curl call to gather usage statistics on central server
  2.087      Minor formatting cleanup in show info routine
  2.086      Update install script to support user skins and updates easily
@@ -325,7 +329,6 @@ define('DEBUG',  false);  // all debugs
 define('DEBUG2', false); // authentication flow debug
 define('DEBUG3', false); // room display debug - show all things
 define('DEBUG4', false); // options processing debug
-define('DEBUG4b', false); // options processing debug
 define('DEBUG5', false); // debug print included in output table
 define('DEBUG6', false); // debug misc
 define('DEBUG7', false); // debug misc
@@ -2218,10 +2221,10 @@ function doAction($hubnum, $path, $swid, $swtype,
     }
 
     // handle clocks
-    if ( $swid==="clockdigital") {
+    if ( $command==="" && $swid==="clockdigital") {
         $dclock = getClock("Digital Clock", "clockdigital", $options, $allthings, "", "M d, Y", "h:i:s A");
         $response = $dclock;
-    } else if ( $swid==="clockanalog" ) {
+    } else if ( $command==="" && $swid==="clockanalog" ) {
         $aclock = getClock("Analog Clock", "clockanalog", $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
         $response = $aclock;
         
@@ -2230,7 +2233,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // then we process all tile customizer settings which can also change the name
     // next we check customizer to see if name and width and height changed
     // finally, we send name, width, height to returnFile routine to get the html tag
-    } else if (array_key_exists($swtype, $specialtiles) ) {
+    } else if ( $command==="" && array_key_exists($swtype, $specialtiles) ) {
         if ( $allthings ) {
             $thingvalue = $allthings["$swtype|$swid"]["value"];
         } else {
@@ -2261,7 +2264,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // image, blank, or custom tiles updated frequently
     // all things must be in session for this to work
     // and fast actions are only supported in query mode
-    } else if ( $swid==="fast" && $swtype==="fast" ) {
+    } else if ( $swid==="fast" && $swtype==="fast" && $command==="" ) {
 
         if ( $allthings && $path==="doquery" ) {
             $response = array();
@@ -2326,7 +2329,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     // if the new slow type is requested return things that can be updated seldomly
     // all things must be in session for this to work
     // and slow actions are only supported in query mode
-    } else if ( $swid==="slow" && $swtype==="slow" ) {
+    } else if ( $swid==="slow" && $swtype==="slow" && $command==="" ) {
 
         if ( $allthings && $path==="doquery" ) {
             $response = array();
@@ -2629,8 +2632,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                     if ( (!array_key_exists("refresh", $thing) || 
                           $thing["refresh"]==="normal") && 
                          array_key_exists($idx, $options["index"]) ) {
-                        $tileid = $options["index"][$idx];
-                        $respvals[$tileid] = $thing;
+                        $tid = $options["index"][$idx];
+                        $respvals[$tid] = $thing;
                     }
                 }
                                                 
@@ -2662,8 +2665,8 @@ function doAction($hubnum, $path, $swid, $swtype,
     if ( DEBUG8 ) {
         $debugres = array("lidx" => $lidx, "mainidx"=> $mainidx, "tileid" => $tileid, "hubhum" => $hubnum,
             "access_token"=> $access_token, "endpt"=> $endpt,
-            "swid"=> $swid, "attr"=> $swattr, "save"=>$save,  "value"=> $swval, "type= "=> $swtype, "subid" => $subid,
-            "access"=> $linked_access, "host" => $linked_host, $subid => $response[$subid]);
+            "swid"=> $swid, "attr"=> $swattr, "save"=>$save,  "value"=> $swval, "type"=> $swtype, "subid" => $subid,
+            "access"=> $linked_access, "host" => $linked_host);
         $response = array_merge($response, $debugres);
     }
 
@@ -2701,6 +2704,14 @@ function getMusicArt($thingvalue) {
          substr($thingvalue["trackImage"],0,4) === "http" ) {
         $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
         $thingvalue["trackImage"] = $imgvalue;
+        
+        // fix up bug in echo devices that stores artist in the album name
+        $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
+        $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
+    } else {
+        $thingvalue["currentArtist"] = "";
+        $thingvalue["currentAlbum"] = "";
+        $thingvalue["trackImage"] = "";
     }
     
     return $thingvalue;

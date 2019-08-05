@@ -350,6 +350,15 @@ function setupWebsocket()
             console.log("Error interpreting webSocket message. err: ", err);
             return;
         }
+        
+        // skip music track descriptions that start with grouped to avoid
+        // overwriting more useful variant also typically sent previously
+        if ( thetype==="music" && pvalue["trackDescription"] ) {
+            var desc = pvalue["trackDescription"];
+            if ( desc.startsWith("Grouped with") ) {
+                delete( pvalue["trackDescription"] );
+            }
+        }
 
         // check if we have valid info for this update item
         var linktile = null;
@@ -2043,14 +2052,14 @@ function updateTile(aid, presult) {
                     } catch (err) {}
                 } 
                 
-                if ( forceit || (value!==oldvalue) ) {
+                if ( (forceit || (value!==oldvalue)) && !value.startsWith("Grouped with") ) {
                     value = value.trim();
                     
                     console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
-                                if (pstatus==="success" && presult.trackImage ) {
+                                if (pstatus==="success" && typeof presult==="object" && presult.trackImage ) {
                                     try {
                                         $("#a-"+aid+"-currentArtist").html(presult.currentArtist);
                                         $("#a-"+aid+"-currentAlbum").html(presult.currentAlbum);
@@ -2152,7 +2161,7 @@ function clockUpdater(tz) {
         
         // update the time of all things on the main page
         // this skips the wysiwyg items in edit boxes
-        // only update times that have a :s format type or has nothing specified
+        // include format if provided by user in a sibling field
         $("div.panel div.clock.time").each(function() {
             if ( $(this).parent().siblings("div.overlay.fmt_time").length > 0 ) {
                 var timestr = $(this).parent().siblings("div.overlay.fmt_time").children("div.fmt_time").html();
@@ -2170,6 +2179,14 @@ function clockUpdater(tz) {
                     timestr = timestr.replace("A","AM");
                 }
                 $(this).html(timestr);
+            // take care of linked times
+            } else if ( $(this).siblings("div.user_hidden").length > 0 ) {
+                var linkval = $(this).siblings("div.user_hidden").attr("linkval");
+                if ( linkval && $("div.clock.time.p_"+linkval) ) {
+                    var timestr = $("div.clock.time.p_"+linkval).html();
+                    $(this).html(timestr);
+                }
+                // console.log("skip time, linkval= ",linkval);
             } else {
                 var timestr = defaultstr;
                 if ( hour24 >= 12 ) {
@@ -2653,7 +2670,13 @@ function processClick(that, thingname) {
                     showstr = showstr + s + ": " + txt + "<br>";
                 }
             });
-            var pos = {top: $(tile).position().top + 50, left: $(tile).position().left};
+            var winwidth = $("#dragregion").innerWidth();
+            var leftpos = $(tile).position().left + 5;
+            if ( leftpos + 220 > winwidth ) {
+                leftpos = winwidth - 220;
+            }
+            var pos = {top: $(tile).position().top + 80, left: leftpos};
+            console.log("popup pos: ", pos, " winwidth: ", winwidth);
             createModal("modalpopup", showstr, "body", false, pos, function(ui) {
                 console.log("Finished inspecting status of a " + thetype);
                 // console.log("pos: ", pos, " that: ", that);
@@ -2686,7 +2709,13 @@ function processClick(that, thingname) {
                                     showstr = showstr + s + ": " + v.toString() + "<br>";
                                 }
                             });
-                            var pos = {top: $(tile).position().top + 50, left: $(tile).position().left};
+                            var winwidth = $("#dragregion").innerWidth();
+                            var leftpos = $(tile).position().left + 5;
+                            if ( leftpos + 220 > winwidth ) {
+                                leftpos = winwidth - 220;
+                            }
+                            var pos = {top: $(tile).position().top + 80, left: leftpos};
+                            console.log("popup pos: ", pos, " winwidth: ", winwidth);
                             createModal("modalpopup", showstr, "body", false, pos, function(ui) {
                                 console.log("Finished inspecting status of a " + thetype);
                                 // console.log("pos: ", pos, " that: ", that);
@@ -2700,16 +2729,18 @@ function processClick(that, thingname) {
                                 // update the linked item
                                 // note - the events of any linked item will replace the events of master tile
                                 if ( command==="LINK" && presult["LINK"] ) {
-                                    var linkaid = $("div."+linktype+"-thing.p_"+linkval).attr("id");
+                                    var linkaid = $("div.p_"+linkval).attr("id");
+                                    var linkhub = $("div.p_"+linkval).attr("hub");
                                     var realsubid = presult["LINK"]["realsubid"];
-                                    if ( linkaid && realsubid ) {
+                                    // alert("aid= " + aid + " linktype= " + linktype + " linkval= " + linkval + " linkaid = " + linkaid + " realsubid= " + realsubid + " linkhub= "+linkhub);
+                                    if ( linkaid && linkhub && realsubid ) {
                                         linkaid = linkaid.substring(2);
                                         var linkbid = presult["LINK"]["linked_swid"];
                                         var linkvalue = presult["LINK"]["linked_val"];
                                         if ( linkvalue["name"] ) { delete linkvalue["name"]; }
                                         if ( linkvalue["password"] ) { delete linkvalue["password"]; }
                                         updateTile(aid, linkvalue);
-                                        updAll(realsubid, linkaid, linkbid, linktype, hubnum, linkvalue);
+                                        updAll(realsubid, linkaid, linkbid, linktype, linkhub, linkvalue);
                                     }
                                 }
                                 // we remove name and password fields since they don't need updating for security reasons
