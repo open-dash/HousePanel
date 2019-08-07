@@ -45,7 +45,7 @@ read -p " Directory name for HousePanel (default= $hpdir): " nhpdir
 [ -n "$nhpdir" ] && hpdir=$nhpdir
 
 isupdate="n"
-nisupdate = "n"
+nisupdate="n"
 echo -e "$Cyan Is this an update to a prior installation? "
 read -p " Enter y for yes or n for no (default= $isupdate): " nisupdate
 [ -n "$nisupdate" ] && isupdate=$nisupdate

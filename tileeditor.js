@@ -1923,24 +1923,24 @@ function getIcons(str_type, thingindex) {
     getIconCategories();
     var iCategory = $("#iconSrc").val();
     var skindir = $("#skinid").val();
-    var localPath = skindir + '/icons/';
+    var localPath = 'icons';
     
     // change to use php to gather icons in an ajax post call
     // this replaces the old method that fails on GoDaddy
     if ( !iCategory ) { iCategory = 'Local_Storage'; }
     if( iCategory === 'Local_Storage' || iCategory==='Local_Media') {
         if ( iCategory === 'Local_Media') {
-            localPath = skindir + '/media/';
+            localPath = 'media';
         }
         $.post("getdir.php", 
-            {useajax: "geticons", attr: localPath},
+            {useajax: "geticons", skin: skindir, path: localPath},
             function (presult, pstatus) {
                 if (pstatus==="success" ) {
-                    console.log("reading icons from local path= "+localPath);
+                    console.log("reading icons from skin= " + skindir + " and path= "+localPath);
                     $('#iconList').html(presult);
                     setupIcons(iCategory, str_type, thingindex);
                 } else {
-                    $('#iconList').html("<div class='error'>Error reading icons from local path= " + localPath + "</div>");
+                    $('#iconList').html("<div class='error'>Error reading icons from skin= " + skindir + " and local path= " + localPath + "</div>");
                 }
             }
         );
@@ -1961,11 +1961,11 @@ function getIcons(str_type, thingindex) {
                         icons+='<div>';
                         icons+='<img class="icon" src="' + iconPath + '"></div>';
                     }
-                }); //end each Icon			
+                });			
                 $('#iconList').html(icons);
                 setupIcons(iCategory, str_type, thingindex);
-            } //end function()
-        }); //end ajax
+            }
+        });
     }
 }
 
@@ -2007,6 +2007,13 @@ function getBgEffect(effect) {
 function iconSelected(category, cssRuleTarget, imagePath, str_type, subid, thingindex) {
     $("#noIcon").prop('checked', false);
     var strEffect = getBgEffect();
+    
+    // remove skin directory reference because css is now located in the skin directory
+    var skindir = $("#skinid").val() + "/";
+    if ( imagePath.startsWith(skindir) ) {
+        var n = skindir.length;
+        imagePath = imagePath.substring(n);
+    }
     var imgurl = 'background-image: url("' + imagePath + '")';
     console.log("Setting icon: category= " + category + " target= " + cssRuleTarget + " icon= " + imagePath + " type= " + str_type + " index= " + thingindex + " rule= " + imgurl);
     addCSSRule(cssRuleTarget, imgurl + strEffect + ";");

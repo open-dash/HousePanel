@@ -1,36 +1,49 @@
 <?php
 
-if ( isset($_POST["useajax"]) ) {
-    $useajax = $_POST["useajax"];
-    if ( isset($_POST["attr"]) && file_exists($_POST["attr"]) ) { 
-        $icondir = $_POST["attr"]; 
+if ( isset($_POST["useajax"]) && $_POST["useajax"]==="geticons" ) {
+    $useajax = true;
+    
+    if ( isset($_POST["skin"]) ) { 
+        $skin = $_POST["skin"]; 
     } else {
-        $icondir = "skin-housepanel/icons/";
-    }
-   
-//    $thingindex = $_POST["id"];
-//    $str_type = $_POST["type"];
-//    $icontarget = $_POST["value"];
-} else if ( isset($_GET["useajax"]) ) {
-    $useajax = $_GET["useajax"];
-    if ( isset($_GET["attr"]) && file_exists($_GET["attr"]) ) { 
-        $icondir = $_GET["attr"]; 
-    } else {
-        $icondir = "skin-housepanel/icons/";
+        $skin = "skin-housepanel";
     }
     
+    if ( isset($_POST["path"]) ) { 
+        $icondir = $_POST["path"]; 
+    } else {
+        $icondir = "icons";
+    }
+   
 } else {
     $useajax = false;
-    if ( isset($_GET["attr"]) && file_exists($_GET["attr"]) ) { 
-        $icondir = $_GET["attr"]; 
+    if ( isset($_GET["skin"]) ) { 
+        $skin = $_GET["skin"]; 
     } else {
-        $icondir = "skin-housepanel/icons/";
+        $skin = "skin-housepanel";
+    }
+    
+    if ( isset($_GET["path"]) ) {
+        $icondir = $_GET["path"];
+    } else {
+        $icondir = "icons";
     }
 }
-$ipos = strpos($icondir,"/");
-$subdir = substr($icondir, $ipos+1);
 
-$dirlist = scandir($icondir);
+// change over to where our icons are located
+$savedir = getcwd();
+// chdir($skin);
+
+$activedir = $skin . "/" . $icondir . "/";
+$dirlist = scandir($activedir);
+
+if ( $useajax ) {
+    // $showdir = $icondir . "/";
+    $showdir = $activedir;
+} else {
+    $showdir = $activedir;
+}
+
 $allowed = array("png","jpg","jpeg","gif");
 $tc = "";
 foreach ($dirlist as $filename) {
@@ -41,7 +54,7 @@ foreach ($dirlist as $filename) {
         $froot = $parts['basename'];
         if ( in_array($ext, $allowed) ) {
             $tc.= '<div class="cat Local_Storage">';
-            $fullname = $icondir . rawurlencode($filename);
+            $fullname = $showdir . rawurlencode($filename);
             $tc.= "<img src=\"$fullname\" class=\"icon\" title=\"$froot\" />";
             $tc.= "</div>";
         }
@@ -49,7 +62,11 @@ foreach ($dirlist as $filename) {
     
 }
 
-if ( $useajax && $useajax!=="false" ) {
+// change back
+// chdir($savedir);
+
+// report results
+if ( $useajax ) {
     echo $tc;
 } else {
     echo '<!DOCTYPE html>';
@@ -57,7 +74,8 @@ if ( $useajax && $useajax!=="false" ) {
     echo "<link id=\"tileeditor\" rel=\"stylesheet\" type=\"text/css\" href=\"tileeditor.css\"/>";	
     echo "</head><body>";
     echo "<div class='test'><h2>HousePanel Icons</h2>";
-    echo "<h3>$icondir</h3>";
+    echo "<h3>skin = $skin</h3>";
+    echo "<h3>icondir = $icondir</h3>";
     echo $tc;
     echo "</div></body></html>";
 }

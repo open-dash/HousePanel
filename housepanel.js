@@ -136,7 +136,7 @@ $(document).ready(function() {
     // show tabs and hide skin
     if ( pagename==="main") {
         $("#tabs").tabs();
-        $("div.skinoption").hide();
+        // $("div.skinoption").hide();
     }
     
     // get default tab from cookie and go to that tab
@@ -1209,13 +1209,13 @@ function execButton(buttonid) {
             cancelSortable();
             cancelPagemove();
         }
-        $("div.skinoption").show();
+        // $("div.skinoption").show();
         setupDraggable();
         addEditLink();
         $("#mode_Edit").prop("checked",true);
         priorOpmode = "DragDrop";
     } else if ( buttonid==="showdoc" ) {
-        window.open("docs/index.html",'_blank');
+        window.open("http://www.housepanel.net",'_blank');
         return;
     } else if ( buttonid==="name" ) {
         return;
@@ -1739,7 +1739,7 @@ function delEditLink() {
        $(this).remove();
     });
     // hide the skin and 
-    $("div.skinoption").hide();
+    // $("div.skinoption").hide();
     
     // closeModal();
 }
@@ -1933,9 +1933,11 @@ function setupCustomCount() {
 function toggleTabs() {
     var hidestatus = $("#toggletabs");
     if ( $("#roomtabs").hasClass("hidden") ) {
+        $("#showversion").removeClass("hidden");
         $("#roomtabs").removeClass("hidden");
         if ( hidestatus ) hidestatus.html("Hide Tabs");
     } else {
+        $("#showversion").addClass("hidden");
         $("#roomtabs").addClass("hidden");
         if ( hidestatus ) hidestatus.html("Show Tabs");
     }
