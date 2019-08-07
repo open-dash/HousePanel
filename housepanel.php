@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.093      User specific skin support
  2.092      Major update to documentation on housepanel.net
               - tweak info window when inspected near right edge
               - enable album art upon first change in song
@@ -400,17 +401,17 @@ function htmlHeader($skin="skin-housepanel") {
     $tc.= "<script type=\"text/javascript\" src=\"customize.js?v=" . $cm_hash . "\"></script>";
     
     // load custom .css and the main script file
-    if (!$skin) {
+    if (!$skin || !file_exists("$skin/housepanel.css")) {
         $skin = "skin-housepanel";
     }
-    $csshash = md5_file($skin . "/housepanel.css");
+    $csshash = md5_file("$skin/housepanel.css");
     $tc.= "<link rel=\"stylesheet\" type=\"text/css\" href=\"$skin/housepanel.css?v=" . $csshash . "\">";
 
-    // load the custom tile sheet if it exists - changed this to put in root
-    // so now custom tiles apply to all skins
-    if (file_exists("customtiles.css")) {
-        $customhash = md5_file("customtiles.css");
-        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"customtiles.css?v=". $customhash ."\">";
+    // load the custom tile sheet if it exists
+    // replaced logic to make customizations skin specific
+    if (file_exists("$skin/customtiles.css")) {
+        $customhash = md5_file("$skin/customtiles.css");
+        $tc.= "<link id=\"customtiles\" rel=\"stylesheet\" type=\"text/css\" href=\"$skin/customtiles.css?v=". $customhash ."\">";
     }
     
     // begin creating the main page
@@ -782,6 +783,9 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             unset($options["skin"]);
         } else if ( array_key_exists("skin", $configoptions) ) {
             $skin = $configoptions["skin"];
+            if ( $skin==="" ) {
+                $skin = "skin-housepanel";
+            }
         } else {
             $skin = "skin-housepanel";
             $rewrite = true;
@@ -837,6 +841,15 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
             // handle current format with multiple passwords
             if ( is_array($pwords) ) {
                 
+                // ensure we have latest format for pwords
+                $opwords = $pwords;
+                foreach ($opwords as $un => $pw) {
+                    if ( !is_array($pw) ) {
+                        $pwords[$un] = array($pw, $skin);
+                        $rewrite = true;
+                    }
+                }
+                
                 // get the current user name and password
                 if ( isset($_COOKIE["uname"]) ) {
                     $uname = $_COOKIE["uname"];
@@ -847,10 +860,11 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
                 // if user doesn't exist, add user with blank password
                 if ( !array_key_exists($uname, $pwords) ) {
                     $pword = "";
-                    $pwords[$uname] = $pword;
+                    $pwords[$uname] = array("", $skin);
                     $rewrite = true;
                 } else {
-                    $pword = $pwords[$uname];
+                    $pword = $pwords[$uname][0];
+                    $skin = $pwords[$uname][1];
                 }
 
             // if only one password then convert to multiple format
@@ -995,6 +1009,8 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
     // removed clientinfo support - too old to make sense any more
     // update the options with updated set
+    // all user provided skins are now tied to a user name under pwords
+    // last one given is saved here also in main area as the new default
     if ( $rewrite ) {
         $configoptions = array(
             "timezone" => $timezone,
@@ -2936,7 +2952,7 @@ function cleanupStr($str) {
 
 // call to write Custom Css Back to customtiles.css
 // we actually write two copies - one saved in the skin for skin swapping
-function writeCustomCss($fname, $str, $skin="") {
+function writeCustomCss($skin, $str) {
     $today = date("F j, Y  h:i:s A");
     $fixstr = "";
     if ( !$str ) {
@@ -2955,46 +2971,38 @@ function writeCustomCss($fname, $str, $skin="") {
         $fixstr.= $str3;
     }
 
-    // write the file
-    file_put_contents($fname, $fixstr);
-    
-    // if we are dual writing the file then do it
-    if ( $skin && file_exists($skin . "/housepanel.css") ) {
-        file_put_contents($skin . "/customtiles.css", $fixstr);
+    // write to specific skin folder if the location is valid
+    if ( $skin && file_exists("$skin/housepanel.css") ) {
+        file_put_contents("$skin/customtiles.css", $fixstr);
     }
 }
 
 // read in customtiles ignoring the comments
 // updated this to properly treat /*   */ comment blocks
-function readCustomCss() {
-    $contents = file_get_contents("customtiles.css");
-    
-//    $file = fopen("customtiles.css","rb");
-//    $contents = "";
-//
-//    if ( $file ) {
-//        $incomment = false;
-//        while (!feof($file)) {
-//            $line = trim(fgets($file, 1024));
-//            
-//            if ( substr($line, 0, 2) === "/*" ) {
-//                $incomment = true;
-//            }
-//                
-//            if ( $line && !$incomment && substr($line, 0, 2)!=="//" ) {
-//                $contents.= $line;
-//                if ( substr($line, -1)!=="\n" ) {
-//                    $contents.= "\n";
-//                }
-//            }
-//            
-//            if ( substr($line, -2) === "*/" ) {
-//                $incomment = false;
-//            }
-//            
-//        }
-//    }
+function readCustomCss($skin) {
+    $contents = file_get_contents("$skin/customtiles.css");
     return $contents;
+}
+
+// get the active user and skin
+function getSkin($options, $uname="") {
+    if ( !$uname ) {
+        $uname = $_COOKIE["uname"];
+    }
+    $pwords = $options["config"]["pword"];
+    if ( !$pwords || !is_array($pwords) || count($pwords)===0 ) {
+        $skin = "skin-housepanel";
+    } else if ( $uname && array_key_exists($uname, $pwords) ) {
+        $pword = $pwords[$uname];
+        if ( is_array($pword) ) {
+            $skin = $pword[1];
+        } else {
+            $skin = $options["config"]["skin"];
+        }
+    } else {
+        $skin = "skin-housepanel";
+    }
+    return $skin;
 }
 
 function refactorOptions($allthings) {
@@ -3004,7 +3012,6 @@ function refactorOptions($allthings) {
 //       the user custom setup file is also reset to the main one
 
     // load in custom css strings
-    $customcss = readCustomCss();
     $updatecss = false;
     $thingtypes = getTypes();
     $cnt = 0;
@@ -3013,6 +3020,8 @@ function refactorOptions($allthings) {
     $options["useroptions"] = $thingtypes;
     $options["things"] = array();
     $options["index"] = array();
+    $skin = getSkin($options);
+    $customcss = readCustomCss($skin);
 
     foreach ($oldoptions["index"] as $thingid => $idxarr) {
         
@@ -3112,9 +3121,9 @@ function refactorOptions($allthings) {
         }
     }
     
+    // save our updated options and our custom style sheet file
     writeOptions($options);
-    $skin = $options["config"]["skin"];
-    writeCustomCss("customtiles.css",$customcss,$skin);
+    writeCustomCss($skin, $customcss);
     
 }
 
@@ -3164,11 +3173,6 @@ function getOptions($options, $newthings) {
         $options["useroptions"] = $thingtypes;
     }
 
-    // if css doesn't exist set back to default
-    if ( !file_exists($options["config"]["skin"] . "/housepanel.css") ) {
-        $options["config"]["skin"] = "skin-housepanel";
-    }
-    
     // find the largest index number for a sensor in our index
     // and undo the old flawed absolute positioning
     $cnt = getMaxIndex($options);
@@ -3728,14 +3732,19 @@ function processOptions($optarray) {
             if ( $skin && file_exists($skin . "/housepanel.css") ) {
                 // make sure our default skin has a custom file
                 if ( !file_exists($skin . "/customtiles.css") ) {
-                    writeCustomCss($skin . "/customtiles.css","");
+                    writeCustomCss($skin, "");
                 }
-                // set the options to use this skin
+                
+                // default skin option is updated
                 $options["config"]["skin"] = $skin;
                 
-                // move this skin's custom file over to the main routine
-                $css = file_get_contents($skin . "/customtiles.css");
-                writeCustomCss("customtiles.css",$css);
+                // save the skin in my user specific setting
+                $uname = $_COOKIE["uname"];
+                $pwords = $options["config"]["pword"];
+                if ( array_key_exists($uname, $pwords) ) {
+                    $pwords[$uname][1] = $skin;
+                    $options["config"]["pword"] = $pwords;
+                }
             }
             
         }
@@ -3866,9 +3875,16 @@ function putStats($hub) {
     curl_call($host, $headertype, $nvpreq, "POST");
 }
 
-function getInfoPage($returnURL, $skin, $allthings, $devhistory) {
+function getInfoPage($returnURL, $allthings, $devhistory) {
     $options = readOptions();
     $configoptions = $options["config"];
+    $pwords = $configoptions["pword"];
+    $uname = $_COOKIE["uname"];
+    if ( $uname && array_key_exists($uname, $pwords) ) {
+        $skin = $pwords[$uname][1];
+    } else {
+        $skin = $configoptions["skin"];
+    }
     $hubs = $configoptions["hubs"];
     $specialtiles = getSpecials();
     
@@ -3890,6 +3906,9 @@ function getInfoPage($returnURL, $skin, $allthings, $devhistory) {
     $tc.= hidden("pagename", "info");
     $tc.= "</form>";
     $tc.= "<div class=\"infopage\">";
+    if ($uname) {
+        $tc.= "<div class='bold'>Username = $uname </div>";
+    }
     $tc.= "<div class='bold'>Site url = $returnURL </div>";
     $tc.= "<div class='bold'>Skin folder = $skin </div>";
     $tc.= "<div class='bold'>" . count($hubs) . " Hubs active</div>";
@@ -4140,10 +4159,18 @@ function is_ssl() {
         $options["config"]["webSocketServerPort"] = $webSocketServerPort;
         $pwords = $options["config"]["pword"];
         
+        // ensure we have latest format for pwords
+        $opwords = $pwords;
+        foreach ($opwords as $un => $pw) {
+            if ( !is_array($pw) ) {
+                $pwords[$un] = array($pw, $skindir);
+            }
+        }
+        
         // if password given, create new hash and logout forcing new login
         if ( $pword!=="" ) {
             $hash = pw_hash($pword);
-            $pwords[$uname] = $hash;
+            $pwords[$uname] = array($hash, $skindir);
             setcookie("pwcrypt", "", $expirz, "/");
             
         // otherwise keep old password unless user doesn't exist
@@ -4151,18 +4178,16 @@ function is_ssl() {
         } else {
             if ( !array_key_exists($uname, $pwords) ) {
                 // blank pw created for a new user - logout
-                $hash = "";
                 setcookie("pwcrypt", "", $expirz, "/");
                 echo "error - no password given and user $uname does not exist.";
                 exit(0);
                 // $pwords[$uname] = $hash;
             } else {
                 // stay logged in if we were
-                $hash = $pwords[$uname];
+                $hash = $pwords[$uname][0];
             }
         }
         $options["config"]["pword"] = $pwords;
-        
         writeOptions($options);
         echo "success - uname = $uname hash = $hash";
         exit(0);
@@ -4225,13 +4250,24 @@ function is_ssl() {
         
         // get or create the password array holding the hash
         // handle old style pword setting that wasn't an array
+        // includes logic to bundle the skin with this user so that
+        // now each user can use their own skin if they want
         if ( array_key_exists("pword", $configoptions) ) {
             $pwords = $configoptions["pword"];
             if ( !is_array($pwords) ) {
-                $pwords = array($uname => $pwords);
+                $pwdata = array($pwords, $skin);
+                $pwords = array($uname => $pwdata);
+            } else {
+                $opwords = $pwords;
+                foreach($opwords as $un => $pw) {
+                    if ( !is_array($pw) ) {
+                        $pwords[$un] = array($pw, $skin);
+                    }
+                }
             }
         } else {
-            $pwords = array($uname => "");
+            $pwdata = array("", $skin);
+            $pwords = array($uname => $pwdata);
         }
         
         // replace hash for this user if a new password given that is non blank
@@ -4348,7 +4384,7 @@ function is_ssl() {
         echo htmlFooter();
         exit(0);
     } else if ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="dologin" ) {
-        echo htmlHeader($skin);
+        echo htmlHeader();
         echo getLoginPage($returnURL, "");
         echo htmlFooter();
         unset($_SESSION["hpcode"]);
@@ -4985,11 +5021,6 @@ function is_ssl() {
                 $allthings = getAllThings(true);
                 $options= getOptions($options, $allthings);
                 writeOptions($options);
-                $skin = $options["config"]["skin"];
-                if ( $skin ) {
-                    $customcss = file_get_contents("customtiles.css");
-                    writeCustomCss($skin . "/customtiles.css",$customcss);
-                }
         
                 header("Location: $returnURL");
                 break;
@@ -5059,7 +5090,7 @@ function is_ssl() {
             // an Ajax option to display all the ID value for use in Python and EventGhost
             case "showid":
                 $allthings = getAllThings();
-                $tc = getInfoPage($returnURL, $skin, $allthings, $devhistory);
+                $tc = getInfoPage($returnURL, $allthings, $devhistory);
                 echo htmlHeader();
                 echo $tc;
                 echo htmlFooter();
@@ -5076,18 +5107,24 @@ function is_ssl() {
                 // $options = readOptions();
                 $options["useroptions"] = $swval;
                 $skin = $swattr;
-                
+
                 // set the skin and replace the custom file with that skin's version
                 if ( $skin && file_exists($skin . "/housepanel.css") ) {
+
+                    // save the skin in my user specific setting
+                    $uname = $_COOKIE["uname"];
+                    $pwords = $options["config"]["pword"];
+                    if ( $uname && array_key_exists($uname, $pwords) ) {
+                        $pwords[$uname][1] = $skin;
+                        $options["config"]["pword"] = $pwords;
+                    }
+                    
                     // make sure our default skin has a custom file
                     if ( !file_exists($skin . "/customtiles.css") ) {
-                        writeCustomCss($skin . "/customtiles.css","");
+                        writeCustomCss($skin, "");
                     }
                     // set the options to use this skin
                     $options["config"]["skin"] = $skin;
-                    // move this skin's custom file over to the main routine
-                    $css = file_get_contents($skin . "/customtiles.css");
-                    writeCustomCss("customtiles.css",$css);
                 }
                 writeOptions($options);
                 echo "success";
@@ -5135,11 +5172,9 @@ function is_ssl() {
                     } else {
                         $result = "Nothing updated for type= $swtype tileid= $tileid newname= $newname";
                     }
-                    // $skin = $options["config"]["skin"];
-                    // writeCustomCss("customtiles.css",$swval,$skin);
                 }
-                $skin = $options["config"]["skin"];
-                writeCustomCss("customtiles.css",$swval,$skin);
+                $skin = getSkin($options);
+                writeCustomCss($skin, $swval);
                 
                 echo $result;
                 break;
@@ -5169,7 +5204,7 @@ function is_ssl() {
                     
                     // user is in our system so keep asking for pw until good
                     if (array_key_exists($uname, $pwords)) {
-                        $hash = $pwords[$uname];
+                        $hash = is_array($pwords[$uname]) ? $pwords[$uname][0] : $pwords[$uname];
                         setcookie("uname", $uname, $expiry, "/");
                         if ( ($hash==="" && $pword==="") || pw_verify($pword, $hash) ) {
                             setcookie("pwcrypt", $uname, $expiry, "/");
@@ -5395,9 +5430,10 @@ function is_ssl() {
         if ( array_key_exists("time", $options) ) {
             $time = $options["time"];
             $info = explode(" @ ", $time);
-            $version = $info[0];
-            $upgraded = ($version !== HPVERSION );
+            $version = floatval($info[0]);
+            $upgraded = ($version < floatval(HPVERSION) );
         } else {
+            $version = 1.0;
             $upgraded = true;
             $options["time"] = HPVERSION . " @ " . strval(time());
         }
@@ -5443,6 +5479,17 @@ function is_ssl() {
         // get the password config array
         $pwords = $configoptions["pword"];
         
+        // if version is older than 2.093 upgrade to include skin specific user
+        if ( $version < 2.093 ) {
+            $opwords = $pwords;
+            foreach ( $opwords as $un => $pw) {
+                if ( !is_array($pw) ) {
+                    $pwords[$un] = array($pw, $skin);
+                    $rewriteoptions = true;
+                }
+            }
+        }
+        
         // if a legacy style pword was set then let user in
         // but send them to reauth page to reset password
         // and delete the legacy cookie type and old options hash
@@ -5460,16 +5507,19 @@ function is_ssl() {
             // but keep new ones for the case where they were set on a different device
             // all new passwords use a 60 character strong cipher - use 50 just in case
             $rewritepw = false;
-            foreach ( $pwords as $un => $pw) {
-                if ( $pw!=="" && strlen($pw) < 50 ) {
-                    $pwords[$un] = "";
+            $opwords = $pwords;
+            foreach ( $opwords as $un => $pw) {
+                $thepw = $pw[0];
+                $theskin = $pw[1];
+                if ( $thepw!=="" && strlen($thepw) < 50 ) {
+                    $pwords[$un] = array("", $theskin);
                     $rewritepw = true;
                 }
             }
             
             // if for some reason saved user doesn't have a pw, make a blank one
             if ( !array_key_exists($uname, $pwords) ) {
-                $pwords[$uname] = "";
+                $pwords[$uname] = array("", $skin);
             }
             $configoptions["pword"] = $pwords;
             
@@ -5479,7 +5529,7 @@ function is_ssl() {
                 $login = "reauth";
                 $rewriteoptions = true;
             } else {
-                $login = ( $pwords[$uname]==="" ) ? true : false;
+                $login = ( $pwords[$uname][0]==="" ) ? true : false;
             }
             
         // new password approach detected
@@ -5529,6 +5579,9 @@ function is_ssl() {
             $kioskmode = ($kiosk===true || strtolower($kiosk)==="yes" || 
                           $kiosk==="true" || intval($kiosk)===1 );
 
+            // get user specific skin
+            $skin = $pwords[$uname][1];
+            
             // get all the things from all the hubs
             $allthings = getAllThings();
             $thingoptions = $options["things"];
@@ -5550,17 +5603,11 @@ function is_ssl() {
                 writeOptions($options);
             }
 
-            // make sure our default skin has a custom file
+            // make sure our active skin has a custom file
             if ( !file_exists($skin . "/customtiles.css") ) {
-                writeCustomCss($skin . "/customtiles.css","");
+                writeCustomCss($skin, "");
             }
             
-            // check if custom tile CSS is present
-            if ( !file_exists("customtiles.css") ) {
-                $css = file_get_contents($skin . "/customtiles.css");
-                writeCustomCss("customtiles.css",$css);
-            }
-
             if (DEBUG || DEBUG5) {
                 $tc.= "<h2>Allthings</h2>";
                 $tc.= "<div class='debug'><pre>" . print_r($allthings,true) . "</pre></div>";
@@ -5591,9 +5638,8 @@ function is_ssl() {
             }
             
             // include doc button and username that is logged in
-            $uname = $_COOKIE["uname"];
-            $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
             $tc.= '<div class="showversion">' . $uname . " - V" . HPVERSION  .'</div>';
+            $tc.= '<div id="showdocs"><a href="docs/index.html" target="_blank">?</a></div>';
 
             // end of the tabs
             $tc.= "</div>";
@@ -5641,7 +5687,8 @@ function is_ssl() {
                   <input id=\"mode_Snap\" class=\"radioopts\" type=\"checkbox\" name=\"snapmode\" value=\"snap\"><label for=\"mode_Snap\" class=\"radioopts\">Grid Snap?</label>
                 </div><div id=\"opmode\"></div>";
                 $tc.="</div>";
-                $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+                // $tc.= "<div class=\"skinoption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" value=\"$skin\"/></div>";
+                $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
             } else {
                 $tc.= "<input id=\"skinid\" type=\"hidden\" value=\"$skin\"/>";
             }
