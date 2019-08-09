@@ -1957,7 +1957,7 @@ function getIcons(str_type, thingindex) {
                     iconCategory = $.trim(iconCategory).replace(/\s/g, '_');	
                     if(iconCategory === iCategory) {
                         var iconPath = val.substr(1 + val.indexOf('|'));
-                        iconPath = encodeURI(iconPath);
+                        // iconPath = encodeURI(iconPath);
                         icons+='<div>';
                         icons+='<img class="icon" src="' + iconPath + '"></div>';
                     }

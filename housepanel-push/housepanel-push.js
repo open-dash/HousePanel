@@ -215,6 +215,7 @@ if ( app ) {
                         // clients[i].sendUTF(JSON.stringify(elements));
                         entry["client"] = i+1;
                         entry["clientcount"] = clients.length;
+                        entry["trigger"] = req.body['change_attribute'];
                         clients[i].sendUTF(JSON.stringify(entry));
                     }
                 }

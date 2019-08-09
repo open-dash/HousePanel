@@ -134,6 +134,16 @@ div.greetingopts div.hubopt {
     width: auto; height: 22px; padding-top: 0px;
     text-align: left; 
 }
+#infoname {
+    color: white;
+    background-color: none;
+    cursor: pointer;
+    font-size: 14pt;
+}
+#infoname:hover {
+    color: black;
+    background-color: white;
+}
 
 label.startupinp, input.indent {
     font-weight: bold;
@@ -851,7 +861,7 @@ input[type="button"]#wholetile {
     display: inline;
     margin: 0px 5px 5px 5px;  /* top, right, bottom, left */
     float: left;
-    width: 245px;
+    width: 255px;
     max-height: 470px;
     overflow-x: hidden;
     background-color: rgba(170, 170, 170, 1);

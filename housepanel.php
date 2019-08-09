@@ -10,6 +10,10 @@
  */
 $devhistory = "
  2.100      User specific skin support
+              - add custom tiles to user account
+              - now save user account files in true json format
+              - fix query to linked items
+              - improve album art search and support tunein items
  2.092      Major update to documentation on housepanel.net
               - tweak info window when inspected near right edge
               - enable album art upon first change in song
@@ -321,19 +325,18 @@ $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
 define('APPNAME', 'HousePanel V' . HPVERSION);
 define('CRYPTSALT','HP$by%KW');
-define('ACCUAPI','EKAgVUfsBu2hcKYzUlbMPHdbac0GAfr5');
-// Ann Arbor = 329380
+
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
 // option3 can stay on and will just print lots of stuff on each page
-define('DEBUG',  false);  // all debugs
-define('DEBUG2', false); // authentication flow debug
+define('DEBUG',  false); // turns on debugs 3 and 5
+define('DEBUG2', false); // authentication flow debug and stop
 define('DEBUG3', false); // room display debug - show all things
-define('DEBUG4', false); // options processing debug
+define('DEBUG4', false); // options processing debug and stop
 define('DEBUG5', false); // debug print included in output table
-define('DEBUG6', false); // debug misc
-define('DEBUG7', false); // debug misc
-define('DEBUG8', false); // debug custom development
+define('DEBUG6', false); // show devices and stop
+define('DEBUG7', false); // show what getallthings returns and stop
+define('DEBUG8', false); // debug custom development - add info to doaction return
 
 define("DONATE", true);  // turn on or off the donate button
 
@@ -1632,7 +1635,7 @@ function returnFile($fname, $width, $height, $ctype) {
     return $v;
 }
 
-// experimental function to create frame2.html with AccuWeather for a city
+// function to create frame2.html with AccuWeather for a city
 // the City Name, Country Code, and the Location Code from AccuWeather must be provided
 // getAccuWeather("ann-arbor-mi","us","329380");
 function getAccuWeather($city, $region, $code, $unit="f") {
@@ -1933,10 +1936,11 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // also prevent dates and times from being added
         // also do not include any music album or artist names in the class
         // and finally if the value is complex with spaces or other characters, skip
-        $extra = ( (substr($tval,0,5)==="track") || $tkey=="time" || $tkey==="date" || $tkey==="color" ||
-                   $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="trackImage" ||
+        $extra = ( $tkey=="time" || $tkey==="date" || $tkey==="color" ||
+                   (substr($tkey,0,6)==="event_") ||
+                   $tkey==="trackDescription" || $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="trackImage" ||
                    is_numeric($tval) || $thingtype==$tval || $tval=="" || 
-                   (substr($tval,0,7)==="number_") || (substr($tval,0,4)==="http") ||
+                   (substr($tval,0,5)==="track") || (substr($tval,0,7)==="number_") || (substr($tval,0,4)==="http") ||
                    strpos($tval," ") || strpos($tval,"\"") || strpos($tval,",") ) ? "" : " " . $tval;
         
         // fix track names for groups, empty, and super long
@@ -2471,7 +2475,11 @@ function doAction($hubnum, $path, $swid, $swtype,
     
                         // if nothing returned and an action request, act like a query
                         if ( (!$response || count($response)===0) && $path==="doaction" && $realsubid ) {
-                            $response = array($subid => $thingvalue[$subid]);
+                            if ( $thingvalue[$subid] ) {
+                                $response = array($subid => $thingvalue[$subid]);
+                            } else {
+                                $response = array($realsubid => $linked_val[$realsubid]);
+                            }
                             
                             // include a special return for linked tile update
                             $response["LINK"] = array("realsubid"=>$realsubid, "linked_swid"=>$linked_swid, "linked_val"=>$linked_val);
@@ -2494,7 +2502,11 @@ function doAction($hubnum, $path, $swid, $swtype,
                     // if not hub or a query just grab the as-is value of the linked item
                     } else {
                         $realsubid = $subid;
-                        $response = array($subid => $thingvalue[$subid]);
+                        if ( $thingvalue[$subid] ) {
+                            $response = array($subid => $thingvalue[$subid]);
+                        } else {
+                            $response = array($realsubid => $linked_val[$realsubid]);
+                        }
                         $response["LINK"] = array("realsubid"=>$realsubid, "linked_swid"=>$linked_swid, "linked_val"=>$linked_val);
                     }
                 }
@@ -2694,10 +2706,11 @@ function doAction($hubnum, $path, $swid, $swtype,
 function getMusicArt($thingvalue) {
                
     if (array_key_exists("trackDescription", $thingvalue) && $thingvalue["trackDescription"] ) {
-        $trackname = $thingvalue["trackDescription"];
-        $astart = strpos($trackname,"by ");
-        $astop = strpos($trackname,"from ");
+        $trackname = trim($thingvalue["trackDescription"]);
+        $astart = strpos($trackname," by ");
+        $astop = strpos($trackname," from ");
     } else {
+        $trackname = "";
         $astart = 0;
         $astop = 0;
     }
@@ -2705,16 +2718,18 @@ function getMusicArt($thingvalue) {
     // check for artist in the track description
     // we don't need to check the zero position since that will always have a song
     if ( $astart && $astop ) {
-        $artist = substr($trackname, $astart+3, $astop-$astart-4);
-        $album = substr($trackname, $astop+5);
+        $artist = substr($trackname, $astart+4, $astop-$astart-4);
+        $album = substr($trackname, $astop+6);
         $bstop = strpos($album,"Grouped with ");
         if (  $bstop !== false ) {
             $album = substr($album, 0, $bstop);
         }
+        $thingvalue["currentArtist"] = $artist;
+        $thingvalue["currentAlbum"] = $album;
         if ( $artist && $album ) {
-            $thingvalue["currentArtist"] = $artist;
-            $thingvalue["currentAlbum"] = $album;
             $thingvalue["trackImage"] = getAlbumArt($artist, $album);
+        } else {
+            $thingvalue["trackImage"] = "";
         }
     
     // use native if there which will be true if it starts with http
@@ -2726,6 +2741,18 @@ function getMusicArt($thingvalue) {
         // fix up bug in echo devices that stores artist in the album name
         $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
         $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
+
+    // if we just have a song name use tunein to find icon
+    } else if ( $trackname && $trackname!=="None" ) {
+        $album = $trackname;
+        $bstop = strpos($album,"Grouped with ");
+        if (  $bstop !== false ) {
+            $album = substr($album, 0, $bstop);
+        }
+        $thingvalue["currentArtist"] = "";
+        $thingvalue["currentAlbum"] = $album;
+        $thingvalue["trackImage"] = getAlbumArt("tunein", $album);
+        
     } else {
         $thingvalue["currentArtist"] = "";
         $thingvalue["currentAlbum"] = "";
@@ -2893,40 +2920,65 @@ function readOptions($reset = false) {
                 fclose($fc);
             } else {
                 $customfname = "hm_" . $uname . ".cfg";
+                
+                // read this assuming old or new method - either will work
                 if ( file_exists($customfname) ) {
                     $fc = fopen($customfname,"rb");
-                    $str_rooms = fgets($fc);
-                    $str_rooms = str_replace(array("\n","\r","\t"), "", $str_rooms);
-                    $opt_rooms = json_decode($str_rooms, true);
-                    $str_things = fgets($fc); 
-                    $str_things = str_replace(array("\n","\r","\t"), "", $str_things);
-                    $opt_things = json_decode($str_things, true);
-                    fclose($fc);
+                    $str = fgets($fc);
+                    $str = str_replace(array("\n","\r","\t"), "", $str);
+                    $opts = json_decode($str, true);
+                    
+                    // if this is missing the signature it must be old format
+                    if ( !array_key_exists("::CUSTOM::", $opts) ) {
+                        $opt_rooms = $opts;
+                        $str_things = fgets($fc); 
+                        $str_things = str_replace(array("\n","\r","\t"), "", $str_things);
+                        $opt_things = json_decode($str_things, true);
+                        fclose($fc);
 
-                    // load in custom settings
-                    $options["rooms"] = $opt_rooms;
-                    // $options["things"] = $opt_things;
-                    $options["things"] = array();
-
-                    // protect against having a custom name and an empty custom user name
-                    foreach ($opt_rooms as $room => $ridx) {
-                        if ( array_key_exists($room, $opt_things) ) {
-                            $things = $opt_things[$room];
-                            $newthings = array();
-                            foreach ($things as $kindexarr) {
-                                // check for a blank custom name
-                                if ( is_array($kindexarr) && count($kindexarr)>3 && $kindexarr[4]==="" ) {
-                                    $kindex = $kindexarr[0];
-                                    $oldthings = $oldthingsarr[$room];
-                                    foreach($oldthings as $okidx) {
-                                        if ( is_array($okidx) && $okidx[0]===$kindex && count($okidx)>3 && $okidx[4] ) {
-                                           $kindexarr[4] = $okidx[4]; 
+                        // load in custom room settings
+                        // custom thing settings is done below
+                        $options["rooms"] = $opt_rooms;
+                        
+                    // read the new format by extracting rooms, things, and user_ items 
+                    } else {
+                        if (array_key_exists("rooms", $opts)) {
+                            $opt_rooms = $opts["rooms"];
+                        }
+                        if (array_key_exists("things", $opts)) {
+                            $opt_things = $opts["things"];
+                        }
+                        foreach ($opts as $key => $content) {
+                            if ( substr($key,0,5)==="user_" ) {
+                                $options[$key] = $content;
+                            }
+                        }
+                    }
+                    
+                    if ( $opt_rooms && $opt_things ) {
+                        $options["rooms"] = $opt_rooms;
+                        $options["things"] = array();
+                       
+                        // protect against having a custom name and an empty custom user name
+                        foreach ($opt_rooms as $room => $ridx) {
+                            if ( array_key_exists($room, $opt_things) ) {
+                                $things = $opt_things[$room];
+                                $newthings = array();
+                                foreach ($things as $kindexarr) {
+                                    // check for a blank custom name
+                                    if ( is_array($kindexarr) && count($kindexarr)>3 && $kindexarr[4]==="" ) {
+                                        $kindex = $kindexarr[0];
+                                        $oldthings = $oldthingsarr[$room];
+                                        foreach($oldthings as $okidx) {
+                                            if ( is_array($okidx) && $okidx[0]===$kindex && count($okidx)>3 && $okidx[4] ) {
+                                               $kindexarr[4] = $okidx[4]; 
+                                            }
                                         }
                                     }
+                                    $newthings[] = $kindexarr;
                                 }
-                                $newthings[] = $kindexarr;
+                                $options["things"][$room] = $newthings;
                             }
-                            $options["things"][$room] = $newthings;
                         }
                     }
 
@@ -2956,15 +3008,28 @@ function writeOptions($options) {
 //    chmod($f, 0777);
     
     // make the room config file to support custom users
-    // important!!! do not pretty print this file
+    // this can now be pretty printed but I don't
     if ( isset($_COOKIE["uname"]) ) {
         $uname = trim($_COOKIE["uname"]);
         if ( $uname ) {
             $customfname = "hm_" . $uname . ".cfg";
             $fc = fopen($customfname,"wb");
-            $str_rooms = json_encode($options["rooms"]);
-            $str_things = json_encode($options["things"]);
-            fwrite($fc, $str_rooms . "\n" . $str_things);
+            
+            // change this format to be real json and include user_ tiles
+            // add a signature key to flag this format
+            // commented code below is the old method that didn't include customizations
+            $customopt = array();
+            $customopt["::CUSTOM::"] = array($uname, HPVERSION, strval(time()));
+            foreach ($options as $key => $content) {
+                if ( $key==="rooms" || $key==="things" || substr($key,0,5)==="user_" ) {
+                    $customopt[$key] = $content;
+                }
+            }
+            $str_customopt = json_encode($customopt);
+            fwrite($fc, $str_customopt);
+//            $str_rooms = json_encode($options["rooms"]);
+//            $str_things = json_encode($options["things"]);
+//            fwrite($fc, $str_rooms . "\n" . $str_things);
             fflush($fc);
             fclose($fc);
         }
@@ -3731,7 +3796,7 @@ function getMaxIndex($options) {
 
 // this processes a _POST return from the options page
 function processOptions($optarray) {
-    if (DEBUG || DEBUG4) {
+    if (DEBUG4) {
         // echo "<html><body>";
         echo "<h2>Debug Print for Options Returned</h2><pre>";
         print_r($optarray);
@@ -3896,12 +3961,11 @@ function processOptions($optarray) {
             }
         }
     }
-    if (DEBUG || DEBUG4) {
+    if (DEBUG4) {
         // echo "<html><body>";
         echo "<h2>Debug Print for New Options Created</h2><pre>";
         print_r($options);
         echo "</pre>";
-        exit(0);
     }
 
     // write options to file
@@ -5229,11 +5293,16 @@ function is_ssl() {
                     $pwords = $configoptions["pword"];
                     
                     // user is in our system so keep asking for pw until good
-                    if (array_key_exists($uname, $pwords)) {
-                        $hash = is_array($pwords[$uname]) ? $pwords[$uname][0] : $pwords[$uname];
+                    if (array_key_exists($uname, $pwords) && is_array($pwords[$uname])) {
+                        $hash = $pwords[$uname][0];
                         setcookie("uname", $uname, $expiry, "/");
                         if ( ($hash==="" && $pword==="") || pw_verify($pword, $hash) ) {
                             setcookie("pwcrypt", $uname, $expiry, "/");
+                            $skin = $pwords[$uname][1];
+                            if ( $skin !== $options["config"]["skin"] ) {
+                                $options["config"]["skin"] = $skin;
+                                writeOptions($options);
+                            }
                         } else {
                             setcookie("pwcrypt", "", $expirz, "/");
                         }
@@ -5405,27 +5474,54 @@ function is_ssl() {
                 break;
                 
             case "trackupdate":
-                $trackname = $swval;
-
+                $thingvalue = array("trackDescription"=> $swval);
+                $results = getMusicArt($thingvalue);
+                unset($results["trackDescription"]);
+                
+//                $trackname = $swval;
+//                
                 // search the track name for an artist
-                $astart = strpos($trackname,"by ");
-                $astop = strpos($trackname,"from ");
-                $artist = "";
-                $album = "";
-                $art = "";
-
-                // check for artist in the track description
-                // we don't need to check the zero position since that will always have a song
-                if ( $astart && $astop ) {
-                    $artist = substr($trackname, $astart+3, $astop-$astart-4);
-                    $album = substr($trackname, $astop+5);
-                    if ( $artist && $album ) {
-                        $art = getAlbumArt($artist, $album);
-                    }
-                }
-                $results = array("currentArtist"=> $artist, "currentAlbum"=> $album, "trackImage"=> $art);
+//                $astart = strpos($trackname," by ");
+//                $astop = strpos($trackname," from ");
+//                $artist = "";
+//                $album = "";
+//                $art = "";
+//
+//                // check for artist in the track description
+//                // we don't need to check the zero position since that will always have a song
+//                if ( $astart && $astop ) {
+//                    $artist = substr($trackname, $astart+4, $astop-$astart-4);
+//                    $album = substr($trackname, $astop+6);
+//                    $bstop = strpos($album,"Grouped with ");
+//                    if (  $bstop !== false ) {
+//                        $album = substr($album, 0, $bstop);
+//                    }
+//                    if ( $artist && $album ) {
+//                        $art = getAlbumArt($artist, $album);
+//                    } else if ($album) {
+//                        $art = "";
+//                    }
+//                } else if ($trackname) {
+//                    $album = $trackname;
+//                    $bstop = strpos($album,"Grouped with ");
+//                    if (  $bstop !== false ) {
+//                        $album = substr($album, 0, $bstop);
+//                    }
+//                    $artist = "";
+//                    $art = getAlbumArt("tunein", $album);
+//                }
+//                $results = array("currentArtist"=> $artist, "currentAlbum"=> $album, "trackImage"=> $art);
                 echo json_encode($results);
                 break;
+                
+            case "logout":
+                setcookie("uname", "", $expirz, "/");
+                setcookie("pwcrypt", "", $expirz, "/");
+                unset($_SESSION["allthings"]);
+                $_SESSION["hpcode"] = "dologin";
+                echo "success";
+                break;
+                
               
             default:
                 // instead of printing a crazy message, return to main screen
@@ -5648,8 +5744,10 @@ function is_ssl() {
             }
             
             // include doc button and username that is logged in
-            $tc.= '<div id="showversion" class="showversion">' . $uname . " - V" . HPVERSION;
-            $tc.= '<div id="showdocs"><a href="http://www.housepanel.net" target="_blank">?</a></div></div>';
+            $tc.= '<div id="showversion" class="showversion">';
+            $tc.= '<span id="infoname">' . $uname . "</span><span> - V" . HPVERSION . '</span>';
+            $tc.= '<div id="showdocs"><a href="http://www.housepanel.net" target="_blank">?</a></div>';
+            $tc.= "</div>";
 
             // end of the tabs
             $tc.= "</div>";

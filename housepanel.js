@@ -331,8 +331,9 @@ function setupWebsocket()
             var presult = JSON.parse(evt.data);
             var pvalue = presult.value;
 
-            // grab name for console log
+            // grab name and trigger for console log
             var pname = pvalue["name"] ? pvalue["name"] : "";
+            var trigger = presult.trigger;
 
             // remove reserved fields
             $.each(reservedcap, function(index, val) {
@@ -345,7 +346,7 @@ function setupWebsocket()
             var thetype = presult.type;
             var client = presult.client;
             var clientcount = presult.clientcount;
-            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," name:",pname," client:",client," of:",clientcount," type= ",thetype," value= ",pvalue);
+            // console.log("webSocket message from: ", webSocketUrl," bid= ",bid," name:",pname," client:",client," of:",clientcount," type= ",thetype," trigger= ",trigger," value= ",pvalue);
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
@@ -359,7 +360,7 @@ function setupWebsocket()
                 delete( pvalue["trackDescription"] );
             }
         }
-
+        
         // check if we have valid info for this update item
         var linktile = null;
         if ( bid!==null && thetype && pvalue && typeof pvalue==="object" ) {
@@ -388,21 +389,21 @@ function setupWebsocket()
         var ontrigger = null;
         if ( client===clientcount ) {
             if ( thetype==="motion" ) {
-                console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
+                // console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
                 if ( pvalue.motion ==="active") { 
                     ontrigger = "on";
                 } else {
                     ontrigger = "";
                 }
             } else if ( thetype==="contact") {
-                console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
+                // console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
                 if ( pvalue.contact ==="open") { 
                     ontrigger = "on";
                 } else {
                     ontrigger = "off";
                 }
             } else if ( typeof pvalue.switch !== "undefined" ) {
-                console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
+                // console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
                 if ( pvalue.switch ==="on") { 
                     ontrigger = "on";
                 } else {
@@ -723,13 +724,17 @@ function setupSliders() {
                             }
                        }, "json"
                 );
+            // for music volume we pause briefly then update
             } else {
                 $.post(returnURL, 
                        {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubid: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + " POST returned: "+ strObject(presult) );
-                                updateTile(aid, presult);
+                                setTimeout(function() {
+                                    updateTile(aid, presult);
+                                }, 1000);
+                                // updateTile(aid, presult);
                             }
                        }, "json"
                 );
@@ -1116,7 +1121,7 @@ function setupDraggable() {
 
                 createModal("modaladd","Remove: "+ tilename + " of type: "+thingtype+" from room "+panel+"? Are you sure?", "body" , true, pos, function(ui, content) {
                     var clk = $(ui).attr("name");
-                    if ( clk=="okay" ) {
+                    if ( clk==="okay" ) {
                         // remove it from the system
                         // alert("Removing thing = " + tilename);
                         $.post(returnURL, 
@@ -1333,9 +1338,31 @@ function setupButtons() {
             execButton(opmode);
             evt.stopPropagation();
         });
+        
+        $("#infoname").on("click", function(e) {
+            var username = $(this).html();
+            var pos = {top: 40, left: 820};
+            createModal("modalexec","Log out user "+ username + " <br/>Are you sure?", "body" , true, pos, function(ui, content) {
+                var clk = $(ui).attr("name");
+                if ( clk==="okay" ) {
+                    $.post(returnURL, 
+                        {useajax: "logout", id: 0, type: "none", value: username},
+                        function (presult, pstatus) {
+                            if ( pstatus==="success" ) {
+                                window.location.href = returnURL;
+                            } else {
+                                console.log("ajax call: status = " + pstatus + " result = "+presult);
+                            }
+                        }
+                    );
+                } else {
+                    closeModal("modalexec");
+                }
+            });
+        });
     }
     
-    if ( pagename=="info" ) {
+    if ( pagename==="info" ) {
         
         $("button.showhistory").on('click', function() {
             if ( $("#devhistory").hasClass("hidden") ) {
@@ -2061,7 +2088,7 @@ function updateTile(aid, presult) {
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
-                                if (pstatus==="success" && typeof presult==="object" && presult.trackImage ) {
+                                if (pstatus==="success" && typeof presult==="object" ) {
                                     try {
                                         $("#a-"+aid+"-currentArtist").html(presult.currentArtist);
                                         $("#a-"+aid+"-currentAlbum").html(presult.currentAlbum);
@@ -2310,13 +2337,6 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
         }
     }
     
-    // for music and lock tiles, wait few seconds and refresh again to get new info
-    if (thetype==="music") {
-        setTimeout(function() {
-            refreshTile(aid, bid, thetype, hubnum);
-        }, 3000);
-    }
-        
     // for doors wait before refresh to give garage time to open or close
     if (thetype==="door") {
         setTimeout(function() {
@@ -2326,7 +2346,7 @@ function updAll(trigger, aid, bid, thetype, hubnum, pvalue) {
         
     // go through all the tiles this bid and type (easy ones)
     // this will include the trigger tile so we skip it
-    if (thetype!=="switch" && thetype!=="switchlevel" && thetype!=="bulb" && thetype!=="light") {
+    if (thetype!=="switch" && thetype!=="switchlevel" && thetype!=="bulb" && thetype!=="light" && thetype!=="music") {
         $('div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
             var otheraid = $(this).attr("id").substring(2);
             if (otheraid !== aid) { updateTile(otheraid, pvalue); }
@@ -2703,7 +2723,8 @@ function processClick(that, thingname) {
                         if ( ajaxcall==="doaction" && cm_Globals.allthings && command==="" &&
                              (thetype==="contact" || thetype==="motion" || 
                               thetype==="presence" || thetype==="clock" ||
-                              thetype==="weather" || thetype==="temperature") 
+                              thetype==="weather" || thetype==="temperature" ||
+                              (command==="LINK") ) 
                             ) {
                             var showstr = "";
                             $.each(presult, function(s, v) {
@@ -2719,7 +2740,7 @@ function processClick(that, thingname) {
                             var pos = {top: $(tile).position().top + 80, left: leftpos};
                             console.log("popup pos: ", pos, " winwidth: ", winwidth);
                             createModal("modalpopup", showstr, "body", false, pos, function(ui) {
-                                console.log("Finished inspecting status of a " + thetype);
+                                // console.log("Finished inspecting status of a " + thetype);
                                 // console.log("pos: ", pos, " that: ", that);
                             });
                         }
