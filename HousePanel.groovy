@@ -2054,10 +2054,12 @@ def setMusic(swid, cmd, swattr, subid) {
             newsw = "playing"
             item.play()
             resp['status'] = newsw
+            resp['trackDescription'] = item.currentValue("trackDescription")
         } else if ( subid=="music-stop" || swattr.contains("music-stop") ) {
             newsw = "stopped"
             item.stop()
             resp['status'] = newsw
+            resp['trackDescription'] = ""
         } else if ( subid=="music-pause" || swattr.contains("music-pause") ) {
             newsw = "paused"
             item.pause()
@@ -2072,9 +2074,11 @@ def setMusic(swid, cmd, swattr, subid) {
             subid = subid.substring(1)
             if ( item.hasCommand(subid) ) {
                 item."$subid"()
+                resp['trackDescription'] = item.currentValue("trackDescription")
             }
         } else if ( cmd && item.hasCommand(cmd) ) {
             item."$cmd"()
+            resp['trackDescription'] = item.currentValue("trackDescription")
         }
     }
     return resp

@@ -363,6 +363,10 @@ function setupWebsocket()
             if ( desc && desc.startsWith("Grouped with") ) {
                 delete( pvalue["trackDescription"] );
             }
+            
+            if ( pvalue["status"] === "stopped" ) {
+                pvalue["trackDescription"] = "None";
+            }
         }
         
         // check if we have valid info for this update item
@@ -2031,12 +2035,13 @@ function updateTile(aid, presult) {
 
     // do something for each tile item returned by ajax call
     var isclock = false;
+    // console.log("updateTile: ", presult);
     
     $.each( presult, function( key, value ) {
         var targetid = '#a-'+aid+'-'+key;
 
         // only take action if this key is found in this tile
-        if ($(targetid) && value) {
+        if ($(targetid)) {
             var oldvalue = $(targetid).html();
             var oldclass = $(targetid).attr("class");
 //            if ( key==="text") {
@@ -2098,7 +2103,7 @@ function updateTile(aid, presult) {
                         $("#a-"+aid+"-currentArtist").html("");
                         $("#a-"+aid+"-currentAlbum").html("");
                         $("#a-"+aid+"-trackImage").html("");
-                    } catch (err) {}
+                    } catch (err) { console.log(err); }
                 } 
                 
                 if ( (forceit || (value!==oldvalue)) && !value.startsWith("Grouped with") ) {
@@ -2273,9 +2278,6 @@ function setupTimer(timerval, timertype, hubnum) {
                 function (presult, pstatus) {
                     if (pstatus==="success" && typeof presult==="object" ) {
 
-//                            if ( timertype==="fast" ) {
-//                                console.log("Fast poll returned: ", presult); 
-//                            }
                         // go through all tiles and update
                         try {
                             $('div.panel div.thing').each(function() {
@@ -2301,8 +2303,19 @@ function setupTimer(timerval, timertype, hubnum) {
                                     if ( thevalue && thevalue.hasOwnProperty("value") ) {
                                         thevalue = thevalue.value;
                                     }
+                                    
+                                    // do not update names because they are never updated on groovy
+                                    // also skip updating music album art if using websockets 
+                                    // since it seems to lag behind
+                                    // and doing it here messes up the websocket updates
                                     if ( thevalue && typeof thevalue==="object" ) {
                                         if ( thevalue["name"] ) { delete thevalue["name"]; }
+                                        if ( wsSocket ) {
+                                            if ( thevalue["trackDescription"] ) { delete thevalue["trackDescription"]; }
+                                            if ( thevalue["trackImage"] ) { delete thevalue["trackImage"]; }
+                                            if ( thevalue["currentArtist"] ) { delete thevalue["currentArtist"]; }
+                                            if ( thevalue["currentAlbum"] ) { delete thevalue["currentAlbum"]; }
+                                        }
                                         updateTile(aid,thevalue); 
                                     }
                                 }
