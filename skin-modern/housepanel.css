@@ -77,7 +77,7 @@ div.piston-thing, div.music.musicmute, div.overlay.music-controls div.music,
 div.door.garage.closed, div.door.garage.closing, div.door.garage.open, div.door.garage.opening,
 div.thermofan, div.thermomode,
 div.valve.startZone, div.valve.pause, div.piston-thing div.pistonName,
-div.shm.state, div.hsm.state
+div.shm.state, div.hsm.state, div.water.wet, div.water.dry
 {
     cursor: pointer;
 }
@@ -268,11 +268,25 @@ div.momentary.on {
 div.presence.present, div.custom.present {
     background-image: url('icons/boypresent.png');
     background-color: rgba(170, 170, 170, 1);
+    height: 90px;
     color: rgba(255, 255, 255, 0.01);
 }
 div.presence.absent, div.custom.absent {
     background-image: url('icons/boyabsent.png');
     background-color: rgba(170, 170, 170, 1);
+    height: 90px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.overlay.water div.water.wet {
+    background-image: url('http://cdn.device-icons.smartthings.com/alarm/water/wet@2x.png');
+    background-color: rgba(170, 170, 170, 1);
+    height: 90px;
+    color: rgba(255, 255, 255, 0.01);
+}
+div.overlay.water div.water.dry {
+    background-image: url('http://cdn.device-icons.smartthings.com/alarm/water/dry@2x.png');
+    background-color: rgba(170, 170, 170, 1);
+    height: 90px;
     color: rgba(255, 255, 255, 0.01);
 }
 

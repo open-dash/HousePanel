@@ -1225,7 +1225,6 @@ div.thing div.thingname, div.catalog-thing div.thingname {
     text-align: center;
     color: #ffffff;
     border-bottom: 2px solid rgba(0,0,0,1);
-    width: 100%;
     height: 30px;
     cursor: default;
     display: block;
@@ -1464,6 +1463,7 @@ div.ovbLevel.L0{
 
 /* disable commands in general */
 div.overlay._on, div.overlay._off, 
+div.overlay._wet, div.overlay._dry, 
 div.overlay._open, div.overlay._close, 
 div.overlay._onPhysical, div.overlay._offPhysical,
 div.overlay._startmotion, div.overlay._stopmotion, div.overlay._reset {

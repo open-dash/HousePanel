@@ -124,7 +124,7 @@ div.switch.flash, div.light.flash,
 div.presence.present, div.presence.absent,
 div.valve.open, div.valve.closed, div.momentary.on, div.momentary.off,
 div.lock.locked, div.lock.unlocked, div.lock.unknown, div.motion.active, div.motion.inactive,
-div.contact.open, div.contact.closed {
+div.contact.open, div.contact.closed, div.water.wet, div.water.dry {
     height: 112px;
 }
 
@@ -137,7 +137,7 @@ div.piston-thing, div.music.musicmute, div.overlay.music-controls div.music,
 div.door.garage.closed, div.door.garage.closing, div.door.garage.open, div.door.garage.opening,
 div.thermofan, div.thermomode,
 div.valve.startZone, div.valve.pause, div.piston-thing div.pistonName,
-div.shm.state, div.hsm.state
+div.shm.state, div.hsm.state, div.water.wet, div.water.dry
 {
     cursor: pointer;
 }
@@ -197,6 +197,16 @@ div.door.closed, div.contact.door.closed {
     background-image: url('icons/closedoor.png');
     color: rgba(255, 255, 255, 0.01);
     background-size: 40px;
+}
+div.overlay.water div.water.wet {
+    background-image: url('http://cdn.device-icons.smartthings.com/alarm/water/wet@2x.png');
+    background-color: rgba(204, 255, 204, 0.6);
+    color: rgba(255, 255, 255, 0.01);
+}
+div.overlay.water div.water.dry {
+    background-image: url('http://cdn.device-icons.smartthings.com/alarm/water/dry@2x.png');
+    background-color: rgba(245, 245, 245, 0.6);
+    color: rgba(255, 255, 255, 0.01);
 }
 /* hide the contact part of garage doors that include an embedded contact sensor */
 div.door-thing.garage div.overlay.contact {

@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.103      link tile query fix and media art fine tune
+              - add default icons for water sensors and enable water actions
  2.100      User specific skin support
               - add custom tiles to user account
               - now save user account files in true json format
@@ -1888,11 +1890,12 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
 }
 
 // cleans up the name of music tracks for proper html page display
+// no longer trim the name because that breaks album art
 function fixTrack($tval) {
     if ( trim($tval)==="" ) {
         $tval = "None"; 
-    } else if ( strlen($tval) > 132) { 
-        $tval = substr($tval,0,129) . " ..."; 
+//    } else if ( strlen($tval) > 132) { 
+//        $tval = substr($tval,0,129) . " ..."; 
     }
     return $tval;
 }

@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 08/18/2019 - added water action for setting dry and wet
  * 07/29/2019 - change Hubitat HubId to the actual Hub UID instead of App Id
  * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
  *              work on fixing color reporting for bulbs - still not quite right
@@ -1029,76 +1030,80 @@ def doAction() {
 
     switch (swtype) {
       case "switch" :
-      	 cmdresult = setSwitch(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setSwitch(swid, cmd, swattr, subid)
+        break
+
       case "bulb" :
-      	 cmdresult = setBulb(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setBulb(swid, cmd, swattr, subid)
+        break
+
       case "light" :
-      	 cmdresult = setLight(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setLight(swid, cmd, swattr, subid)
+        break
+
       case "switchlevel" :
-         cmdresult = setDimmer(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setDimmer(swid, cmd, swattr, subid)
+        break
+
       case "momentary" :
-         cmdresult = setMomentary(swid, cmd, swattr, subid)
-         break
-      
+        cmdresult = setMomentary(swid, cmd, swattr, subid)
+        break
+
       case "lock" :
-         cmdresult = setLock(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setLock(swid, cmd, swattr, subid)
+        break
+
       case "thermostat" :
-         cmdresult = setThermostat(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setThermostat(swid, cmd, swattr, subid)
+        break
+
       case "music" :
-         cmdresult = setMusic(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setMusic(swid, cmd, swattr, subid)
+        break
+
       // note: this requires a special handler for motion to manually set it
       case "motion" :
-    	cmdresult = setMotion(swid, cmd, swattr, subid)
+        cmdresult = setMotion(swid, cmd, swattr, subid)
         break
 
       case "mode" :
-         cmdresult = setMode(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setMode(swid, cmd, swattr, subid)
+        break
+
       case "shm" :
-         cmdresult = setSHMState(swid, cmd, swattr, subid)
-         break
-         
+        cmdresult = setSHMState(swid, cmd, swattr, subid)
+        break
+
       case "hsm":
-          cmdresult = setHSMState(swid, cmd, swattr, subid)
-          break;
-		 
+        cmdresult = setHSMState(swid, cmd, swattr, subid)
+        break;
+ 
       case "valve" :
-      	 cmdresult = setValve(swid, cmd, swattr, subid)
-         break
+        cmdresult = setValve(swid, cmd, swattr, subid)
+        break
 
       case "door" :
       	 cmdresult = setDoor(swid, cmd, swattr, subid)
          break
 
       case "piston" :
-         if ( state.usepistons ) {
-             webCoRE_execute(swid)
-             cmdresult = getPiston(swid)
-         }
-         break;
+        if ( state.usepistons ) {
+            webCoRE_execute(swid)
+            cmdresult = getPiston(swid)
+        }
+        break
       
       case "routine" :
         cmdresult = setRoutine(swid, cmd, swattr, subid)
-        break;
+        break
+        
+      case "water" :
+        cmdresult = setWater(swid, cmd, swattr, subid)
+        break
         
       case "other" :
-          cmdresult = setOther(swid, cmd, swattr, subid)
-          break
+        cmdresult = setOther(swid, cmd, swattr, subid)
+        break
     }
     logger("doAction results: " + cmdresult.toString() , "debug");
     return cmdresult
@@ -1315,6 +1320,32 @@ def setOther(swid, cmd, attr, subid ) {
         }
     }
     return resp
+}
+
+// new setAny routine that could replace all the other stuff above
+// pending testing and prove out
+def setWater(swid, cmd, swattr, subid) {
+    logcaller("setWater", swid, cmd, swattr, subid)
+    def resp = false
+    def item  = mywaters.find {it.id == swid }
+    if (item) {
+        def newsw = item.currentValue
+        if ( subid=="water" && swattr.endsWith(" dry") ) {
+            item.wet()
+        } else if ( subid=="water" && swattr.endsWith(" wet") ) {
+            item.dry()
+        } else if ( subid.startsWith("_") ) {
+            subid = subid.substring(1)
+            if ( item.hasCommand(subid) ) {
+                item."$subid"()
+            }
+        } else if ( item.hasCommand(cmd) ) {
+            item."$cmd"()
+        }
+        resp = getThing(mywaters, swid, item)
+    }
+    return resp
+
 }
 
 def setMode(swid, cmd, swattr, subid) {
