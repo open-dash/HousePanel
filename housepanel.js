@@ -18,6 +18,7 @@ var pagename = "main";
 // set a global socket variable to manage two-way handshake
 var wsSocket = null;
 var webSocketUrl = null;
+var wsinterval = null;
 var nodejsUrl = null;
 var reordered = false;
 
@@ -110,6 +111,9 @@ function getOptions() {
                 cm_Globals.options = presult;
                 var indexkeys = Object.keys(presult.index);
                 console.log("getOptions returned: " + indexkeys.length + " things");
+                if ( pagename==="main" ) {
+                    setupUserOpts();
+                }
             } else {
                 cm_Globals.options = null;
                 console.log("Error: failure reading your hmoptions.cfg file");
@@ -157,18 +161,13 @@ $(document).ready(function() {
     
     // first try to load fast, if failed do slow
     // this is caused by json_encode hanging in main routine
-    getOptions();
+    // getOptions();
     getAllthings(false, false);
     setTimeout(function() {
         if ( !cm_Globals.allthings ) {
             getAllthings(false, true);
         }
-    }, 3000);
-
-    // setup page clicks
-    if ( pagename==="main" && !disablepub ) {
-        setupPage();
-    }
+    }, 10000);
     
     // disable return key
     $("body").off("keypress");
@@ -178,118 +177,125 @@ $(document).ready(function() {
         }
     });
     
-    getMaxZindex();
-    
-    // actions for custom tile count changes
-    setupCustomCount();
-    
     setupButtons();
-    
     setupSaveButton();
     
     if (pagename==="options") {
-        // set up option box clicks
+        setupCustomCount();
         setupFilters();
     }
     
     if ( pagename==="main" ) {
+        getMaxZindex();
         setupSliders();
-
-        // setup click on a page
-        // this appears to be painfully slow so disable
         setupTabclick();
-
         setupColors();
-        
-        // try to get the hubs
-        try {
-            var hubstr = $("input[name='allHubs']").val();
-            var hubs = JSON.parse(hubstr);
-        } catch(err) {
-            console.log ("Couldn't retrieve any hubs. err: ", err);
-            hubs = null;
-        }
-        
-        // try to get timers
-        // disable these if you want to minimize cloud web traffic
-        // if you do this manual controls will not be reflected in panel
-        // but you can always run a refresh to update the panel manually
-        // or you can run it every once in a blue moon too
-        // any value less than 1000 (1 sec) will be interpreted as never
-        // note - with multihub we now use hub type to set the timer
-        var fast_timer;
-        var slow_timer;
-        try {
-            fast_timer = $("input[name='fast_timer']").val();
-            slow_timer = $("input[name='slow_timer']").val();
-        } catch(err) {
-            console.log ("Couldn't retrieve timers; using defaults. err: ", err);
-            fast_timer = 10000;
-            slow_timer = 3600000;
-        }
-        
-        // we could disable this timer loop
-        // we also grab timer from each hub setting now
-        // becuase we now do on-demand updates via webSockets
-        // but for now we keep it just as a backup to keep things updates
-        if ( hubs && typeof hubs === "object" ) {
-            // loop through every hub
-            $.each(hubs, function (num, hub) {
-                // var hubType = hub.hubType;
-                var timerval;
-                var hubId = hub.hubId;
-                if ( hub.hubTimer ) {
-                    timerval = hub.hubTimer;
-                } else {
-                    timerval = 60000;
-                }
-                if ( timerval && timerval >= 1000 ) {
-                    setupTimer(timerval, "all", hubId);
-                }
-            });
-        }
-        
-        // this can be disabled by setting anything less than 1000
-        if ( fast_timer && fast_timer >= 1000 ) {
-            setupTimer(fast_timer, "fast", -1);
-        }
-        if ( slow_timer && slow_timer >= 1000 ) {
-            setupTimer(slow_timer, "slow", -1);
-        }
-        
-        // get the webSocket info and the timers
-        try {
-            webSocketUrl = $("input[name='webSocketUrl']").val();
-            nodejsUrl = $("input[name='nodejsUrl']").val();
-        } catch(err) {
-            console.log("Error attempting to retrieve webSocket URL. err: ", err);
-            webSocketUrl = null;
-            nodejsUrl = null;
-        }
-        timezone = $("input[name='timezone']").val();
-        timezone = parseInt(timezone, 10);
-        
-        // periodically check for socket open and if not open reopen
-        if ( webSocketUrl ) {
-            wsSocketCheck();
-            setInterval(wsSocketCheck, 60000);
-        }
-
-        // initialize the clock updater that runs every second
-        // unlike the timer routines this doesn't do any php callbacks
-        clockUpdater(timezone);
-
         cancelDraggable();
         cancelSortable();
         cancelPagemove();
     }
 
+    // finally we wait a few seconds then setup page clicks
+    setTimeout(function() {
+        if ( pagename==="main" && !disablepub ) {
+            setupPage();
+        }
+    }, 10000);
+
 });
+
+function setupUserOpts() {
+    
+    // get hub info from options array
+    var options = cm_Globals.options;
+    if ( !options || !options.config ) {
+        console.log("error - valid options file not found");
+        return;
+    } else {
+        console.log("options config: ", options.config)
+    }
+    var config = options.config;
+
+    // we could disable this timer loop
+    // we also grab timer from each hub setting now
+    // becuase we now do on-demand updates via webSockets
+    // but for now we keep it just as a backup to keep things updated
+    try {
+        var hubs = config["hubs"];
+    } catch(err) {
+        console.log ("Couldn't retrieve hubs. err: ", err);
+        hubs = null;
+    }
+    if ( hubs && typeof hubs === "object" ) {
+        // loop through every hub
+        $.each(hubs, function (num, hub) {
+            // var hubType = hub.hubType;
+            var timerval;
+            var hubId = hub.hubId;
+            if ( hub.hubTimer ) {
+                timerval = hub.hubTimer;
+            } else {
+                timerval = 60000;
+            }
+            if ( timerval && timerval >= 1000 ) {
+                setupTimer(timerval, "all", hubId);
+            }
+        });
+    }
+
+    // try to get timers
+    try {
+        var fast_timer = config.fast_timer;
+        var slow_timer = config.slow_timer;
+    } catch(err) {
+        console.log ("Couldn't retrieve timers; using defaults. err: ", err);
+        fast_timer = 10000;
+        slow_timer = 3600000;
+    }
+
+    // this can be disabled by setting anything less than 1000
+        if ( fast_timer && fast_timer >= 1000 ) {
+        setupTimer(fast_timer, "fast", -1);
+    }
+        if ( slow_timer && slow_timer >= 1000 ) {
+        setupTimer(slow_timer, "slow", -1);
+    }
+
+    // get the webSocket info and the timers
+    try {
+        webSocketUrl = $("input[name='webSocketUrl']").val();
+        nodejsUrl = $("input[name='nodejsUrl']").val();
+    } catch(err) {
+        console.log("Error attempting to retrieve webSocket URL. err: ", err);
+        webSocketUrl = null;
+        nodejsUrl = null;
+    }
+    
+    try {
+        timezone = $("input[name='timezone']").val();
+        timezone = parseInt(timezone, 10);
+    } catch(err) {
+        console.log("Error attempting to retrieve timezone offset. err: ", err);
+        timezone = 0;
+    }
+    clockUpdater(timezone);
+
+    // periodically check for socket open and if not open reopen
+    if ( webSocketUrl ) {
+        wsSocketCheck();
+        wsinterval = setInterval(wsSocketCheck, 120000);
+    }
+
+}
 
 // check to make sure we always have a websocket
 function wsSocketCheck() {
     if ( webSocketUrl && ( wsSocket === null || wsSocket.readyState===3 )  ) {
         setupWebsocket();
+    }
+    
+    if ( !webSocketUrl && wsinterval ) {
+        cancelInterval(wsinterval);
     }
 }
 
@@ -1474,7 +1480,11 @@ function setupButtons() {
             }
             
             // tell user we are authorizing hub...
-            $("#newthingcount").html("Authorizing...").fadeTo(500, 0.3 ).fadeTo(500, 1).fadeTo(500, 0.3 ).fadeTo(500, 1);
+            // $("#newthingcount").html("Authorizing...").fadeTo(500, 0.3 ).fadeTo(500, 1).fadeTo(500, 0.3 ).fadeTo(500, 1);
+            $("#newthingcount").html("Authorizing...").fadeTo(400, 0.1 ).fadeTo(400, 1);
+            var blinkauth = setInterval(function() {
+                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
+            }, 1000);
             var hubHost = formData.get("hubHost");
             var clientId = formData.get("clientId");
 
@@ -1489,7 +1499,10 @@ function setupButtons() {
             values.userAccess = formData.get("userAccess");
             values.userEndpt = formData.get("userEndpt");
             values.hubName = formData.get("hubName");
-            values.hubId = formData.get("hubId");
+            
+            // set hubId to the value in the drop down selection
+            values.hubId = hubId;
+            
             values.hubTimer = formData.get("hubTimer");
             values.timezone = tz;
             values.skindir = skindir;
@@ -1502,13 +1515,14 @@ function setupButtons() {
             values.pword = pword;
             
             $.post(returnURL, values, function(presult, pstatus) {
+                clearInterval(blinkauth);
                 console.log("hub auth: status: ", pstatus, " result: ", presult);
                  // alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
                     // console.log(obj);
                     $("input[name='hubName']").val(obj.hubName);
-                    $("input[name='hubId']").val(obj.hubId);
+                    // $("input[name='hubId']").val(obj.hubId);
                     var ntc = "Hub #" + hubnum + " hub ID: " + hubId + " was authorized and " + obj.count + " devices were retrieved.";
                     $("#newthingcount").html(ntc);
                 }
@@ -1534,6 +1548,7 @@ function setupButtons() {
             var slow_timer = $("#newslow_timer").val();
             var uname = $("#uname").val();
             var pword = $("#pword").val();
+            var hubId = $("#pickhub").val();
 
             // **********************************************
             // perform input checking
@@ -1544,14 +1559,18 @@ function setupButtons() {
             }
             
             var ntc = "Processing hub information to create your dashboard...";
-            $("#newthingcount").html(ntc).fadeTo(700, 0.3 ).fadeTo(700, 1);
+            $("#newthingcount").html(ntc).fadeTo(400, 0.1 ).fadeTo(400, 1);
+            var blinker = setInterval(function() {
+                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
+            }, 1000);
             
             var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
                             pword: pword, kiosk: false, port: port, webSocketServerPort: webSocketServerPort,
-                            fast_timer: fast_timer, slow_timer: slow_timer};
+                            fast_timer: fast_timer, slow_timer: slow_timer, hubId: hubId};
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
                 function (presult, pstatus) {
+                    clearInterval(blinker);
                     if (pstatus==="success") {
                         // alert("result= " + presult);
                         window.location.href = returnURL;
@@ -2060,16 +2079,21 @@ function updateTile(aid, presult) {
             // handle weather icons
             // updated to address new integer indexing method in ST
             } else if ( key==="weatherIcon" || key==="forecastIcon") {
-                if ( oldvalue != value ) {
-                    $(targetid).removeClass(oldvalue);
-                    $(targetid).addClass(value);
-                }
+//                if ( oldvalue != value ) {
+//                    $(targetid).removeClass(oldvalue);
+//                    $(targetid).addClass(value);
+//                }
                 var icondigit = parseInt(value,10);
-                var iconstr = icondigit.toString();
-                if ( icondigit < 10 ) {
-                    iconstr = "0" + iconstr;
+                var iconimg;
+                if ( Number.isNaN(icondigit) ) {
+                    iconimg = value;
+                } else {
+                    var iconstr = icondigit.toString();
+                    if ( icondigit < 10 ) {
+                        iconstr = "0" + iconstr;
+                    }
+                    iconimg = "media/weather/" + iconstr + ".png";
                 }
-                var iconimg = "media/weather/" + iconstr + ".png";
                 value = "<img src=\"" + iconimg + "\" alt=\"" + iconstr + "\" width=\"80\" height=\"80\">";
             } else if ( (key === "level" || key === "colorTemperature") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
@@ -2707,7 +2731,7 @@ function processClick(that, thingname) {
                  || (thetype==="image" && subid==="image")
                  || (thetype==="blank" && subid==="blank")
                  || (thetype==="custom" && subid==="custom") ) {
-        // console.log("Rereshing " + thetype + ": " + thevalue);
+        console.log("Rereshing special tile type: " + thetype);
         $(targetid).html(thevalue);
         
         // show popup window for blanks and customs

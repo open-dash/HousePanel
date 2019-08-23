@@ -1462,7 +1462,7 @@ div.ovbLevel.L0{
 }
 
 /* disable commands in general */
-div.overlay._on, div.overlay._off, 
+div.overlay._on, div.overlay._off, div.overlay._flash,
 div.overlay._wet, div.overlay._dry, 
 div.overlay._open, div.overlay._close, 
 div.overlay._onPhysical, div.overlay._offPhysical,

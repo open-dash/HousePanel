@@ -1022,7 +1022,7 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         var subid;
         // var firstsub = setsubid(str_type);
 
-        $("#tileDialog div."+str_type+"-thing > div.overlay").each(function(index) {
+        $("#tileDialog div."+str_type+"-thing  div.overlay").each(function(index) {
             var classes = $(this).attr("class");
             var words = classes.split(" ", 3);
             subid = words[1];

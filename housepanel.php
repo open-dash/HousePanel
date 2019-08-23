@@ -9,6 +9,11 @@
  * Revision History
  */
 $devhistory = "
+ 2.104      Bug Fixes and API improvements
+              - enable auto search for correct hub if omitted in API calls
+              - fix spurious hub creation when reauthorization performed
+              - enable blink properly when waiting for authorization
+              - fix tile editor list and tile customizer for weather tiles
  2.103      link tile query fix and media art fine tune
               - add default icons for water sensors and enable water actions
  2.100      User specific skin support
@@ -504,6 +509,11 @@ function curl_call($host, $headertype="", $nvpstr="", $calltype="GET", $webcall=
             $nvpResArray = $response;
         } else {
             $nvpResArray = json_decode($response, TRUE);
+            
+            // convert errors into false
+            if ( array_key_exists("error",$nvpResArray) && $nvpResArray["error"]===true ) {
+                $nvpResArray = false;
+            }
         }
     }
     return $nvpResArray;
@@ -1141,7 +1151,7 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
 
         // $tc.= "<div><label class=\"startupinp required\">Hub ID: </label>";
         // $tc.= "<input class=\"startupinp\" name=\"hubId\" width=\"10\" type=\"text\" value=\"" . $hubId . "\"/></div>"; 
-        hidden("hubId", $hubId);
+        $tc.= hidden("hubId", $hubId);
 
         $tc.= "<div><label class=\"startupinp required\">Refresh Timer: </label>";
         $tc.= "<input class=\"startupinp\" name=\"hubTimer\" width=\"10\" type=\"text\" value=\"" . $hub["hubTimer"] . "\"/></div>"; 
@@ -1651,16 +1661,20 @@ function getAccuWeather($city, $region, $code, $unit="f") {
 }
 
 function getWeatherIcon($num) {
-    $num = strval($num);
-    if ( strlen($num) < 2 ) {
-        $num = "0" . $num;
+    if ( !is_numeric($num)) {
+        $iconstr = $num;
+    } else {
+        $num = strval($num);
+        if ( strlen($num) < 2 ) {
+            $num = "0" . $num;
+        }
+
+        // uncomment this to use ST's copy. Default is to use local copy
+        // so everything stays local
+        // $iconimg = "https://smartthings-twc-icons.s3.amazonaws.com/" . $num . ".png";
+        $iconimg = "media/weather/" . $num . ".png";
+        $iconstr = "<img src=\"$iconimg\" alt=\"$num\" width=\"80\" height=\"80\">";
     }
-    
-    // uncomment this to use ST's copy. Default is to use local copy
-    // so everything stays local
-    // $iconimg = "https://smartthings-twc-icons.s3.amazonaws.com/" . $num . ".png";
-    $iconimg = "media/weather/" . $num . ".png";
-    $iconstr = "<img src=\"$iconimg\" alt=\"$num\" width=\"80\" height=\"80\">";
     return $iconstr;
 }
 
@@ -1942,6 +1956,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         $extra = ( $tkey=="time" || $tkey==="date" || $tkey==="color" ||
                    (substr($tkey,0,6)==="event_") ||
                    $tkey==="trackDescription" || $tkey==="currentArtist" || $tkey==="currentAlbum" || $tkey==="trackImage" ||
+                   $tkey==="weatherIcon" || $tkey==="forecastIcon" ||
                    is_numeric($tval) || $thingtype==$tval || $tval=="" || 
                    (substr($tval,0,5)==="track") || (substr($tval,0,7)==="number_") || (substr($tval,0,4)==="http") ||
                    strpos($tval," ") || strpos($tval,"\"") || strpos($tval,",") ) ? "" : " " . $tval;
@@ -2581,7 +2596,24 @@ function doAction($hubnum, $path, $swid, $swtype,
                           "&swtype=" . urlencode($swtype);
                 if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
                 $response = curl_call($host, $headertype, $nvpreq, "POST");
-                if ( $swtype==="music" ) {
+                
+                // try other hubs if default given and it didn't work for a simple query
+                // this will only happen for API calls
+                if ( !$response && $hubindex===0 && $swid!=="all" && count($hubs)>1 ) {
+                    $hubtry = 0;
+                    while ($hubtry <= count($hubs) && !$response) {
+                        $hubtry++;
+                        $hub = $hubs[$hubtry];
+                        $access_token = $hub["hubAccess"];
+                        $endpt = $hub["hubEndpt"];
+                        $host = $endpt . "/" . $path;
+                        $headertype = array("Authorization: Bearer " . $access_token);
+                        if ( $subid ) { $nvpreq.= "&subid=" . urlencode($subid); }
+                        $response = curl_call($host, $headertype, $nvpreq, "POST");
+                    }
+                }
+                
+                if ( $response && $swtype==="music" ) {
                     $response = getMusicArt($response);
                 }
                 // $response[$subid] = $allthings[$mainidx]["value"][$subid];
@@ -4295,7 +4327,7 @@ function is_ssl() {
         }
         $options["config"]["pword"] = $pwords;
         writeOptions($options);
-        echo "success - uname = $uname hash = $hash";
+        echo "success";
         exit(0);
     }
 
