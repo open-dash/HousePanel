@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.105      Minor bugfix for leak sensors that dont support wet/dry commands
  2.104      Bug Fixes and API improvements
               - enable auto search for correct hub if omitted in API calls
               - fix spurious hub creation when reauthorization performed

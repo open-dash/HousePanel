@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 08/25/2019 - bugfix water leak to prevent error if wet and dry not supported
  * 08/18/2019 - added water action for setting dry and wet
  * 07/29/2019 - change Hubitat HubId to the actual Hub UID instead of App Id
  * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
@@ -1330,9 +1331,9 @@ def setWater(swid, cmd, swattr, subid) {
     def item  = mywaters.find {it.id == swid }
     if (item) {
         def newsw = item.currentValue
-        if ( subid=="water" && swattr.endsWith(" dry") ) {
+        if ( subid=="water" && swattr.endsWith(" dry") && item.hasCommand("wet") ) {
             item.wet()
-        } else if ( subid=="water" && swattr.endsWith(" wet") ) {
+        } else if ( subid=="water" && swattr.endsWith(" wet") && item.hasCommand("dry") ) {
             item.dry()
         } else if ( subid.startsWith("_") ) {
             subid = subid.substring(1)
