@@ -2667,13 +2667,16 @@ function processClick(that, thingname) {
         // for this case there is nothing to do on the server so we just
         // update the text on screen and return it to the log
         } else if ( command==="TEXT" ) {
+            console.log(ajaxcall + ": thingname= " + thingname + " command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
             $.post(returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                 attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                 function(presult, pstatus) {
                     if (pstatus==="success") {
-                        console.log( ajaxcall + ": POST returned:\n"+ strObject(presult) );
+                        console.log( ajaxcall + ": POST returned:", presult);
                         updateTile(aid, presult);
+                    } else {
+                        console.log(ajaxcall + " error: ", pstatus, presult);
                     }
                 }, "json");
             return;

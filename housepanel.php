@@ -2186,7 +2186,17 @@ function doAction($hubnum, $path, $swid, $swtype,
     $mainidx = $swtype . "|" . $swid;
     $lidx = $mainidx;
     $response = array();
-    $macrocount = 0;
+    // $macrocount = 0;
+    $macroresult = null;
+    
+    // detect if we have a session
+    // not having a session typically means HP is in API mode
+    // in API mode link and web api calls are not supported
+    if ( isset($_SESSION["allthings"]) ) {
+        $allthings = unserialize($_SESSION["allthings"]);
+    } else {
+        $allthings = false;
+    }
     
     // check for macros tied to this id
     $idsub = $swtype . "|" . $swid . "|" . $subid;
@@ -2194,6 +2204,7 @@ function doAction($hubnum, $path, $swid, $swtype,
          array_key_exists("macros", $options) && 
          array_key_exists($idsub, $options["macros"]) ) {
         $macros = $options["macros"];
+        $macroresult = array();
         $actions = $macros[$idsub];
         if ( is_array($actions) ) {
             
@@ -2243,22 +2254,33 @@ function doAction($hubnum, $path, $swid, $swtype,
                     }
 
                     // make the recursive call with false as last param to avoid loop
-                    $macrocount++;
-                    doAction($macrohub, "doaction", 
+                    // $macrocount++;
+                    $mid = "$macrotype|$macroid";
+                    if ( $allthings ) {
+                        $priormval = $allthings[$mid];
+                        $macroname = $priormval["name"];
+                        $macroprior = $priormval["value"];
+                    } else {
+                        $macroname = "";
+                        $macroprior = array();
+                    }
+                    
+                    $mresult = doAction($macrohub, "doaction", 
                          $macroid, $macrotype, $macroval, $macroattr, $macrosubid,
                          "", "", false);
+                    $macrovalue = json_decode($mresult);
+                    $mresultarray =  array("id" => $macroid, 
+                        "name" => $macroname, 
+                        "hubnum" => $macrohub,
+                        "type" => $macrotype,
+                        "subid" => $macrosubid,
+                        "attr" => $macroattr,
+                        "prior" => $macroprior,
+                        "value" => $macrovalue );
+                    $macroresult[] = $mresultarray;
                 }
             }
         }
-    }
-    
-    // detect if we have a session
-    // not having a session typically means HP is in API mode
-    // in API mode link and web api calls are not supported
-    if ( isset($_SESSION["allthings"]) ) {
-        $allthings = unserialize($_SESSION["allthings"]);
-    } else {
-        $allthings = false;
     }
 
     // handle clocks
@@ -2718,8 +2740,10 @@ function doAction($hubnum, $path, $swid, $swtype,
         }
     }
     
-    if ( $macro && $macrocount>0 ) {
-        $response["execmacro"] = strval($macrocount);
+    // report results of macro back to js for console log
+    if ( $macro && $macroresult && count($macroresult)>0 ) {
+        $response["macrocount"] = strval(count($macroresult));
+        $response["macroresult"] = $macroresult;
     }
     
     // add the hub index for use in timers and housepanel-push
