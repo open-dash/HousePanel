@@ -18,6 +18,7 @@
  * 
  * Revision history:
  * 08/25/2019 - bugfix water leak to prevent error if wet and dry not supported
+ *              update switches to include name
  * 08/18/2019 - added water action for setting dry and wet
  * 07/29/2019 - change Hubitat HubId to the actual Hub UID instead of App Id
  * 07/03/2019 - added DeviceWatch-Enroll new ignore field and fixed comment above
@@ -1538,12 +1539,16 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         // note: sometime swattr has the command and other times it has the value
         //       just depends. This is a legacy issue when classes were the command
         // we start by handling base GUI case with attr ending in on or off or flash
-        if ( subid=="switch" && swattr.endsWith(" on" ) ) {
-            swattr = "on"
-        } else if ( subid=="switch" && swattr.endsWith(" flash" ) ) {
-            swattr = "on"
-        } else if ( subid=="switch" && swattr.endsWith(" off" ) ) {
-            swattr = "off"
+        if ( subid=="switch" ) {
+            if ( swattr.endsWith(" on" ) ) {
+                swattr = "on"
+            } else if ( swattr.endsWith(" flash" ) ) {
+                swattr = "on"
+            } else if ( swattr.endsWith(" off" ) ) {
+                swattr = "off"
+            }
+        } else if ( subid=="name" ) {
+            swattr = "name"
         }
         
         switch(swattr) {
@@ -1551,6 +1556,13 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         // this branch is legacy - gui no longer sends toggle as attr
         // i left this in code since API could still send toggle as attr
         case "toggle":
+            newonoff = newonoff=="off" ? "on" : "off"
+            break
+        
+        // explicitly toggle light if clicked on name
+        // the commented code will leave it unchanged
+        case "name":
+            // newonoff = item.currentValue("switch")
             newonoff = newonoff=="off" ? "on" : "off"
             break
          
@@ -1708,7 +1720,7 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
                 newonoff = cmd
             } else if (subid.startsWith("_")) {
                 newonoff = subid.substring(1)
-            } else {
+            } else if ( subid=="switch" ) {
                 newonoff = newonoff=="off" ? "on" : "off"
             }
 
@@ -1727,7 +1739,12 @@ def setGenericLight(mythings, swid, cmd, swattr, subid) {
         }
 
         // return the fields that were changed
-        resp = [switch: newonoff]
+        if ( subid=="name" && cmd ) { 
+            resp = ["name": cmd]
+        } else {
+            resp = ["name": item.displayName]
+        }
+        resp.put("switch", newonoff)
         if ( newsw ) { resp.put("level", newsw) }
         if ( newcolor ) { resp.put("color", newcolor) }
         if ( hue ) { resp.put("hue", hue) }

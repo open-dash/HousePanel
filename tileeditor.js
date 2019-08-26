@@ -300,8 +300,8 @@ function initDialogBinds(str_type, thingindex) {
         var newname = $("#editName").val();
         $(target1).html(newname);
         $(target2).html(newname);
-        cm_Globals.reload = false;
         saveTileEdit(str_type, thingindex, newname);
+        // cm_Globals.reload = true;
         event.stopPropagation;
     });
 
@@ -1177,7 +1177,7 @@ function saveTileEdit(str_type, thingindex, newname) {
                 results = "error: pstatus = " + pstatus + " msg = " + presult;
                 console.log("POST " + results);
             }
-            cm_Globals.reload = true;
+            // cm_Globals.reload = true;
         }
     );
     

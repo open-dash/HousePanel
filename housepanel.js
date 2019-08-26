@@ -30,6 +30,7 @@ var reordered = false;
 // use the timers options to turn off polling
 var disablepub = false;
 var disablebtn = false;
+var LOGWEBSOCKET = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -352,7 +353,9 @@ function setupWebsocket()
             var thetype = presult.type;
             var client = presult.client;
             var clientcount = presult.clientcount;
-            console.log("webSocket message from: ", webSocketUrl," bid= ",bid," name:",pname," client:",client," of:",clientcount," type= ",thetype," trigger= ",trigger," value= ",pvalue);
+            if ( LOGWEBSOCKET ) {
+                console.log("webSocket message from: ", webSocketUrl," bid= ",bid," name:",pname," client:",client," of:",clientcount," type= ",thetype," trigger= ",trigger," value= ",pvalue);
+            }
         } catch (err) {
             console.log("Error interpreting webSocket message. err: ", err);
             return;
@@ -457,6 +460,8 @@ function setupWebsocket()
                                function (presult, pstatus) {
                                     if (pstatus==="success" ) {
                                         console.log( ajaxcall + ": POST returned: ", presult );
+                                        if ( presult["name"] ) { delete presult["name"]; }
+                                        if ( presult["password"] ) { delete presult["password"]; }
                                         updAll(subid,aid,trbid,trtype,hubnum,presult);
                                     }
                                }, "json"
@@ -473,6 +478,8 @@ function setupWebsocket()
                            function (presult, pstatus) {
                                 if (pstatus==="success" ) {
                                     console.log( ajaxcall + " POST returned: ", presult );
+                                    if ( presult["name"] ) { delete presult["name"]; }
+                                    if ( presult["password"] ) { delete presult["password"]; }
                                     updAll(subid,aid,trbid,trtype,hubnum,presult);
                                 }
                            }, "json"
@@ -703,6 +710,8 @@ function setupColors() {
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log(ajaxcall + ": value: ", presult);
+                                if ( presult["name"] ) { delete presult["name"]; }
+                                if ( presult["password"] ) { delete presult["password"]; }
                                 updateTile(aid, presult);
                                 // updAll("color",aid,bidupd,thetype,hubnum,presult);
                             }
@@ -756,6 +765,8 @@ function setupSliders() {
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + ": POST returned: ", presult );
+                                if ( presult["name"] ) { delete presult["name"]; }
+                                if ( presult["password"] ) { delete presult["password"]; }
                                 updAll(subid,aid,bidupd,thetype,hubnum,presult);
                             }
                        }, "json"
@@ -767,6 +778,8 @@ function setupSliders() {
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
                                 console.log( ajaxcall + ": POST returned: ", presult );
+                                if ( presult["name"] ) { delete presult["name"]; }
+                                if ( presult["password"] ) { delete presult["password"]; }
                                 setTimeout(function() {
                                     updateTile(aid, presult);
                                 }, 1000);
@@ -824,6 +837,8 @@ function setupSliders() {
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
                             console.log( ajaxcall + ": POST returned: ", presult );
+                            if ( presult["name"] ) { delete presult["name"]; }
+                            if ( presult["password"] ) { delete presult["password"]; }
                             updAll(subid,aid,bidupd,thetype,hubnum,presult);
                         }
                    }, "json"
@@ -2187,7 +2202,8 @@ function refreshTile(aid, bid, thetype, hubnum) {
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubid: hubnum},
         function (presult, pstatus) {
             if (pstatus==="success") {
-                // console.log( "presult from refreshTile: ", strObject(presult) );
+                if ( presult["name"] ) { delete presult["name"]; }
+                if ( presult["password"] ) { delete presult["password"]; }
                 updateTile(aid, presult);
             }
         }, "json"
@@ -2334,6 +2350,7 @@ function setupTimer(timerval, timertype, hubnum) {
                                     // and doing it here messes up the websocket updates
                                     if ( thevalue && typeof thevalue==="object" ) {
                                         if ( thevalue["name"] ) { delete thevalue["name"]; }
+                                        if ( thevalue["password"] ) { delete thevalue["password"]; }
                                         if ( wsSocket ) {
                                             if ( thevalue["trackDescription"] ) { delete thevalue["trackDescription"]; }
                                             if ( thevalue["trackImage"] ) { delete thevalue["trackImage"]; }
@@ -2674,6 +2691,8 @@ function processClick(that, thingname) {
                 function(presult, pstatus) {
                     if (pstatus==="success") {
                         console.log( ajaxcall + ": POST returned:", presult);
+                        if ( presult["name"] ) { delete presult["name"]; }
+                        if ( presult["password"] ) { delete presult["password"]; }
                         updateTile(aid, presult);
                     } else {
                         console.log(ajaxcall + " error: ", pstatus, presult);
@@ -2734,7 +2753,7 @@ function processClick(that, thingname) {
                  || (thetype==="image" && subid==="image")
                  || (thetype==="blank" && subid==="blank")
                  || (thetype==="custom" && subid==="custom") ) {
-        console.log("Rereshing special tile type: " + thetype);
+        console.log("Refreshing special tile type: " + thetype);
         $(targetid).html(thevalue);
         
         // show popup window for blanks and customs

@@ -9,6 +9,10 @@
  * Revision History
  */
 $devhistory = "
+ 2.106      Macro feature tested and fine tuned to return results in console log
+              - tile editor name update fixed to prevent spurious page reloads
+              - returns name on switches now for viewing with API; GUI still ignores
+              - protect from returning password and name in the GUI everywhere
  2.105      Minor bugfix for leak sensors that dont support wet/dry commands
  2.104      Bug Fixes and API improvements
               - enable auto search for correct hub if omitted in API calls
@@ -2259,10 +2263,10 @@ function doAction($hubnum, $path, $swid, $swtype,
                     if ( $allthings ) {
                         $priormval = $allthings[$mid];
                         $macroname = $priormval["name"];
-                        $macroprior = $priormval["value"];
+                        // $macroprior = $priormval["value"];
                     } else {
                         $macroname = "";
-                        $macroprior = array();
+                        // $macroprior = array();
                     }
                     
                     $mresult = doAction($macrohub, "doaction", 
@@ -2273,9 +2277,6 @@ function doAction($hubnum, $path, $swid, $swtype,
                         "name" => $macroname, 
                         "hubnum" => $macrohub,
                         "type" => $macrotype,
-                        "subid" => $macrosubid,
-                        "attr" => $macroattr,
-                        "prior" => $macroprior,
                         "value" => $macrovalue );
                     $macroresult[] = $mresultarray;
                 }
@@ -2742,7 +2743,7 @@ function doAction($hubnum, $path, $swid, $swtype,
     
     // report results of macro back to js for console log
     if ( $macro && $macroresult && count($macroresult)>0 ) {
-        $response["macrocount"] = strval(count($macroresult));
+        // $response["macrocount"] = strval(count($macroresult));
         $response["macroresult"] = $macroresult;
     }
     
