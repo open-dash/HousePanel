@@ -1508,7 +1508,7 @@ function getCustomTile($custom_val, $customtype, $customid, $options, $allthings
                         }
                     } else {
                         $custom_val[$companion] = "::" . $thetype . "::" . $calltype . "::" . $content;
-                        $custom_val[$subid] = "Invalid link to #" . $content . " with subid=$subid idx=$idx at-count: " . count($allthings);
+                        $custom_val[$subid] = "Invalid link to #" . $content . " with subid=$subid";
                     }
 
                 } else if ( $calltype==="URL" ) {
@@ -2565,8 +2565,12 @@ function doAction($hubnum, $path, $swid, $swtype,
                 $n = 1;
                 foreach ($rulecommands as $rule) {
                     $rulepair = explode("=", $rule);
-                    if ( count($rulepair) > 2 ) {
-                        $tileid = strval($rulepair[0]);
+                    $tileid = strval($rulepair[0]);
+                    
+                    // only process rules here that are tile id based simple actions
+                    if ( count($rulepair)===3 && is_numeric($tileid) ) {
+                                                
+                        $tileid = intval($tileid);
                         $subid = strval($rulepair[1]);
                         $swval = strval($rulepair[2]);
                         $idx = array_search($tileid, $options["index"]);

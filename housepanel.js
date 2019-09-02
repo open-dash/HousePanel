@@ -405,88 +405,92 @@ function setupWebsocket()
         // since we only need one of the clients to execute rules
         var ontrigger = null;
         if ( client===clientcount ) {
-            if ( thetype==="motion" ) {
-                // console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
-                if ( pvalue.motion ==="active") { 
-                    ontrigger = "on";
-                } else {
-                    ontrigger = "";
-                }
-            } else if ( thetype==="contact") {
-                // console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
-                if ( pvalue.contact ==="open") { 
-                    ontrigger = "on";
-                } else {
-                    ontrigger = "off";
-                }
-            } else if ( thetype==="momentary") {
-                if ( pvalue.momentary ==="on") { 
-                    ontrigger = "on";
-                } else {
-                    ontrigger = "off";
-                }
-            } else if ( typeof pvalue.switch !== "undefined" ) {
-                // console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
-                if ( pvalue.switch ==="on") { 
-                    ontrigger = "on";
-                } else {
-                    ontrigger = "off";
-                }
-            }
-        }
-        
-        // process linked auto triggers such that contacts, motions, and switches
-        // linked into any other switch will turn it one and off upon a state change
-        if ( linktile && ontrigger ) {
-            $('div.user_hidden[linkval="' + linktile + '"]').each(function() {
-                var tile = $(this).parents("div.thing").last();
-                var tilenum = tile.attr("tile");
-                var aid = tile.attr("id").substring(2);
-                var trbid = tile.attr("bid");
-                var theattr = tile.attr("class");
-                var hubnum = tile.attr("hub");
-                var trtype = tile.attr("type");
-                
-                
-                if ( trtype === "switch" || trtype === "switchlevel" || trtype==="bulb" || trtype==="light" ) {
-                    var currentvalue = $("#a-"+aid+"-switch").html();
-                    console.log(thetype, " trigger of switch for tile: ", tilenum, " trtype: ", trtype, " bid: ", trbid," current: ",currentvalue," ontrigger: ", ontrigger);
-                    
-                    if ( ontrigger !== currentvalue ) {
-                        var ajaxcall = "doaction";
-                        var subid = "switch";
-                        $.post(returnURL, 
-                               {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subid},
-                               function (presult, pstatus) {
-                                    if (pstatus==="success" ) {
-                                        console.log( ajaxcall + ": POST returned: ", presult );
-                                        if ( presult["name"] ) { delete presult["name"]; }
-                                        if ( presult["password"] ) { delete presult["password"]; }
-                                        updAll(subid,aid,trbid,trtype,hubnum,presult);
-                                    }
-                               }, "json"
-                        );
-                    }
-                } else if ( trtype === "momentary" ) {
-                    var currentvalue = $("#a-"+aid+"-momentary").html();
-                    console.log(thetype + " trigger of momentary button: ", tilenum," bid: ", trbid," current: ",currentvalue," ontrigger: ",ontrigger);
-                    
-                    var ajaxcall = "doaction";
-                    var subid = "momentary";
-                    $.post(returnURL, 
-                           {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: subid, hubid: hubnum, subid: subid},
-                           function (presult, pstatus) {
-                                if (pstatus==="success" ) {
-                                    console.log( ajaxcall + " POST returned: ", presult );
-                                    if ( presult["name"] ) { delete presult["name"]; }
-                                    if ( presult["password"] ) { delete presult["password"]; }
-                                    updAll(subid,aid,trbid,trtype,hubnum,presult);
-                                }
-                           }, "json"
-                    );
-                    
-                }
-            });
+            
+            // process all rules that reference this websocket change
+            processRules(bid, thetype, pvalue);
+            
+//            if ( thetype==="motion" ) {
+//                // console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
+//                if ( pvalue.motion ==="active") { 
+//                    ontrigger = "on";
+//                } else {
+//                    ontrigger = "";
+//                }
+//            } else if ( thetype==="contact") {
+//                // console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
+//                if ( pvalue.contact ==="open") { 
+//                    ontrigger = "on";
+//                } else {
+//                    ontrigger = "off";
+//                }
+//            } else if ( thetype==="momentary") {
+//                if ( pvalue.momentary ==="on") { 
+//                    ontrigger = "on";
+//                } else {
+//                    ontrigger = "off";
+//                }
+//            } else if ( typeof pvalue.switch !== "undefined" ) {
+//                // console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
+//                if ( pvalue.switch ==="on") { 
+//                    ontrigger = "on";
+//                } else {
+//                    ontrigger = "off";
+//                }
+//            }
+//        }
+//        
+//        // process linked auto triggers such that contacts, motions, and switches
+//        // linked into any other switch will turn it one and off upon a state change
+//        if ( linktile && ontrigger ) {
+//            $('div.user_hidden[linkval="' + linktile + '"]').each(function() {
+//                var tile = $(this).parents("div.thing").last();
+//                var tilenum = tile.attr("tile");
+//                var aid = tile.attr("id").substring(2);
+//                var trbid = tile.attr("bid");
+//                var theattr = tile.attr("class");
+//                var hubnum = tile.attr("hub");
+//                var trtype = tile.attr("type");
+//                
+//                
+//                if ( trtype === "switch" || trtype === "switchlevel" || trtype==="bulb" || trtype==="light" ) {
+//                    var currentvalue = $("#a-"+aid+"-switch").html();
+//                    console.log(thetype, " trigger of switch for tile: ", tilenum, " trtype: ", trtype, " bid: ", trbid," current: ",currentvalue," ontrigger: ", ontrigger);
+//                    
+//                    if ( ontrigger !== currentvalue ) {
+//                        var ajaxcall = "doaction";
+//                        var subid = "switch";
+//                        $.post(returnURL, 
+//                               {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subid},
+//                               function (presult, pstatus) {
+//                                    if (pstatus==="success" ) {
+//                                        console.log( ajaxcall + ": POST returned: ", presult );
+//                                        if ( presult["name"] ) { delete presult["name"]; }
+//                                        if ( presult["password"] ) { delete presult["password"]; }
+//                                        updAll(subid,aid,trbid,trtype,hubnum,presult);
+//                                    }
+//                               }, "json"
+//                        );
+//                    }
+//                } else if ( trtype === "momentary" ) {
+//                    var currentvalue = $("#a-"+aid+"-momentary").html();
+//                    console.log(thetype + " trigger of momentary button: ", tilenum," bid: ", trbid," current: ",currentvalue," ontrigger: ",ontrigger);
+//                    
+//                    var ajaxcall = "doaction";
+//                    var subid = "momentary";
+//                    $.post(returnURL, 
+//                           {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: subid, hubid: hubnum, subid: subid},
+//                           function (presult, pstatus) {
+//                                if (pstatus==="success" ) {
+//                                    console.log( ajaxcall + " POST returned: ", presult );
+//                                    if ( presult["name"] ) { delete presult["name"]; }
+//                                    if ( presult["password"] ) { delete presult["password"]; }
+//                                    updAll(subid,aid,trbid,trtype,hubnum,presult);
+//                                }
+//                           }, "json"
+//                    );
+//                    
+//                }
+//            });
         }
     };
     
@@ -495,6 +499,10 @@ function setupWebsocket()
         console.log("webSocket connection closed for: ", webSocketUrl);
         wsSocket = null;
     };
+}
+
+function processRules(bid, thetype, pvalue) {
+    
 }
 
 function rgb2hsv(r, g, b) {
