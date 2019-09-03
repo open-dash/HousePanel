@@ -201,7 +201,7 @@ $(document).ready(function() {
         if ( pagename==="main" && !disablepub ) {
             setupPage();
         }
-    }, 10000);
+    }, 2000);
 
 });
 
@@ -379,7 +379,6 @@ function setupWebsocket()
         }
         
         // check if we have valid info for this update item
-        var linktile = null;
         if ( bid!==null && thetype && pvalue && typeof pvalue==="object" ) {
         
             // remove color for now until we get it fixed
@@ -388,12 +387,12 @@ function setupWebsocket()
             }
         
             // update all the tiles that match this type and id
-            // notice we limit this to items on the actual panel
+            // this now works even if tile isn't on the panel because
+            // now we read the options file and grab the tile number
+            // this is done in the processRules function below
             $('div.panel div.thing[bid="'+bid+'"][type="'+thetype+'"]').each(function() {
                 try {
                     var aid = $(this).attr("id").substring(2);
-                    linktile = $(this).attr("tile");
-                    // console.log("aid= "+aid+" linktile= "+linktile+" pvalue= ",pvalue);
                     updateTile(aid, pvalue);
                 } catch (e) {
                     console.log("Error updating tile of type: "+ thetype + " and id: " + bid + " with value: ", pvalue);
@@ -401,96 +400,13 @@ function setupWebsocket()
             });
         }
         
-        // handle motion and contact triggers but only for the last client
+        // handle rules and link triggers but only for the last client
         // since we only need one of the clients to execute rules
-        var ontrigger = null;
+        // rules and link triggers do not update the screen
+        // so you must have the node pusher app installed to keep things synced
         if ( client===clientcount ) {
-            
-            // process all rules that reference this websocket change
-            processRules(bid, thetype, pvalue);
-            
-//            if ( thetype==="motion" ) {
-//                // console.log("motion auto trigger: ",pvalue.motion," client #"+client+" of "+clientcount);
-//                if ( pvalue.motion ==="active") { 
-//                    ontrigger = "on";
-//                } else {
-//                    ontrigger = "";
-//                }
-//            } else if ( thetype==="contact") {
-//                // console.log("contact auto trigger: ",pvalue.contact," client #"+client+" of "+clientcount);
-//                if ( pvalue.contact ==="open") { 
-//                    ontrigger = "on";
-//                } else {
-//                    ontrigger = "off";
-//                }
-//            } else if ( thetype==="momentary") {
-//                if ( pvalue.momentary ==="on") { 
-//                    ontrigger = "on";
-//                } else {
-//                    ontrigger = "off";
-//                }
-//            } else if ( typeof pvalue.switch !== "undefined" ) {
-//                // console.log("switch auto trigger: ",pvalue.switch," client #"+client+" of "+clientcount);
-//                if ( pvalue.switch ==="on") { 
-//                    ontrigger = "on";
-//                } else {
-//                    ontrigger = "off";
-//                }
-//            }
-//        }
-//        
-//        // process linked auto triggers such that contacts, motions, and switches
-//        // linked into any other switch will turn it one and off upon a state change
-//        if ( linktile && ontrigger ) {
-//            $('div.user_hidden[linkval="' + linktile + '"]').each(function() {
-//                var tile = $(this).parents("div.thing").last();
-//                var tilenum = tile.attr("tile");
-//                var aid = tile.attr("id").substring(2);
-//                var trbid = tile.attr("bid");
-//                var theattr = tile.attr("class");
-//                var hubnum = tile.attr("hub");
-//                var trtype = tile.attr("type");
-//                
-//                
-//                if ( trtype === "switch" || trtype === "switchlevel" || trtype==="bulb" || trtype==="light" ) {
-//                    var currentvalue = $("#a-"+aid+"-switch").html();
-//                    console.log(thetype, " trigger of switch for tile: ", tilenum, " trtype: ", trtype, " bid: ", trbid," current: ",currentvalue," ontrigger: ", ontrigger);
-//                    
-//                    if ( ontrigger !== currentvalue ) {
-//                        var ajaxcall = "doaction";
-//                        var subid = "switch";
-//                        $.post(returnURL, 
-//                               {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subid},
-//                               function (presult, pstatus) {
-//                                    if (pstatus==="success" ) {
-//                                        console.log( ajaxcall + ": POST returned: ", presult );
-//                                        if ( presult["name"] ) { delete presult["name"]; }
-//                                        if ( presult["password"] ) { delete presult["password"]; }
-//                                        updAll(subid,aid,trbid,trtype,hubnum,presult);
-//                                    }
-//                               }, "json"
-//                        );
-//                    }
-//                } else if ( trtype === "momentary" ) {
-//                    var currentvalue = $("#a-"+aid+"-momentary").html();
-//                    console.log(thetype + " trigger of momentary button: ", tilenum," bid: ", trbid," current: ",currentvalue," ontrigger: ",ontrigger);
-//                    
-//                    var ajaxcall = "doaction";
-//                    var subid = "momentary";
-//                    $.post(returnURL, 
-//                           {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: subid, hubid: hubnum, subid: subid},
-//                           function (presult, pstatus) {
-//                                if (pstatus==="success" ) {
-//                                    console.log( ajaxcall + " POST returned: ", presult );
-//                                    if ( presult["name"] ) { delete presult["name"]; }
-//                                    if ( presult["password"] ) { delete presult["password"]; }
-//                                    updAll(subid,aid,trbid,trtype,hubnum,presult);
-//                                }
-//                           }, "json"
-//                    );
-//                    
-//                }
-//            });
+            processRules(pname, bid, thetype, trigger, pvalue);
+            processLinks(pname, bid, thetype, trigger, pvalue);
         }
     };
     
@@ -501,8 +417,131 @@ function setupWebsocket()
     };
 }
 
-function processRules(bid, thetype, pvalue) {
+function processRules(pname, bid, thetype, trigger, pvalue) {
+    // go through all tiles with a new rule type
+    var idx = thetype + "|" + bid;
+    try {
+        var index = cm_Globals.options["index"];
+        var tileid = index[idx];
+    } catch (e) {
+        console.log("webSocket RULE error: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " error: ", e);
+        return;
+    }
     
+    // construct the if phrase for the trigger
+    var ifphrase = tileid + "=" + trigger + "=" + pvalue[trigger];
+    
+    // print some debug info
+    if ( LOGWEBSOCKET ) {
+        console.log("webSocket RULE - name: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " tileid: ", tileid, " if: ", ifphrase);
+    }
+
+    // process all tiles that subscribe to this trigger
+    $('div.user_hidden[command="RULE"]').each(function() {
+        var linkval = $(this).attr("linkval");
+        var parts = linkval.split("=");
+        var tile = $(this).parents("div.thing").last();
+        var tilenum = tile.attr("tile");
+        var trbid = tile.attr("bid");
+        var aid = tile.attr("id").substring(2);
+        var theattr = tile.attr("class");
+        var hubnum = tile.attr("hub");
+        var trtype = tile.attr("type");
+        
+        // if-then rules differ from directed rules by having 5 elements
+        // and only one can be given as opposed to any number of directed rules
+        // the first three elements are the same as directed rules
+        // the last two parameters tell which subid to active and to what value
+        // the first three parameters are the tile, subid, and value to monitor
+        if ( linkval.startsWith(ifphrase) && parts.length===5 ) {
+            var subidtrigger = parts[3];
+            var ontrigger = parts[4];
+            
+            // invoke the command for the subscribed tile
+            var currentvalue = $("#a-"+aid+"-"+subidtrigger).html();
+            console.log("Rule trigger for tile: ", tilenum, " type: ", trtype, " bid: ", trbid, "subid: ", subidtrigger, " current: ",currentvalue," ontrigger: ", ontrigger);
+
+            if ( ontrigger !== currentvalue ) {
+                var ajaxcall = "doaction";
+                $.post(returnURL, 
+                       {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                console.log( ajaxcall + ": POST returned: ", presult );
+                                // if ( presult["name"] ) { delete presult["name"]; }
+                                // if ( presult["password"] ) { delete presult["password"]; }
+                                // updateTile(aid, presult);
+                                // updAll(subidtrigger,aid,trbid,trtype,hubnum,presult);
+                            }
+                       }, "json"
+                );
+            }
+        }
+    });
+}
+
+function processLinks(pname, bid, thetype, trigger, pvalue) {
+    // go through all tiles with a new rule type
+    var idx = thetype + "|" + bid;
+    try {
+        var index = cm_Globals.options["index"];
+        var tileid = index[idx];
+    } catch (e) {
+        console.log("webSocket LINK error: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " error: ", e);
+        return;
+    }
+    
+    // process linked auto-on auto-off lights
+    $('div.user_hidden[command="LINK"][linkval="' + tileid + '"]').each(function() {
+        var ontrigger = "";
+        var subidtrigger = "switch";
+        var tile = $(this).parents("div.thing").last();
+        var tilenum = tile.attr("tile");
+        var trbid = tile.attr("bid");
+        var aid = tile.attr("id").substring(2);
+        var theattr = tile.attr("class");
+        var hubnum = tile.attr("hub");
+        var trtype = tile.attr("type");
+        
+        // handle case where changed tile is linked to this one
+        if (  trtype === "switch" || trtype === "switchlevel" || 
+              trtype==="bulb" || trtype==="light" )
+        {
+            
+            if ( trigger==="motion" && pvalue.motion ==="active" ) {
+                ontrigger = "on";
+            } else if ( trigger==="motion" && pvalue.motion ==="inactive" ) {
+                ontrigger = "off";
+            } else if ( trigger==="contact" && pvalue.contact ==="open" ) {
+                ontrigger = "on";
+            } else if ( trigger==="contact" && pvalue.contact ==="closed" ) {
+                ontrigger = "off";
+            } else if ( trigger==="switch" && pvalue.switch ==="on" ) {
+                ontrigger = "on";
+            } else if ( trigger==="switch" && pvalue.switch ==="off" ) {
+                ontrigger = "off";
+            }
+            // invoke the command for the subscribed tile
+            var currentvalue = $("#a-"+aid+"-"+subidtrigger).html();
+
+            if ( ontrigger && ontrigger !== currentvalue ) {
+                var ajaxcall = "doaction";
+                console.log("LINK trigger for tile: ", tilenum, "trigger: ", trigger, " type: ", trtype, " bid: ", trbid, "subid: ", subidtrigger, " current: ",currentvalue," ontrigger: ", ontrigger);
+                $.post(returnURL, 
+                       {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
+                       function (presult, pstatus) {
+                            if (pstatus==="success" ) {
+                                console.log( ajaxcall + ": POST returned: ", presult );
+                                if ( presult["name"] ) { delete presult["name"]; }
+                                if ( presult["password"] ) { delete presult["password"]; }
+                                updateTile(aid, presult);
+                            }
+                       }, "json"
+                );
+            }
+            
+        }
+    });
 }
 
 function rgb2hsv(r, g, b) {
@@ -2828,7 +2867,11 @@ function processClick(that, thingname) {
                             createModal("modalpopup", showstr, "body", false, pos, function(ui) {
                             });
                         } else if ( ajaxcall==="doaction" && cm_Globals.allthings && 
-                                    command==="LINK" && presult["LINK"] ) {
+                                    command==="LINK" && presult["LINK"] && 
+                                     (linktype==="contact" || linktype==="motion" || 
+                                      linktype==="presence" || linktype==="clock" ||
+                                      linktype==="weather" || linktype==="temperature")
+                                   ) {
                             var showstr = "";
                             var linkresult = presult["LINK"]["linked_val"];
                             $.each(linkresult, function(s, v) {

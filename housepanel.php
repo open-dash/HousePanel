@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.107      New Rule feature that allows non-visual triggers to be added to any tile
  2.106      Macro feature tested and fine tuned to return results in console log
               - tile editor name update fixed to prevent spurious page reloads
               - returns name on switches now for viewing with API; GUI still ignores
@@ -2570,7 +2571,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                     // only process rules here that are tile id based simple actions
                     if ( count($rulepair)===3 && is_numeric($tileid) ) {
                                                 
-                        $tileid = intval($tileid);
+                        // $tileid = intval($tileid);
                         $subid = strval($rulepair[1]);
                         $swval = strval($rulepair[2]);
                         $idx = array_search($tileid, $options["index"]);
@@ -2607,6 +2608,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                         $myheader = array("Authorization: Bearer " . $access_token);
                         $res = curl_call($host, $myheader, $nvpreq, "POST");
                         $response[$tileid] = $res;
+                    } else if ( count($rulepair)===5 ) {
+                        $response[] = $rule;
                     }
                     $n++;
                 }
