@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.108      Modify Rule to enable multiple actions and require 'if: ' to flag if
  2.107      New Rule feature that allows non-visual triggers to be added to any tile
  2.106      Macro feature tested and fine tuned to return results in console log
               - tile editor name update fixed to prevent spurious page reloads
