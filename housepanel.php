@@ -1827,7 +1827,7 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
             $thingvalue = getMusicArt($thingvalue);
         } 
         
-        $tc.= "<div aid=\"$i\" type=\"$thingtype\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
+        $tc.= "<div aid=\"$i\" type=\"$thingtype\" title=\"$thingpr\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         // $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
         $tc.= $thingpr;
         $tc.= "</div>";

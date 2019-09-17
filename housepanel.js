@@ -422,59 +422,116 @@ function processRules(pname, bid, thetype, trigger, pvalue) {
     var idx = thetype + "|" + bid;
     try {
         var index = cm_Globals.options["index"];
-        var tileid = index[idx];
+        var tileid = index[idx].toString();
     } catch (e) {
         console.log("webSocket RULE error: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " error: ", e);
         return;
     }
     
+    // rule structure
+    // if: tile=num[= or < or > or !]value, tile=num=value[=attr], tile=num=attr=[attr]...
+    // num is the tile number and value is the comparison text or value string
+    // the symbol between num and value determines if this is an equal, less, greater, or not equal test
+    // the attr variable is optional but if provided will be sent to the api
+    // 
+    
     // construct the if phrase for the trigger
-    var ifphrase = tileid + "=" + trigger + "=" + pvalue[trigger];
+    var regpattern = /if\s*[:| ]\s*(\d*)\s*=\s*([\w\s-]*)(=|<|>|!)\s*(.*)/;
+    var itempattern =  /(\d*)\s*=\s*([\w\s-]*)\s*=\s*(.*)/;
+    var itempattern2 = /(\d*)\s*=\s*([\w\s-]*)\s*=\s*(.*)=(.*)/;
+    var regsplit = /[,;]/;
+    var ifvalue = pvalue[trigger];
     
     // print some debug info
     if ( LOGWEBSOCKET ) {
-        console.log("webSocket RULE - name: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " tileid: ", tileid, " if: ", ifphrase);
+        console.log("webSocket RULE - name: ", pname, " id: ", bid, " type: ", thetype, " trigger: ", trigger, " tileid: ", tileid);
     }
 
     // process all tiles that subscribe to this trigger
     $('div.user_hidden[command="RULE"]').each(function() {
         var linkval = $(this).attr("linkval");
-        var parts = linkval.split("=");
-        var tile = $(this).parents("div.thing").last();
-        var tilenum = tile.attr("tile");
-        var trbid = tile.attr("bid");
-        var aid = tile.attr("id").substring(2);
-        var theattr = tile.attr("class");
-        var hubnum = tile.attr("hub");
-        var trtype = tile.attr("type");
         
-        // if-then rules differ from directed rules by having 5 elements
-        // and only one can be given as opposed to any number of directed rules
-        // the first three elements are the same as directed rules
-        // the last two parameters tell which subid to active and to what value
-        // the first three parameters are the tile, subid, and value to monitor
-        if ( linkval.startsWith(ifphrase) && parts.length===5 ) {
-            var subidtrigger = parts[3];
-            var ontrigger = parts[4];
+        // split the commands into trigger and other commands
+        var testcommands = linkval.split(regsplit);
+        var triggercom = testcommands[0].trim();
+        var res = triggercom.match(regpattern);
+        var ismatch = false;
+        
+        if ( testcommands.length > 1 && res ) {
             
-            // invoke the command for the subscribed tile
-            var currentvalue = $("#a-"+aid+"-"+subidtrigger).html();
-            console.log("Rule trigger for tile: ", tilenum, " type: ", trtype, " bid: ", trbid, "subid: ", subidtrigger, " current: ",currentvalue," ontrigger: ", ontrigger);
-
-            if ( ontrigger !== currentvalue ) {
-                var ajaxcall = "doaction";
-                $.post(returnURL, 
-                       {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
-                       function (presult, pstatus) {
-                            if (pstatus==="success" ) {
-                                console.log( ajaxcall + ": POST returned: ", presult );
-                                // if ( presult["name"] ) { delete presult["name"]; }
-                                // if ( presult["password"] ) { delete presult["password"]; }
-                                // updateTile(aid, presult);
-                                // updAll(subidtrigger,aid,trbid,trtype,hubnum,presult);
-                            }
-                       }, "json"
+            var matchtile = res[1].trim();
+            var matchsubid = res[2].trim();
+            var matchop = res[3];
+            var matchval = res[4].trim();
+                
+            // check to see if this custom tile matches the rule specification
+            // to match the tile number and the subid must match the trigger
+            // and the rule operand must be either =, <, >, or !
+            if ( matchtile===tileid && matchsubid===trigger ) {
+                ismatch = ( 
+                    matchop==="=" && matchval===ifvalue ||
+                    matchop==="!" && matchval!==ifvalue ||
+                    matchop==="<" && matchval < ifvalue ||
+                    matchop===">" && matchval > ifvalue 
                 );
+            }
+        }
+        
+        // console.log("ismatch: ", ismatch, " tileid: ", tileid, " linkval: ", linkval, " res: ", res, " testcommands: ", testcommands);
+        // process all the actions requested if the if conditions are met
+        // this loops through all the actions specified after the trigger test
+        // the triggering tile must exist on the panel for this to work
+        if ( ismatch ) {
+            var i;
+            for ( i= 1; i < testcommands.length; i++ ) {
+                
+                var itemaction = testcommands[i].trim();
+                var items = itemaction.match(itempattern);
+                var items2 = itemaction.match(itempattern2);
+                
+                if ( items ) {
+                    
+                    // get the tile info for this rule item
+                    // this pulls the items from the regular expression variables
+                    var tilenum = items[1].trim();
+                    var subidtrigger = items[2].trim();
+                    var ontrigger;
+                    var theattr;
+                    
+                    // get the first tile on the panel that matches this tile number
+                    var tile = $('div.panel div.thing[tile="'+tilenum+'"]').first();
+                    
+                    if ( tile ) {
+                        var aid = tile.attr("id").substring(2);
+                        var trbid = tile.attr("bid");
+                        if ( items2 ) {
+                            ontrigger = items2[3].trim();
+                            theattr = items2[4].trim();
+                        } else {
+                            ontrigger = items[3];
+                            // theattr = $("a-"+aid+"-"+subidtrigger).attr("class");
+                            theattr = "";
+                        }
+                        var hubnum = tile.attr("hub");
+                        var trtype = tile.attr("type");
+                        // invoke the command for the subscribed tile if it will make a difference
+                        // var currentvalue = $("#a-"+aid+"-"+subidtrigger).html();
+
+                        console.log("Rule trigger for tile: ", tilenum, " type: ", trtype, " id: ", trbid, "subid: ", subidtrigger, " value: ", ontrigger, " attr: ", theattr);
+                        var ajaxcall = "doaction";
+                        $.post(returnURL, 
+                               {useajax: ajaxcall, id: trbid, tile: tilenum, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
+                               function (presult, pstatus) {
+                                    if (pstatus==="success" ) {
+                                        console.log( ajaxcall + ": POST returned: ", presult );
+                                        // if ( presult["name"] ) { delete presult["name"]; }
+                                        // if ( presult["password"] ) { delete presult["password"]; }
+                                        // updateTile(aid, presult);
+                                    }
+                               }, "json"
+                        );
+                    }
+                }
             }
         }
     });
