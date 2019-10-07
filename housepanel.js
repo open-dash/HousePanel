@@ -213,10 +213,10 @@ function setupUserOpts() {
         console.log("error - valid options file not found");
         return;
     } else {
-        console.log("options config: ", options.config)
+        console.log("options config: ", options.config);
     }
     var config = options.config;
-
+    
     // we could disable this timer loop
     // we also grab timer from each hub setting now
     // becuase we now do on-demand updates via webSockets
@@ -404,9 +404,11 @@ function setupWebsocket()
         // since we only need one of the clients to execute rules
         // rules and link triggers do not update the screen
         // so you must have the node pusher app installed to keep things synced
-        if ( client===clientcount ) {
-            processRules(pname, bid, thetype, trigger, pvalue);
-            processLinks(pname, bid, thetype, trigger, pvalue);
+        if ( cm_Globals.options && client===clientcount ) {
+            if ( cm_Globals.options["rules"]==="true" || cm_Globals.options["rules"]===true ) {
+                processRules(pname, bid, thetype, trigger, pvalue);
+                processLinks(pname, bid, thetype, trigger, pvalue);
+            } 
         }
     };
     

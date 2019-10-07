@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.109      Add options parameter to enable or disable rules since it can be slow
  2.108      Modify Rule to enable multiple actions and require 'if: ' to flag if
  2.107      New Rule feature that allows non-visual triggers to be added to any tile
  2.106      Macro feature tested and fine tuned to return results in console log
@@ -3510,6 +3511,10 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $configoptions = $options["config"];
     $skin = getSkin($options);
     $kioskoptions = $configoptions["kiosk"];
+    $ruleoptions = "false";
+    if (array_key_exists("rules", $configoptions)) {
+        $ruleoptions = $configoptions["rules"];
+    }
     $hubs = $configoptions["hubs"];
     
     $tc = "";
@@ -3527,8 +3532,13 @@ function getOptionsPage($options, $retpage, $allthings, $sitename) {
     $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/>";
     $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     
-    $kstr = ($kioskoptions===true || $kioskoptions=="true" || $kioskoptions==="1" || $kioskoptions==="yes") ? "checked" : "";
+    $kstr = ($kioskoptions===true || $kioskoptions==="true" || $kioskoptions==="1" || $kioskoptions==="yes") ? "checked" : "";
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/>";
+    
+    $tc.= "<label for=\"ruleid\" class=\"kioskoption\">Enable Rules? </label>";
+    $rstr = ($ruleoptions===true || $ruleoptions==="true" || $ruleoptions==="1" || $ruleoptions==="yes") ? "checked" : "";
+    $tc.= "<input id=\"ruleid\" width=\"24\" type=\"checkbox\" name=\"rules\"  value=\"$ruleoptions\" $rstr/>";
+    
     $tc.= "</div>";
     
     $tc.= "<div class=\"filteroption\">Accuweather City: <input id=\"accucityid\" width=\"120\" type=\"text\" name=\"accucity\"  value=\"\"/>";
@@ -3906,6 +3916,7 @@ function processOptions($optarray) {
     // get all the rooms checkboxes and reconstruct list of active things
     // note that the list of checkboxes can come in any random order
     $options["config"]["kiosk"] = "false";
+    $options["config"]["rules"] = "false";
     foreach($optarray as $key => $val) {
         //skip the returns from the submit button and the flag
         if ($key==="options" || $key==="submitoption" || $key==="submitrefresh" ||
@@ -3935,8 +3946,15 @@ function processOptions($optarray) {
             }
             
         }
+        
+        // if the box is checked th3s means kiosk mode is true
         else if ( $key==="kiosk") {
             $options["config"]["kiosk"] = "true";
+        }
+
+        // if box is checked this means rules are on
+        else if ( $key==="rules") {
+            $options["config"]["rules"] = "true";
         }
         
         // write the frame2 html file
