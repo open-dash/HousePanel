@@ -1065,7 +1065,8 @@ function loadSubSelect(str_type, firstsub, thingindex) {
         
         // set the first onoff state
         var onoff = getOnOff(str_type, subid);
-        $("#onoffTarget").html(onoff[0]);
+//        $("#onoffTarget").html(onoff[0]);
+        $("#onoffTarget").html("");
         
         initColor(str_type, subid, thingindex);
         initDialogBinds(str_type, thingindex);
@@ -1856,7 +1857,7 @@ function initColor(str_type, subid, thingindex) {
             ish3 = $("div.overlay." + subid).css("display");
             ish4 = $("div.overlay." + subid +".v_"+thingindex + " div." + subid + ".p_"+thingindex).css("display");
         }
-        console.log ("hidden check: ", subid, ish1, ish2, ish3, ish4);
+        // console.log ("hidden check: ", subid, ish1, ish2, ish3, ish4);
         if ( ish1 === "none" || ish2 === "none" || ish3 ==="none" || ish4==="none") {
             $("#isHidden").prop("checked", true);
             defaultOverlay = "block";

@@ -85,7 +85,7 @@ read -p " Enter y for yes or n for no. (default= $hppush): " nhppush
 
 userskin="n"
 nuserskin="n"
-echo -e "$Cyan Do you have a custom skin director? $Color_Off"
+echo -e "$Cyan Do you have a custom skin directory? $Color_Off"
 read -p " If so, enter name here or accept default of no: " nuserskin
 [ -n "$nhppush" ] && userskin=$nuserskin
 

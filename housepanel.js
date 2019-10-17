@@ -30,7 +30,7 @@ var reordered = false;
 // use the timers options to turn off polling
 var disablepub = false;
 var disablebtn = false;
-var LOGWEBSOCKET = false;
+var LOGWEBSOCKET = true;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
