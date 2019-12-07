@@ -191,10 +191,15 @@ input.startupinp {
     border-left: #cccccc solid 3px;
     border-right: black solid 3px;
     border-bottom: black solid 3px;
-    width: 60%;
+    width: 600px;
     position: absolute;
     left: 220px;
     display: inline-block;
+}
+
+div.filteroption div {
+    margin-bottom: 10px;
+    display: block;
 }
 
 select.startupinp {
@@ -274,7 +279,7 @@ ul.ui-tabs-nav {
     display: inline-block;
 }
 
-div.skinoption, .kioskoption, div.filteroption, td.optname {
+div.skinoption, .kioskoption, div.filteroption, td label.optname {
     font-size: 12pt;
     font-weight: bold;
     margin-left: 8px;
@@ -300,9 +305,13 @@ table.catoptions {
 table.catoptions input {
     margin-left: 15px;
 }
-td.optname {
+td label.optname {
     padding-left: 5px;
     padding-right: 30px;
+}
+td label.optname:hover {
+    background: black;
+    color: white;
 }
 
 form {
@@ -514,6 +523,10 @@ span.typeopt, span.ital {
     font-weight: normal;    font-family: "Raleway", serif;    font-style: italic;
     color: #666666; margin-left: 5px;
 }
+span.indent {
+    position: absolute;
+    left: 220px;
+}
 div.processoptions {
     margin-left: 0px; margin-top: 0px;    
     padding-top: 10px;
@@ -576,22 +589,41 @@ div.restoretabs.hidden, div.thing.hidden.catalog-thing {
 }
 div.filteroption div.smallbutton {
     padding: 4px;
-    height: 1.8em;
+    height: auto;
     width: 60px;
     display: inline-block;
     font-size: 12pt;
     background-color: #cccccc;
+    color: black;
     border-left: solid 2px gray;
     border-top: solid 2px gray;
     border-right: solid 3px black;
     border-bottom: solid 3px black;
     margin-left: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     text-align: center;
     cursor: pointer;
 }
-
+div.filteroption div.radiobutton {
+    color: black;
+    margin-left: 10px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    width: auto; 
+    height: auto;
+    display: block;
+    text-align: left;
+    padding-top: 2px;
+}
+div.radiobutton label {
+    margin-top: 4px; margin-bottom: 4px;
+    margin-left: 10px;
+}
 div.filteroption div.smallbutton:hover {
+    background-color: black;
+    color: white;
+}
+div.radiobutton label:hover {
     background-color: black;
     color: white;
 }

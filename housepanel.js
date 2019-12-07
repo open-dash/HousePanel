@@ -234,9 +234,9 @@ function setupUserOpts() {
             var timerval;
             var hubId = hub.hubId;
             if ( hub.hubTimer ) {
-                timerval = hub.hubTimer;
+                timerval = parseInt(hub.hubTimer, 10);
             } else {
-                timerval = 60000;
+                timerval = 300000;
             }
             if ( timerval && timerval >= 1000 ) {
                 setupTimer(timerval, "all", hubId);
@@ -247,10 +247,12 @@ function setupUserOpts() {
     // try to get timers
     try {
         var fast_timer = config.fast_timer;
+        fast_timer = parseInt(fast_timer, 10);
         var slow_timer = config.slow_timer;
+        slow_timer = parseInt(slow_timer, 10);
     } catch(err) {
         console.log ("Couldn't retrieve timers; using defaults. err: ", err);
-        fast_timer = 10000;
+        fast_timer = 0;
         slow_timer = 3600000;
     }
 
@@ -272,19 +274,20 @@ function setupUserOpts() {
         nodejsUrl = null;
     }
     
+    var tzoffset;
     try {
-        timezone = $("input[name='timezone']").val();
-        timezone = parseInt(timezone, 10);
+        tzoffset = $("input[name='tzoffset']").val();
+        tzoffset = parseInt(tzoffset, 10);
     } catch(err) {
         console.log("Error attempting to retrieve timezone offset. err: ", err);
-        timezone = 0;
+        tzoffset = 0;
     }
-    clockUpdater(timezone);
+    clockUpdater(tzoffset);
 
     // periodically check for socket open and if not open reopen
     if ( webSocketUrl ) {
         wsSocketCheck();
-        wsinterval = setInterval(wsSocketCheck, 120000);
+        wsinterval = setInterval(wsSocketCheck, 300000);
     }
 
 }
@@ -368,10 +371,10 @@ function setupWebsocket()
             }
             // skip music track descriptions that start with grouped to avoid
             // overwriting more useful variant also typically sent previously
-            var desc = pvalue["trackDescription"];
-            if ( desc && desc.startsWith("Grouped with") ) {
-                delete( pvalue["trackDescription"] );
-            }
+//            var desc = pvalue["trackDescription"];
+//            if ( desc && desc.startsWith("Grouped with") ) {
+//                delete( pvalue["trackDescription"] );
+//            }
             
             if ( pvalue["status"] === "stopped" ) {
                 pvalue["trackDescription"] = "None";
@@ -1472,9 +1475,10 @@ function setupButtons() {
     if ( pagename==="main" && !disablebtn ) {
         $("#controlpanel").on("click", "div.formbutton", function(evt) {
             var buttonid = $(this).attr("id");
+            var textname = $(this).text();
             if ( $(this).hasClass("confirm") ) {
                 var pos = {top: 100, left: 100};
-                createModal("modalexec","Perform " + buttonid + " operation... Are you sure?", "body", true, pos, function(ui, content) {
+                createModal("modalexec","Perform " + textname + " operation... Are you sure?", "body", true, pos, function(ui, content) {
                     var clk = $(ui).attr("name");
                     if ( clk==="okay" ) {
                         execButton(buttonid);
@@ -1564,9 +1568,6 @@ function setupButtons() {
         $("#authhubwrapper").on('click',function(evt) {
             $("#newthingcount").html("");
         });
-        $("#tskwrapper").on('click',function(evt) {
-            $("#newthingcount").html("");
-        });
         
         // handle auth submissions
         // add on one time info from user
@@ -1580,23 +1581,6 @@ function setupButtons() {
             } catch(err) {
                 evt.stopPropagation(); 
                 alert("Something went wrong when trying to submit your auth...\n" + err.message);
-                return;
-            }
-            
-            var tz = $("#newtimezone").val();
-            var skindir = $("#newskindir").val();
-            var port = $("#newport").val();
-            var webSocketServerPort = $("#newsocketport").val();
-            var fast_timer = $("#newfast_timer").val();
-            var slow_timer = $("#newslow_timer").val();
-            var uname = $("#uname").val();
-            var pword = $("#pword").val();
-
-            // **********************************************
-            // perform input checking
-            // **********************************************
-            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
-                evt.stopPropagation(); 
                 return;
             }
             
@@ -1623,21 +1607,12 @@ function setupButtons() {
             
             // set hubId to the value in the drop down selection
             values.hubId = hubId;
-            
             values.hubTimer = formData.get("hubTimer");
-            values.timezone = tz;
-            values.skindir = skindir;
-            values.use_kiosk = false;
-            values.port = port;
-            values.webSocketServerPort = webSocketServerPort;
-            values.fast_timer = fast_timer;
-            values.slow_timer = slow_timer;
-            values.uname = uname;
-            values.pword = pword;
             
             $.post(returnURL, values, function(presult, pstatus) {
                 clearInterval(blinkauth);
                 console.log("hub auth: status: ", pstatus, " result: ", presult);
+                
                  // alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
@@ -1655,45 +1630,54 @@ function setupButtons() {
                     window.location.href = location;
                 }
             },"json");
-            // request.send(formData);
-            
             evt.stopPropagation(); 
         });
 
+        // TODO: send user to options page if first time
+        // user is done authorizing so make an API call to clean up
+        // and then return to the main app
         $("#cancelauth").click(function(evt) {
-            var tz = $("#newtimezone").val();
-            var skindir = $("#newskindir").val();
-            var port = $("#newport").val();
-            var webSocketServerPort = $("#newsocketport").val();
-            var fast_timer = $("#newfast_timer").val();
-            var slow_timer = $("#newslow_timer").val();
-            var uname = $("#uname").val();
-            var pword = $("#pword").val();
-            var hubId = $("#pickhub").val();
-
-            // **********************************************
-            // perform input checking
-            // **********************************************
-            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
-                evt.stopPropagation(); 
-                return;
-            }
-            
-            var ntc = "Processing hub information to create your dashboard...";
-            $("#newthingcount").html(ntc).fadeTo(400, 0.1 ).fadeTo(400, 1);
-            var blinker = setInterval(function() {
-                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
-            }, 1000);
-            
-            var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
-                            pword: pword, kiosk: false, port: port, webSocketServerPort: webSocketServerPort,
-                            fast_timer: fast_timer, slow_timer: slow_timer, hubId: hubId};
+//            var tz = $("#newtimezone").val();
+//            var skindir = $("#newskindir").val();
+//            var port = $("#newport").val();
+//            var webSocketServerPort = $("#newsocketport").val();
+//            var fast_timer = $("#newfast_timer").val();
+//            var slow_timer = $("#newslow_timer").val();
+//            var uname = $("#uname").val();
+//            var pword = $("#pword").val();
+//            var hubId = $("#pickhub").val();
+//
+//            // **********************************************
+//            // perform input checking
+//            // **********************************************
+//            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
+//                evt.stopPropagation(); 
+//                return;
+//            }
+//            
+//            var ntc = "Processing hub information to create your dashboard...";
+//            $("#newthingcount").html(ntc).fadeTo(400, 0.1 ).fadeTo(400, 1);
+//            var blinker = setInterval(function() {
+//                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
+//            }, 1000);
+//            
+//            var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
+//                            pword: pword, kiosk: false, port: port, webSocketServerPort: webSocketServerPort,
+//                            fast_timer: fast_timer, slow_timer: slow_timer, hubId: hubId};
+//            $.post(returnURL, 
+//                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
+//                function (presult, pstatus) {
+//                    clearInterval(blinker);
+//                    if (pstatus==="success") {
+//                        // alert("result= " + presult);
+//                        window.location.href = returnURL;
+//                    }
+//                }
+//            );
             $.post(returnURL, 
-                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
+                {useajax: "cancelauth", id: 1, type: "none", value: "none"},
                 function (presult, pstatus) {
-                    clearInterval(blinker);
                     if (pstatus==="success") {
-                        // alert("result= " + presult);
                         window.location.href = returnURL;
                     }
                 }
@@ -1945,6 +1929,10 @@ function setupSaveButton() {
 function showType(ischecked, theval) {
     
     if ( pagename==="options" ) {
+        
+        var hubnum = $('input[name="huboptpick"]').val();
+        console.log("hubnum= " + hubnum);
+        
         $('table.roomoptions tr[type="'+theval+'"]').each(function() {
             if ( ischecked ) {
                 $(this).attr("class", "showrow");
@@ -1990,10 +1978,9 @@ function setupFilters() {
     
     $('input[name="useroptions[]"]').each(updateClick);
     $('input[name="useroptions[]"]').click(updateClick);
+    // $('input[name="huboptpick"]').click(updateClick);
     
     $("#allid").click(function() {
-//        alert("clicked all");
-        // $("#allid").prop("checked", true);
         $('input[name="useroptions[]"]').each(function() {
             $(this).prop("checked",true);
             $(this).attr("checked",true);
@@ -2006,13 +1993,17 @@ function setupFilters() {
                 $(this).attr("class", "showrow"+odd);
             });
         }
-        if ( $("#catalog") ) {
+        if ( pagename==="main" && $("#catalog") ) {
             $("#catalog div.thing").each(function(){
                 // alert( $(this).attr("class"));
                 if ( $(this).hasClass("hidden") ) {
                     $(this).removeClass("hidden");
                 }
             });
+        }
+        if ( pagename==="options") {
+            $("#hopt_all").prop("checked", true);
+            $("#hopt_all").attr("checked", true);
         }
     });
     
@@ -2027,12 +2018,16 @@ function setupFilters() {
                 $(this).attr("class", "hiderow");
             });
         }
-        if ( $("#catalog") ) {
+        if ( pagename==="main" && $("#catalog") ) {
             $("#catalog div.thing").each(function(){
                 if ( ! $(this).hasClass("hidden") ) {
                     $(this).addClass("hidden");
                 }
             });
+        }
+        if ( pagename==="options") {
+            $("#hopt_all").prop("checked", true);
+            $("#hopt_all").attr("checked", true);
         }
     });
 }
@@ -2251,7 +2246,8 @@ function updateTile(aid, presult) {
                     } catch (err) { console.log(err); }
                 } 
                 
-                if ( (forceit || (value!==oldvalue)) && !value.startsWith("Grouped with") ) {
+                // if ( (forceit || (value!==oldvalue)) && !value.startsWith("Grouped with") ) {
+                if ( forceit || (value!==oldvalue) ) {
                     value = value.trim();
                     
                     console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
