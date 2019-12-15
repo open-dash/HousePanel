@@ -164,12 +164,14 @@ $(document).ready(function() {
     // first try to load fast, if failed do slow
     // this is caused by json_encode hanging in main routine
     // getOptions();
-    getAllthings(false, false);
-    setTimeout(function() {
-        if ( !cm_Globals.allthings ) {
-            getAllthings(false, true);
-        }
-    }, 10000);
+    if ( pagename==="main" || pagename==="options" ) {
+        getAllthings(false, false);
+        setTimeout(function() {
+            if ( !cm_Globals.allthings ) {
+                getAllthings(false, true);
+            }
+        }, 10000);
+    }
     
     // disable return key
     $("body").off("keypress");
@@ -1640,11 +1642,17 @@ function setupButtons() {
         // user is done authorizing so make an API call to clean up
         // and then return to the main app
         $("#cancelauth").click(function(evt) {
+            $("#newthingcount").html("Done... Please wait...").fadeTo(400, 0.1 ).fadeTo(400, 1);
+            var blinkauth = setInterval(function() {
+                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
+            }, 1000);
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none"},
                 function (presult, pstatus) {
                     if (pstatus==="success") {
                         window.location.href = returnURL;
+                    } else {
+                        clearInterval(blinkauth);
                     }
                 }
             );

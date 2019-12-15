@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.111      Minor bugfixes to 2.110 hub auth separation
  2.110      Major rewrite of auth flow to move options to options page
               - username and password are now on the options page
               - bug fixes in timer refresh logic
@@ -761,19 +762,18 @@ function getAuthPage($returl, $hpcode, $hubset=null, $newthings=null) {
     // or if a reauth is requested or when converting old passwords
     $tc.= "<div class=\"greeting\">";
 
-    $tc.="<p>You are seeing this because you either requested a re-authentication " .
-            "or you have not yet authorized a valid SmartThings or Hubitat hub for " .
-            "HousePanel to access your smart home devices. With HousePanel " .
-            "you can use any number and combination of hub types at the same time. " . 
-            "To configure HousePanel you should have the following info about at least one hub: " .
-            "API URL, Client ID, and Client Secret.</p><br />";
+    $tc.="<p>Here is where you link a SmartThings or Hubitat hub to " .
+            "HousePanel to gain access to your smart home devices. " .
+            "You can link any number and combination of hubs. " . 
+            "To link a hub you must have the following info: " .
+            "API URL, Client ID, and Client Secret. " .
+            "</p><br />";
     
-    $tc.= "<p><strong>*** IMPORTANT ***</strong> This information is secret and it will be stored " .
+    $tc.= "<p><strong>*** IMPORTANT ***</strong> Information you provide here is secret and will be stored " .
             "on your server in a configuration file called <i>hmoptions.cfg</i> " . 
-            "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website " .
-            "unless the site is secured via some means such as password protection. A locally hosted " . 
-            "website on a Raspberry Pi is the strongly preferred option. " .
-            "HousePanel periodically stores anonymized and encrypted usage data. " . 
+            "This is why HousePanel should <strong>*** NOT ***</strong> be hosted on a public-facing website. " .
+            "A locally hosted website on a Raspberry Pi is the strongly recommended option. " .
+            "HousePanel does periodically store anonymized and encrypted use frequency data. " . 
             "By proceeding you are agreeing to this practice.</p>";
     $tc.= "</div>";
 
@@ -4039,10 +4039,12 @@ function putStats($hub) {
     $time = strval(time());
     $hubinfo = md5($hub["hubId"]);
     $signature = md5($time . HPVERSION);
+    $hubtype = $hub["hubType"];
     $nvpreq = "hub=" . urlencode($hubinfo) . 
               "&time=" . urlencode($time) . 
               "&version=" . urlencode(HPVERSION) . 
-              "&signature=" . urlencode($signature);
+              "&signature=" . urlencode($signature) .
+              "&hubtype=" . urlencode($hubtype);
     curl_call($host, $headertype, $nvpreq, "POST");
 }
 
@@ -5311,7 +5313,7 @@ function is_ssl() {
             case "cancelauth":
                 // if our user has been removed force hub auth to go to options
                 $uname = getUserName();
-                if ( !array_key_exists("pword", $options) ||
+                if ( $uname === "default" ||
                      !array_key_exists("rooms", $options) ||
                      !array_key_exists("things", $options)
                     ) {
