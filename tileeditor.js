@@ -369,6 +369,9 @@ function initDialogBinds(str_type, thingindex) {
         } else {
             addCSSRule(getCssRuleTarget(str_type, 'tile', thingindex), rule);
             addCSSRule(getCssRuleTarget(str_type, 'head', thingindex), rule);
+            if ( str_type==="switchlevel" || str_type==="bulb" ) {
+                addCSSRule("div.overlay.level.v_"+thingindex+" .ui-slider", rule);
+            }
         }
         
         // handle special case of thermostats that need to have widths fixed
@@ -434,6 +437,9 @@ function initDialogBinds(str_type, thingindex) {
             addCSSRule(getCssRuleTarget(str_type, 'panel', thingindex), rule);
         } else {
             addCSSRule(getCssRuleTarget(str_type, 'tile', thingindex), rule);
+            if ( str_type==="switchlevel" || str_type==="bulb" ) {
+                addCSSRule("div.overlay.level.v_"+thingindex+" .ui-slider", rule);
+            }
         }
         
         if ( str_type === "thermostat" ) {

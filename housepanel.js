@@ -7,6 +7,7 @@ cm_Globals.thingidx = null;
 cm_Globals.allthings = null;
 cm_Globals.options = null;
 cm_Globals.returnURL = "housepanel.php";
+cm_Globals.hubId = "all";
 
 var modalStatus = 0;
 var modalWindows = [];
@@ -1126,8 +1127,9 @@ function thingDraggable(thing, snap) {
 function setupDraggable() {
 
     // get the catalog content and insert after main tabs content
+    var hubpick = cm_Globals.hubId;
     var xhr = $.post(returnURL, 
-        {useajax: "getcatalog", id: 0, type: "catalog", value: "none", attr: "none"},
+        {useajax: "getcatalog", id: 0, type: "catalog", value: "none", attr: hubpick},
         function (presult, pstatus) {
             if (pstatus==="success") {
                 $("#tabs").after(presult);
@@ -1580,7 +1582,8 @@ function setupButtons() {
                 var formData = new FormData(myform);
             } catch(err) {
                 evt.stopPropagation(); 
-                alert("Something went wrong when trying to submit your auth...\n" + err.message);
+                alert("Something went wrong when trying to authenticate your hub...\n" + err.message);
+                console.log("Error: ", err);
                 return;
             }
             
@@ -1637,43 +1640,6 @@ function setupButtons() {
         // user is done authorizing so make an API call to clean up
         // and then return to the main app
         $("#cancelauth").click(function(evt) {
-//            var tz = $("#newtimezone").val();
-//            var skindir = $("#newskindir").val();
-//            var port = $("#newport").val();
-//            var webSocketServerPort = $("#newsocketport").val();
-//            var fast_timer = $("#newfast_timer").val();
-//            var slow_timer = $("#newslow_timer").val();
-//            var uname = $("#uname").val();
-//            var pword = $("#pword").val();
-//            var hubId = $("#pickhub").val();
-//
-//            // **********************************************
-//            // perform input checking
-//            // **********************************************
-//            if ( !checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) ) {
-//                evt.stopPropagation(); 
-//                return;
-//            }
-//            
-//            var ntc = "Processing hub information to create your dashboard...";
-//            $("#newthingcount").html(ntc).fadeTo(400, 0.1 ).fadeTo(400, 1);
-//            var blinker = setInterval(function() {
-//                $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
-//            }, 1000);
-//            
-//            var attrdata = {timezone: tz, skindir: skindir, uname: uname, 
-//                            pword: pword, kiosk: false, port: port, webSocketServerPort: webSocketServerPort,
-//                            fast_timer: fast_timer, slow_timer: slow_timer, hubId: hubId};
-//            $.post(returnURL, 
-//                {useajax: "cancelauth", id: 1, type: "none", value: "none", attr: attrdata},
-//                function (presult, pstatus) {
-//                    clearInterval(blinker);
-//                    if (pstatus==="success") {
-//                        // alert("result= " + presult);
-//                        window.location.href = returnURL;
-//                    }
-//                }
-//            );
             $.post(returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none"},
                 function (presult, pstatus) {
@@ -1928,13 +1894,12 @@ function setupSaveButton() {
 
 function showType(ischecked, theval) {
     
+    var hubpick = cm_Globals.hubId;
+        
     if ( pagename==="options" ) {
-        
-        var hubnum = $('input[name="huboptpick"]').val();
-        console.log("hubnum= " + hubnum);
-        
         $('table.roomoptions tr[type="'+theval+'"]').each(function() {
-            if ( ischecked ) {
+            var hubId = $(this).children("td.hubname").attr("hubid");
+            if ( ischecked && (hubpick===hubId || hubpick==="all") ) {
                 $(this).attr("class", "showrow");
             } else {
                 $(this).attr("class", "hiderow");
@@ -1949,7 +1914,7 @@ function showType(ischecked, theval) {
                 rowcnt++;
                 rowcnt % 2 === 0 ? odd = " odd" : odd = "";
                 $(this).attr("class", "showrow"+odd);
-           }
+            }
         });
     }
     
@@ -1957,9 +1922,10 @@ function showType(ischecked, theval) {
     if ( $("#catalog") ) {
         $("#catalog div.thing[type=\""+theval+"\"]").each(function(){
             // alert( $(this).attr("class"));
-            if ( ischecked && $(this).hasClass("hidden") ) {
+            var hubId = $(this).attr("hubid");
+            if ( ischecked && (hubpick===hubId || hubpick==="all") && $(this).hasClass("hidden") ) {
                 $(this).removeClass("hidden");
-            } else if ( ! ischecked && ! $(this).hasClass("hidden") ) {
+            } else if ( (!ischecked || (hubpick!==hubId && hubpick!=="all")) && ! $(this).hasClass("hidden") ) {
                 $(this).addClass("hidden");
             }
         });
@@ -1975,60 +1941,42 @@ function setupFilters() {
         var ischecked = $(this).prop("checked");
         showType(ischecked, theval);
     }
-    
+
+    // initial page load set up all rows
     $('input[name="useroptions[]"]').each(updateClick);
+    
+    // upon click update the right rows
     $('input[name="useroptions[]"]').click(updateClick);
-    // $('input[name="huboptpick"]').click(updateClick);
+
+    // hub specific filter
+    $('input[name="huboptpick"]').click(function() {
+        // get the id of the hub type we just picked
+        cm_Globals.hubId = $(this).val();
+        // var hubpick = cm_Globals.hubId;
+        // alert("hubpick= " + hubpick);
+
+        // reset all filters using hub setting
+        $('input[name="useroptions[]"]').each(updateClick);
+    });
     
     $("#allid").click(function() {
         $('input[name="useroptions[]"]').each(function() {
             $(this).prop("checked",true);
             $(this).attr("checked",true);
         });
-        if ( $("#optionstable") ) {
-            var rowcnt= 0;
-            $('table.roomoptions tr').each(function() {
-                rowcnt++;
-                rowcnt % 2 == 0 ? odd = " odd" : odd = "";
-                $(this).attr("class", "showrow"+odd);
-            });
-        }
-        if ( pagename==="main" && $("#catalog") ) {
-            $("#catalog div.thing").each(function(){
-                // alert( $(this).attr("class"));
-                if ( $(this).hasClass("hidden") ) {
-                    $(this).removeClass("hidden");
-                }
-            });
-        }
-        if ( pagename==="options") {
-            $("#hopt_all").prop("checked", true);
-            $("#hopt_all").attr("checked", true);
-        }
+        
+        // update the main table using standard logic
+        $('input[name="useroptions[]"]').each(updateClick);
     });
     
     $("#noneid").click(function() {
-        // $("#noneid").prop("checked", true);
         $('input[name="useroptions[]"]').each(function() {
             $(this).prop("checked",false);
             $(this).attr("checked",false);
         });
-        if ( $("#optionstable") ) {
-            $('table.roomoptions tr').each(function() {
-                $(this).attr("class", "hiderow");
-            });
-        }
-        if ( pagename==="main" && $("#catalog") ) {
-            $("#catalog div.thing").each(function(){
-                if ( ! $(this).hasClass("hidden") ) {
-                    $(this).addClass("hidden");
-                }
-            });
-        }
-        if ( pagename==="options") {
-            $("#hopt_all").prop("checked", true);
-            $("#hopt_all").attr("checked", true);
-        }
+        
+        // update the main table using standard logic
+        $('input[name="useroptions[]"]').each(updateClick);
     });
 }
 

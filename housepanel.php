@@ -10,7 +10,10 @@
  */
 $devhistory = "
  2.110      Major rewrite of auth flow to move options to options page
-              - Bug fixes in timer refresh logic
+              - username and password are now on the options page
+              - bug fixes in timer refresh logic
+              - bug fix to tile width to include slider for bulbs and switches
+              - add hub filter to options and tile catalog drag pages
  2.109      Add options parameter to enable or disable rules since it can be slow
  2.108      Modify Rule to enable multiple actions and require 'if: ' to flag if
  2.107      New Rule feature that allows non-visual triggers to be added to any tile
@@ -1911,13 +1914,35 @@ function getNewPage(&$cnt, $allthings, $roomtitle, $kroom, $things, $options, $k
     return $tc;
 }
 
-function getCatalog($allthings) {
+function getCatalog($allthings, $hubpick) {
     $thingtypes = getTypes();
     sort($thingtypes);
     $options = readOptions();
     $useroptions = $options["useroptions"];
+    $configoptions = $options["config"];
+    $hubs = $configoptions["hubs"];
     $tc = "";
     $tc.= "<div id=\"catalog\">";
+    
+    // if more than one hub then let user pick which one to show
+    if ( count($hubs) > 1 ) {
+        $tc.= "<div class=\"filteroption\">Hub Filters: ";
+        $hid = "hopt_all";
+        $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='all' checked='1'><label for='$hid'>All Hubs</label></div>";
+        $hid = "hopt_none";
+        $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='none'><label for='$hid'>No Hub</label></div>";
+        $hubcount = 0;
+        foreach ($hubs as $hub) {
+            $hubName = $hub["hubName"];
+            $hubType = $hub["hubType"];
+            $hubId = strval($hub["hubId"]);
+            $hid = "hopt_" . $hubcount;
+            $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='$hubId'><label for='$hid'>$hubName ($hubType)</label></div>";
+            $hubcount++;
+        }
+        $tc.= "</div>";
+    }
+    
     $tc.= "<div class=\"filteroption\">Option Filters: ";
     $tc.= "<div id=\"allid\" class=\"smallbutton\">All</div>";
     $tc.= "<div id=\"noneid\" class=\"smallbutton\">None</div>";
@@ -1942,26 +1967,26 @@ function getCatalog($allthings) {
     $i= 0;
     foreach($allthings as $thesensor) {
         $bid = $thesensor["id"];
-//        if ( is_numeric($bid) ) {
-//            $bid = "h_" . $bid;
-//        }
-        // $thingvalue = $thesensor["value"];
         $thingtype = $thesensor["type"];
         $thingname = $thesensor["name"];
+        $hubId = strval($thesensor["hubnum"]);
+        if ( $hubId==="-1" ) {
+            $hubId = "none";
+        }
 
-        if (strlen($thingname) > 32 ) {
-            $thingpr = substr($thingname,0,30) . " ...";
+        if (strlen($thingname) > 23 ) {
+            $thingpr = substr($thingname,0,23) . " ...";
         } else {
             $thingpr = $thingname;
         }
         
-        if (in_array($thingtype, $useroptions)) {
+        if (in_array($thingtype, $useroptions) && ($hubpick===$hubId || $hubpick==="all")) {
             $hide = "";
         } else {
             $hide = "hidden ";
         }
 
-        $tc.= "<div id=\"cat-$i\" bid=\"$bid\" type=\"$thingtype\" ";
+        $tc.= "<div id=\"cat-$i\" bid=\"$bid\" type=\"$thingtype\" hubid=\"$hubId\" ";
         $tc.= "panel=\"catalog\" class=\"thing " . $hide . "catalog-thing\">"; 
         $tc.= "<div class=\"thingname\">$thingpr</div>";
         $tc.= "<div class=\"thingtype\">$thingtype</div>";
@@ -3294,8 +3319,19 @@ function getCustomCount($stype, $options) {
 
 function getUserName() {
     $uname = filter_input(INPUT_COOKIE, "uname", FILTER_SANITIZE_STRING);
-    if ( !$uname ) { $uname = ""; }
+    if ( !$uname ) { $uname = "default"; }
     return $uname;
+}
+
+function setDefaultOptions($configoptions) {
+    $configoptions["port"] = "19234";
+    $configoptions["webSocketServerPort"] = "1337";
+    $configoptions["fast_timer"] = "0";
+    $configoptions["slow_timer"] = "300000";
+    $configoptions["timezone"] = date_default_timezone_get();
+    $configoptions["rules"] = "false";
+    $configoptions["kiosk"] = "false";
+    return $configoptions;
 }
 
 // create page to display in a submit form to set options
@@ -3308,19 +3344,19 @@ function getOptionsPage($options, $retpage, $allthings) {
     $indexoptions = $options["index"];
     $useroptions = $options["useroptions"];
     $configoptions = $options["config"];
-    $skin = getSkin($options);
-    $kioskoptions = $configoptions["kiosk"];
-    $ruleoptions = "false";
-    if (array_key_exists("rules", $configoptions)) {
-        $ruleoptions = $configoptions["rules"];
-    }
     $hubs = $configoptions["hubs"];
-    $timezone = $configoptions["timezone"];
     $uname = getUserName();
+    $skin = getSkin($options, $uname);
+    if ( !array_key_exists("port", $configoptions) ) {
+        $configoptions = setDefaultOptions($configoptions);
+    }
     $port = $configoptions["port"];
     $webSocketServerPort = $configoptions["webSocketServerPort"];
     $fast_timer = $configoptions["fast_timer"];
     $slow_timer = $configoptions["slow_timer"];
+    $kioskoptions = $configoptions["kiosk"];
+    $ruleoptions = $configoptions["rules"];
+    $timezone = $configoptions["timezone"];
     
     $tc = "";
     $tc.= "<h3>" . APPNAME . " Options</h3>";
@@ -3371,15 +3407,19 @@ function getOptionsPage($options, $retpage, $allthings) {
     
     // if more than one hub then let user pick which one to show
     if ( count($hubs) > 1 ) {
-        $tc.= "<br /><div class=\"filteroption\">Hub Filters: ";
+        $tc.= "<div class=\"filteroption\">Hub Filters: ";
         $hid = "hopt_all";
         $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='all' checked='1'><label for='$hid'>All Hubs</label></div>";
+        $hid = "hopt_none";
+        $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='none'><label for='$hid'>No Hub</label></div>";
+        $hubcount = 0;
         foreach ($hubs as $hub) {
             $hubName = $hub["hubName"];
             $hubType = $hub["hubType"];
             $hubId = $hub["hubId"];
-            $hid = "hopt_" . $hubId;
-            $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='$hubName'><label for='$hid'>$hubName ($hubType)</label></div>";
+            $hid = "hopt_" . $hubcount;
+            $tc.= "<div class='radiobutton'><input id='$hid' type='radio' name='huboptpick' value='$hubId'><label for='$hid'>$hubName ($hubType)</label></div>";
+            $hubcount++;
         }
         $tc.= "</div>";
     }
@@ -3444,9 +3484,11 @@ function getOptionsPage($options, $retpage, $allthings) {
         if ( $hubnum === -1 ) {
             $hubType = "None";
             $hubStr = "None";
+            $hubId = "none";
         } else {
             $hubType = $hub["hubType"];
             $hubStr = $hub["hubName"];
+            $hubId = $hub["hubId"];
         }
 
         // get the tile index number
@@ -3475,8 +3517,8 @@ function getOptionsPage($options, $retpage, $allthings) {
         $tc.= $thingname . "<span class=\"typeopt\"> (" . $thetype . ")</span>";
         $tc.= "</td>";
         
-        $tc.="<td class=\"hubname\">";
-        $tc.= $hubStr . "<br><span class=\"typeopt\">(" . $hubnum . ": " . $hubType . ")</span>";
+        $tc.="<td class=\"hubname\" hubId=\"$hubId\">";
+        $tc.= $hubStr . " ($hubType)";
         $tc.= "</td>";
 
         // loop through all the rooms
@@ -3704,6 +3746,14 @@ function getMaxIndex($options) {
     return $maxindex;
 }
 
+function checkuser($val) {
+    $uname = trim($val);
+    if ( $uname==="" ) {
+        $uname = "default";
+    }
+    return $uname;
+}
+
 // this processes a _POST return from the options page
 function processOptions($options, $optarray) {
     if (DEBUG4) {
@@ -3760,6 +3810,7 @@ function processOptions($options, $optarray) {
         if ( array_key_exists($uname, $pwords) ) {
             if ( is_array($pwords[$uname]) ) {
                 $hash = $pwords[$uname][0];
+                $skin = $pwords[$uname][1];
             } else {
                 $hash = $pwords[$uname];
                 $pwords[$uname] = array($hash, $skin);
@@ -3776,6 +3827,7 @@ function processOptions($options, $optarray) {
         $pwords[$uname] = array($hash, $skin);
         $configoptions["pword"] = $pwords;
     }
+    $defskin = $skin;
     
     // fix long-standing bug by putting a clock in any empty room
     // to force the form to return each room defined in options file
@@ -3819,7 +3871,7 @@ function processOptions($options, $optarray) {
             $configoptions["housepanel_url"] = $val;
         }
         else if ( $key==="uname" && $val ) {
-            $uname = trim($val);
+            $uname = checkuser($val);
         }
         else if ( $key==="pword" && $val ) {
             $pword = trim($val);
@@ -3827,13 +3879,13 @@ function processOptions($options, $optarray) {
             setcookie("pwcrypt", "", $expirz, "/");
         }
         else if ( $key==="accucity" && $val ) {
-            $city = $val;
+            $city = trim($val);
         }
         else if ( $key==="accuregion" && $val ) {
-            $region = $val;
+            $region = trim($val);
         }
         else if ( $key==="accucode" && $val ) {
-            $code = $val;
+            $code = trim($val);
         }
         
         // handle user selected special tile count
@@ -3932,35 +3984,27 @@ function processOptions($options, $optarray) {
     try {
         date_default_timezone_set($timezone);
     } catch (Exception $e) {
-        // $timezone = "Americas/Detroit";
         $timezone = date_default_timezone_get();
         date_default_timezone_set($timezone);
     }
     $configoptions["timezone"] = $timezone;
 
-    // change the skin if given and different than before
-    if ( $skin && $skin!==$configoptions["skin"] && file_exists($skin . "/housepanel.css") ) {
+    // set the skin if it is a good one or use default from above
+    if ( $skin && file_exists($skin . "/housepanel.css") ) {
         if ( !file_exists($skin . "/customtiles.css") ) {
             writeCustomCss($skin, "");
         }
         $configoptions["skin"] = $skin;
     } else {
-        $skin = $configoptions["skin"];
+        $skin = $defskin;
     }
     
     // process username and password settings and save in skin specific loc
     // includes logic to bundle the skin with this user so that
     // now each user can use their own skin if they want
-    if (!array_key_exists($uname, $pwords)) {
-        $pwords[$uname] = array($hash, $skin);
-    } else if ( $hash ) {
-        $pwords[$uname] = array($hash, $skin);
-    } else {
-        $pwords[$uname] = array("", $skin);
-    }
+    $pwords[$uname] = array($hash, $skin);
     
     // now set all the parameters with complex logic
-    $configoptions["skin"] = $skin;
     $configoptions["pword"] = $pwords;
     $configoptions["timezone"] = $timezone;
     
@@ -3968,7 +4012,9 @@ function processOptions($options, $optarray) {
     $options["config"] = $configoptions;
     
     // set the user cookie
+    // and log this user in
     setcookie("uname", $uname, $expiry, "/");
+    setcookie("pwcrypt", $uname, $expiry, "/");
     
     if (DEBUG4) {
         echo "<h2>Debug Print for New Options Created - After Processing</h2><pre>";
@@ -4254,43 +4300,6 @@ function is_ssl() {
 
         // get the hubId value and save in the old hubnum variable
         $hubId = filter_input(INPUT_POST, "hubId", FILTER_SANITIZE_SPECIAL_CHARS);
-        $hubnum = $hubId;
-        
-//        $skin = filter_input(INPUT_POST, "skindir", FILTER_SANITIZE_SPECIAL_CHARS);
-//        $timezone = filter_input(INPUT_POST, "timezone", FILTER_SANITIZE_SPECIAL_CHARS);
-//        $kiosk = false;
-//        $port = filter_input(INPUT_POST, "port", FILTER_SANITIZE_SPECIAL_CHARS);
-//        $webSocketServerPort = filter_input(INPUT_POST, "webSocketServerPort", FILTER_SANITIZE_SPECIAL_CHARS);
-//        if ( !$port ) {
-//            $port = "";
-//        }
-//        if ( !$webSocketServerPort ) {
-//            $webSocketServerPort = "";
-//        }
-//        $fast_timer = filter_input(INPUT_POST, "fast_timer", FILTER_SANITIZE_SPECIAL_CHARS);
-//        $slow_timer = filter_input(INPUT_POST, "slow_timer", FILTER_SANITIZE_SPECIAL_CHARS);
-//        
-//        // if blank user name given use last authenticated name if present
-//        // and if not use default user name of "user" - changed from admin previously
-//        $uname = filter_input(INPUT_POST, "uname", FILTER_SANITIZE_SPECIAL_CHARS);
-//        if ( $uname==="" ) {
-//            if ( isset($_COOKIE["uname"]) ) {
-//                $uname = $_COOKIE["uname"];
-//            } else {
-//                $uname = "user";
-//            }
-//        } else {
-//            setcookie("uname", $uname, $expiry, "/");
-//        }
-//
-//        // get user requested new password for this user
-//        // if blank given then existing password will remain
-//        if ( isset( $_POST["pword"]) ) {
-//            $pword = trim($_POST["pword"]);
-//        } else {
-//            $pword = "";
-//        }
-        
         $hubType = filter_input(INPUT_POST, "hubType", FILTER_SANITIZE_SPECIAL_CHARS);
         $hubHost = filter_input(INPUT_POST, "hubHost", FILTER_SANITIZE_SPECIAL_CHARS);
         $clientId = filter_input(INPUT_POST, "clientId", FILTER_SANITIZE_SPECIAL_CHARS);
@@ -4398,7 +4407,38 @@ function is_ssl() {
         exit(0);
     } else if ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="dologin" ) {
         echo htmlHeader();
-        echo getLoginPage($returnURL, "");
+        $uname = getUserName();
+        echo getLoginPage($returnURL, $uname);
+        echo htmlFooter();
+        unset($_SESSION["hpcode"]);
+        exit(0);
+        
+    // redirect to options page - this is done for new users
+    // or when a valid login isn't defined
+    } else if ( isset($_SESSION["hpcode"]) && $_SESSION["hpcode"]==="dooptions" ) {
+        $options = readOptions();
+        $configoptions = $options["config"];
+        $allthings = getAllThings();
+        $maxroom = 0;
+        if ( array_key_exists("things", $options) && 
+             array_key_exists("rooms", $options) ) {
+            $thingoptions = $options["things"];
+            foreach ($thingoptions as $roomname => $thinglist) {
+                if ( count($thinglist) > $maxroom ) {
+                    $maxroom = count($thinglist);
+                }
+            }
+        }
+
+        // if no room has more than 2 things setup defaults
+        // I picked 2 because clock is always there
+        if ( $maxroom < 2 || $uname==="default" ) {
+            $options = setDefaults($options, $allthings);
+            writeOptions($options);
+        }
+            
+        echo htmlHeader();
+        echo getOptionsPage($options, $returnURL, $allthings);
         echo htmlFooter();
         unset($_SESSION["hpcode"]);
         exit(0);
@@ -4447,13 +4487,19 @@ function is_ssl() {
         // unset session to force re-read of things since they could have changed
         unset($_SESSION["allthings"]);
 
-        // check for manual reset flag for debugging purposes
+        // check for manual reset flag
+        // this removes all users and logs out
+        // and then sends over to reauth hub and force options page to show
         if ( $code==="reset") {
+            unset($configoptions["pword"]);
+            $options["config"] = $configoptions;
+            writeOptions($options);
+            setcookie("uname", "", $expirz, "/");
             setcookie("pwcrypt", "", $expirz, "/");
             if ( defined("ENABLERESET") && ENABLERESET===true ) {
                 $_SESSION["hpcode"] = "redoauth";
             } else {
-                $_SESSION["hpcode"] = "dologin";
+                $_SESSION["hpcode"] = "dooptions";
             }
             header("Location: $returnURL");
             exit(0);
@@ -5008,7 +5054,7 @@ function is_ssl() {
             
             case "getcatalog":
                 $allthings = getAllThings();
-                echo getCatalog($allthings);
+                echo getCatalog($allthings, $swattr);
                 break;
                 
             case "showoptions":
@@ -5076,7 +5122,6 @@ function is_ssl() {
                     $configoptions = $options["config"];
                     $pwords = $configoptions["pword"];
                     $skin = getSkin($options);
-                    // setcookie("uname", $uname, $expiry, "/");
                     if ( $uname===$pwname && array_key_exists($uname, $pwords) ) {
                         $login = true;
                     } else {
@@ -5094,7 +5139,7 @@ function is_ssl() {
                     $_SESSION["hpcode"] = $hpcode;
                     $tc= getAuthPage($returnURL, $hpcode);
                 } else {
-                    $tc = getLoginPage($returnURL, "");
+                    $tc = getLoginPage($returnURL, $uname);
                 }
                 echo htmlHeader($skin);
                 echo $tc;
@@ -5264,7 +5309,16 @@ function is_ssl() {
                 break;
             
             case "cancelauth":
-                unset($_SESSION["hpcode"]);
+                // if our user has been removed force hub auth to go to options
+                $uname = getUserName();
+                if ( !array_key_exists("pword", $options) ||
+                     !array_key_exists("rooms", $options) ||
+                     !array_key_exists("things", $options)
+                    ) {
+                    $_SESSION["hpcode"] = "dooptions";
+                } else {
+                    unset($_SESSION["hpcode"]);
+                }
                 echo "success";
                 break;
             
@@ -5403,7 +5457,7 @@ function is_ssl() {
                 break;
                 
             case "logout":
-                setcookie("uname", "", $expirz, "/");
+                // setcookie("uname", "", $expirz, "/");
                 setcookie("pwcrypt", "", $expirz, "/");
                 unset($_SESSION["allthings"]);
                 $_SESSION["hpcode"] = "dologin";
@@ -5474,19 +5528,33 @@ function is_ssl() {
             $hubs = $newhubs;
         }
         
-        // set up time zone - use Detroit if something bogus given
+        // set up time zone - use default if something bogus given
         try {
             $timezone = $configoptions["timezone"];
             date_default_timezone_set($timezone);
         } catch (Exception $e) {
-            // $timezone = "Americas/Detroit";
             $timezone = date_default_timezone_get();
             date_default_timezone_set($timezone);
         }
 
         // get the password config array
-        $pwords = $configoptions["pword"];
         $uname = getUserName();
+        if ( array_key_exists("pword", $configoptions) ) {
+            $pwords = $configoptions["pword"];
+        } else {
+            $pwords = null;
+        }
+        
+        // set default login to nothing for first time users
+        // and log in the default user
+        if ( !$pwords ) {
+            $pwords = array();
+            $hash = "";
+            $pwords[$uname] = array($hash, $skin);
+            $configoptions["pword"] = $pwords;
+            setcookie("pwcrypt", $uname, $expiry, "/");
+            $rewriteoptions = true;
+        }
         
         // if a legacy style pword was set then let user in
         // but send them to reauth page to reset password
@@ -5497,7 +5565,6 @@ function is_ssl() {
             // remove all the old md5 passwords
             // but keep new ones for the case where they were set on a different device
             // all new passwords use a 60 character strong cipher - use 50 just in case
-            $rewritepw = false;
             $opwords = $pwords;
             foreach ( $opwords as $un => $pw) {
                 if ( is_array($pw) ) {
@@ -5507,35 +5574,23 @@ function is_ssl() {
                     $thepw = $pw;
                     $theskin = $skin;
                 }
-                    
                 if ( $thepw!=="" && strlen($thepw) < 50 ) {
                     $pwords[$un] = array("", $theskin);
-                    $rewritepw = true;
                 }
             }
-            
-            // if for some reason saved user doesn't have a pw, make a blank one
-            if ( !array_key_exists($uname, $pwords) ) {
-                $pwords[$uname] = array("", $skin);
-            }
+
+            // empty their old password but keep them logged in
+            // and send them over to the options page
+            $login = "options";
             $configoptions["pword"] = $pwords;
-            
-            // force reauth if old passwords were reset
-            // or force login if new passwords are there but this is first time for this client
-            if ($rewritepw ) {
-                $login = "reauth";
-                $rewriteoptions = true;
-            } else {
-                $login = ( $pwords[$uname][0]==="" ) ? true : false;
-            }
+            $rewriteoptions = true;
+            setcookie("pwcrypt", $uname, $expiry, "/");
             
         // new password approach detected
         // this includes blank passwords signaling don't use one
         // this is not recommended but it is supported
-        } else if ( $uname && isset($_COOKIE["pwcrypt"]) ) {
+        } else if ( isset($_COOKIE["pwcrypt"]) ) {
             $pwname = $_COOKIE["pwcrypt"];
-            // $uname = $_COOKIE["uname"];
-            // setcookie("uname", $uname, $expiry, "/");
             if ( $uname===$pwname && array_key_exists($uname, $pwords) ) {
                 $login = true;
             } else {
@@ -5560,7 +5615,17 @@ function is_ssl() {
             $_SESSION["hpcode"] = $hpcode;
             $tc= getAuthPage($returnURL, $hpcode);
             
+        } else if ( $login==="options" ) {
+            unset($_SESSION["allthings"]);
+            $allthings = getAllThings();
+            $tc= getOptionsPage($options, $returnURL, $allthings);
+            
+        // if login isnt valid show login page
         } else if ( $login===false ) {
+            
+            // print_r($options);
+            //  echo "pwords = " . print_r($pwords, true);
+            // exit(0);
             $tc = getLoginPage($returnURL, $uname);
             
         // otherwise begin the logic of creating the full housepanel webpage
@@ -5573,15 +5638,14 @@ function is_ssl() {
 
             // get all the things from all the hubs
             $allthings = getAllThings();
-            $thingoptions = $options["things"];
-            $roomoptions = $options["rooms"];
-            $indexoptions = $options["index"];
-            
-            // create defaults if nothing setup
             $maxroom = 0;
-            foreach ($thingoptions as $roomname => $thinglist) {
-                if ( count($thinglist) > $maxroom ) {
-                    $maxroom = count($thinglist);
+            if ( array_key_exists("things", $options) && 
+                 array_key_exists("rooms", $options) ) {
+                $thingoptions = $options["things"];
+                foreach ($thingoptions as $roomname => $thinglist) {
+                    if ( count($thinglist) > $maxroom ) {
+                        $maxroom = count($thinglist);
+                    }
                 }
             }
 
@@ -5591,6 +5655,9 @@ function is_ssl() {
                 $options = setDefaults($options, $allthings);
                 writeOptions($options);
             }
+            $thingoptions = $options["things"];
+            $roomoptions = $options["rooms"];
+            $indexoptions = $options["index"];
 
             // make sure our active skin has a custom file
             if ( !file_exists($skin . "/customtiles.css") ) {
