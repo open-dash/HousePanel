@@ -1773,3 +1773,9 @@ div.bold {
     font-size: 14pt;
     font-weight: bold;
 }
+
+div.audio-thing div.groupRole,
+div.audio-thing div.groupPrimaryDeviceId,
+div.audio-thing div.groupId {
+    display: none;
+}

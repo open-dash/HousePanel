@@ -72,7 +72,7 @@ function getAllthings(modalwindow, reload) {
                 if (pstatus==="success" && typeof presult === "object" ) {
                     var keys = Object.keys(presult);
                     cm_Globals.allthings = presult;
-                    console.log("getAllthings returned: " + keys.length + " things");
+                    console.log("getAllthings returned: " + keys.length + " things  (reload: " + swattr + ")");
                     
                     if ( ! cm_Globals.options ) {
                         getOptions();
@@ -170,7 +170,7 @@ $(document).ready(function() {
             if ( !cm_Globals.allthings ) {
                 getAllthings(false, true);
             }
-        }, 10000);
+        }, 3000);
     }
     
     // disable return key
@@ -836,7 +836,7 @@ function setupColors() {
 
 function setupSliders() {
     
-    $("div.overlay.level >div.level").slider({
+    $("div.overlay.level >div.level, div.overlay.volume >div.volume").slider({
         orientation: "horizontal",
         min: 0,
         max: 100,
@@ -904,7 +904,7 @@ function setupSliders() {
     });
 
     // set the initial slider values
-    $("div.overlay.level >div.level").each( function(){
+    $("div.overlay.level >div.level, div.overlay.volume >div.volume").each( function(){
         var initval = $(this).attr("value");
         // alert("setting up slider with value = " + initval);
         $(this).slider("value", initval);
@@ -2126,6 +2126,11 @@ function updateTile(aid, presult) {
 
     // do something for each tile item returned by ajax call
     var isclock = false;
+    var nativeimg = false;
+    if ( presult["audioTrackData"] ) {
+        nativeimg = true;
+        delete presult["audioTrackData"];
+    }
     // console.log("updateTile: ", presult);
     
     $.each( presult, function( key, value ) {
@@ -2151,10 +2156,6 @@ function updateTile(aid, presult) {
             // handle weather icons
             // updated to address new integer indexing method in ST
             } else if ( key==="weatherIcon" || key==="forecastIcon") {
-//                if ( oldvalue != value ) {
-//                    $(targetid).removeClass(oldvalue);
-//                    $(targetid).addClass(value);
-//                }
                 var icondigit = parseInt(value,10);
                 var iconimg;
                 if ( Number.isNaN(icondigit) ) {
@@ -2167,7 +2168,7 @@ function updateTile(aid, presult) {
                     iconimg = "media/weather/" + iconstr + ".png";
                 }
                 value = "<img src=\"" + iconimg + "\" alt=\"" + iconstr + "\" width=\"80\" height=\"80\">";
-            } else if ( (key === "level" || key === "colorTemperature") && $(targetid).slider ) {
+            } else if ( (key === "level" || key === "colorTemperature" || key==="volume" || key==="groupVolume") && $(targetid).slider ) {
 //                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
                 value = false;
@@ -2183,7 +2184,7 @@ function updateTile(aid, presult) {
                 value = '<canvas id="clock_' + aid + '" class="' + value + '"></canvas>';
                 isclock = true;
             // handle updating album art info
-            } else if ( key==="track" || key === "trackDescription") {
+            } else if ( key === "trackDescription" && !nativeimg) {
                 var forceit = false;
                 if ( !oldvalue ) { 
                     oldvalue = "None" ;
@@ -2226,6 +2227,7 @@ function updateTile(aid, presult) {
                 if ( value && value.trim().startsWith("http") ) {
                     value = value.trim();
                     value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
+                    nativeimg = true;
                 }
                 // $("#a-"+aid+"-albumart").html(value);
                 
@@ -2751,6 +2753,18 @@ function processClick(that, thingname) {
                         console.log( ajaxcall + ": POST returned:", presult);
                         if ( presult["name"] ) { delete presult["name"]; }
                         if ( presult["password"] ) { delete presult["password"]; }
+                        
+                        // fix up new Sonos fields
+                        if ( presult["audioTrackData"] ) {
+                            var audiodata = JSON.parse(presult["audioTrackData"]);
+                            presult["trackDescription"] = audiodata["title"];
+                            presult["currentArtist"] = audiodata["artist"];
+                            presult["currentAlbum"] = audiodata["album"];
+                            presult["trackImage"] = audiodata["albumArtUrl"];
+                            presult["mediaSource"] = audiodata["mediaSource"];
+                            delete presult["audioTrackData"];
+                        }
+                        
                         updateTile(aid, presult);
                     } else {
                         console.log(ajaxcall + " error: ", pstatus, presult);
@@ -2928,6 +2942,17 @@ function processClick(that, thingname) {
                                 else if ( command !== "RULE" ) {
                                     if ( presult["name"] ) { delete presult["name"]; }
                                     if ( presult["password"] ) { delete presult["password"]; }
+                        
+                                    // fix up new Sonos fields
+                                    if ( presult["audioTrackData"] ) {
+                                        var audiodata = JSON.parse(presult["audioTrackData"]);
+                                        presult["trackDescription"] = audiodata["title"];
+                                        presult["currentArtist"] = audiodata["artist"];
+                                        presult["currentAlbum"] = audiodata["album"];
+                                        presult["trackImage"] = audiodata["albumArtUrl"];
+                                        presult["mediaSource"] = audiodata["mediaSource"];
+                                    }
+                        
                                     updAll(subid,aid,bid,thetype,hubnum,presult);
                                 }
 

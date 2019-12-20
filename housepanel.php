@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.112      Added audioNotification capability for new Sonos DH (draft)
+              - fixed up login again and added feature to disable pw's
  2.111      Minor bugfixes to 2.110 hub auth separation
  2.110      Major rewrite of auth flow to move options to options page
               - username and password are now on the options page
@@ -346,6 +348,7 @@ $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
 define('APPNAME', 'HousePanel V' . HPVERSION);
 define('CRYPTSALT','HP$by%KW');
+define('BYPASSPW', false);
 
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
@@ -1655,12 +1658,23 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
             // this includes a check for helper items created by getCustomTile
             foreach($thingvalue as $tkey => $tval) {
                 
+                // handle the new Sonos audio type which has a media type with details
+                if ( $thingtype==="audio" && $tkey==="audioTrackData" ) {
+                    $audiodata = json_decode($tval, true);
+                    $tc.= putElement($kindex, $i, $j, $thingtype, $audiodata["title"], "trackDescription", "trackDescription", $bgcolor);
+                    $tc.= putElement($kindex, $i, $j+1, $thingtype, $audiodata["artist"], "currentArtist", "currentArtist", $bgcolor);
+                    $tc.= putElement($kindex, $i, $j+2, $thingtype, $audiodata["album"], "currentAlbum", "currentAlbum", $bgcolor);
+                    $tc.= putElement($kindex, $i, $j+3, $thingtype, $audiodata["albumArtUrl"], "trackImage", "trackImage", $bgcolor);
+                    $tc.= putElement($kindex, $i, $j+4, $thingtype, $audiodata["mediaSource"], "mediaSource", "mediaSource", $bgcolor);
+                    $j = $j+5;	
+                }
+                
                 // print a hidden field for user web calls and links
                 // this is what enables customization of any tile to happen
                 // ::type::LINK::tval  or ::LINK::tval
                 // this special element is not displayed and sits inside the overlay
                 // we only process the non helpers and look for helpers in same list
-                if ( substr($tkey,0,5)!=="user_" && substr($tval,0,2)!=="::" && 
+                else if ( substr($tkey,0,5)!=="user_" && substr($tval,0,2)!=="::" && 
                      (strpos($tkey, "DeviceWatch-") === false) &&
                      (strpos($tkey, "checkInterval") === false) 
                    ) { 
@@ -1812,7 +1826,7 @@ function putElement($kindex, $i, $j, $thingtype, $tval, $tkey="value", $subtype=
         // finally, adjust for level sliders that can't have values in the content
         $tc.= "<div class=\"overlay $tkey v_$kindex\">";
         if ($sibling) { $tc.= $sibling; }
-        if ( $tkey == "level" || $tkey=="colorTemperature" ) {
+        if ( $tkey === "level" || $tkey==="colorTemperature" || $tkey==="volume" || $tkey==="groupVolume" ) {
             $tc.= "<div aid=\"$i\" type=\"$thingtype\"  subid=\"$tkey\" value=\"$tval\" title=\"$tkey\" class=\"" . $thingtype . $tkeyshow . " p_$kindex" . "\" id=\"a-$i-$tkey" . "\">" . "</div>";
         } else if ( $thingtype==="other" && substr($tval,0,7)==="number_" ) {
             $numval = substr($tkey,8);
@@ -2603,9 +2617,19 @@ function getMusicArt($thingvalue) {
         $astop = 0;
     }
     
+    // use native if there which will be true if it starts with http
+    if ( array_key_exists("trackImage", $thingvalue) && 
+         substr($thingvalue["trackImage"],0,4) === "http" ) {
+        $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
+        $thingvalue["trackImage"] = $imgvalue;
+        
+        // fix up bug in echo devices that stores artist in the album name
+        $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
+        $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
+
     // check for artist in the track description
     // we don't need to check the zero position since that will always have a song
-    if ( $astart && $astop ) {
+    } else if ( $astart && $astop ) {
         $artist = substr($trackname, $astart+4, $astop-$astart-4);
         $album = substr($trackname, $astop+6);
         $bstop = strpos($album,"Grouped with ");
@@ -2619,16 +2643,6 @@ function getMusicArt($thingvalue) {
         } else {
             $thingvalue["trackImage"] = "";
         }
-    
-    // use native if there which will be true if it starts with http
-    } else if ( array_key_exists("trackImage", $thingvalue) && 
-         substr($thingvalue["trackImage"],0,4) === "http" ) {
-        $imgvalue = "<img width='120' height='120' src='" . $thingvalue["trackImage"] . "'>";
-        $thingvalue["trackImage"] = $imgvalue;
-        
-        // fix up bug in echo devices that stores artist in the album name
-        $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
-        $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
 
     // if we just have a song name use tunein to find icon
     } else if ( $trackname && $trackname!=="None" ) {
@@ -3268,7 +3282,7 @@ function setDefaults($options, $allthings) {
 
 function getTypes() {
     $thingtypes = array("routine","switch", "light", "switchlevel", "bulb", "momentary","contact",
-                        "motion", "lock", "thermostat", "temperature", "music", "valve",
+                        "motion", "lock", "thermostat", "temperature", "music", "audio", "valve",
                         "door", "illuminance", "smoke", "water",
                         "weather", "presence", "mode", "shm", "hsm", "piston", "other",
                         "clock", "blank", "image", "frame", "video", "custom", "control", "power");
@@ -3795,6 +3809,7 @@ function processOptions($options, $optarray) {
 
     // get logged in user or set default if not logged in
     $uname = getUserName();
+    $olduname = $uname;
     
     // get defauilt skin
     if ( array_key_exists("skin", $configoptions) ) {
@@ -3828,6 +3843,8 @@ function processOptions($options, $optarray) {
         $configoptions["pword"] = $pwords;
     }
     $defskin = $skin;
+    $oldhash = $hash;
+    $hash = "";
     
     // fix long-standing bug by putting a clock in any empty room
     // to force the form to return each room defined in options file
@@ -3876,7 +3893,8 @@ function processOptions($options, $optarray) {
         else if ( $key==="pword" && $val ) {
             $pword = trim($val);
             $hash = pw_hash($pword);
-            setcookie("pwcrypt", "", $expirz, "/");
+            $oldhash = $hash;
+            // setcookie("pwcrypt", "", $expirz, "/");
         }
         else if ( $key==="accucity" && $val ) {
             $city = trim($val);
@@ -4002,6 +4020,9 @@ function processOptions($options, $optarray) {
     // process username and password settings and save in skin specific loc
     // includes logic to bundle the skin with this user so that
     // now each user can use their own skin if they want
+    if ( $uname === $olduname ) {
+        $hash = $oldhash;
+    }
     $pwords[$uname] = array($hash, $skin);
     
     // now set all the parameters with complex logic
@@ -5252,32 +5273,80 @@ function is_ssl() {
             // we never store the hash password anywhere except in hmoptions
             case "dologin":
     
-                if ( isset($_POST["pword"]) && isset($_POST["uname"]) ) {
-                    $uname = $_POST["uname"];
-                    $pword = $_POST["pword"];
+                if ( isset($_POST["uname"]) ) {
+                    $uname = trim($_POST["uname"]);
+                    if ( $uname==="" ) {
+                        $uname = "default";
+                    }
+                    if ( isset($_POST["pword"]) ) {
+                        $pword = trim($_POST["pword"]);
+                    } else {
+                        $pword = "";
+                    }
                     $options = readOptions();
                     $configoptions = $options["config"];
                     $pwords = $configoptions["pword"];
-                    
-                    // user is in our system so keep asking for pw until good
-                    if (array_key_exists($uname, $pwords) && is_array($pwords[$uname])) {
-                        $hash = $pwords[$uname][0];
+
+                    // login user if this option is picked
+                    // if user exists, use the skin for that user
+                    // otherwise, create a new user with the given name
+                    if ( BYPASSPW ) {
                         setcookie("uname", $uname, $expiry, "/");
-                        if ( ($hash==="" && $pword==="") || pw_verify($pword, $hash) ) {
-                            setcookie("pwcrypt", $uname, $expiry, "/");
+                        setcookie("pwcrypt", $uname, $expiry, "/");
+                        
+                        // if password exists in config file, use it and keep it
+                        if ( array_key_exists($uname, $pwords) && is_array($pwords[$uname]) ) {
+                            $hash = $pwords[$uname][0];
                             $skin = $pwords[$uname][1];
-                            if ( $skin !== $options["config"]["skin"] ) {
-                                $options["config"]["skin"] = $skin;
-                                writeOptions($options);
+                            $options["config"]["skin"] = $skin;
+                            
+                        // if old style in config file, use it and convert it
+                        // if nothing is in config file, use user provided pw
+                        } else {
+                            if (array_key_exists($uname, $pwords) ) {
+                                $hash = $pwords[$uname];
+                            } else {
+                                $hash = pw_hash($pword);
                             }
+                            $skin = $configoptions["skin"];
+                            $pwords[$uname] = array($hash, $skin);
+                            $configoptions["pword"] = $pwords;
+                            $options["config"] = $configoptions;
+                        }
+                        writeOptions($options);
+                        
+                    // process login feature - user must exist from options page
+                    // and the password provided must match
+                    } else {
+
+                        // user is in our system so keep asking for pw until good
+                        if (array_key_exists($uname, $pwords) ) {
+                            if ( is_array($pwords[$uname]) ) {
+                                $hash = $pwords[$uname][0];
+                                $skin = $pwords[$uname][1];
+                            } else {
+                                $hash = $pwords[$uname];
+                                $skin = $configoptions["skin"];
+                            }
+                            setcookie("uname", $uname, $expiry, "/");
+                            if ( ($hash==="" && $pword==="") || pw_verify($pword, $hash) ) {
+                                setcookie("pwcrypt", $uname, $expiry, "/");
+                                $skin = $pwords[$uname][1];
+                                if ( $skin !== $options["config"]["skin"] ) {
+                                    $options["config"]["skin"] = $skin;
+                                    writeOptions($options);
+                                }
+                                unset($_SESSION["hpcode"]);
+                            } else {
+                                setcookie("pwcrypt", "", $expirz, "/");
+                                $_SESSION["hpcode"] = "dologin";
+                            }
+
+                        // user given not in our system so repeat login page
                         } else {
                             setcookie("pwcrypt", "", $expirz, "/");
+                            $_SESSION["hpcode"] = "dologin";
                         }
-                        
-                    // user given not in our system so reauth page
-                    } else {
-                        setcookie("pwcrypt", "", $expirz, "/");
-                        $_SESSION["hpcode"] = "dologin";
                     }
                     header("Location: $returnURL");
                     exit(0);

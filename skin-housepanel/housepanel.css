@@ -345,7 +345,7 @@ div.switchlevel.colorTemperature, div.switchlevel.hue, div.switchlevel.saturatio
     height: 32px;
 }
 
-div.switchlevel.level, div.bulb.level, div.music.level {
+div.switchlevel.level, div.bulb.level, div.music.level, div.audio.volume, div.audio.groupVolume {
     height: 4px;
 }
 
@@ -404,10 +404,38 @@ div.heatingSetpoint-up, div.coolingSetpoint-up {
 }
 
 /* music styling */
-div.music.level, div.music.vol {
+div.music.level, div.audio.volume {
     width: 99%;
 }
-div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next {
+
+div.audio-thing div.overlay._previousTrack,
+div.audio-thing div.overlay._pause,
+div.audio-thing div.overlay._play,
+div.audio-thing div.overlay._stop,
+div.audio-thing div.overlay._nextTrack,
+div.audio-thing div.overlay._muteGroup,
+div.audio-thing div.overlay._unmuteGroup,
+div.audio-thing div.overlay._groupVolumeUp,
+div.audio-thing div.overlay._groupVolumeDown
+{
+    display: inline;
+}
+div.audio-thing div.overlay._rewind,
+div.audio-thing div.overlay._fastForward,
+div.audio-thing div.overlay._mute,
+div.audio-thing div.overlay._unmute,
+div.audio-thing div.overlay._volumeUp,
+div.audio-thing div.overlay._volumeDown {
+    display: none;
+}
+
+div.audio-thing div.overlay._volumeUp {
+    margin-left: 40px;
+}
+
+div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-next,
+div.audio._previousTrack, div.audio._pause, div.audio._stop, div.audio._play, div.audio._nextTrack, 
+div.audio._rewind, div.audio._fastForward {
     color: rgba(255, 255, 255, 0.01);
     background-size: 38px;
     display: inline-block;
@@ -416,20 +444,56 @@ div.music-previous, div.music-pause, div.music-stop, div.music-play, div.music-n
     width: 32px;
     margin-top: 5px;
 }
-div.music-pause {
+div.audio._mute, div.audio._muteGroup,
+div.audio._unmute, div.audio._unmuteGroup,
+div.audio._volumeUp, div.audio._groupVolumeUp,
+div.audio._volumeDown, div.audio._groupVolumeDown{
+    color: rgba(255, 255, 255, 0.01);
+    background-size: 40px;
+    display: inline-block;
+    background-repeat: no-repeat;
+    margin-top: 2px;
+    height:40px; 
+    width: 40px;
+}
+div.music-pause, div.audio._pause {
     background-image: url("media/pause.png");
 }
-div.music-stop {
+div.music-stop, div.audio._stop {
     background-image: url("media/stop.png");
 }
-div.music-play {
+div.music-play, div.audio._play {
     background-image: url("media/play.png");
 }
-div.music-previous {
+div.music-previous, div.audio.previousTrack {
     background-image: url("media/prev.png");
 }
-div.music-next {
+div.music-next, div.audio._nextTrack {
     background-image: url("media/next.png");
+}
+div.audio._mute, div.audio._muteGroup {
+    background-image: url("media/mute.png");
+}
+div.audio._unmute, div.audio._unmuteGroup {
+    background-image: url("media/unmute.png");
+}
+div.audio._rewind {
+    background-image: url("media/rewind.png");
+}
+div.audio._fastForward {
+    background-image: url("media/fastforward.png");
+}
+div.audio._volumeUp {
+    background-image: url("media/up.png");
+}
+div.audio._volumeDown {
+    background-image: url("media/down.png");
+}
+div.audio._groupVolumeUp {
+    background-image: url("media/upgroup.png");
+}
+div.audio._groupVolumeDown {
+    background-image: url("media/downgroup.png");
 }
 
 /* make thermostat height auto */
@@ -576,22 +640,26 @@ div.level-up:hover, div.level-dn:hover {
 
 /* music styling */
 div.thing.music-thing {
-    background-color: rgba(80,0,50,0.4);
+    background-color: rgba(80,0,50,0.6);
+    width: 180px;
+    height: auto;
+}
+div.thing.audio-thing {
+    background-color: rgba(0, 102, 102, 1);
     width: 180px;
     height: auto;
 }
 /* use italic serif font for music titles and a custom size */
 div.overlay.track div.music.track, 
 div.overlay.track div.custom.track, 
-div.overlay.trackDescription div.music.trackDescription,
-div.overlay.trackDescription div.custom.trackDescription
+div.overlay.trackDescription div.trackDescription
 {
     font-family: "Raleway",serif;
     font-size: 11pt;
     font-style: italic;
-    height: 40px;
+    height: auto;
     width: 100%;
-    padding-top: 10px;
+    padding-top: 10px; padding-bottom: 10px;
     border-bottom: none;
     background-color: rgba(80, 80, 80, 0.7);
 }
@@ -827,8 +895,9 @@ div.overlay {
     width: 100%;
     display: block;
 }
-div.overlay.level {
-    height: 32px;
+div.overlay.level, div.audio-thing div.overlay.volume {
+    height: 28px;
+    margin-top: 4px;
 }
 
 /* remove slider from regular switches */

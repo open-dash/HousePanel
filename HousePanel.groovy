@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 12/19/2019 - update to include new Sonos audioNotification capability
  * 08/25/2019 - bugfix water leak to prevent error if wet and dry not supported
  *              update switches to include name
  * 08/18/2019 - added water action for setting dry and wet
@@ -134,7 +135,8 @@ preferences {
     }
     section ("Music & Other Sensors") {
         paragraph "Any thing can be added as an Other sensor. Other sensors bring in ALL fields supported by the device handler."
-    	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players"
+    	input "mymusics", "capability.musicPlayer", hideWhenEmpty: true, multiple: true, required: false, title: "Music Players (legacy)"
+    	input "myaudios", "capability.audioNotification", hideWhenEmpty: true, multiple: true, required: false, title: "Audio Devices"
         input "mypowers", "capability.powerMeter", multiple: true, required: false, title: "Power Meters"
     	input "myothers", "capability.sensor", multiple: true, required: false, title: "Other and Virtual Sensors"
     }
@@ -396,6 +398,27 @@ def getMusic(swid, item=null) {
     return resp
 }
 
+def getAudio(swid, item=null) {
+    def raw = getThing(myaudios, swid, item)
+    logger(raw, "info" )
+    
+    // lets put it in the desired order
+    // "groupVolumeUp", "groupVolumeDown", "muteGroup", "unmuteGroup",
+    def resp = [name: raw.name, audioTrackData: raw.audioTrackData,
+        _rewind: raw._rewind, _previousTrack: raw._previousTrack,
+        _pause: raw._pause, _play: raw._play, _stop: raw._stop,
+        _nextTrack: raw._nextTrack, _fastForward: raw._fastForward,
+        playbackStatus: raw.playbackStatus,
+        // _mute: raw._mute, _unmute: raw._unmute, 
+        _muteGroup: raw._muteGroup, _unmuteGroup: raw._unmuteGroup, 
+        //_volumeUp: raw._volumeUp, _volumeDown: raw._volumeDown,
+        _groupVolumeUp: raw._groupVolumeUp, _groupVolumeDown: raw._groupVolumeDown,
+        volume: raw.volume, 
+        mute: raw.mute, groupRole: raw.groupRole]
+    
+    return resp
+}
+
 // this was updated to use the real key names so that push updates work
 // note -changes were also made in housepanel.php and elsewhere to support this
 def getThermostat(swid, item=null) {
@@ -600,17 +623,21 @@ def getDevice(mydevices, swid, item=null) {
 }
 
 // make a generic thing getter to streamline the code
-def getThing(things, swid, item=null) {
-    item = item ? item : things.find {it.id == swid }
+def getThing(things, swid, item=null, reservedcap=null) {
+    item = item ? item : things?.find {it.id == swid }
     def resp = item ? [:] : false
     if ( item ) {
         resp.put("name",item.displayName)
         
+        if ( !reservedcap ) {
+            reservedcap = ["supportedTrackControlCommands", "supportedPlaybackCommands" ,"presets", "groupVolume", "groupMute",
+                           "groupPrimaryDeviceId", "groupId",
+                           "DeviceWatch-DeviceStatus", "DeviceWatch-Enroll", "checkInterval", "healthStatus"]
+        }
         item.capabilities.each {cap ->
             // def capname = cap.getName()
             cap.attributes?.each {attr ->
                 try {
-                    def reservedcap = ["DeviceWatch-DeviceStatus", "DeviceWatch-Enroll", "checkInterval", "healthStatus"]
                     def othername = attr.getName()
                     def othervalue = item.currentValue(othername)
                     if ( !reservedcap.contains(othername) ) {
@@ -622,12 +649,13 @@ def getThing(things, swid, item=null) {
             }
         }
         // add commands other than standard ones
+        // "groupVolumeUp", "groupVolumeDown", "muteGroup", "unmuteGroup",
+        def reserved = ["setLevel","setHue","on","off","open","close",
+                        "setSaturation","setColorTemperature","setColor","setAdjustedColor",
+                        "indicatorWhenOn","indicatorWhenOff","indicatorNever",
+                        "enrollResponse","stopLevelChange","poll","ping","configure","refresh"]
         item.supportedCommands.each { comm ->
             try {
-                def reserved = ["setLevel","setHue","on","off","open","close",\
-                                "setSaturation","setColorTemperature","setColor","setAdjustedColor",\
-                                "indicatorWhenOn","indicatorWhenOff","indicatorNever",\
-                                "enrollResponse","stopLevelChange","poll","ping","configure","refresh"]
                 def comname = comm.getName()
                 def args = comm.getArguments()
                 def arglen = 0
@@ -719,6 +747,8 @@ def getAllThings() {
     resp = getWaters(resp)
     run = logStepAndIncrement(run)
     resp = getMusics(resp)
+    run = logStepAndIncrement(run)
+    resp = getAudios(resp)
     run = logStepAndIncrement(run)
     resp = getSmokes(resp)
     run = logStepAndIncrement(run)
@@ -880,6 +910,17 @@ def getMusics(resp) {
     return resp
 }
 
+def getAudios(resp) {
+    try {
+        myaudios?.each {
+            def multivalue = getAudio(it.id, it)
+            resp << [name: it.displayName, id: it.id, value: multivalue, type: "audio"]
+        }
+    } catch (e) {}
+    
+    return resp
+}
+
 def getThermostats(resp) {
     try {
         mythermostats?.each {
@@ -990,6 +1031,7 @@ def autoType(swid) {
     else if ( myswitches?.find {it.id == swid } ) { swtype= "switch" }
     else if ( mylocks?.find {it.id == swid } ) { swtype= "lock" }
     else if ( mymusics?.find {it.id == swid } ) { swtype= "music" }
+    else if ( myaudios?.find {it.id == swid } ) { swtype= "audio" }
     else if ( mythermostats?.find {it.id == swid} ) { swtype = "thermostat" }
     else if ( mypresences?.find {it.id == swid } ) { swtype= "presence" }
     else if ( myweathers?.find {it.id == swid } ) { swtype= "weather" }
@@ -1013,6 +1055,33 @@ def autoType(swid) {
     return swtype
 }
 
+def itemFromId(swid) {
+    def item = 
+        mydimmers?.find {it.id == swid } ||
+        mymomentaries?.find {it.id == swid } ||
+        mylights?.find {it.id == swid } ||
+        mybulbs?.find {it.id == swid } ||
+        myswitches?.find {it.id == swid } ||
+        mylocks?.find {it.id == swid } ||
+        mymusics?.find {it.id == swid } ||
+        myaudios?.find {it.id == swid } ||
+        mythermostats?.find {it.id == swid} ||
+        mypresences?.find {it.id == swid } ||
+        myweathers?.find {it.id == swid } ||
+        mymotions?.find {it.id == swid } ||
+        mydoors?.find {it.id == swid } ||
+        mycontacts?.find {it.id == swid } ||
+        mywaters?.find {it.id == swid } ||
+        myvalves?.find {it.id == swid } ||
+        myilluminances?.find {it.id == swid } ||
+        mysmokes?.find {it.id == swid } ||
+        mytemperatures?.find {it.id == swid } ||
+        myothers?.find {it.id == swid } ||
+        mypowers?.find {it.id == swid } || null
+        
+    return item
+}
+
 // this performs ajax action for clickable tiles
 def doAction() {
     // returns false if the item is not found
@@ -1031,6 +1100,10 @@ def doAction() {
     }
 
     switch (swtype) {
+      case "audio" :
+        cmdresult = setAudio(swid, cmd, swattr, subid)
+        break
+        
       case "switch" :
         cmdresult = setSwitch(swid, cmd, swattr, subid)
         break
@@ -1131,6 +1204,10 @@ def doQuery() {
         cmdresult = getAllThings()
         break
 
+    case "audio" :
+        cmdresult = swid ? getAudio(swid) : getAudios( [] )
+        break
+         
     case "switch" :
         cmdresult = swid ? getSwitch(swid) : getSwitches( [] )
         break
@@ -1324,8 +1401,49 @@ def setOther(swid, cmd, attr, subid ) {
     return resp
 }
 
-// new setAny routine that could replace all the other stuff above
-// pending testing and prove out
+// control audio devices
+// much like music but the buttons are real commands
+def setAudio(swid, cmd, swattr, subid) {
+    def resp = false
+    def item  = myaudios.find {it.id == swid }
+    
+    if ( item ) {
+        logcaller(item.getDisplayName(), swid, cmd, swattr, subid)
+        resp = getAudio(swid, item)
+
+        if ( (subid=="_mute" || subid=="mute") && swattr.contains(" unmuted" ) ) {
+            item.mute()
+            resp["mute"] = "muted"
+        } else if ( (subid=="_unmute" || subid=="mute") && swattr.contains(" muted" ) ) {
+            item.unmute()
+            resp["mute"] = "unmuted"
+        } else if ( subid=="volume" ) {
+            def newvol = item.currentValue("volume")
+            try {
+                newvol = cmd.toInteger()
+            } catch (e) {
+            }
+            item.setVolume(newvol)
+            resp["volume"] = newvol
+        } else if (subid.startsWith("_")) {
+            subid = subid.substring(1)
+            if ( item.hasCommand(subid) ) {
+                item."$subid"()
+                def xdelay = math.sleep(500)
+                resp = getAudio(swid, item)
+                resp = getAudio(swid, item)
+            }
+        }
+        else if ( item.hasCommand(cmd) ) {
+            item."$cmd"()
+            resp = getAudio(swid, item)
+            resp = getAudio(swid, item)
+        }
+    }
+    return resp
+}
+
+// handle water devices
 def setWater(swid, cmd, swattr, subid) {
     logcaller("setWater", swid, cmd, swattr, subid)
     def resp = false
@@ -2126,6 +2244,7 @@ def registerAll() {
     runIn(200, "registerThermostats");
     runIn(200, "registerTracks");
     runIn(200, "registerMusics");
+    runIn(200, "registerAudios");
     
     // skip these on purpose because they change slowly and report often
     // runIn(10, "registerSlows");
@@ -2185,8 +2304,15 @@ def registerMusics() {
     registerCapabilities(mymusics, "mute")
 }
 
+def registerAudios() {
+    registerCapabilities(myaudios, "playbackStatus")
+    registerCapabilities(myaudios, "volume")
+    registerCapabilities(myaudios, "mute")
+}
+
 def registerTracks() {
     registerCapabilities(mymusics, "trackDescription")
+    registerCapabilities(myaudios, "audioTrackData")
 }
 
 def registerCapabilities(devices, capability) {
@@ -2286,8 +2412,8 @@ def postHub(message) {
 }
 
 // Wrapper function for all logging.
-private logcaller(caller, swid, cmd, swattr, subid) {
-    logger("${caller}: swid= $swid cmd= $cmd swattr= $swattr subid= $subid", "debug")
+private logcaller(caller, swid, cmd, swattr, subid, level="debug") {
+    logger("${caller}: swid= $swid cmd= $cmd swattr= $swattr subid= $subid", level)
 }
 
 private logger(msg, level = "debug") {

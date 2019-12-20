@@ -68,9 +68,9 @@ function getOnOff(str_type, subid) {
         onoff = ["heat","cool","auto","off"];
     } else if ( subid.startsWith("thermostatOperatingState" ) ) {
         onoff = ["idle","heating","cooling","off"];
-    } else if ( subid.startsWith("musicstatus" ) ) {
+    } else if ( subid.startsWith("musicstatus" ) || subid.startsWith("playbackStatus") ) {
         onoff = ["stopped","paused","playing"];
-    } else if ( subid.startsWith("musicmute" ) ) {
+    } else if ( subid.startsWith("musicmute" ) || (str_type==="audio" && subid.startsWith("mute")) ) {
         onoff = ["muted","unmuted"];
     } else if ( subid.startsWith("presence" ) ) {
         onoff = ["present","absent"];
