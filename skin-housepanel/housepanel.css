@@ -386,20 +386,22 @@ div.heatingSetpoint-up, div.coolingSetpoint-up {
 div.heat-dn, div.cool-dn, div.level-dn, div.switchlevel-dn,
 div.colorTemperature-dn, div.hue-dn, div.saturation-dn,
 div.heatingSetpoint-dn, div.coolingSetpoint-dn {
-    background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
+    background-image: url("media/down.png");
+/*    background-image: url("media/sprites.gif");
     background-position: -32px 0px;
-	background-size: auto;
+    background-size: auto;*/
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
 div.heat-up, div.cool-up, div.level-up, div.switchlevel-up,
 div.colorTemperature-up, div.hue-up, div.saturation-up,
 div.heatingSetpoint-up, div.coolingSetpoint-up {
-    background-image: url("media/sprites.gif");
     color: rgba(255, 255, 255, 0.01);
+    background-image: url("media/up.png");
+/*    background-image: url("media/sprites.gif");
     background-position: -272px -2px;
-	background-size: auto;
+    background-size: auto;*/
     box-shadow: 0px 1px 2px rgba(0,0,0,0.8);
 }
 
@@ -604,11 +606,13 @@ div.overlay.heat div.thermostat.heat, div.overlay.heat div.thermostat.cool {
     height: 27px;
 }
 
-div.heat, div.heatingSetpoint {
+div.heatingSetpoint {
     background-color: #cc3300;
+    height: 32px;
 }
-div.cool, div.coolingSetpoint {
+div.coolingSetpoint {
     background-color: #0033cc;
+    height: 32px;
 }
 div.colorTemperature-val, div.hue-val, div.saturation-val, div.hue, div.saturation {
     background-color: #ffffff;
@@ -633,7 +637,7 @@ div.colorTemperature-up:hover, div.colorTemperature-dn:hover,
 div.hue-up:hover, div.hue-dn:hover,
 div.saturation-up:hover, div.saturation-dn:hover,
 div.level-up:hover, div.level-dn:hover {
-    border: 2px solid #303030;
+    border: 2px solid #cccccc;
     width: 28px;
     height: 28px;
 }

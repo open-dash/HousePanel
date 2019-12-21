@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 12/20/2019 - bug fixes and cleanup
  * 12/19/2019 - update to include new Sonos audioNotification capability
  * 08/25/2019 - bugfix water leak to prevent error if wet and dry not supported
  *              update switches to include name
@@ -1429,7 +1430,6 @@ def setAudio(swid, cmd, swattr, subid) {
             subid = subid.substring(1)
             if ( item.hasCommand(subid) ) {
                 item."$subid"()
-                def xdelay = math.sleep(500)
                 resp = getAudio(swid, item)
                 resp = getAudio(swid, item)
             }
