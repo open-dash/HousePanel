@@ -9,8 +9,9 @@
  * Revision History
  */
 $devhistory = "
- 2.113      Remove bogus line in groovy code
+ 2.114      Allow track to update on hub refresh for audio devices
               - updated modern skin to work with new Sonos DH
+ 2.113      Remove bogus line in groovy code
  2.112      Added audioNotification capability for new Sonos DH (draft)
               - fixed up login again and added feature to disable pw's
  2.111      Minor bugfixes to 2.110 hub auth separation

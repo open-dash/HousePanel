@@ -2386,6 +2386,7 @@ function setupTimer(timerval, timertype, hubnum) {
                                 if ( aid.startsWith("t-") ) {
                                     aid = aid.substring(2);
                                     var tileid = $(this).attr("tile");
+                                    var strtype = $(this).attr("type");
 
                                     var thevalue;
                                     try {
@@ -2411,7 +2412,7 @@ function setupTimer(timerval, timertype, hubnum) {
                                     if ( thevalue && typeof thevalue==="object" ) {
                                         if ( thevalue["name"] ) { delete thevalue["name"]; }
                                         if ( thevalue["password"] ) { delete thevalue["password"]; }
-                                        if ( wsSocket ) {
+                                        if ( wsSocket && strtype==="music" ) {
                                             if ( thevalue["trackDescription"] ) { delete thevalue["trackDescription"]; }
                                             if ( thevalue["trackImage"] ) { delete thevalue["trackImage"]; }
                                             if ( thevalue["currentArtist"] ) { delete thevalue["currentArtist"]; }
