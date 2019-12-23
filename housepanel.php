@@ -9,6 +9,8 @@
  * Revision History
  */
 $devhistory = "
+ 2.115      Finalize audio track refresh feature and remove bugs
+              - handle music tiles properly and remove test bug
  2.114      Allow track to update on hub refresh for audio devices
               - updated modern skin to work with new Sonos DH
  2.113      Remove bogus line in groovy code
@@ -1626,10 +1628,9 @@ function makeThing($idx, $i, $kindex, $thesensor, $panelname, $options, $postop=
             }
             $thingvalue[$thingtype] = returnFile($fn, $fw, $fh, $thingtype );
         }
-        
         if ( $thingtype==="music" ) {
             $thingvalue = getMusicArt($thingvalue);
-        } 
+        }
         
         $tc.= "<div aid=\"$i\" type=\"$thingtype\" title=\"$thingpr\" class=\"thingname $thingtype t_$kindex\" id=\"s-$i\">";
         // $tc.= "<span class=\"original n_$kindex\">" . $thingpr. "</span>";
@@ -2216,10 +2217,10 @@ function doAction($hubnum, $path, $swid, $swtype,
                             $fh = $specialtiles[$thingtype][2];
                         }
                         $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $thingtype);
-                    } else if ( $thingtype==="music" ) {
-                        $thingvalue = getMusicArt($thingvalue);
                     }
+                    $thingvalue = getMusicArt($thingvalue);
                     $thing["value"]= $thingvalue;
+                    $thing["name"] = $thingvalue["name"];
                     $response[$tileid] = $thing;
                 }
             }
@@ -2259,9 +2260,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                             $fh = $specialtiles[$thingtype][2];
                         }
                         $thingvalue[$thingtype] = returnFile($thingvalue["name"], $fw, $fh, $thingtype);
-                    } else if ( $thingtype==="music" ) {
-                        $thingvalue = getMusicArt($thingvalue);
-                    }
+                    } 
+                    $thingvalue = getMusicArt($thingvalue);
                     $thing["value"]= $thingvalue;
                     $thing["name"] = $thing["value"]["name"];
                     $response[$tileid] = $thing;
@@ -2481,10 +2481,14 @@ function doAction($hubnum, $path, $swid, $swtype,
                     }
                 }
                 
+                // for music th
                 if ( $response && $swtype==="music" ) {
-                    $response = getMusicArt($response);
+                    if ( $path==="doquery") {
+                        $response = getMusicArt($response);
+                    } else {
+                        unset($response["trackDescription"]);
+                    }
                 }
-                // $response[$subid] = $allthings[$mainidx]["value"][$subid];
                 
                 if ( $response && $allthings && array_key_exists($mainidx, $allthings) ) {
                     $allthings[$mainidx]["value"] = $response;
@@ -2529,7 +2533,9 @@ function doAction($hubnum, $path, $swid, $swtype,
                     if ( $stype!=="control" ) {
                         $thing["name"] = getCustomName($thing["name"], $idx, $options);
                         $thing["value"] = getCustomTile($thing["value"], $thing["type"], $thing["id"], $options, $allthings);
-                        if ( $thing["type"]==="music" ) {
+
+                        // handle music icons
+                        if ( $stype==="music" ) {
                             $thing["value"] = getMusicArt($thing["value"]);
                         }
 
@@ -2609,15 +2615,51 @@ function doAction($hubnum, $path, $swid, $swtype,
 }
 
 function getMusicArt($thingvalue) {
-               
+
+    // get track name if it is there
     if (array_key_exists("trackDescription", $thingvalue) && $thingvalue["trackDescription"] ) {
         $trackname = trim($thingvalue["trackDescription"]);
+    } else {
+        $trackname = "";
+    }
+    
+    if ( (strpos($trackname, " by ") > 0) && (strpos($trackname," from ") > 0) )  {
         $astart = strpos($trackname," by ");
         $astop = strpos($trackname," from ");
     } else {
-        $trackname = "";
         $astart = 0;
         $astop = 0;
+    }
+    
+    if ( array_key_exists("audioTrackData", $thingvalue) ) {
+        $audiodata = json_decode($thingvalue["audioTrackData"], true);
+        $thingvalue["trackDescription"] = trim($audiodata["title"]);
+        $trackname = $thingvalue["trackDescription"];
+        $$thingvalue["currentArtist"] = $audiodata["artist"];
+        $thingvalue["currentAlbum"] = $audiodata["album"];
+        $thingvalue["trackImage"] = $audiodata["albumArtUrl"];
+        $thingvalue["mediaSource"] = $audiodata["mediaSource"];
+        unset($thingvalue["audioTrackData"]);
+        $astart = 0;
+        $astop = 0;
+    } else {
+        
+        // get track name if it is there
+        if (array_key_exists("trackDescription", $thingvalue) && $thingvalue["trackDescription"] ) {
+            $trackname = trim($thingvalue["trackDescription"]);
+        } else {
+            $trackname = "";
+        }
+
+        if ( $trackname && (strpos($trackname, " by ") > 0) && (strpos($trackname," from ") > 0) )  {
+            $astart = strpos($trackname," by ");
+            $astop = strpos($trackname," from ");
+        } else {
+            $astart = 0;
+            $astop = 0;
+        }
+        $thingvalue["currentArtist"] = "";
+        $thingvalue["currentAlbum"] = "";
     }
     
     // use native if there which will be true if it starts with http
@@ -2627,9 +2669,11 @@ function getMusicArt($thingvalue) {
         $thingvalue["trackImage"] = $imgvalue;
         
         // fix up bug in echo devices that stores artist in the album name
-        $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
-        $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
-
+        if ( !$thingvalue["mediaSource"] ) {
+            $thingvalue["currentArtist"] = $thingvalue["currentAlbum"];
+            $thingvalue["currentAlbum"] = $thingvalue["trackDescription"];
+        }
+        
     // check for artist in the track description
     // we don't need to check the zero position since that will always have a song
     } else if ( $astart && $astop ) {
@@ -2657,11 +2701,6 @@ function getMusicArt($thingvalue) {
         $thingvalue["currentArtist"] = "";
         $thingvalue["currentAlbum"] = $album;
         $thingvalue["trackImage"] = getAlbumArt("tunein", $album);
-        
-    } else {
-        $thingvalue["currentArtist"] = "";
-        $thingvalue["currentAlbum"] = "";
-        $thingvalue["trackImage"] = "";
     }
     
     return $thingvalue;
@@ -5526,7 +5565,7 @@ function is_ssl() {
             case "trackupdate":
                 $thingvalue = array("trackDescription"=> $swval);
                 $results = getMusicArt($thingvalue);
-                unset($results["trackDescription"]);
+                // unset($results["trackDescription"]);
                 echo json_encode($results);
                 break;
                 

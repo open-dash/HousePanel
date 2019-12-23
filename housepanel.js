@@ -31,7 +31,7 @@ var reordered = false;
 // use the timers options to turn off polling
 var disablepub = false;
 var disablebtn = false;
-var LOGWEBSOCKET = true;
+var LOGWEBSOCKET = false;
 
 Number.prototype.pad = function(size) {
     var s = String(this);
@@ -2127,9 +2127,30 @@ function updateTile(aid, presult) {
     // do something for each tile item returned by ajax call
     var isclock = false;
     var nativeimg = false;
+    
+    // handle audio devices
     if ( presult["audioTrackData"] ) {
-        nativeimg = true;
+        var oldvalue = "";
+        if ( $("#a-"+aid+"-trackDescription") ) {
+            oldvalue = $("#a-"+aid+"-trackDescription").html();
+        }
+        var audiodata = JSON.parse(presult["audioTrackData"]);
+        console.log("audio track changed from: ["+oldvalue+"] to: ["+audiodata["title"]+"]");
+        presult["trackDescription"] = audiodata["title"];
+        presult["currentArtist"] = audiodata["artist"];
+        presult["currentAlbum"] = audiodata["album"];
+        presult["trackImage"] = audiodata["albumArtUrl"];
+        presult["mediaSource"] = audiodata["mediaSource"];
         delete presult["audioTrackData"];
+    }
+    
+    // handle native track images - including audio devices above
+    if ( presult["trackImage"] ) {
+        var trackImage = presult["trackImage"].trim();
+        if ( trackImage.startsWith("http") ) {
+            presult["trackImage"] = "<img height=\"120\" width=\"120\" src=\"" + trackImage + "\">";
+            nativeimg = true;
+        }
     }
     // console.log("updateTile: ", presult);
     
@@ -2169,10 +2190,11 @@ function updateTile(aid, presult) {
                 }
                 value = "<img src=\"" + iconimg + "\" alt=\"" + iconstr + "\" width=\"80\" height=\"80\">";
             } else if ( (key === "level" || key === "colorTemperature" || key==="volume" || key==="groupVolume") && $(targetid).slider ) {
-//                var initval = $(this).attr("value");
                 $(targetid).slider("value", value);
+                // disable putting values in the slot
                 value = false;
                 oldvalue = false;
+            // TODO: make color values work by setting the mini colors circle
             } else if ( key==="color") {
 //                alert("updating color: "+value);
                 $(targetid).html(value);
@@ -2182,7 +2204,7 @@ function updateTile(aid, presult) {
                 value = value.substring(7);
             } else if ( key === "skin" && value.startsWith("CoolClock") ) {
                 value = '<canvas id="clock_' + aid + '" class="' + value + '"></canvas>';
-                isclock = true;
+                isclock = ( oldvalue !== value );
             // handle updating album art info
             } else if ( key === "trackDescription" && !nativeimg) {
                 var forceit = false;
@@ -2207,7 +2229,7 @@ function updateTile(aid, presult) {
                 if ( forceit || (value!==oldvalue) ) {
                     value = value.trim();
                     
-                    console.log("track changed from: [" + oldvalue + "] to: ["+value+"]");
+                    console.log("music track changed from: [" + oldvalue + "] to: ["+value+"]");
                     $.post(returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
@@ -2222,23 +2244,17 @@ function updateTile(aid, presult) {
                     );
                 }
                 
-            // update album art for native track image returns
-            } else if ( key === "trackImage" ) {
-                if ( value && value.trim().startsWith("http") ) {
-                    value = value.trim();
-                    value = "<img height=\"120\" width=\"120\" src=\"" + value + "\">";
-                    nativeimg = true;
-                }
-                // $("#a-"+aid+"-albumart").html(value);
-                
+            // add status of things to the class and remove old status
             } else if ( oldclass && oldvalue && value &&
-                     key!=="name" &&
-                     $.isNumeric(value)===false && 
-                     $.isNumeric(oldvalue)===false &&
-                     oldclass.indexOf(oldvalue)>=0 ) {
+                    key!=="name" && key!=="trackImage" && key!=="color" &&
+                    key!=="trackDescription" && key!=="mediaSource" &&
+                    key!=="currentArtist" && key!=="currentAlbum" &&
+                    $.isNumeric(value)===false && 
+                    $.isNumeric(oldvalue)===false &&
+                    oldclass.indexOf(oldvalue)>=0 ) 
+            {
                     $(targetid).removeClass(oldvalue);
                     $(targetid).addClass(value);
-                
             }
 
             // update the content 
@@ -2251,6 +2267,7 @@ function updateTile(aid, presult) {
         }
     });
     
+    // if we updated a clock skin render it on the page
     if ( isclock ) {
         CoolClock.findAndCreateClocks();
     }
@@ -2355,13 +2372,13 @@ function clockUpdater(tz) {
 
 function setupTimer(timerval, timertype, hubnum) {
 
-    // console.log("hub #" + hubnum + " timer = " + timerval);
     // we now pass the unique hubId value instead of numerical hub
     // since the number can now change when new hubs are added and deleted
     var updarray = [timertype, timerval, hubnum];
     updarray.myMethod = function() {
 
         var that = this;
+        console.log("hub #" + that[2] + " timer = " + that[1] + " timertype = " + that[0] + " priorOpmode= " + priorOpmode + " modalStatus= " + modalStatus);
         var err;
 
         // skip if not in operation mode or if inside a modal dialog box
@@ -2376,6 +2393,7 @@ function setupTimer(timerval, timertype, hubnum) {
             $.post(returnURL, 
                 {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubid: that[2]},
                 function (presult, pstatus) {
+                    console.log("pstatus = " + pstatus + " presult= ", presult);
                     if (pstatus==="success" && typeof presult==="object" ) {
 
                         // go through all tiles and update
@@ -2431,11 +2449,13 @@ function setupTimer(timerval, timertype, hubnum) {
         }
 
         // repeat the method above indefinitely
+        console.log("timer= " + that[1]);
         setTimeout(function() {updarray.myMethod();}, that[1]);
     };
 
     // wait before doing first one - or skip this hub if requested
     if ( timerval && timerval >= 1000 ) {
+        // alert("timerval = " + timerval);
         setTimeout(function() {updarray.myMethod();}, timerval);
     }
     
@@ -2763,7 +2783,7 @@ function processClick(that, thingname) {
                             presult["currentAlbum"] = audiodata["album"];
                             presult["trackImage"] = audiodata["albumArtUrl"];
                             presult["mediaSource"] = audiodata["mediaSource"];
-                            delete presult["audioTrackData"];
+                            // delete presult["audioTrackData"];
                         }
                         
                         updateTile(aid, presult);
