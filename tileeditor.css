@@ -4,6 +4,9 @@ All styling that is fixed across all skins is now here
 Of course, anything here can be overridden by a skin since
 this file is loaded first, so nothing if carved in stone
 By moving things here we reduce the skin file to the bare needs
+
+* 01/02/2020 - minor tweaks to make floor plan skins look right
+
 */
 * {
     font-family: "Droid Sans", sans-serif;
@@ -230,8 +233,8 @@ div#catalog {
 }
 
 .ui-widget.ui-widget-content{
-    border-radius: 4px;
     margin: 0px 0 0 0;
+    border: none;
 }
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor{
 	text-decoration: none;
@@ -824,6 +827,12 @@ div.editlink, div.dellink, div.cmzlink {
     top: 12px;
     width: 28px; height: 28px;
 }
+div.editlink {
+    width: 32px; height: 32px;
+}
+div.cmzlink {
+    top: 40px;
+}
 div.cmzlink {
     left: 36px;
 }
@@ -1246,12 +1255,13 @@ div.thing:hover{
 
 div.thing.catalog-thing {
     display: inline-block;
+    border: 1px solid black;
     width: 120px;
     height: auto;
 }
 /* the name of the thing - must be after the above heights */
 /* added catalog-thing div.thingname to ensure catalog shows properly */
-div.thing div.thingname, div.catalog-thing div.thingname {
+div.thing.catalog-thing div.thingname {
     background-color: rgba(0, 50, 100,1);
     font-size: 11pt;
     text-align: center;
@@ -1261,17 +1271,14 @@ div.thing div.thingname, div.catalog-thing div.thingname {
     cursor: default;
     display: block;
 }
-div.thingname:hover {
+div.catalog-thing div.thingname:hover {
     background-color: #5050a0; 
     color: #cccccc;
 }
-div.thermostat-thing div.thingname {
-    width: 120px;
+div.thing.catalog-thing div.thingtype {
+    color: rgba(0,0,0,1);
 }
 
-div.music-thing div.thingname.music {
-    width: 100%;
-}
 div.overlay.trackData, div.overlay.switch div.music.switch {
     display: none;
 }
@@ -1510,11 +1517,11 @@ div.custom-thing div.post, div.custom-thing div.text {
 }
 
 /* hide names for special tiles and the custom element */
-div.video-thing div.thingname,
-div.blank-thing div.thingname,
-div.image-thing div.thingname,
-div.custom-thing div.thingname,
-div.frame-thing div.thingname,
+div.thing.video-thing div.thingname,
+div.thing.blank-thing div.thingname,
+div.thing.image-thing div.thingname,
+div.thing.custom-thing div.thingname,
+div.thing.frame-thing div.thingname,
 div.overlay.custom,
 div.video.width, div.video.height,
 div.blank.width, div.blank.height,

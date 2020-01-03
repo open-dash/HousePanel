@@ -4,7 +4,7 @@
  * heavily modified by Ken Washington @kewashi on the forum
  * 
  * Designed for use only with HousePanel for Hubitat and SmartThings
- * (c) Ken Washington 2017, 2018
+ * (c) Ken Washington 2017 - 2020
  * 
  */
 var et_Globals = {};
@@ -113,7 +113,7 @@ function getCssRuleTarget(str_type, subid, thingindex, useall) {
                 target+= '.t_'+thingindex;
             }
         } else {
-            target = "div.panel"
+            target = "div.panel";
             if ( useall < 1 ) { target+= '.panel-'+thingindex; }
         }
         
@@ -295,8 +295,8 @@ function initDialogBinds(str_type, thingindex) {
         
     // new button to process the name change
     $("#processName").on("click", function (event) {
-        var target1 = getCssRuleTarget(str_type, "head", thingindex)
-        var target2 = getCssRuleTarget(str_type, "name", thingindex)
+        var target1 = getCssRuleTarget(str_type, "head", thingindex);
+        var target2 = getCssRuleTarget(str_type, "name", thingindex);
         var newname = $("#editName").val();
         $(target1).html(newname);
         $(target2).html(newname);
@@ -313,7 +313,7 @@ function initDialogBinds(str_type, thingindex) {
 
     // set the header name
     // var target1 = "span.n_"+thingindex;
-    var target1 = getCssRuleTarget(str_type, "head", thingindex)
+    var target1 = getCssRuleTarget(str_type, "head", thingindex);
     var newname = $(target1).html();
     $("#editName").val(newname);
     
@@ -1177,7 +1177,7 @@ function saveTileEdit(str_type, thingindex, newname) {
             if (pstatus==="success" ) {
                 results = "success: msg = " + presult;
                 console.log("POST " + results);
-                if ( cm_Globals.reload && ( typeof modalWindows["modalcustom"] === "undefined" || modalWindows["modalcustom"] === 0 ) ) {
+                if ( cm_Globals.reload && ( typeof modalWindows["modalcustom"]==="undefined"  || modalWindows["modalcustom"] === 0 ) ) {
                     location.reload(true);
                 }
             } else {
@@ -1194,7 +1194,7 @@ function saveTileEdit(str_type, thingindex, newname) {
 function cancelTileEdit(str_type, thingindex) {
     document.getElementById('customtiles').sheet = savedSheet;
     // alert( modalWindows["modalcustom"] );
-    if ( (et_Globals.reload || cm_Globals.reload) && ( modalWindows["modalcustom"] === 0 || typeof modalWindows["modalcustom"] === "undefined" ) ) {
+    if ( (et_Globals.reload || cm_Globals.reload) && ( typeof modalWindows["modalcustom"]==="undefined"  || modalWindows["modalcustom"] === 0 ) ) {
         location.reload(true);
     }
 }

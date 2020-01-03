@@ -112,7 +112,7 @@ function customizeTile(thingindex, aid, bid, str_type, hubnum) {
 
                 // grab the global list of all things and options
                 if ( !cm_Globals.allthings || !cm_Globals.options ) {
-                    var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
+                    var pos = {top: 5, left: 5, zindex: 9999, background: "red", color: "white"};
                     createModal("waitbox", "Loading data. Please wait...", "div.modalbuttons", false, pos);
                     getAllthings("waitbox", true);
                 } else {
@@ -610,7 +610,7 @@ function initCustomActions() {
             return;
         }
         
-        var pos = {top: 5, left: 5, zindex: 99999, background: "blue", color: "white"};
+        var pos = {top: 375, left: 380, zindex: 9999, background: "red", color: "white", position: "absolute"};
         var subid = $("#cm_userfield").val();
         var tilename = $("#cm_subheader").html();
         createModal("modalremove","Remove item: " + subid + " from tile: " + tilename + "<br> Are you sure?", "table.cm_table", true, pos, function(ui) {
@@ -895,7 +895,7 @@ function applyCustomField(action) {
     } else {
         
         // show processing window
-        // var pos = {top: 5, left: 5, zindex: 99999, background: "red", color: "white"};
+        // var pos = {top: 5, left: 5, zindex: 9999, background: "red", color: "white"};
         // createModal("waitbox", "Processing " + action + " Please wait...", "table.cm_table", false, pos);
         
         // make the call

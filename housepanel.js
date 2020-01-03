@@ -1,4 +1,12 @@
-// jquery functions to do Ajax on housepanel.php
+/* javascript file for HousePanel
+ * 
+ * Developed by Ken Washington @kewashi
+ * Designed for use only with HousePanel for Hubitat and SmartThings
+ * (c) Ken Washington 2017 - 2020
+ * 
+ * 01/02/2020 - updated to fix z-index bug so things show up on top properly
+ * 
+ */
 
 // globals array used everywhere now
 var cm_Globals = {};
@@ -12,7 +20,6 @@ cm_Globals.hubId = "all";
 var modalStatus = 0;
 var modalWindows = [];
 var priorOpmode = "Operate";
-var returnURL = "housepanel.php";
 var dragZindex = 1;
 var pagename = "main";
 
@@ -93,10 +100,16 @@ function getAllthings(modalwindow, reload) {
                 } else {
                     console.log("Error: failure obtaining things from HousePanel: ", presult);
                     cm_Globals.allthings = null;
+                    
+                    // try again but this time forcing a reload
+                    if ( modalwindow===false && reload===false ) {
+                        getAllthings(false, true);
+                    }
+                    
                     if ( modalwindow ) {
                         closeModal(modalwindow);
                     }
-                    closeModal("modalcustom");
+                    // closeModal("modalcustom");
                 }
             }, "json"
         );
@@ -118,7 +131,7 @@ function getOptions() {
                 }
             } else {
                 cm_Globals.options = null;
-                console.log("Error: failure reading your hmoptions.cfg file");
+                console.log("error - failure reading your hmoptions.cfg file");
             }
         }, "json"
     );
@@ -126,6 +139,7 @@ function getOptions() {
 
 $(document).ready(function() {
     // set the global return URL value
+    var returnURL;
     try {
         returnURL = $("input[name='returnURL']").val();
     } catch(e) {
@@ -140,23 +154,28 @@ $(document).ready(function() {
     }
 
     // show tabs and hide skin
-    if ( pagename==="main") {
+    if ( pagename==="main" ) {
         $("#tabs").tabs();
-        // $("div.skinoption").hide();
-    }
+        var tabcount = $("li.ui-tabs-tab").length;
+
+        // hide tabs if there is only one room
+        if ( tabcount === 1 ) {
+            toggleTabs();
+        }
     
-    // get default tab from cookie and go to that tab
-    var defaultTab = getCookie( 'defaultTab' );
-    if ( pagename==="main" && defaultTab ) {
-        try {
-            $("#"+defaultTab).click();
-        } catch (e) {
-            defaultTab = $("#roomtabs").children().first().attr("aria-labelledby");
-            setCookie('defaultTab', defaultTab, 30);
+        // get default tab from cookie and go to that tab
+        var defaultTab = getCookie( 'defaultTab' );
+        if ( defaultTab && tabcount > 1 ) {
             try {
                 $("#"+defaultTab).click();
-            } catch (f) {
-                console.log(f);
+            } catch (e) {
+                defaultTab = $("#roomtabs").children().first().attr("aria-labelledby");
+                setCookie('defaultTab', defaultTab, 30);
+                try {
+                    $("#"+defaultTab).click();
+                } catch (f) {
+                    console.log(f);
+                }
             }
         }
     }
@@ -166,11 +185,11 @@ $(document).ready(function() {
     // getOptions();
     if ( pagename==="main" || pagename==="options" ) {
         getAllthings(false, false);
-        setTimeout(function() {
-            if ( !cm_Globals.allthings ) {
-                getAllthings(false, true);
-            }
-        }, 3000);
+//        setTimeout(function() {
+//            if ( !cm_Globals.allthings ) {
+//                getAllthings(false, true);
+//            }
+//        }, 3000);
     }
     
     // disable return key
@@ -190,7 +209,6 @@ $(document).ready(function() {
     }
     
     if ( pagename==="main" ) {
-        getMaxZindex();
         setupSliders();
         setupTabclick();
         setupColors();
@@ -203,6 +221,7 @@ $(document).ready(function() {
     setTimeout(function() {
         if ( pagename==="main" && !disablepub ) {
             setupPage();
+            dragZindex = getMaxZindex("");
         }
     }, 2000);
 
@@ -213,7 +232,7 @@ function setupUserOpts() {
     // get hub info from options array
     var options = cm_Globals.options;
     if ( !options || !options.config ) {
-        console.log("error - valid options file not found");
+        console.log("error - valid options file not found.");
         return;
     } else {
         console.log("options config: ", options.config);
@@ -527,7 +546,7 @@ function processRules(pname, bid, thetype, trigger, pvalue) {
 
                         console.log("Rule trigger for tile: ", tilenum, " type: ", trtype, " id: ", trbid, "subid: ", subidtrigger, " value: ", ontrigger, " attr: ", theattr);
                         var ajaxcall = "doaction";
-                        $.post(returnURL, 
+                        $.post(cm_Globals.returnURL, 
                                {useajax: ajaxcall, id: trbid, tile: tilenum, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
                                function (presult, pstatus) {
                                     if (pstatus==="success" ) {
@@ -592,7 +611,7 @@ function processLinks(pname, bid, thetype, trigger, pvalue) {
             if ( ontrigger && ontrigger !== currentvalue ) {
                 var ajaxcall = "doaction";
                 console.log("LINK trigger for tile: ", tilenum, "trigger: ", trigger, " type: ", trtype, " bid: ", trbid, "subid: ", subidtrigger, " current: ",currentvalue," ontrigger: ", ontrigger);
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                        {useajax: ajaxcall, id: trbid, type: trtype, value: ontrigger, attr: theattr, hubid: hubnum, subid: subidtrigger},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -615,7 +634,7 @@ function rgb2hsv(r, g, b) {
      var g = parseInt( (''+g).replace(/\s/g,''),10 ); 
      var b = parseInt( (''+b).replace(/\s/g,''),10 ); 
 
-    if ( r==null || g==null || b==null ||
+    if ( r===null || g===null || b===null ||
          isNaN(r) || isNaN(g)|| isNaN(b) ) {
         return {"hue": 0, "saturation": 0, "level": 0};
     }
@@ -629,9 +648,9 @@ function rgb2hsv(r, g, b) {
     var h, s, v = max;
 
     var d = max - min;
-    s = max == 0 ? 0 : d / max;
+    s = max === 0 ? 0 : d / max;
 
-    if (max == min) {
+    if (max === min) {
     h = 0; // achromatic
     } else {
         switch (max) {
@@ -649,15 +668,23 @@ function rgb2hsv(r, g, b) {
     return {"hue": h, "saturation": s, "level": v};
 }
 
-function getMaxZindex() {
-    dragZindex = 2;
-    $("div.panel div.thing").each( function() {
+function getMaxZindex(panel) {
+    var zmax = 2;
+    var target = "div.panel";
+    if ( panel ) {
+        target = target + "-" + panel;
+    }
+    $(target+" div.thing").each( function() {
         var zindex = $(this).css("z-index");
-        if ( zindex && zindex < 9999 ) {
-            zindex = parseInt(zindex);
-            if ( zindex > dragZindex ) { dragZindex = zindex; }
+        if ( zindex ) {
+            zindex = parseInt(zindex, 10);
+            if ( zindex && zindex > zmax ) { zmax = zindex; }
         }
     });
+    if ( zmax >= 999 ) {
+        zmax = 2;
+    }
+    return zmax;
 }
 
 function convertToModal(modalcontent, addok) {
@@ -674,8 +701,8 @@ function convertToModal(modalcontent, addok) {
 function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunction, loadfunction) {
     // var modalid = "modalid";
     
-    // skip if a modal is already up...
-    if ( modalWindows[modalid]!==null && modalWindows[modalid]>0 ) { return; }
+    // skip if this modal window is already up...
+    if ( typeof modalWindows["modalcustom"]!=="undefined" && modalWindows[modalid]>0 ) { return; }
     
     modalWindows[modalid] = 1;
     modalStatus = modalStatus + 1;
@@ -685,8 +712,6 @@ function createModal(modalid, modalcontent, modaltag, addok,  pos, responsefunct
     
     var postype;
     if ( modaltag && typeof modaltag === "object" ) {
-        // alert("object");
-        // console.log("modaltag object: ", modaltag);
         modalhook = modaltag;
         postype = "relative";
     } else if ( modaltag && (typeof modaltag === "string") && typeof ($(modaltag)) === "object"  ) {
@@ -783,7 +808,7 @@ function closeModal(modalid) {
     $("#"+modalid).remove();
     modalWindows[modalid] = 0;
     modalStatus = modalStatus - 1;
-    // alert("Closing modal. modalstatus = " + modalStatus);
+    if ( modalStatus < 0 ) { modalStatus = 0; }
 }
 
 function setupColors() {
@@ -817,7 +842,7 @@ function setupColors() {
                 var thetype = $(tile).attr("type");
                 var ajaxcall = "doaction";
                 console.log(ajaxcall + ": id= "+bid+" type= "+ thetype+ " color= "+ hslstr);
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                        {useajax: ajaxcall, id: bid, type: thetype, value: hslstr, attr: "color", hubid: hubnum},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -872,7 +897,7 @@ function setupSliders() {
             
             // handle music volume different than lights
             if ( thetype != "music") {
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                        {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubid: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -885,7 +910,7 @@ function setupSliders() {
                 );
             // for music volume we pause briefly then update
             } else {
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                        {useajax: ajaxcall, id: bid, type: linktype, value: thevalue, attr: "level", subid: subid, hubid: hubnum, command: command, linkval: linkval},
                        function (presult, pstatus) {
                             if (pstatus==="success" ) {
@@ -944,7 +969,7 @@ function setupSliders() {
             
             console.log(ajaxcall + ": command= " + command + " id= "+bid+" type= "+linktype+ " value= " + thevalue + " subid= " + subid + " command= " + command + " linkval: ", linkval);
             
-            $.post(returnURL, 
+            $.post(cm_Globals.returnURL, 
                    {useajax: ajaxcall, id: bid, type: thetype, value: parseInt(ui.value), attr: "colorTemperature", hubid: hubnum, command: command, linkval: linkval },
                    function (presult, pstatus) {
                         if (pstatus==="success" ) {
@@ -1030,8 +1055,8 @@ function setupPagemove() {
                 pages[pagename] = k;
                 k++;
             });
-            // console.log("reordered rooms: " + pages);
-            $.post(returnURL, 
+            console.log("reordering " + k + " rooms: ", pages);
+            $.post(cm_Globals.returnURL, 
                 {useajax: "pageorder", id: "none", type: "rooms", value: pages, attr: "none"}
             );
         }
@@ -1079,8 +1104,8 @@ function setupSortable() {
                 updateSortNumber(this, num.toString());
             });
             reordered = true;
-            console.log("reordered " + num + " tiles: ", things);
-            $.post(returnURL, 
+            console.log("reordering " + num + " tiles: ", things);
+            $.post(cm_Globals.returnURL, 
                    {useajax: "pageorder", id: "none", type: "things", value: things, attr: roomtitle}
             );
         }
@@ -1108,18 +1133,18 @@ function thingDraggable(thing, snap) {
         start: function(evt, ui) {
             startPos.left = $(evt.target).css("left");
             startPos.top = $(evt.target).css("top");
-            
             startPos.zindex = $(evt.target).css("z-index");
-            if ( !startPos.zindex || !parseInt(startPos.zindex) ) {
-                startPos.zindex = 2;
-            }
-            // console.log("Starting drag top= "+startPos.top+" left= "+startPos.left+" z= "+startPos.zindex);
             
             // while dragging make sure we are on top
             $(evt.target).css("z-index", 9999);
         },
         stop: function(evt, ui) {
-            startPos.zindex = parseInt(startPos.zindex) + 1;
+            startPos.zindex = parseInt(startPos.zindex) ;
+            
+            // fix invalid tiles
+            if ( startPos.zindex > 99 ) {
+                startPos.zindex = 99;
+            }
             $(evt.target).css( {"z-index": startPos.zindex.toString()} );
         },
         grid: snapgrid
@@ -1130,7 +1155,7 @@ function setupDraggable() {
 
     // get the catalog content and insert after main tabs content
     var hubpick = cm_Globals.hubId;
-    var xhr = $.post(returnURL, 
+    var xhr = $.post(cm_Globals.returnURL, 
         {useajax: "getcatalog", id: 0, type: "catalog", value: "none", attr: hubpick},
         function (presult, pstatus) {
             if (pstatus==="success") {
@@ -1197,22 +1222,24 @@ function setupDraggable() {
                                     cnt = parseInt(cnt.substring(2),10) + 1;
                                     // alert("bid= " + bid + " type= " + thingtype + " panel= "+panel+ " cnt= " + cnt + " after id= " + lastthing.attr("id") + " name= " + lastthing.find(".thingname").text());
 
-                                    $.post(returnURL, 
+                                    $.post(cm_Globals.returnURL, 
                                         {useajax: "dragmake", id: bid, type: thingtype, value: panel, attr: cnt},
                                         function (presult, pstatus) {
-                                            if (pstatus==="success") {
+                                            if (pstatus==="success" && !presult.startsWith("error")) {
                                                 console.log( "Added " + thingname + " of type " + thingtype + " and bid= " + bid + " to room " + panel + " thing: ", presult );
                                                 lastthing.after(presult);
                                                 var newthing = lastthing.next();
-                                                dragZindex = dragZindex + 1;
-                                                $(newthing).css( {"z-index": dragZindex.toString()} );
+                                                var zmax = getMaxZindex(panel) + 1;
+                                                $(newthing).css( {"z-index": zmax.toString()} );
                                                 var snap = $("#mode_Snap").prop("checked");
                                                 thingDraggable( newthing, snap );
                                                 setupPage();
                                                 setupSliders();
                                                 setupColors();
+                                            } else {
+                                                console.log(presult);
                                             }
-                                        }
+                                        } 
                                     );
                                 }
                             });
@@ -1225,31 +1252,36 @@ function setupDraggable() {
                     dragthing["tile"] = tile;
                     dragthing["panel"] = $(thing).attr("panel");
                     var customname = $("div." + thingtype + ".name.p_"+tile).html();
-                    // moving a tile will result in setting the custom field
-                    // this preserves custom fields
-                    // var customname = $("span.customname.m_"+tile).html();
                     if ( !customname ) { customname = thingname; }
                     dragthing["custom"] = customname;
-                    dragZindex = parseInt(dragZindex,10);
-                    
-                    if ( !startPos.zindex ) {
-                        startPos.zindex = 2;
-                    }
-                    if ( startPos.zindex < dragZindex ) { 
-                        startPos.zindex = dragZindex + 1; 
-                    }
-                    dragZindex = startPos.zindex;
+//                     dragZindex = parseInt(dragZindex,10);
+//                    
+//                    if ( !startPos.zindex ) {
+//                        startPos.zindex = 2;
+//                    }
+//                    if ( startPos.zindex < dragZindex ) { 
+//                        startPos.zindex = dragZindex + 1; 
+//                    }
+//                     dragZindex = startPos.zindex;
                     
                     // make this sit on top
-                    dragthing["zindex"] = startPos.zindex;
-                    $(thing).css( {"z-index": startPos.zindex.toString()} );
+                    var zmax = getMaxZindex(dragthing["panel"]);
+                    dragthing["zindex"] = zmax;
+                    $(thing).css( {"z-index": zmax.toString()} );
                     
                     // now post back to housepanel to save the position
                     // also send the dragthing object to get panel name and tile pid index
                     if ( ! $("#catalog").hasClass("ui-droppable-hover") ) {
-                        console.log( "Moved " + customname + " to top: "+ ui.position.top + ", left: " + ui.position.left + ", z: " + dragZindex );
-                        $.post(returnURL, 
-                               {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position}
+                        console.log( "Moving " + customname + " to top: "+ ui.position.top + ", left: " + ui.position.left + ", z-index: " + zmax);
+                        $.post(cm_Globals.returnURL, 
+                               {useajax: "dragdrop", id: bid, type: thingtype, value: dragthing, attr: ui.position},
+                            function (presult, pstatus) {
+                                if (pstatus==="success" ) {
+                                    console.log("success - result: ", presult," position: ", ui.position );
+                                } else {
+                                    console.log("error - result: ", presult," position: ", ui.position );
+                                }
+                            }
                         );
                     }
 
@@ -1286,14 +1318,15 @@ function setupDraggable() {
                     if ( clk==="okay" ) {
                         // remove it from the system
                         // alert("Removing thing = " + tilename);
-                        $.post(returnURL, 
+                        $.post(cm_Globals.returnURL, 
                             {useajax: "dragdelete", id: bid, type: thingtype, value: panel, attr: tile},
                             function (presult, pstatus) {
-                                console.log("dragdelete call: status: ", pstatus, " result: ", presult);
-                                if (pstatus==="success" && presult==="success") {
+                                if (pstatus==="success" && !presult.startsWith("error")) {
                                     console.log( "Removed tile: ", $(thing).html() );
                                     // remove it visually
                                     $(thing).remove();
+                                } else {
+                                    console.log(presult);
                                 }
                             }
                         );
@@ -1305,7 +1338,7 @@ function setupDraggable() {
                             $(thing).css("position","relative").css("left",startPos.left).css("top",startPos.top);
                             $(thing).css( {"z-index": startPos.zindex.toString()} );
                         } catch(e) { 
-                            alert("Drag/drop error. Please share this with @kewashi on the ST Community Forum: " + e.message); 
+                            alert("Drag/drop error. Please share this with @kewashi on the ST or HE Community Forum: " + e.message); 
                         }
                     }
                 });
@@ -1320,7 +1353,7 @@ function dynoForm(ajaxcall, content, idval, typeval) {
     typeval = typeval ? typeval : "dynoform";
     content = content ? content : "";
     
-    var controlForm = $('<form>', {'name': 'controlpanel', 'action': returnURL, 'target': '_top', 'method': 'POST'});
+    var controlForm = $('<form>', {'name': 'controlpanel', 'action': cm_Globals.returnURL, 'target': '_top', 'method': 'POST'});
     controlForm.appendTo("body");
     // alert("Posting form for ajaxcall= " + ajaxcall + " to: " + retval);
     // lets now add the hidden fields we need to post our form
@@ -1418,7 +1451,7 @@ function updateFilters() {
         }
     });
     var newskin = $("#skinid").val();
-    $.post(returnURL, 
+    $.post(cm_Globals.returnURL, 
         {useajax: "savefilters", id: 0, type: "none", value: filters, attr: newskin}
     );
 }
@@ -1507,13 +1540,13 @@ function setupButtons() {
             createModal("modalexec","Log out user "+ username + " <br/>Are you sure?", "body" , true, pos, function(ui, content) {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
-                    $.post(returnURL, 
+                    $.post(cm_Globals.returnURL, 
                         {useajax: "logout", id: 0, type: "none", value: username},
                         function (presult, pstatus) {
                             if ( pstatus==="success" ) {
-                                window.location.href = returnURL;
+                                window.location.href = cm_Globals.returnURL;
                             } else {
-                                console.log("logout call: status: ", pstatus, " result: ", presult);
+                                console.log("error - logout call: status: ", pstatus, " result: ", presult);
                              }
                         }
                     );
@@ -1529,15 +1562,15 @@ function setupButtons() {
         $("button.showhistory").on('click', function() {
             if ( $("#devhistory").hasClass("hidden") ) {
                 $("#devhistory").removeClass("hidden");
-                $(this).html("Hide History");
+                $(this).html("Hide Dev Log");
             } else {
                 $("#devhistory").addClass("hidden");
-                $(this).html("Show History");
+                $(this).html("Show Dev Log");
             }
         });
         
         $("button.infobutton").on('click', function() {
-            window.location.href = returnURL;
+            window.location.href = cm_Globals.returnURL;
         });
     }
 
@@ -1614,11 +1647,9 @@ function setupButtons() {
             values.hubId = hubId;
             values.hubTimer = formData.get("hubTimer");
             
-            $.post(returnURL, values, function(presult, pstatus) {
+            $.post(cm_Globals.returnURL, values, function(presult, pstatus) {
                 clearInterval(blinkauth);
                 console.log("hub auth: status: ", pstatus, " result: ", presult);
-                
-                 // alert("Ready to auth...");
                 var obj = presult;
                 if ( obj.action === "things" ) {
                     // console.log(obj);
@@ -1630,7 +1661,7 @@ function setupButtons() {
 
                 // if oauth flow then start the process
                 if ( obj.action === "oauth" ) {
-                    var nvpreq= "response_type=code&client_id=" + encodeURI(clientId) + "&scope=app&redirect_uri=" + encodeURI(returnURL);
+                    var nvpreq= "response_type=code&client_id=" + encodeURI(clientId) + "&scope=app&redirect_uri=" + encodeURI(cm_Globals.returnURL);
                     var location = hubHost + "/oauth/authorize?" + nvpreq;
                     window.location.href = location;
                 }
@@ -1646,11 +1677,11 @@ function setupButtons() {
             var blinkauth = setInterval(function() {
                 $("#newthingcount").fadeTo(400, 0.1 ).fadeTo(400, 1);
             }, 1000);
-            $.post(returnURL, 
+            $.post(cm_Globals.returnURL, 
                 {useajax: "cancelauth", id: 1, type: "none", value: "none"},
                 function (presult, pstatus) {
                     if (pstatus==="success") {
-                        window.location.href = returnURL;
+                        window.location.href = cm_Globals.returnURL;
                     } else {
                         clearInterval(blinkauth);
                     }
@@ -1671,11 +1702,11 @@ function setupButtons() {
                 var clk = $(ui).attr("name");
                 if ( clk==="okay" ) {
                     // remove it from the system
-                    $.post(returnURL, 
+                    $.post(cm_Globals.returnURL, 
                         {useajax: "hubdelete", id: hubId, type: "none", value: "none"},
                         function (presult, pstatus) {
-                            console.log("hubdelete call: status: ", pstatus, " result: ", presult);
-                            if (pstatus==="success") {
+                            if (pstatus==="success" && !presult.startsWith("error")) {
+                                getOptions();
                                 // now lets fix up the auth page by removing the hub section
                                 var target = "#authhub_" + hubId;
                                 $(target).remove();
@@ -1691,9 +1722,8 @@ function setupButtons() {
                                 // send message over to Node.js to update elements
                                 wsSocketSend("update");
                             } else {
-                                var errstr = "Error attempting to remove hub #" + hubnum+ " hubID: " + hubId;
-                                $("#newthingcount").html(errstr);
-                                console.log(errstr);
+                                $("#newthingcount").html(presult);
+                                console.log(presult);
                             }
                         }
                     );
@@ -1709,15 +1739,15 @@ function setupButtons() {
 
 // function to send a message to Node.js app
 // this isn't used because using wsSocket is more efficient
-function postNode(msg) {
-    if ( nodejsUrl ) {
-        $.post(nodejsUrl, {msgtype: "initialize", message: msg},
-            function(presult, pstatus) {  
-                console.log("Node.js call: status: ", pstatus, " result: ", presult);
-            }, "json"
-        );
-    }
-}
+//function postNode(msg) {
+//    if ( nodejsUrl ) {
+//        $.post(nodejsUrl, {msgtype: "initialize", message: msg},
+//            function(presult, pstatus) {  
+//                console.log("Node.js call: status: ", pstatus, " result: ", presult);
+//            }, "json"
+//        );
+//    }
+//}
 
 function addEditLink() {
     
@@ -1726,7 +1756,7 @@ function addEditLink() {
        var editdiv = "<div class=\"editlink\" aid=" + $(this).attr("id") + "> </div>";
        var cmzdiv = "<div class=\"cmzlink\" aid=" + $(this).attr("id") + "> </div>";
        var deldiv = "<div class=\"dellink\" aid=" + $(this).attr("id") + "> </div>";
-       $(this).append(editdiv).append(cmzdiv).append(deldiv);
+       $(this).append(cmzdiv).append(editdiv).append(deldiv);
     });
     
     // add links to edit page tabs
@@ -1787,14 +1817,15 @@ function addEditLink() {
             if ( clk==="okay" ) {
                 // remove it from the system
                 // alert("Removing thing = " + tilename);
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                     {useajax: "dragdelete", id: bid, type: str_type, value: panel, attr: tile},
                     function (presult, pstatus) {
-                        console.log("dragdelete call: status: ", pstatus, " result: ", presult);
-                        if (pstatus==="success" && presult==="success") {
+                        if (pstatus==="success" && !presult.startsWith("error")) {
                             console.log( "Removed tile: "+ $(thing).html() );
                             // remove it visually
                             $(thing).remove();
+                        } else {
+                            console.log(presult);
                         }
                     }
                 );
@@ -1814,11 +1845,10 @@ function addEditLink() {
             if ( clk==="okay" ) {
                 // remove it from the system
                 // alert("Removing thing = " + tilename);
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                     {useajax: "pagedelete", id: roomnum, type: "none", value: roomname, attr: "none"},
                     function (presult, pstatus) {
-                        console.log("pagedelete call: status: ", pstatus, " result: ", presult);
-                        if (pstatus==="success" && presult==="success") {
+                        if (pstatus==="success" && !presult.startsWith("error")) {
                             console.log( "Removed Page #" + roomnum + " Page name: "+ roomname );
                             // remove it visually
                             $("li[roomnum="+roomnum+"]").remove();
@@ -1829,6 +1859,8 @@ function addEditLink() {
                                 defaultTab = $("#roomtabs").children().first().attr("aria-labelledby");
                                 setCookie('defaultTab', defaultTab, 30);
                             }
+                        } else {
+                            console.log(presult);
                         }
                     }
                 );
@@ -1852,12 +1884,13 @@ function addEditLink() {
         createModal("modaladd","Add New Room to HousePanel. Are you sure?", "body" , true, pos, function(ui, content) {
             var clk = $(ui).attr("name");
             if ( clk==="okay" ) {
-                $.post(returnURL, 
+                $.post(cm_Globals.returnURL, 
                     {useajax: "pageadd", id: "none", type: "none", value: "none", attr: "none"},
                     function (presult, pstatus) {
-                        console.log("pageadd call: status: ", pstatus, " result: ", presult);
                         if ( pstatus==="success" && !presult.startsWith("error") ) {
                             location.reload(true);
+                        } else {
+                            console.log(presult);
                         }
                     }
                 );
@@ -2230,7 +2263,7 @@ function updateTile(aid, presult) {
                     value = value.trim();
                     
                     console.log("music track changed from: [" + oldvalue + "] to: ["+value+"]");
-                    $.post(returnURL, 
+                    $.post(cm_Globals.returnURL, 
                            {useajax: "trackupdate", id: 1, type: "music", value: value},
                            function (presult, pstatus) {
                                 if (pstatus==="success" && typeof presult==="object" ) {
@@ -2258,7 +2291,6 @@ function updateTile(aid, presult) {
             }
 
             // update the content 
-            // console.log("oldvalue= ",oldvalue," value= ", value, " targetid= ", targetid);
             if (oldvalue || value) {
                 try {
                     $(targetid).html(value);
@@ -2275,7 +2307,7 @@ function updateTile(aid, presult) {
 
 function refreshTile(aid, bid, thetype, hubnum) {
     var ajaxcall = "doquery";
-    $.post(returnURL, 
+    $.post(cm_Globals.returnURL, 
         {useajax: ajaxcall, id: bid, type: thetype, value: "none", attr: "none", hubid: hubnum},
         function (presult, pstatus) {
             if (pstatus==="success") {
@@ -2356,7 +2388,6 @@ function clockUpdater(tz) {
                     var timestr = $("div.clock.time.p_"+linkval).html();
                     $(this).html(timestr);
                 }
-                // console.log("skip time, linkval= ",linkval);
             } else {
                 var timestr = defaultstr;
                 if ( hour24 >= 12 ) {
@@ -2378,22 +2409,25 @@ function setupTimer(timerval, timertype, hubnum) {
     updarray.myMethod = function() {
 
         var that = this;
-        console.log("hub #" + that[2] + " timer = " + that[1] + " timertype = " + that[0] + " priorOpmode= " + priorOpmode + " modalStatus= " + modalStatus);
+        if ( LOGWEBSOCKET ) {
+            console.log("hub #" + that[2] + " timer = " + that[1] + " timertype = " + that[0] + " priorOpmode= " + priorOpmode + " modalStatus= " + modalStatus);
+        }
         var err;
 
         // skip if not in operation mode or if inside a modal dialog box
-        if ( priorOpmode !== "Operate" || modalStatus ) { 
-            // console.log ("Timer Hub #" + that[2] + " skipped: opmode= " + priorOpmode + " modalStatus= " + modalStatus);
+        if ( priorOpmode !== "Operate" || modalStatus > 0 ) { 
             // repeat the method above indefinitely
             setTimeout(function() {updarray.myMethod();}, that[1]);
             return; 
         }
 
         try {
-            $.post(returnURL, 
+            $.post(cm_Globals.returnURL, 
                 {useajax: "doquery", id: that[0], type: that[0], value: "none", attr: "none", hubid: that[2]},
                 function (presult, pstatus) {
-                    console.log("pstatus = " + pstatus + " presult= ", presult);
+                    if ( LOGWEBSOCKET ) {
+                        console.log("pstatus = " + pstatus + " presult= ", presult);
+                    }
                     if (pstatus==="success" && typeof presult==="object" ) {
 
                         // go through all tiles and update
@@ -2449,7 +2483,7 @@ function setupTimer(timerval, timertype, hubnum) {
         }
 
         // repeat the method above indefinitely
-        console.log("timer= " + that[1]);
+        // console.log("timer= " + that[1]);
         setTimeout(function() {updarray.myMethod();}, that[1]);
     };
 
@@ -2654,7 +2688,7 @@ function setupPage() {
                         processClick(that, thingname);
                     } else {
                         userpw = $("#userpw").val();
-                        $.post(returnURL, 
+                        $.post(cm_Globals.returnURL, 
                             {useajax: "pwhash", id: "none", type: "verify", value: userpw, attr: pw},
                             function (presult, pstatus) {
                                 if ( pstatus==="success" && presult==="success" ) {
@@ -2766,7 +2800,7 @@ function processClick(that, thingname) {
         // update the text on screen and return it to the log
         } else if ( command==="TEXT" ) {
             console.log(ajaxcall + ": thingname= " + thingname + " command= " + command + " bid= "+bid+" hub= " + hubnum + " type= " + thetype + " linktype= " + linktype + " subid= " + subid + " value= " + thevalue + " linkval= " + linkval + " attr="+theattr);
-            $.post(returnURL, 
+            $.post(cm_Globals.returnURL, 
                 {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                 attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                 function(presult, pstatus) {
@@ -2817,7 +2851,7 @@ function processClick(that, thingname) {
             this[0].html(this[2]);
         };
 
-        $.post(returnURL, 
+        $.post(cm_Globals.returnURL, 
             {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                 attr: subid, subid: subid, hubid: hubnum},
             function(presult, pstatus) {
@@ -2882,7 +2916,7 @@ function processClick(that, thingname) {
         setTimeout( function(){ $(targetid).removeClass("clicked"); }, 750 );
 
         // pass the call to main routine in php
-        $.post(returnURL, 
+        $.post(cm_Globals.returnURL, 
                {useajax: ajaxcall, id: bid, type: thetype, value: thevalue, 
                 attr: theattr, subid: subid, hubid: hubnum, command: command, linkval: linkval},
                function (presult, pstatus) {

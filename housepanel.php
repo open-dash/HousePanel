@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.116      Tweaks to enable floor plan skins and bug fixes
  2.115      Finalize audio track refresh feature and remove bugs
               - handle music tiles properly and remove test bug
  2.114      Allow track to update on hub refresh for audio devices
@@ -2759,6 +2760,7 @@ function setOrder($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
 }
 
 function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
+    
     $updated = false;
     $options = readOptions();
     $panel = $swval["panel"];
@@ -2796,7 +2798,17 @@ function setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr) {
                                                    intval($swattr["left"],10), 
                                                    $zindex, $customname);
         writeOptions($options);
+        $pt = $options["things"][$panel];
+        try {
+            $result = "success - moved= " . print_r($pt[$moved], true);
+        } catch (Exception $e) {
+            $result = "error - " . print_r($e,true);
+        }
+    
+    } else {
+        $result = "error - did not move tile successfully. value= " . print_r($swval, true);
     }
+    return $result;
     
 }
 
@@ -4171,7 +4183,7 @@ function getInfoPage($returnURL, $allthings, $devhistory) {
     }
     $tc.= "</div>";
     
-    $tc.= "<button class=\"showhistory\">Show History</button>";
+    $tc.= "<button class=\"showhistory\">Show Dev Log</button>";
     $tc.= "<div id=\"devhistory\" class=\"infopage hidden\">";
     $tc.= "<pre>$devhistory</pre>";
     $tc.= "</div>";
@@ -5077,36 +5089,38 @@ function is_ssl() {
                 
             // implement free form drag drap capability
             case "dragdrop":
-                echo setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr);
+                $optres = setPosition($endpt, $access_token, $swid, $swtype, $swval, $swattr);
+                echo $optres;
                 break;
         
             // make new tile from drag / drop
             case "dragmake":
-                if ( $swid && $swtype && $swval && $swattr ) {
+                if ( $swid!=="" && $swtype && $swval && $swattr ) {
                     $allthings = getAllThings();
                     $retcode = addThing($swid, $swtype, $swval, $swattr, $allthings);
                 } else {
-                    $retcode = "<div class='error'>error id = $swid type = $swtype val = $swval</div>";
+                    $retcode = "error - invalid parameters for dragmake function. swid= $swid swval= $swval swattr= $swattr";
                 }
                 echo $retcode;
+                exit(0);
                 break;
             
             // remove tile from drag / drop
             case "dragdelete":
-                if ( $swid && $swtype && $swval && $swattr ) {
+                if ( $swid!=="" && $swtype && $swval && $swattr ) {
                     $retcode = delThing($swid, $swtype, $swval, $swattr);
                 } else {
-                    $retcode = "error - invalid parameters for tile delete function";
+                    $retcode = "error - invalid parameters for pagedelete function. swid= $swid swval= $swval swattr= $swattr";
                 }
                 echo $retcode;
                 break;
             
             // remove tile from drag / drop
             case "pagedelete":
-                if ( $swid && $swval ) {
+                if ( $swid!=="" && $swval!=="none" ) {
                     $retcode = delPage($swid, $swval);
                 } else {
-                    $retcode = "error - invalid parameters for pagedelete function";
+                    $retcode = "error - invalid parameters for pagedelete function. swid= $swid swval= $swval";
                 }
                 echo $retcode;
                 break;
@@ -5550,16 +5564,20 @@ function is_ssl() {
                         break;
                     }
                 }
+                
+                // remove hub and signal success if found
+                // we no longer return the hubs - return success code instead
+                // in the js routine we re-read the options file anyway
                 if ( $update ) {
                     $newhubs = array_values($hubs);
                     $configoptions["hubs"] = $newhubs;
                     $options["config"] = $configoptions;
                     writeOptions($options);
+                    echo "success";
+                } else {
+                    echo "error - hub $hubId not found so cannot be deleted.";
                 }
-                echo json_encode($newhubs);
-                // $_SESSION["hpcode"] = "redoauth";
-                // header("Location: $returnURL");
-                // exit(0);
+                // echo json_encode($newhubs);
                 break;
                 
             case "trackupdate":

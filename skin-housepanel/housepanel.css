@@ -1008,3 +1008,24 @@ div.switchlevel.event_1, div.bulb.event_1 {
     background-color: rgba(90,90,90,1);
     font-style: italic;
 }
+div.thing div.thingname {
+    background-color: rgba(0, 50, 100,1);
+    font-size: 11pt;
+    text-align: center;
+    color: #ffffff;
+    border-bottom: 2px solid rgba(0,0,0,1);
+    height: 30px;
+    cursor: default;
+    display: block;
+}
+div.thing div.thingname:hover {
+    background-color: #5050a0; 
+    color: #cccccc;
+}
+div.thermostat-thing div.thingname {
+    width: 120px;
+}
+
+div.music-thing div.thingname, div.audio-thing div.thingname {
+    width: 100%;
+}
