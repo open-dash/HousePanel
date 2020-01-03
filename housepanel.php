@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.117      Load jquery locally and include files in the distro
  2.116      Tweaks to enable floor plan skins and bug fixes
  2.115      Finalize audio track refresh feature and remove bugs
               - handle music tiles properly and remove test bug
@@ -395,9 +396,14 @@ function htmlHeader($skin="skin-housepanel") {
     $tc.= '<link rel="shortcut icon" href="media/favicon.ico">';
     
     // load jQuery and themes
-    $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
-    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>';
-    $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
+    // now load these locally and include them in the HP source for speed
+    // and to keep everything local
+    //    $tc.= '<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">';
+    //    $tc.= '<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>';
+    //    $tc.= '<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>';
+    $tc.= '<link rel="stylesheet" href="jquery-ui.css">';
+    $tc.= '<script src="jquery-1.12.4.min.js"></script>';
+    $tc.= '<script src="jquery-ui.min.js"></script>';
 
     // md5 function
     $tc.= '<script src="md5.min.js"></script>';
