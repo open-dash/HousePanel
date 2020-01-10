@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.118      Fix bug that prevented user from changing custom tile count
  2.117      Load jquery locally and include files in the distro
  2.116      Tweaks to enable floor plan skins and bug fixes
  2.115      Finalize audio track refresh feature and remove bugs
@@ -3845,18 +3846,24 @@ function processOptions($options, $optarray) {
     $expirz = time()-3650*24*3600;
     
     $oldoptions = $options;
-    $configoptions = $oldoptions["config"];
+    $configoptions = $options["config"];
     $options["things"] = array();
     $roomnames = array_keys($oldoptions["rooms"]);
     $specialtiles = getSpecials();
     if ( array_key_exists("specialtiles", $oldoptions["config"]) ) {
-        $specialcounts = $oldoptions["config"]["specialtiles"];
+        $specialcounts = $configoptions["specialtiles"];
+        if ( !is_array($specialcounts) ) {
+            $specialcounts = array();
+            foreach ($specialtiles as $stype) {
+                $specialcounts[$stype] = 4;
+            }
+            $configoptions["specialtiles"] = $specialcounts;
+        }
     } else {
         $specialcounts = array();
         foreach ($specialtiles as $stype) {
             $specialcounts[$stype] = 4;
         }
-        $configoptions["specialtiles"] = $specialcounts;
         $configoptions["specialtiles"] = $specialcounts;
     }
     
@@ -3975,6 +3982,7 @@ function processOptions($options, $optarray) {
                 $customcnt = intval($val);
                 if ( $customcnt !== $oldcnt ) {
                     $options = createSpecialIndex($customcnt, $stype, $spid, $options);
+                    $specialcounts = $options["config"]["specialtiles"];
                 }
                 
             }
@@ -4088,6 +4096,7 @@ function processOptions($options, $optarray) {
     // now set all the parameters with complex logic
     $configoptions["pword"] = $pwords;
     $configoptions["timezone"] = $timezone;
+    $configoptions["specialtiles"] = $specialcounts;
     
     // save the configuration parameters in the main options array
     $options["config"] = $configoptions;

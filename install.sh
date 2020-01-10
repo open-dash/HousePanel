@@ -185,35 +185,49 @@ then
 
     cd /var/www/html/$hpdir
     # update individual files
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.php"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.js"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/hpapi.py"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/customize.js"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.js"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.css"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame1.html"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame2.html"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame3.html"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame4.html"
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.css"
+    echo -e "$Cyan \nCopying updated main files... $Color_Off"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.php"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.js"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/hpapi.py"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/customize.js"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.js"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/tileeditor.css"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame1.html"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame2.html"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame3.html"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/frame4.html"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel.css"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/iconlist.txt"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/getdir.php"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/index.html"
+
+    if [ ! -f "jquery-1.12.4.min.js" ];
+    then
+        echo -e "$Cyan \nCopying jQuery files... $Color_Off"
+        wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/jquery-1.12.4.min.js"
+        wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/jquery-ui.min.js"
+        wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/jquery-ui.css"
+    fi
 
     cd docs
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/docs/index.html"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/docs/index.html"
 
+    echo -e "$Cyan \nUpdating css files for default skins... $Color_Off"
     cd ../skin-housepanel
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-housepanel/housepanel.css"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-housepanel/housepanel.css"
 
     cd ../skin-modern
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-modern/housepanel.css"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-modern/housepanel.css"
 
     cd ../skin-plain
-    wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-plain/housepanel.css"
+    wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/skin-plain/housepanel.css"
 
     if [ "$hppush" = "y"  ];
     then
+        echo -e "$Cyan \nUpdating housepanel-push files... $Color_Off"
         cd ../housepanel-push
-        wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/housepanel-push.js"
-        wget -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/package.json"
+        wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/housepanel-push.js"
+        wget -q -nd -N "https://raw.githubusercontent.com/kewashi/HousePanel/master/housepanel-push/package.json"
     fi
 
     cd /var/www/html/$hpdir
@@ -238,11 +252,11 @@ if [ "$hppush" = "y"  ];
 then
     cd /var/www/html/$hpdir/housepanel-push
 
-    echo -e "$Green \nInstalling housepanel-push package $Color_Off"
+    echo -e "$Cyan \nInstalling housepanel-push package $Color_Off"
     npm install
 
     # create the file to install as a service
-    echo -e "$Green \nCreating a file to run housepanel-push as a service $Color_Off"
+    echo -e "$Cyan \nCreating a file to run housepanel-push as a service $Color_Off"
     sudo echo "[Unit]" > housepanel-push.service
     sudo echo "Description=Node.js HousePanel Push Server" >> housepanel-push.service
     sudo echo "After=network-online.target" >> housepanel-push.service
@@ -259,7 +273,7 @@ then
     sudo echo "WantedBy=multi-user.target" >> housepanel-push.service
     sudo chmod 755 housepanel-push.service
 
-    echo -e "$Green \nInstalling housepanel-push as a service $Color_Off"
+    echo -e "$Cyan \nInstalling housepanel-push as a service $Color_Off"
     sudo cp housepanel-push.service /etc/systemd/system
     cd /etc/systemd/system
     sudo systemctl enable housepanel-push
@@ -268,5 +282,5 @@ then
 fi
 
 cd ~
-echo -e "$Green \n $infostr in /var/www/html/$hpdir $Color_Off"
+echo -e "$Green \n$infostr in /var/www/html/$hpdir $Color_Off"
 echo -e "$Green \nTo use open a browser and load  http://$ip/$hpdir/housepanel.php $Color_Off"

@@ -952,8 +952,7 @@ div.other-thing.pioneer, div.other-thing.pioneer div.thingname, div.other-thing.
 div.other-thing.pioneer, div.other-thing.lg {
     background-color: rgba(110, 222, 222, 0.3);
 }
-div.other-thing.pioneer div.overlay,
-div.other-thing.lg div.overlay {
+div.other-thing div.overlay {
     display: inline-block;
     width: 80px; height: 30px;
     padding-top: 10px;
@@ -961,9 +960,8 @@ div.other-thing.lg div.overlay {
     background-color: rgba(0, 50, 50, 1);
     cursor: pointer;
 }
-div.other-thing.pioneer div.overlay.healthStatus,
+div.other-thing div.overlay.healthStatus,
 div.other-thing.pioneer div.overlay.name, 
-div.other-thing.lg div.overlay.healthStatus,
 div.other-thing.lg div.overlay.name 
 {
     display: none;
