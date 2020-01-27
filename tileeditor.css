@@ -1761,7 +1761,7 @@ div.rule {
 
 /* by default turn off all history displays */
 div.overlay.event_1, div.overlay.event_2, div.overlay.event_3, div.overlay.event_4,
-div.overlay.password {
+div.overlay.password, div.overlay.tamper {
     display: none;
 }
 

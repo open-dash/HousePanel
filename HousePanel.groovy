@@ -17,6 +17,7 @@
  * it displays and enables interaction with switches, dimmers, locks, etc
  * 
  * Revision history:
+ * 01/10/2020 - add mode chenge hub push and clean up code
  * 12/20/2019 - bug fixes and cleanup
  * 12/19/2019 - update to include new Sonos audioNotification capability
  * 08/25/2019 - bugfix water leak to prevent error if wet and dry not supported
@@ -207,15 +208,11 @@ def initialize() {
     state.loggingLevelIDE = settings.configLogLevel?.toInteger() ?: 3
     logger("Installed ${hubtype} hub with settings: ${settings} ", "debug")
     
-    if ( isHubitat() ) {
-        subscribe(location, "hsmStatus", hsmStatusHandler)
-        subscribe(location, "hsmAlerts", hsmAlertHandler)
-    }
-    
     if (state.directIP)
     {
-        postHub("initialize");
-        runIn(10, "registerAll");
+        postHub("initialize", "", "", "", "")
+        registerLocations()
+        runIn(200, "registerAll")
     }
 }
 
@@ -2236,18 +2233,27 @@ def setRoutine(swid, cmd, swattr, subid) {
 }
 
 def registerAll() {
-    runIn(200, "registerLights");
-    runIn(200, "registerBulbs");
-    runIn(200, "registerDoors");
-    runIn(200, "registerMotions");
-    runIn(200, "registerOthers");
-    runIn(200, "registerThermostats");
-    runIn(200, "registerTracks");
-    runIn(200, "registerMusics");
-    runIn(200, "registerAudios");
+    runIn(300, "registerLights");
+    runIn(300, "registerBulbs");
+    runIn(300, "registerDoors");
+    runIn(300, "registerMotions");
+    runIn(300, "registerOthers");
+    runIn(300, "registerThermostats");
+    runIn(300, "registerTracks");
+    runIn(300, "registerMusics");
+    runIn(300, "registerAudios");
+}
+
+def registerLocations() {
+    // lets subscribe to mode changes
+    subscribe(location, "mode", modeChangeHandler)
+    logger("Registered locations for mode changes", "info")
     
-    // skip these on purpose because they change slowly and report often
-    // runIn(10, "registerSlows");
+    // doesn't do anything yet
+    if ( isHubitat() ) {
+        subscribe(location, "hsmStatus", hsmStatusHandler)
+        subscribe(location, "hsmAlerts", hsmAlertHandler)
+    }
 }
 
 def registerLights() {
@@ -2308,6 +2314,7 @@ def registerAudios() {
     registerCapabilities(myaudios, "playbackStatus")
     registerCapabilities(myaudios, "volume")
     registerCapabilities(myaudios, "mute")
+    registerCapabilities(myaudios, "groupRole")
 }
 
 def registerTracks() {
@@ -2350,41 +2357,31 @@ def changeHandler(evt) {
             }
             
         }
-        
-        
-        // set a hub action - include the access token so we know which hub this is
-        def params = [
-            method: "POST",
-            path: "/",
-            headers: [
-                HOST: "${state.directIP}:${state.directPort}",
-                'Content-Type': 'application/json'
-            ],
-            body: [
-                msgtype: "update",
-                change_name: deviceName,
-                change_device: deviceid,
-                change_attribute: attr,
-                change_value: value
-            ]
-        ]
-        def result
-        if ( isST() ) {
-            result = physicalgraph.device.HubAction.newInstance(params)
-        } else {
-            result = hubitat.device.HubAction.newInstance(params)
-        }
-        sendHubCommand(result)
+        postHub("update", deviceName, deviceid, attr, value)
     }
 }
 
-def postHub(message) {
-
-    logger("ip= ${state.directIP} port= ${state.directPort} message= ${message}", "info" )
+def modeChangeHandler(evt) {
     
-    if ( message && state?.directIP && state?.directPort ) {
+    // send group of hub actions for mode changes
+    def result
+    def themode = evt.value
+    logger("Sending new mode= ${themode} to Websocket at (${state.directIP}:${state.directPort})", "info")
+    def vals = ["m1x1","m1x2","m2x1","m2x2"]
+    vals.each {
+        def modeid = "${state.prefix}${it}"
+        def modename = "Mode ${it}"
+        postHub("update", modename, modeid, "themode", themode)
+    }
+}
+
+def postHub(msgtype, name, id, attr, value) {
+
+    logger("postHub to IP= ${state.directIP} port= ${state.directPort} msgtype= ${msgtype} name= ${name} id= ${id} attr= ${attr} value= ${value}", "info" )
+    
+    if ( msgtype && state?.directIP && state?.directPort ) {
         // Send Using the Direct Mechanism
-        logger("Sending ${message} to Websocket at ${state.directIP}:${state.directPort}", "info")
+        logger("Sending ${msgtype} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
         // set a hub action - include the access token so we know which hub this is
         def params = [
@@ -2395,8 +2392,11 @@ def postHub(message) {
                 'Content-Type': 'application/json'
             ],
             body: [
-                msgtype: "initialize",
-                message: message,
+                msgtype: msgtype,
+                change_name: name,
+                change_device: id,
+                change_attribute: attr,
+                change_value: value
             ]
         ]
         def result

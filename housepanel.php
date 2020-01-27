@@ -9,6 +9,7 @@
  * Revision History
  */
 $devhistory = "
+ 2.119      Minor bug fixes
  2.118      Fix bug that prevented user from changing custom tile count
  2.117      Load jquery locally and include files in the distro
  2.116      Tweaks to enable floor plan skins and bug fixes
@@ -1038,20 +1039,20 @@ function getClock($clockname, $clockid, $options, $allthings, $clockskin="", $fm
 
 function addSpecials(&$allthings, $options) {
     // set hub number to nothing for manually created tiles
-    $hubnum = -1;
-    $hubType = "None";
+    $hubnum = "-1";
 
     // add digital clock tile
     // never refresh since clocks have their own refresh timer built into the javascript code
-    $clockid = "clockdigital";
-    $dclock = getClock("Digital Clock", $clockid, $options, $allthings, "", "M d, Y", "h:i:s A");
-    $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $dclock["name"], 
+    // you will need to over-ride this with the tile customizer if you add custom fields
+    $clockidd = "clockdigital";
+    $dclock = getClock("Digital Clock", $clockidd, $options, $allthings, "", "M d, Y", "h:i:s A");
+    $allthings["clock|$clockidd"] = array("id" => $clockidd, "name" => $dclock["name"], 
         "hubnum" => $hubnum, "type" => "clock", "refresh"=>"never", "value" => $dclock);
 
     // add analog clock tile - no longer use dclock format settings by default
-    $clockid = "clockanalog";
-    $aclock = getClock("Analog Clock", $clockid, $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
-    $allthings["clock|$clockid"] = array("id" => $clockid, "name" => $aclock["name"], 
+    $clockida = "clockanalog";
+    $aclock = getClock("Analog Clock", $clockida, $options, $allthings, "CoolClock:swissRail:72", "M d, Y", "h:i:s A");
+    $allthings["clock|$clockida"] = array("id" => $clockida, "name" => $aclock["name"], 
         "hubnum" => $hubnum, "type" => "clock", "refresh"=>"never", "value" => $aclock);
 
     // add special tiles based on type and user provided count
@@ -2494,7 +2495,8 @@ function doAction($hubnum, $path, $swid, $swtype,
                     if ( $path==="doquery") {
                         $response = getMusicArt($response);
                     } else {
-                        unset($response["trackDescription"]);
+                        $response = getMusicArt($response);
+                        // unset($response["trackDescription"]);
                     }
                 }
                 
@@ -2526,7 +2528,7 @@ function doAction($hubnum, $path, $swid, $swtype,
                            $thing["refresh"]==="normal" ) && 
                           array_key_exists($idx, $allthings) ) {
                         $oldthing = $allthings[$idx];
-                        $newvalue = array_merge($oldthing["value"], $thing["value"]);
+                        // $newvalue = array_merge($oldthing["value"], $thing["value"]);
                         $newthing = array_merge($oldthing, $thing);
                         $allthings[$idx] = $newthing;
                     }
@@ -2574,10 +2576,11 @@ function doAction($hubnum, $path, $swid, $swtype,
                     }
                 }
                 
-                // send all normal frequency tiles to update script
+                // send only things from this hub to the update script
+                // but include things with no hub and only do normal refresh
                 foreach($allthings as $idx => $thing) {
-                    if ( (!array_key_exists("refresh", $thing) || 
-                          $thing["refresh"]==="normal") && 
+                    if ( (!array_key_exists("refresh", $thing) || $thing["refresh"]==="normal") && 
+                         ($thing["hubnum"]===$hubnum || $thing["hubnum"]==="-1" || $thing["hubnum"]===-1 || strtolower($thing["hubnum"])==="none") &&
                          array_key_exists($idx, $options["index"]) ) {
                         $tid = $options["index"][$idx];
                         $respvals[$tid] = $thing;
@@ -2710,7 +2713,7 @@ function getMusicArt($thingvalue) {
         $thingvalue["currentAlbum"] = $album;
         $thingvalue["trackImage"] = getAlbumArt("tunein", $album);
     }
-    
+
     return $thingvalue;
 }
 
@@ -3556,7 +3559,7 @@ function getOptionsPage($options, $retpage, $allthings) {
         $thetype = $thesensor["type"];
         $hubnum = $thesensor["hubnum"];
         $hub = $hubs[findHub($hubnum, $hubs)];
-        if ( $hubnum === -1 ) {
+        if ( $hubnum === -1 || $hubnum==="-1" ) {
             $hubType = "None";
             $hubStr = "None";
             $hubId = "none";
@@ -4234,7 +4237,7 @@ function getInfoPage($returnURL, $allthings, $devhistory) {
         
         $hubnum = $thing["hubnum"];
         $hub = $hubs[findHub($hubnum, $hubs)];
-        if ( $hubnum === -1 ) {
+        if ( $hubnum === -1 || $hubnum === "-1" ) {
             $hubType = "None";
             $hubName = "None";
             $hubstr = $hubName . "<br><span class=\"typeopt\"> (" . $hubnum . ": " . $hubType . ")</span>";
@@ -5001,7 +5004,7 @@ function is_ssl() {
         // for clocks and other generic stuff this will be false
         // which will default to using the first hub found
         if ( $hubnum!==false && $hubnum!==null ) {
-            if ( $hubnum === -1 ) {
+            if ( $hubnum === -1 || $hubnum === "-1" ) {
                 $hub = $hubs[0];
                 $hubType = "None";
             } else {
@@ -5808,13 +5811,6 @@ function is_ssl() {
             // make sure our active skin has a custom file
             if ( !file_exists($skin . "/customtiles.css") ) {
                 writeCustomCss($skin, "");
-            }
-            
-            if (DEBUG5) {
-                $tc.= "<h2>Allthings</h2>";
-                $tc.= "<div class='debug'><pre>" . print_r($allthings,true) . "</pre></div>";
-                $tc.= "<hr><h2>Options</h2>";
-                $tc.= "<div class='debug'><pre>" . print_r($options,true) . "</pre></div>";
             }
             
             // new wrapper around catalog and things but excluding buttons
