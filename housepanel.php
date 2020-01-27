@@ -357,7 +357,7 @@ $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
 define('APPNAME', 'HousePanel V' . HPVERSION);
 define('CRYPTSALT','HP$by%KW');
-define('BYPASSPW', true);
+define('BYPASSPW', false);
 
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
