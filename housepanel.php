@@ -357,7 +357,7 @@ $version = trim(substr($devhistory,1,10));
 define('HPVERSION', $version);
 define('APPNAME', 'HousePanel V' . HPVERSION);
 define('CRYPTSALT','HP$by%KW');
-define('BYPASSPW', false);
+define('BYPASSPW', true);
 
 // developer debug options
 // options 2 and 4 will stop the flow and must be reset to continue normal operation
@@ -5219,7 +5219,7 @@ function is_ssl() {
                     $configoptions = $options["config"];
                     $pwords = $configoptions["pword"];
                     $skin = getSkin($options);
-                    if ( $uname===$pwname && array_key_exists($uname, $pwords) ) {
+                    if ( BYPASSPW || ($uname===$pwname && array_key_exists($uname, $pwords)) ) {
                         $login = true;
                     } else {
                         $login = false;
@@ -5770,7 +5770,7 @@ function is_ssl() {
             $tc= getOptionsPage($options, $returnURL, $allthings);
             
         // if login isnt valid show login page
-        } else if ( $login===false ) {
+        } else if ( $login===false && !BYPASSPW ) {
             
             // print_r($options);
             //  echo "pwords = " . print_r($pwords, true);
