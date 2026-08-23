@@ -30,8 +30,9 @@ function makeCallback(hubs, elements, logs) {
             return;
         }
 
-        var hubnum = parseInt(newitems.pop());
-        if ( isNaN(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
+        var rawHubnum = newitems.pop();
+        var hubnum = Number(rawHubnum);
+        if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
             logs.push('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
             return;
         }
@@ -69,6 +70,16 @@ const hubs = [
     cb(null, { statusCode: 200 }, JSON.stringify({ error: "no hub" }));
     assert.strictEqual(elements.length, 0);
     assert.ok(logs[0].includes("not an array"), "non-array guard log present");
+}
+
+// 1e. partially numeric values must not be truncated into a valid hub index
+{
+    const elements = [];
+    const logs = [];
+    const cb = makeCallback(hubs, elements, logs);
+    cb(null, { statusCode: 200 }, JSON.stringify([{ id: "t1", value: {} }, "1junk"]));
+    assert.strictEqual(elements.length, 0, "partially numeric index must push nothing");
+    assert.ok(logs[0].includes("Malformed or out-of-range hub index"), "partial index log present");
 }
 
 // 1c. malformed JSON body

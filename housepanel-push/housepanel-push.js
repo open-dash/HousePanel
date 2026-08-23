@@ -128,8 +128,9 @@ function updateElements() {
                     }
 
                     // pop the hub index off the stack since it was put there in doAction
-                    var hubnum = parseInt(newitems.pop());
-                    if ( isNaN(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
+                    var rawHubnum = newitems.pop();
+                    var hubnum = Number(rawHubnum);
+                    if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
                         console.log('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
                         return;
                     }
