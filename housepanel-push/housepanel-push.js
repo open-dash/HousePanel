@@ -171,9 +171,29 @@ function updateElements() {
     }
 }
 
+// require a shared secret (configured as config.pushToken in hmoptions.cfg)
+// on every request so remote attackers cannot send or read push traffic
+// without credentials. Fails closed if no token has been configured.
+function checkPushAuth(req, res) {
+    var token = config && config.pushToken;
+    if ( !token ) {
+        console.log((new Date()) + " housepanel-push: pushToken not configured in hmoptions.cfg; rejecting unauthenticated request.");
+        res.status(503).json('housepanel-push is not configured with a pushToken; request rejected');
+        return false;
+    }
+    var provided = req.headers['x-push-token'] || req.query.token || (req.body && req.body.pushToken);
+    if ( provided !== token ) {
+        console.log((new Date()) + " housepanel-push: rejected unauthorized request from " + req.ip);
+        res.status(401).json('unauthorized');
+        return false;
+    }
+    return true;
+}
+
 // a callback function to give status info if they point a browser here
 if ( app ) {
     app.get("/", function (req, res) {
+        if ( !checkPushAuth(req, res) ) { return; }
         
         var str = "<p>This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
                   "To use this you must install housepanel-push as a service on some server. <br>" +
@@ -192,6 +212,7 @@ if ( app ) {
 // handler for messages posted from the hub
 if ( app ) {
     app.post("/", function (req, res) {
+        if ( !checkPushAuth(req, res) ) { return; }
 
         // handle two types of messages posted from hub
         // the first initialize type tells Node.js to update elements
@@ -208,17 +229,20 @@ if ( app ) {
             for (var num= 0; num< elements.length; num++) {
 
                 var entry = elements[num];
+                var changeAttr = req.body['change_attribute'];
                 if ( entry.id == req.body['change_device'].toString() &&
-                    req.body['change_attribute']!='trackData' &&
+                    changeAttr!='trackData' &&
+                    typeof changeAttr === 'string' &&
+                    Object.prototype.hasOwnProperty.call(entry.value || {}, changeAttr) &&
                     entry.value && typeof entry.value === 'object' &&
-                    entry['value'][req.body['change_attribute']] != req.body['change_value'] )
+                    Reflect.get(entry.value, changeAttr) != req.body['change_value'] )
                 {
                     cnt = cnt + 1;
                     // console.log(entry['value']);
-                    entry['value'][req.body['change_attribute']] = req.body['change_value'];
+                    Reflect.set(entry.value, changeAttr, req.body['change_value']);
                     if ( entry['value']['trackData'] ) { delete entry['value']['trackData']; }
                     console.log((new Date()) + 'updating tile #',entry['id'],' from trigger:',
-                                req.body['change_attribute'],' to ', clients.length,' hosts. value= ', JSON.stringify(entry['value']) );
+                                changeAttr,' to ', clients.length,' hosts. value= ', JSON.stringify(entry['value']) );
 
                     // send the updated element to all clients
                     // this is processed by the webSockets client in housepanel.js
