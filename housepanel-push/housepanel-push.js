@@ -210,6 +210,7 @@ if ( app ) {
                 var entry = elements[num];
                 if ( entry.id == req.body['change_device'].toString() &&
                     req.body['change_attribute']!='trackData' &&
+                    entry.value && typeof entry.value === 'object' &&
                     entry['value'][req.body['change_attribute']] != req.body['change_value'] )
                 {
                     cnt = cnt + 1;
