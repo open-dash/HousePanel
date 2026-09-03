@@ -588,6 +588,19 @@ attempts to automate this for you. It works for some people but it is not
 completely robust so it might fail, in which case the details above should help.
 Over time I will continue improving the install.sh script to make it more robust
 and foolproof.
+<br><br>
+
+<h3>Push Authentication</h3>
+housepanel-push requires every state-changing hub POST to include a shared secret,
+so a remote attacker cannot forge push traffic. Open the HousePanel Options page in
+your browser once after upgrading; a Push Token field will be generated automatically
+and shown there (click it to select and copy). Paste that value into the new
+"Push Token" setting in your SmartThings/Hubitat HousePanel SmartApp and save it &mdash;
+the SmartApp will then send it as an <code>Authorization: Bearer &lt;token&gt;</code>
+header on every push. Until you do this, hub pushes will be rejected with 401
+Unauthorized (or 503 if the Options page has never been opened on this install, since
+no token has been generated yet). The status page at <code>GET /</code> does not require
+this token.
 <br>
 
 <h3>Set Server Permissions</h3>
