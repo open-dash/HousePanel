@@ -5,6 +5,7 @@ process.title = 'housepanel-push';
 var webSocketServer = require('websocket').server;
 var http = require('http');
 var fs = require('fs');
+var crypto = require('crypto');
 
 // list of currently connected clients (users)
 var clients = [ ];
@@ -171,9 +172,12 @@ function updateElements() {
     }
 }
 
-// require a shared secret (configured as config.pushToken in hmoptions.cfg)
-// on every request so remote attackers cannot send or read push traffic
-// without credentials. Fails closed if no token has been configured.
+// require a shared secret (configured as config.pushToken in hmoptions.cfg,
+// generated and displayed by the HousePanel Options page) on state-changing
+// requests so remote attackers cannot inject fake hub push traffic. Fails
+// closed if no token has been configured yet. Only Authorization: Bearer
+// <token> is accepted -- no header/query/body alternatives, since those can
+// leak into access logs.
 function checkPushAuth(req, res) {
     var token = config && config.pushToken;
     if ( !token ) {
@@ -181,8 +185,15 @@ function checkPushAuth(req, res) {
         res.status(503).json('housepanel-push is not configured with a pushToken; request rejected');
         return false;
     }
-    var provided = req.headers['x-push-token'] || req.query.token || (req.body && req.body.pushToken);
-    if ( provided !== token ) {
+    var auth = req.get('Authorization') || '';
+    var match = auth.match(/^Bearer\s+(.+)$/i);
+    var provided = match ? match[1] : null;
+    var providedBuf = Buffer.from(provided || '');
+    var tokenBuf = Buffer.from(token);
+    var authorized = !!provided &&
+        providedBuf.length === tokenBuf.length &&
+        crypto.timingSafeEqual(providedBuf, tokenBuf);
+    if ( !authorized ) {
         console.log((new Date()) + " housepanel-push: rejected unauthorized request from " + req.ip);
         res.status(401).json('unauthorized');
         return false;
@@ -190,20 +201,14 @@ function checkPushAuth(req, res) {
     return true;
 }
 
-// a callback function to give status info if they point a browser here
+// a callback function to give status info if they point a browser here.
+// this is a public status page (no credentials required) so it only
+// reports a client count, never per-client host/IP details.
 if ( app ) {
     app.get("/", function (req, res) {
-        if ( !checkPushAuth(req, res) ) { return; }
-        
         var str = "<p>This is housepanel-push used to forward state from hubs to HousePanel dashboards. " +
                   "To use this you must install housepanel-push as a service on some server. <br>" +
                   "Currently connected to " + clients.length + " clients.</p>";
-        str = str + "<br><hr><br>";
-          
-        for (var i=0; i < clients.length; i++) {
-            str = str + "Client #" + i + " host= " + clients[i].socket.remoteAddress.substring(7) + " <br>";
-            // str = str + "Client #" + i + " host= " + clients[i].origin + " <br>";
-        }
         res.send(str);
         console.log((new Date()) + "GET request. Currently connected to " + clients.length + " clients. " );
     });

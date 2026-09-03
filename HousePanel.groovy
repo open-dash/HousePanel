@@ -107,6 +107,7 @@ preferences {
         paragraph "Specify these parameters to enable direct and instant hub pushes when things change in your home."
         input "webSocketHost", "text", title: "Host IP", defaultValue: "192.168.11.20", required: false
         input "webSocketPort", "text", title: "Port", defaultValue: "19234", required: false
+        input "pushToken", "text", title: "Push Token (copy from HousePanel Options page)", required: false
     }
     section("Lights and Switches") {
         input "myswitches", "capability.switch", multiple: true, required: false, title: "Switches"
@@ -197,6 +198,7 @@ def initialize() {
     state.usepistons = settings?.usepistons ?: false
     state.directIP = settings?.webSocketHost ?: ""
     state.directPort = settings?.webSocketPort ?: "19234"
+    state.pushToken = settings?.pushToken ?: ""
     state.tz = settings?.timezone ?: "America/Detroit"
     state.prefix = settings?.hubprefix ?: getPrefix()
     state.dateFormat = settings?.dateformat ?: "M/dd h:mm"
@@ -2383,14 +2385,19 @@ def postHub(msgtype, name, id, attr, value) {
         // Send Using the Direct Mechanism
         logger("Sending ${msgtype} to Websocket at ${state.directIP}:${state.directPort}", "info")
 
-        // set a hub action - include the access token so we know which hub this is
+        // set a hub action - include the push token so housepanel-push can
+        // authenticate this request as coming from an authorized hub
+        def pushHeaders = [
+            HOST: "${state.directIP}:${state.directPort}",
+            'Content-Type': 'application/json'
+        ]
+        if ( state?.pushToken ) {
+            pushHeaders['Authorization'] = "Bearer ${state.pushToken}"
+        }
         def params = [
             method: "POST",
             path: "/",
-            headers: [
-                HOST: "${state.directIP}:${state.directPort}",
-                'Content-Type': 'application/json'
-            ],
+            headers: pushHeaders,
             body: [
                 msgtype: msgtype,
                 change_name: name,
