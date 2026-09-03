@@ -208,7 +208,10 @@ def initialize() {
         webCoRE_init()
     }
     state.loggingLevelIDE = settings.configLogLevel?.toInteger() ?: 3
-    logger("Installed ${hubtype} hub with settings: ${settings} ", "debug")
+    logger("Installed ${hubtype} hub. " +
+           "webSocket: ${settings?.webSocketHost}:${settings?.webSocketPort}, " +
+           "cloudCalls: ${settings?.cloudcalls}, " +
+           "timezone: ${settings?.timezone}", "debug")
     
     if (state.directIP)
     {
