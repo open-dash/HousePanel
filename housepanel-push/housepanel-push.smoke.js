@@ -8,6 +8,7 @@
 //   4. healthy path still parses, indexes hubs correctly, and pushes items
 
 const assert = require("assert");
+const crypto = require("crypto");
 
 // Mirrors the callback body now in housepanel-push.js updateElements()
 function makeCallback(hubs, elements, logs) {
@@ -210,6 +211,54 @@ const hubs = [
         threw = true;
     }
     assert.strictEqual(threw, false, "update handler must not throw on non-object value");
+}
+
+// Mirrors checkPushAuth() in housepanel-push.js: only Authorization: Bearer
+// <token> is accepted, compared in constant time. Returns the HTTP status
+// that would be sent (200 = authorized, 401 = unauthorized, 503 = no token
+// configured), same statuses the real handler returns.
+function mockCheckPushAuth(configuredToken, authHeader) {
+    var token = configuredToken;
+    if ( !token ) { return 503; }
+    var auth = authHeader || '';
+    var match = auth.match(/^Bearer\s+(.+)$/i);
+    var provided = match ? match[1] : null;
+    var providedBuf = Buffer.from(provided || '');
+    var tokenBuf = Buffer.from(token);
+    var authorized = !!provided &&
+        providedBuf.length === tokenBuf.length &&
+        crypto.timingSafeEqual(providedBuf, tokenBuf);
+    return authorized ? 200 : 401;
+}
+
+const REAL_TOKEN = "s3cr3t-push-token";
+
+// 7. no pushToken configured at all -> 503 regardless of what's sent
+{
+    assert.strictEqual(mockCheckPushAuth(null, "Bearer anything"), 503, "unconfigured token must 503");
+    assert.strictEqual(mockCheckPushAuth(null, undefined), 503, "unconfigured token must 503 with no header");
+}
+
+// 7b. configured token, no Authorization header -> 401
+{
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, undefined), 401, "missing Authorization must 401");
+}
+
+// 7c. configured token, malformed Authorization scheme -> 401
+{
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, "Token " + REAL_TOKEN), 401, "non-Bearer scheme must 401");
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, REAL_TOKEN), 401, "raw token with no scheme must 401");
+}
+
+// 7d. configured token, wrong bearer token -> 401
+{
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, "Bearer wrong-token"), 401, "wrong bearer token must 401");
+}
+
+// 7e. configured token, correct bearer token -> 200 (authorized)
+{
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, "Bearer " + REAL_TOKEN), 200, "correct bearer token must authorize");
+    assert.strictEqual(mockCheckPushAuth(REAL_TOKEN, "bearer " + REAL_TOKEN), 200, "scheme match must be case-insensitive");
 }
 
 console.log("ALL BEHAVIORAL ASSERTIONS PASSED");
