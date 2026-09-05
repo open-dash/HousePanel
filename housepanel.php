@@ -712,7 +712,7 @@ function getEndpoint($access_token, $stweb, $clientId, $hubType) {
 
 // this used to create input blocks for auth page
 // it was modified for use now on the options page
-function tsk($timezone, $skin, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer) {
+function tsk($timezone, $skin, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer, $pushToken = "") {
 
     $tc= "";
     $tc.= "<div class='inp'><label class=\"startupinp\">Skin: </label>";
@@ -725,7 +725,11 @@ function tsk($timezone, $skin, $uname, $port, $webSocketServerPort, $fast_timer,
     $tc.= "<input id=\"newport\" class=\"startupinp\" name=\"port\" width=\"20\" type=\"text\" value=\"$port\"/></div>"; 
 
     $tc.= "<div><label class=\"startupinp\">WebSocket Port: </label>";
-    $tc.= "<input id=\"newsocketport\" class=\"startupinp\" name=\"webSocketServerPort\" width=\"20\" type=\"text\" value=\"$webSocketServerPort\"/></div>"; 
+    $tc.= "<input id=\"newsocketport\" class=\"startupinp\" name=\"webSocketServerPort\" width=\"20\" type=\"text\" value=\"$webSocketServerPort\"/></div>";
+
+    $tc.= "<div><label class=\"startupinp\">Push Token: </label>";
+    $tc.= "<input id=\"pushtoken\" class=\"startupinp\" width=\"240\" type=\"text\" readonly=\"readonly\" onclick=\"this.select();\" value=\"$pushToken\"/></div>";
+    $tc.= "<div><label></label><span class='indent typeopt'>copy this into the Push Token setting of your SmartThings/Hubitat SmartApp so hub pushes authenticate</span></div>";
 
     $tc.= "<div><label class=\"startupinp\">Fast Timer: </label>";
     $tc.= "<input id=\"newfast_timer\" class=\"startupinp\" name=\"fast_timer\" width=\"20\" type=\"text\" value=\"$fast_timer\"/></div>"; 
@@ -3428,6 +3432,16 @@ function getOptionsPage($options, $retpage, $allthings) {
     if ( !array_key_exists("port", $configoptions) ) {
         $configoptions = setDefaultOptions($configoptions);
     }
+
+    // housepanel-push authenticates hub POSTs with this shared secret.
+    // generate one on first visit to this page so every install gets a
+    // token automatically instead of requiring manual hmoptions.cfg edits.
+    if ( !array_key_exists("pushToken", $configoptions) || !$configoptions["pushToken"] ) {
+        $configoptions["pushToken"] = bin2hex(random_bytes(32));
+        $options["config"] = $configoptions;
+        writeOptions($options);
+    }
+    $pushToken = $configoptions["pushToken"];
     $port = $configoptions["port"];
     $webSocketServerPort = $configoptions["webSocketServerPort"];
     $fast_timer = $configoptions["fast_timer"];
@@ -3451,11 +3465,11 @@ function getOptionsPage($options, $retpage, $allthings) {
     
     // $tc.= "<div class=\"filteroption\">Skin directory name: <input id=\"skinid\" width=\"240\" type=\"text\" name=\"skin\"  value=\"$skin\"/>";
     $tc.= "<div class=\"filteroption\">";
-    $tc.= tsk($timezone, $skin, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer);
+    $tc.= tsk($timezone, $skin, $uname, $port, $webSocketServerPort, $fast_timer, $slow_timer, $pushToken);
     $tc.= "</div>";
-    
+
     $tc.= "<div class=\"filteroption\">";
-    $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";    
+    $tc.= "<label for=\"kioskid\" class=\"kioskoption\">Kiosk Mode: </label>";
     $kstr = ($kioskoptions===true || $kioskoptions==="true" || $kioskoptions==="1" || $kioskoptions==="yes") ? "checked" : "";
     $tc.= "<input id=\"kioskid\" width=\"24\" type=\"checkbox\" name=\"kiosk\"  value=\"$kioskoptions\" $kstr/>";
     
