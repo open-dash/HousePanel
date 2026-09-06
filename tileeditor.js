@@ -1199,18 +1199,6 @@ function cancelTileEdit(str_type, thingindex) {
     }
 }
 
-function resetInverted(selector) {
-    var sheet = document.getElementById('customtiles').sheet; // returns an Array-like StyleSheetList
-    for (var i=sheet.cssRules.length; i--;) {
-        var current_style = sheet.cssRules[i];
-        if(current_style.selectorText === selector){
-            if(current_style.cssText.indexOf("invert") !== -1) {
-                current_style.style.filter="";	
-            }	  		
-        }
-    }
-}
-
 function checkboxHandler(idselect, onaction, offaction, overlay) {
     $(idselect).off('change');
     $(idselect).on("change",function() {
