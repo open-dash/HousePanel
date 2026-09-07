@@ -1456,57 +1456,6 @@ function updateFilters() {
     );
 }
 
-function checkInputs(port, webSocketServerPort, fast_timer, slow_timer, uname, pword) {
-
-    var errs = {};
-    var isgood = true;
-    var intre = /^\d{1,}$/;         // only digits allowed and must be more than 1024
-    var unamere = /^\D\S{3,}$/;      // start with a letter and be four long at least
-    var pwordre = /^\S{6,}$/;        // start with anything but no white space and at least 6 digits 
-
-    if ( port ) {
-        var i = parseInt(port, 10);
-        if ( !intre.test(port) || (i > 0 && i < 1024) || i > 65535 ) {
-            errs.port = " " + port + ", Must be 0 or an integer between 1024 and 65535";
-            isgood = false;
-        }
-    }
-    if ( webSocketServerPort ) {
-        var j = parseInt(webSocketServerPort, 10);
-        if ( !intre.test(webSocketServerPort)  || (j > 0 && j < 1024) || j > 65535 ) {
-            errs.webSocketServerPort = " " + webSocketServerPort + ", Must be 0 or an integer between 1024 and 65535";
-            isgood = false;
-        }
-    }
-
-    if ( !intre.test(fast_timer) ) {
-        errs.fast_timer = " " + fast_timer + ", must be an integer; enter 0 to disable";
-        isgood = false;
-    }
-    if ( !intre.test(slow_timer) ) {
-        errs.slow_timer = " " + slow_timer + ", must be an integer; enter 0 to disable";
-        isgood = false;
-    }
-    if ( uname!=="admin" && !unamere.test(uname) ) {
-        errs.uname = " " + uname + ", must begin with a letter and be at least 3 characters long";
-        isgood = false;
-    }
-    if ( pword!=="" && !pwordre.test(pword) ) {
-        errs.pword = ", must be blank or at least 6 characters long";
-        isgood = false;
-    }
-
-    // show all errors
-    if ( !isgood ) {
-        var str = "";
-        $.each(errs, function(key, val) {
-            str = str + "Invalid " + key + val + "\n"; 
-        });
-        alert(str);
-    }
-    return isgood;
-}
-
 function setupButtons() {
 
     if ( pagename==="main" && !disablebtn ) {
@@ -1736,18 +1685,6 @@ function setupButtons() {
     }
 
 }
-
-// function to send a message to Node.js app
-// this isn't used because using wsSocket is more efficient
-//function postNode(msg) {
-//    if ( nodejsUrl ) {
-//        $.post(nodejsUrl, {msgtype: "initialize", message: msg},
-//            function(presult, pstatus) {  
-//                console.log("Node.js call: status: ", pstatus, " result: ", presult);
-//            }, "json"
-//        );
-//    }
-//}
 
 function addEditLink() {
     
