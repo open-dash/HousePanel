@@ -82,6 +82,23 @@ function locateOptionsFile() {
     return null;
 }
 
+// shut down any existing client connections coming from the same remote host,
+// so a reconnecting dashboard replaces its previous session instead of
+// duplicating it. Returns the number of stale connections removed.
+function dropClientsForHost(host) {
+    var removed = 0;
+    var i = 0;
+    while ( i < clients.length ) {
+        if ( clients[i].socket.remoteAddress === host ) {
+            clients.splice(i, 1);
+            removed++;
+        } else {
+            i++;
+        }
+    }
+    return removed;
+}
+
 function updateElements() {
     elements = [ ];
     hubs = null;
@@ -326,15 +343,7 @@ if ( wsServer ) {
         
         // shut down any existing connections to same remote host
         var host = connection.socket.remoteAddress;
-        var i = 0;
-        while ( i < clients.length ) {
-            var oldhost = clients[i].socket.remoteAddress;
-            if ( oldhost===host ) {
-                clients.splice(i, 1);
-            } else {
-                i++;
-            }
-        }
+        dropClientsForHost(host);
 
         // report ndex of the connection
         // we no longer rely on this to close prior connections
@@ -356,15 +365,7 @@ if ( wsServer ) {
 
             // remove clients that match this host
             // clients.splice(indexsave, 1);
-            var i = 0;
-            while ( i < clients.length ) {
-                var oldhost = clients[i].socket.remoteAddress;
-                if ( oldhost===host ) {
-                    clients.splice(i, 1);
-                } else {
-                    i++;
-                }
-            }
+            dropClientsForHost(host);
         });
 
     });
