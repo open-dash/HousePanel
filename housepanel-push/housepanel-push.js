@@ -291,12 +291,14 @@ if ( app ) {
 
             // loop through all the elements for this hub
             // remove music trackData field that we don't know how to handle
+            var changeDevice = req.body['change_device'];
+            var changeDeviceStr = (changeDevice === undefined || changeDevice === null || changeDevice === '') ? '' : String(changeDevice);
             var cnt = 0;
             for (var num= 0; num< elements.length; num++) {
 
                 var entry = elements[num];
                 var changeAttr = req.body['change_attribute'];
-                if ( entry.id == req.body['change_device'].toString() &&
+                if ( changeDeviceStr !== '' && entry.id == changeDeviceStr &&
                     changeAttr!='trackData' &&
                     typeof changeAttr === 'string' &&
                     Object.prototype.hasOwnProperty.call(entry.value || {}, changeAttr) &&

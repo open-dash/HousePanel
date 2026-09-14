@@ -215,6 +215,47 @@ const hubs = [
     assert.strictEqual(threw, false, "update handler must not throw on non-object value");
 }
 
+// 6d. update handler: a missing/blank/null change_device must update nothing
+// (mirrors the guard in housepanel-push.js: changeDeviceStr).
+function updateHandlerCount(elements, body) {
+    var changeDevice = body['change_device'];
+    var changeDeviceStr = (changeDevice === undefined || changeDevice === null || changeDevice === '') ? '' : String(changeDevice);
+    var changeAttr = body['change_attribute'];
+    var cnt = 0;
+    for (var num = 0; num < elements.length; num++) {
+        var entry = elements[num];
+        if ( changeDeviceStr !== '' && entry.id == changeDeviceStr &&
+            changeAttr!='trackData' &&
+            typeof changeAttr === 'string' &&
+            Object.prototype.hasOwnProperty.call(entry.value || {}, changeAttr) &&
+            entry.value && typeof entry.value === 'object' &&
+            Reflect.get(entry.value, changeAttr) != body['change_value'] ) {
+            cnt = cnt + 1;
+        }
+    }
+    return cnt;
+}
+{
+    const hostile = [
+        { id: '', value: { on: false } },
+        { id: 0, value: { on: false } },
+        { id: 'undefined', value: { on: false } },
+        { id: '1', value: { on: false } }
+    ];
+    assert.strictEqual(
+        updateHandlerCount(hostile, { change_attribute: 'on', change_value: 'true' }),
+        0, "missing change_device must not throw or match ''/0/'undefined'-id elements");
+    assert.strictEqual(
+        updateHandlerCount(hostile, { change_device: null, change_attribute: 'on', change_value: 'true' }),
+        0, "null change_device must update nothing");
+    assert.strictEqual(
+        updateHandlerCount(hostile, { change_device: '', change_attribute: 'on', change_value: 'true' }),
+        0, "blank change_device must update nothing");
+    assert.strictEqual(
+        updateHandlerCount(hostile, { change_device: '1', change_attribute: 'on', change_value: 'true' }),
+        1, "a valid matching device id must still match exactly one element");
+}
+
 // ---------------------------------------------------------------------------
 // Push authentication tests. These call the REAL checkPushAuth/getPushToken
 // exported by housepanel-push.js -- not a copy of the logic -- so that a
