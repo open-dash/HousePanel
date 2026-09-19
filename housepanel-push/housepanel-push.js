@@ -12,6 +12,7 @@ try {
     webSocketServer = null;
 }
 var http = require('http');
+var https = require('https');
 var fs = require('fs');
 var crypto = require('crypto');
 
@@ -122,6 +123,21 @@ function updateElements() {
     
     if ( hubs && hubs.length && config && config.housepanel_url ) {
         console.log('housepanel-push installed. Elements being updated from ', hubs.length,' hubs to ', config.housepanel_url);
+        // Native http.request is HTTP-only; pick https.request for TLS URLs
+        // (the dropped `request` library did this automatically).
+        var urlObj = null;
+        try {
+            urlObj = new URL(config.housepanel_url);
+            if ( urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:' ) {
+                console.log('unsupported housepanel_url protocol:', urlObj.protocol);
+                urlObj = null;
+            }
+        } catch (urlErr) {
+            console.log('error parsing housepanel_url:', urlErr.message);
+            urlObj = null;
+        }
+        var isHttps = !!(urlObj && urlObj.protocol === 'https:');
+        var requestLib = isHttps ? https : http;
         var num;
         // console.log(hubs);
         for (num= 0; num< hubs.length; num++) {
@@ -136,25 +152,24 @@ function updateElements() {
                 numstr = null;
             }
             
-            if ( numstr ) {
+            if ( numstr && urlObj ) {
                 var formBody = 'useajax=doquery&id=all&type=all&value=none&attr=none&hubid=' + encodeURIComponent(numstr);
-                var urlObj = new URL(config.housepanel_url);
-                var postReq = http.request({
+                var postReq = requestLib.request({
                     hostname: urlObj.hostname,
-                    port: urlObj.port || 80,
-                    path: urlObj.pathname || '/',
+                    port: urlObj.port || (isHttps ? 443 : 80),
+                    path: (urlObj.pathname || '/') + urlObj.search,
                     method: 'POST',
+                    timeout: 60000,
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         'Content-Length': Buffer.byteLength(formBody)
                     }
                 }, function (response) {
-                    var chunks = [];
-                    response.on('data', function (chunk) { chunks.push(chunk); });
+                    var body = '';
+                    response.on('data', function (chunk) { body += chunk; });
                     response.on('end', function () {
-                        var body = chunks.join('');
-                        if ( !response || response.statusCode != 200 ) {
-                            console.log('error attempting to read hub. statusCode:', response ? response.statusCode : 'none');
+                        if ( response.statusCode != 200 ) {
+                            console.log('error attempting to read hub. statusCode:', response.statusCode);
                             return;
                         }
 
@@ -192,6 +207,9 @@ function updateElements() {
                 postReq.on('error', function (err) {
                     console.log(err);
                     console.log('error attempting to read hub. statusCode: none');
+                });
+                postReq.on('timeout', function () {
+                    postReq.destroy();
                 });
                 postReq.write(formBody);
                 postReq.end();
