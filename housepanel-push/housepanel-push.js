@@ -12,6 +12,7 @@ try {
     webSocketServer = null;
 }
 var http = require('http');
+var https = require('https');
 var fs = require('fs');
 var crypto = require('crypto');
 
@@ -122,7 +123,21 @@ function updateElements() {
     
     if ( hubs && hubs.length && config && config.housepanel_url ) {
         console.log('housepanel-push installed. Elements being updated from ', hubs.length,' hubs to ', config.housepanel_url);
-        var request = require('request');
+        // Native http.request is HTTP-only; pick https.request for TLS URLs
+        // (the dropped `request` library did this automatically).
+        var urlObj = null;
+        try {
+            urlObj = new URL(config.housepanel_url);
+            if ( urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:' ) {
+                console.log('unsupported housepanel_url protocol:', urlObj.protocol);
+                urlObj = null;
+            }
+        } catch (urlErr) {
+            console.log('error parsing housepanel_url:', urlErr.message);
+            urlObj = null;
+        }
+        var isHttps = !!(urlObj && urlObj.protocol === 'https:');
+        var requestLib = isHttps ? https : http;
         var num;
         // console.log(hubs);
         for (num= 0; num< hubs.length; num++) {
@@ -137,46 +152,67 @@ function updateElements() {
                 numstr = null;
             }
             
-            if ( numstr ) {
-                var parms = { url:config.housepanel_url,
-                              form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubid:numstr}};
-                request.post( parms, function (error, response, body) {
-                    if ( error || !response || response.statusCode != 200 ) {
-                        if ( error ) { console.log(error); }
-                        console.log('error attempting to read hub. statusCode:', response ? response.statusCode : 'none');
-                        return;
+            if ( numstr && urlObj ) {
+                var formBody = 'useajax=doquery&id=all&type=all&value=none&attr=none&hubid=' + encodeURIComponent(numstr);
+                var postReq = requestLib.request({
+                    hostname: urlObj.hostname,
+                    port: urlObj.port || (isHttps ? 443 : 80),
+                    path: (urlObj.pathname || '/') + urlObj.search,
+                    method: 'POST',
+                    timeout: 60000,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Length': Buffer.byteLength(formBody)
                     }
+                }, function (response) {
+                    var body = '';
+                    response.on('data', function (chunk) { body += chunk; });
+                    response.on('end', function () {
+                        if ( response.statusCode != 200 ) {
+                            console.log('error attempting to read hub. statusCode:', response.statusCode);
+                            return;
+                        }
 
-                    var newitems;
-                    try {
-                        newitems = JSON.parse(body);
-                    } catch (parseError) {
-                        console.log('error parsing housepanel doquery response:', parseError.message);
-                        return;
-                    }
-                    if ( !Array.isArray(newitems) ) {
-                        console.log('housepanel doquery response is not an array; skipping.');
-                        return;
-                    }
+                        var newitems;
+                        try {
+                            newitems = JSON.parse(body);
+                        } catch (parseError) {
+                            console.log('error parsing housepanel doquery response:', parseError.message);
+                            return;
+                        }
+                        if ( !Array.isArray(newitems) ) {
+                            console.log('housepanel doquery response is not an array; skipping.');
+                            return;
+                        }
 
-                    // pop the hub index off the stack since it was put there in doAction
-                    var rawHubnum = newitems.pop();
-                    var hubnum = Number(rawHubnum);
-                    if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
-                        console.log('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
-                        return;
-                    }
+                        // pop the hub index off the stack since it was put there in doAction
+                        var rawHubnum = newitems.pop();
+                        var hubnum = Number(rawHubnum);
+                        if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
+                            console.log('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
+                            return;
+                        }
 
-                    var hub = hubs[hubnum];
-                    if ( hub && newitems.length ) {
-                        var hubId = hub.hubId;
-                        console.log('success reading', newitems.length,' elements from hub ID:', hubId,
-                                    ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
-                        newitems.forEach( function(item) {
-                            elements.push(item);
-                        });
-                    }
+                        var hub = hubs[hubnum];
+                        if ( hub && newitems.length ) {
+                            var hubId = hub.hubId;
+                            console.log('success reading', newitems.length,' elements from hub ID:', hubId,
+                                        ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
+                            newitems.forEach( function(item) {
+                                elements.push(item);
+                            });
+                        }
+                    });
                 });
+                postReq.on('error', function (err) {
+                    console.log(err);
+                    console.log('error attempting to read hub. statusCode: none');
+                });
+                postReq.on('timeout', function () {
+                    postReq.destroy();
+                });
+                postReq.write(formBody);
+                postReq.end();
             }
         }
     } else {

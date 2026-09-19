@@ -447,7 +447,127 @@ function httpTests() {
     });
 }
 
+// ---------------------------------------------------------------------------
+// 9. Native http/https doquery client (replaces the dropped `request` library).
+// These call the real updateElements() against a local HTTP server, and stub
+// https.request to prove TLS URLs do not go through http.request.
+// ---------------------------------------------------------------------------
+function nativeDoqueryTests() {
+    const httpmod = require("http");
+    return new Promise(function (resolve, reject) {
+        const received = [];
+        const server = httpmod.createServer(function (req, res) {
+            let data = "";
+            req.on("data", function (chunk) { data += chunk; });
+            req.on("end", function () {
+                received.push({
+                    method: req.method,
+                    url: req.url,
+                    contentType: req.headers["content-type"],
+                    body: data
+                });
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(JSON.stringify([{ id: "t1", value: { on: "off" } }, 0]));
+            });
+        });
+        server.listen(0, "127.0.0.1", function () {
+            const port = server.address().port;
+            writeCfg({
+                housepanel_url: "http://127.0.0.1:" + port + "/housepanel.php?keep=1",
+                hubs: [{ hubId: "hub-1", hubType: "ST", hubName: "Living" }]
+            });
+            try {
+                push.updateElements();
+            } catch (err) {
+                server.close(function () { reject(err); });
+                return;
+            }
+            const deadline = Date.now() + 2000;
+            (function wait() {
+                if ( received.length >= 1 ) {
+                    server.close(function () {
+                        try {
+                            assert.strictEqual(received.length, 1, "one hub must produce one doquery POST");
+                            assert.strictEqual(received[0].method, "POST");
+                            assert.strictEqual(received[0].url, "/housepanel.php?keep=1", "pathname and query string must be preserved");
+                            assert.ok((received[0].contentType || "").indexOf("application/x-www-form-urlencoded") >= 0);
+                            assert.ok(received[0].body.indexOf("useajax=doquery") >= 0);
+                            assert.ok(received[0].body.indexOf("id=all") >= 0);
+                            assert.ok(received[0].body.indexOf("type=all") >= 0);
+                            assert.ok(received[0].body.indexOf("value=none") >= 0);
+                            assert.ok(received[0].body.indexOf("attr=none") >= 0);
+                            assert.ok(received[0].body.indexOf("hubid=hub-1") >= 0);
+                            resolve();
+                        } catch (err) { reject(err); }
+                    });
+                    return;
+                }
+                if ( Date.now() > deadline ) {
+                    server.close(function () {
+                        reject(new Error("timed out waiting for native doquery POST"));
+                    });
+                    return;
+                }
+                setTimeout(wait, 20);
+            })();
+        });
+        server.on("error", reject);
+    });
+}
+
+function httpsProtocolTest() {
+    const httpsmod = require("https");
+    const orig = httpsmod.request;
+    let captured = null;
+    const { EventEmitter } = require("events");
+    httpsmod.request = function (opts) {
+        captured = opts;
+        const fake = new EventEmitter();
+        fake.write = function () { return true; };
+        fake.end = function () {
+            process.nextTick(function () {
+                fake.emit("error", new Error("stubbed https"));
+            });
+        };
+        fake.destroy = function () {};
+        return fake;
+    };
+    writeCfg({
+        housepanel_url: "https://example.invalid/housepanel.php?keep=1",
+        hubs: [{ hubId: "hub-1", hubType: "ST", hubName: "Living" }]
+    });
+    try {
+        assert.doesNotThrow(function () { push.updateElements(); });
+        assert.ok(captured, "https.request must be used for https housepanel_url");
+        assert.strictEqual(captured.hostname, "example.invalid");
+        assert.strictEqual(Number(captured.port), 443, "https default port must be 443");
+        assert.strictEqual(captured.path, "/housepanel.php?keep=1");
+        assert.strictEqual(captured.method, "POST");
+        assert.strictEqual(captured.timeout, 60000);
+    } finally {
+        httpsmod.request = orig;
+    }
+    return new Promise(function (resolve) { setImmediate(resolve); });
+}
+
+function invalidUrlTest() {
+    writeCfg({
+        housepanel_url: "not-a-valid-url",
+        hubs: [{ hubId: "hub-1", hubType: "ST", hubName: "Living" }]
+    });
+    assert.doesNotThrow(function () { push.updateElements(); }, "malformed housepanel_url must not throw");
+    writeCfg({
+        housepanel_url: "ftp://example.com/housepanel.php",
+        hubs: [{ hubId: "hub-1", hubType: "ST", hubName: "Living" }]
+    });
+    assert.doesNotThrow(function () { push.updateElements(); }, "non-http housepanel_url must not throw");
+    return Promise.resolve();
+}
+
 httpTests()
+    .then(nativeDoqueryTests)
+    .then(httpsProtocolTest)
+    .then(invalidUrlTest)
     .then(function () {
         process.chdir(origCwd);
         fs.rmSync(tmpdir, { recursive: true, force: true });

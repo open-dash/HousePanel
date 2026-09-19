@@ -6,7 +6,6 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
-    "request": "^2.88.0",
     "websocket": "^1.0.28"
   },
   "devDependencies": {},
