@@ -122,7 +122,6 @@ function updateElements() {
     
     if ( hubs && hubs.length && config && config.housepanel_url ) {
         console.log('housepanel-push installed. Elements being updated from ', hubs.length,' hubs to ', config.housepanel_url);
-        var request = require('request');
         var num;
         // console.log(hubs);
         for (num= 0; num< hubs.length; num++) {
@@ -138,45 +137,64 @@ function updateElements() {
             }
             
             if ( numstr ) {
-                var parms = { url:config.housepanel_url,
-                              form:{useajax:'doquery',id:'all',type:'all',value:'none',attr:'none',hubid:numstr}};
-                request.post( parms, function (error, response, body) {
-                    if ( error || !response || response.statusCode != 200 ) {
-                        if ( error ) { console.log(error); }
-                        console.log('error attempting to read hub. statusCode:', response ? response.statusCode : 'none');
-                        return;
+                var formBody = 'useajax=doquery&id=all&type=all&value=none&attr=none&hubid=' + encodeURIComponent(numstr);
+                var urlObj = new URL(config.housepanel_url);
+                var postReq = http.request({
+                    hostname: urlObj.hostname,
+                    port: urlObj.port || 80,
+                    path: urlObj.pathname || '/',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Length': Buffer.byteLength(formBody)
                     }
+                }, function (response) {
+                    var chunks = [];
+                    response.on('data', function (chunk) { chunks.push(chunk); });
+                    response.on('end', function () {
+                        var body = chunks.join('');
+                        if ( !response || response.statusCode != 200 ) {
+                            console.log('error attempting to read hub. statusCode:', response ? response.statusCode : 'none');
+                            return;
+                        }
 
-                    var newitems;
-                    try {
-                        newitems = JSON.parse(body);
-                    } catch (parseError) {
-                        console.log('error parsing housepanel doquery response:', parseError.message);
-                        return;
-                    }
-                    if ( !Array.isArray(newitems) ) {
-                        console.log('housepanel doquery response is not an array; skipping.');
-                        return;
-                    }
+                        var newitems;
+                        try {
+                            newitems = JSON.parse(body);
+                        } catch (parseError) {
+                            console.log('error parsing housepanel doquery response:', parseError.message);
+                            return;
+                        }
+                        if ( !Array.isArray(newitems) ) {
+                            console.log('housepanel doquery response is not an array; skipping.');
+                            return;
+                        }
 
-                    // pop the hub index off the stack since it was put there in doAction
-                    var rawHubnum = newitems.pop();
-                    var hubnum = Number(rawHubnum);
-                    if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
-                        console.log('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
-                        return;
-                    }
+                        // pop the hub index off the stack since it was put there in doAction
+                        var rawHubnum = newitems.pop();
+                        var hubnum = Number(rawHubnum);
+                        if ( !Number.isInteger(hubnum) || hubnum < 0 || hubnum >= hubs.length ) {
+                            console.log('Malformed or out-of-range hub index from housepanel doquery; skipping this response.');
+                            return;
+                        }
 
-                    var hub = hubs[hubnum];
-                    if ( hub && newitems.length ) {
-                        var hubId = hub.hubId;
-                        console.log('success reading', newitems.length,' elements from hub ID:', hubId,
-                                    ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
-                        newitems.forEach( function(item) {
-                            elements.push(item);
-                        });
-                    }
+                        var hub = hubs[hubnum];
+                        if ( hub && newitems.length ) {
+                            var hubId = hub.hubId;
+                            console.log('success reading', newitems.length,' elements from hub ID:', hubId,
+                                        ' hub type: ', hub.hubType, ' hub name: ', hub.hubName);
+                            newitems.forEach( function(item) {
+                                elements.push(item);
+                            });
+                        }
+                    });
                 });
+                postReq.on('error', function (err) {
+                    console.log(err);
+                    console.log('error attempting to read hub. statusCode: none');
+                });
+                postReq.write(formBody);
+                postReq.end();
             }
         }
     } else {
